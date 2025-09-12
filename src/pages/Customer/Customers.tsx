@@ -1,19 +1,28 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 
+interface Customer {
+  _id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  city?: string;
+  country?: string;
+}
+
 const Customers = () => {
-  const [customers, setCustomers] = useState([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
-
   useEffect(() => {
     axios
-      .get(`${import.meta.env.VITE_API_BASE_URL}/api/customers`) // Make sure this endpoint exists
+      .get<Customer[]>(`${import.meta.env.VITE_API_BASE_URL}/api/customers`)
       .then((res) => {
         setCustomers(res.data);
       })
-      .catch((err) => console.error('❌ Error fetching customers:', err));
+      .catch((err) => console.error("❌ Error fetching customers:", err));
   }, []);
 
   const filteredCustomers = useMemo(() => {
