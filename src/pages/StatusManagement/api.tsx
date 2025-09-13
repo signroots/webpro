@@ -1,4 +1,5 @@
-import axios from "axios"; 
+import axios from "axios";
+import type { AxiosError } from "axios";
 interface Status {
   _id: string;
   name: string;
@@ -15,6 +16,7 @@ const api = axios.create({
 });
 
 const handleError = (error: unknown) => {
+  // Type guard for Axios errors
   if (axios.isAxiosError(error)) {
     console.error("API Error:", error.response?.data || error.message);
     throw error.response?.data || error;
@@ -31,13 +33,13 @@ export const fetchStatuses = async (): Promise<Status[]> => {
     handleError(error);
     return [];
   }
-}
+};
 
 export const fetchStatusById = async (id: string): Promise<Status> => {
   try {
     const res = await api.get(`/${id}`);
     return res.data as Status;
-  } catch (error) {
+  } catch (error: unknown) {
     handleError(error);
     throw error;
   }
@@ -47,7 +49,7 @@ export const createStatus = async (data: { name: string; is_active: boolean }): 
   try {
     const res = await api.post("/", data);
     return res.data as Status;
-  } catch (error) {
+  } catch (error: unknown) {
     handleError(error);
     throw error;
   }
@@ -57,7 +59,7 @@ export const updateStatus = async (id: string, data: { name: string; is_active: 
   try {
     const res = await api.put(`/${id}`, data);
     return res.data as Status;
-  } catch (error) {
+  } catch (error: unknown) {
     handleError(error);
     throw error;
   }
@@ -66,7 +68,7 @@ export const updateStatus = async (id: string, data: { name: string; is_active: 
 export const deleteStatus = async (id: string): Promise<void> => {
   try {
     await api.delete(`/${id}`);
-  } catch (error) {
+  } catch (error: unknown) {
     handleError(error);
     throw error;
   }
