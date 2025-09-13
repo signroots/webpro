@@ -7,7 +7,14 @@ const API_BASE = "http://localhost:5000/api";
 export const fetchdistinctDomain = async (): Promise<DomainWithEmails[]> => {
   try {
     const res = await axios.get(`${API_BASE}/domains_list/distinct-domains`);
-    return res.data.data as DomainWithEmails[]; // ✅ Cast to correct type
+    // ⚡ Ensure the response maps to the correct structure
+    return (res.data.data as DomainWithEmails[]).map(domain => ({
+      ...domain,
+      emails: domain.emails.map(email => ({
+        ...email,
+        users: Array.isArray(email.users) ? email.users : [], // always array
+      })),
+    }));
   } catch (error) {
     console.error("❌ Error fetching domains with emails:", error);
     throw error;

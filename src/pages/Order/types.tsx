@@ -9,7 +9,7 @@ export interface Email {
   creationDate?: string;
   expiryDate?: string;
   customer?: string;
-  users?: string[];  // ✅ array of strings
+  users?: string[]; // Must be array of strings everywhere
   password?: string;
 }
 
