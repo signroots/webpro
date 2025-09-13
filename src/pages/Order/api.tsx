@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { DomainWithEmails } from "./types"; // Your type
+import type { DomainWithEmails } from "./types";
 
 const API_BASE = "http://localhost:5000/api";
 
@@ -7,12 +7,12 @@ const API_BASE = "http://localhost:5000/api";
 export const fetchdistinctDomain = async (): Promise<DomainWithEmails[]> => {
   try {
     const res = await axios.get(`${API_BASE}/domains_list/distinct-domains`);
-    // ⚡ Ensure the response maps to the correct structure
-    return (res.data.data as DomainWithEmails[]).map(domain => ({
+
+    return (res.data.data as any[]).map(domain => ({
       ...domain,
-      emails: domain.emails.map(email => ({
+      emails: domain.emails.map((email: any) => ({
         ...email,
-        users: Array.isArray(email.users) ? email.users : [], // always array
+        users: Array.isArray(email.users) ? email.users : [], // normalize to array
       })),
     }));
   } catch (error) {
@@ -28,7 +28,7 @@ export const updateDomainWithEmails = async (
 ): Promise<DomainWithEmails> => {
   try {
     const res = await axios.put(`${API_BASE}/domains_list/${domainName}`, payload);
-    return res.data as DomainWithEmails; // ✅ Cast to correct type
+    return res.data as DomainWithEmails;
   } catch (error) {
     console.error("❌ Error updating domain and emails:", error);
     throw error;
