@@ -18,7 +18,7 @@ export const fetchdistinctDomain = async () => {
 export const updateDomainWithEmails = async (domainName: string, payload: any) => {
   try {
     const res = await axios.put(`${API_BASE}/domains_list/${domainName}`, payload);
-    return res.data; // { success, message, data }
+    return res.data.data; // { success, message, data }
   } catch (error) {
     console.error("❌ Error updating domain and emails:", error);
     throw error;
