@@ -1,4 +1,4 @@
-import axios, { AxiosError } from "axios"; 
+import axios from "axios"; 
 interface Status {
   _id: string;
   name: string;
