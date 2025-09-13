@@ -14,5 +14,5 @@ app.use('/api/domains_list', domainRoutes);
 
 // Start server
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on http://139.59.70.195:${PORT}`);
+  console.log(`Server running on https://139.59.70.195:${PORT}`);
 });
