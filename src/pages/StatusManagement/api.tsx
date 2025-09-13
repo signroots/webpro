@@ -1,5 +1,6 @@
 import axios from "axios";
-import type { AxiosError } from "axios";
+
+// Status interface
 interface Status {
   _id: string;
   name: string;
@@ -10,21 +11,25 @@ const API_URL = "http://localhost:5000/api/status";
 
 const api = axios.create({
   baseURL: API_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  headers: { "Content-Type": "application/json" },
 });
 
+// ✅ Custom type guard for Axios errors
+const isAxiosError = (error: unknown): error is { response?: { data?: any }; message: string } => {
+  return (error as any)?.isAxiosError !== undefined || (error as any)?.response !== undefined;
+};
+
 const handleError = (error: unknown) => {
-  // Type guard for Axios errors
-  if (axios.isAxiosError(error)) {
-    console.error("API Error:", error.response?.data || error.message);
-    throw error.response?.data || error;
+  if (isAxiosError(error)) {
+    console.error("API Error:", (error as any).response?.data || (error as any).message);
+    throw (error as any).response?.data || error;
   } else {
     console.error("Unexpected Error:", error);
     throw error;
   }
 };
+
+// Fetch all statuses
 export const fetchStatuses = async (): Promise<Status[]> => {
   try {
     const res = await api.get("/");
@@ -35,6 +40,7 @@ export const fetchStatuses = async (): Promise<Status[]> => {
   }
 };
 
+// Fetch one status
 export const fetchStatusById = async (id: string): Promise<Status> => {
   try {
     const res = await api.get(`/${id}`);
@@ -45,6 +51,7 @@ export const fetchStatusById = async (id: string): Promise<Status> => {
   }
 };
 
+// Create status
 export const createStatus = async (data: { name: string; is_active: boolean }): Promise<Status> => {
   try {
     const res = await api.post("/", data);
@@ -55,6 +62,7 @@ export const createStatus = async (data: { name: string; is_active: boolean }): 
   }
 };
 
+// Update status
 export const updateStatus = async (id: string, data: { name: string; is_active: boolean }): Promise<Status> => {
   try {
     const res = await api.put(`/${id}`, data);
@@ -65,6 +73,7 @@ export const updateStatus = async (id: string, data: { name: string; is_active: 
   }
 };
 
+// Delete status
 export const deleteStatus = async (id: string): Promise<void> => {
   try {
     await api.delete(`/${id}`);
