@@ -101,7 +101,7 @@ const Orders: React.FC = () => {
   useEffect(() => {
     const loadDomains = async () => {
       try {
-        const data: DomainWithEmails[] = await fetchdistinctDomain();
+        const data = (await fetchdistinctDomain()) as unknown as DomainWithEmails[];
         setDomains(data);
         setAllDomains(data);
       } catch (err) {
