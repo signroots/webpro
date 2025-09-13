@@ -558,9 +558,10 @@ const Orders: React.FC = () => {
               });
 
               // ✅ Update the local emails list so UI refreshes
-              setDomains((prev) =>
-                prev.map((e) => (e._id === updated._id ? updated : e))
-              );
+              const updatedDomain = await updateDomainWithEmails(selectedDomain.domainName, updated);
+              // setDomains((prev) =>
+              //   prev.map((e) => (e._id === updatedDomain._id ? updatedDomain : e))
+              // );
 
               closeModal();
             } catch (err) {
