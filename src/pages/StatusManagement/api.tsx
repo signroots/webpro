@@ -1,9 +1,12 @@
-// src/api/status.ts
-import axios, { AxiosError } from "axios";
+import axios, { AxiosError } from "axios"; 
+interface Status {
+  _id: string;
+  name: string;
+  is_active: boolean;
+}
 
-const API_URL = "http://localhost:5000/api/status"; // Base endpoint for statuses
+const API_URL = "http://localhost:5000/api/status";
 
-// ✅ Axios instance (easier if you add auth headers later)
 const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -11,58 +14,60 @@ const api = axios.create({
   },
 });
 
-// ✅ Generic error handler
-const handleError = (error: AxiosError) => {
-  console.error("API Error:", error.response?.data || error.message);
-  throw error.response?.data || error;
+const handleError = (error: unknown) => {
+  if (axios.isAxiosError(error)) {
+    console.error("API Error:", error.response?.data || error.message);
+    throw error.response?.data || error;
+  } else {
+    console.error("Unexpected Error:", error);
+    throw error;
+  }
 };
-
-// Fetch all statuses
-export const fetchStatuses = async () => {
+export const fetchStatuses = async (): Promise<Status[]> => {
   try {
     const res = await api.get("/");
-    return res.data;
-  } catch (error) {
-    handleError(error as AxiosError);
+    return res.data as Status[];
+  } catch (error: unknown) {
+    handleError(error);
+    return [];
   }
-};
+}
 
-// Fetch one status by ID
-export const fetchStatusById = async (id: string) => {
+export const fetchStatusById = async (id: string): Promise<Status> => {
   try {
     const res = await api.get(`/${id}`);
-    return res.data;
+    return res.data as Status;
   } catch (error) {
-    handleError(error as AxiosError);
+    handleError(error);
+    throw error;
   }
 };
 
-// Create a new status
-export const createStatus = async (data: { name: string; is_active: boolean }) => {
+export const createStatus = async (data: { name: string; is_active: boolean }): Promise<Status> => {
   try {
     const res = await api.post("/", data);
-    return res.data;
+    return res.data as Status;
   } catch (error) {
-    handleError(error as AxiosError);
+    handleError(error);
+    throw error;
   }
 };
 
-// Update a status
-export const updateStatus = async (id: string, data: { name: string; is_active: boolean }) => {
+export const updateStatus = async (id: string, data: { name: string; is_active: boolean }): Promise<Status> => {
   try {
     const res = await api.put(`/${id}`, data);
-    return res.data;
+    return res.data as Status;
   } catch (error) {
-    handleError(error as AxiosError);
+    handleError(error);
+    throw error;
   }
 };
 
-// Delete a status
-export const deleteStatus = async (id: string) => {
+export const deleteStatus = async (id: string): Promise<void> => {
   try {
-    const res = await api.delete(`/${id}`);
-    return res.data;
+    await api.delete(`/${id}`);
   } catch (error) {
-    handleError(error as AxiosError);
+    handleError(error);
+    throw error;
   }
 };
