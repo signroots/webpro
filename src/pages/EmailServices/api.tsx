@@ -1,22 +1,39 @@
+// src/pages/EmailServices/api.tsx
 import axios from "axios";
 
-const baseURL = "http://192.168.220.44:5000/api/emails";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-// ✅ Fetch all emails
-export const fetchEmails = async (provider?: string) => {
-  const url = provider ? `${baseURL}?provider=${encodeURIComponent(provider)}` : baseURL;
-  const res = await axios.get(url);
-  return res.data;
+export interface Email {
+  _id: string;
+  domain: string;
+  subscription: string;
+  plan?: string;
+  status: string;
+  username: string;
+  password?: string;
+  users: number;
+  creationDate?: string;
+  expiryDate?: string;
+  customer?: string;
+  provider: string;
+}
+
+export const fetchEmails = async (provider?: string): Promise<Email[]> => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/emails${provider ? `?provider=${provider}` : ""}`);
+    return response.data as Email[]; // ✅ Type assertion
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
 };
 
-// ✅ Fetch single email
-export const fetchEmailById = async (id: string) => {
-  const res = await axios.get(`${baseURL}/${id}`);
-  return res.data;
-};
-
-// ✅ Update email
-export const updateEmail = async (id: string, data: any) => {
-  const res = await axios.put(`${baseURL}/${id}`, data);
-  return res.data;
+export const updateEmail = async (id: string, payload: Partial<Email>): Promise<Email> => {
+  try {
+    const response = await axios.put(`${API_BASE_URL}/api/email/${id}`, payload);
+    return response.data as Email; // ✅ Type assertion
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
 };
