@@ -1,3 +1,5 @@
+// src/pages/Order/types.ts
+
 export interface Email {
   username: string;
   domain: string;
@@ -7,7 +9,7 @@ export interface Email {
   creationDate?: string;
   expiryDate?: string;
   customer?: string;
-  users?: string[]; // always an array
+  users?: string[];
   password?: string;
 }
 

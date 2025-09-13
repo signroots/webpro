@@ -9,10 +9,9 @@ import {
   FaGlobe,
 } from "react-icons/fa";
 import { SiCloudflare } from "react-icons/si";
-import Modal from "react-modal";
+
 import {
   fetchdistinctDomain,
-  updateDomainWithEmails,
 } from "./api"; // API import
 
 // Types
@@ -82,21 +81,21 @@ const Orders: React.FC = () => {
   );
 
   // Modal
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<"view" | "edit">("view");
-  const [selectedDomain, setSelectedDomain] =
-    useState<DomainWithEmails | null>(null);
+  // const [isModalOpen, setIsModalOpen] = useState(false);
+  // const [modalMode, setModalMode] = useState<"view" | "edit">("view");
+  // const [selectedDomain, setSelectedDomain] =
+  //   useState<DomainWithEmails | null>(null);
 
-  const openModal = (domain: DomainWithEmails, mode: "view" | "edit") => {
-    setSelectedDomain({ ...domain });
-    setModalMode(mode);
-    setIsModalOpen(true);
-  };
+  // const openModal = (domain: DomainWithEmails, mode: "view" | "edit") => {
+  //   setSelectedDomain({ ...domain });
+  //   setModalMode(mode);
+  //   setIsModalOpen(true);
+  // };
 
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedDomain(null);
-  };
+  // const closeModal = () => {
+  //   setIsModalOpen(false);
+  //   setSelectedDomain(null);
+  // };
 
   // Load domains + emails
   useEffect(() => {
@@ -463,13 +462,13 @@ const Orders: React.FC = () => {
                   {/* Actions */}
                   <td className="px-6 py-8 flex items-center justify-center gap-2">
                     <button
-                      onClick={() => openModal(domain, "view")}
+                      // onClick={() => openModal(domain, "view")}
                       className="text-blue-600 hover:text-blue-800"
                     >
                       <FaEye />
                     </button>
                     <button
-                      onClick={() => openModal(domain, "edit")}
+                      // onClick={() => openModal(domain, "edit")}
                       className="text-green-600 hover:text-green-800"
                     >
                       <FaEdit />
@@ -505,184 +504,6 @@ const Orders: React.FC = () => {
       </div>
 
       {/* Modal */}
-<Modal
-  isOpen={isModalOpen}
-  onRequestClose={closeModal}
-  contentLabel="Email Modal"
-  className="bg-white rounded-xl shadow-2xl max-w-3xl w-full mx-auto mt-20 p-8 outline-none relative"
-  overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50"
->
-  {selectedDomain && selectedDomain.emails.length > 0 && (
-    <div>
-      {/* ❌ Close button */}
-      <button
-        onClick={closeModal}
-        className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold"
-      >
-        &times;
-      </button>
-
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">
-        {modalMode === "view" ? "Email Details" : "Edit Email"}
-      </h2>
-
-      {modalMode === "view" ? (
-        // 👁️ VIEW MODE
-        <div className="grid grid-cols-2 gap-6 text-gray-700">
-          <p><strong>Domain:</strong> {selectedDomain.domainName}</p>
-          <p><strong>Username:</strong> {selectedDomain.emails[0]?.username}</p>
-          <p><strong>Provider:</strong> {selectedDomain.emails[0]?.provider}</p>
-          <p><strong>Status:</strong> {selectedDomain.emails[0]?.status}</p>
-          <p><strong>Subscription:</strong> {selectedDomain.emails[0]?.subscription}</p>
-          <p><strong>Expiry Date:</strong> {selectedDomain.emails[0]?.expiryDate}</p>
-        </div>
-      ) : (
-        // ✏️ EDIT MODE
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault();
-            if (!selectedDomain || selectedDomain.emails.length === 0) return;
-
-            try {
-              const updated = await updateDomainWithEmails(selectedDomain.domainName, {
-                domain: selectedDomain.emails[0]?.domain,
-                subscription: selectedDomain.emails[0]?.subscription,
-                username: selectedDomain.emails[0]?.username,
-                customer: selectedDomain.emails[0]?.customer,
-                users: selectedDomain.emails[0]?.users,
-                password: selectedDomain.emails[0]?.password,
-                status: selectedDomain.emails[0]?.status,
-                creationDate: selectedDomain.emails[0]?.creationDate,
-                expiryDate: selectedDomain.emails[0]?.expiryDate,
-                provider: selectedDomain.emails[0]?.provider,
-              });
-
-              // ✅ Update the local emails list so UI refreshes
-              setDomains((prev) =>
-                prev.map((e) => (e._id === updated._id ? updated : e))
-              );
-
-              closeModal();
-            } catch (err) {
-              console.error("Update failed", err);
-              alert("Failed to update email. Please try again.");
-            }
-          }}
-          className="grid grid-cols-2 gap-6"
-        >
-          {/* Domain */}
-          <div>
-            <label className="block text-sm font-medium mb-1">Domain</label>
-            <input
-              type="text"
-              value={selectedDomain.emails[0]?.domain || ""}
-              onChange={(e) =>
-                setSelectedDomain({
-                  ...selectedDomain,
-                  emails: [
-                    {
-                      ...selectedDomain.emails[0],
-                      domain: e.target.value,
-                    },
-                  ],
-                })
-              }
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 
-              bg-white text-gray-800 focus:ring-2 focus:ring-blue-400 focus:outline-none"
-            />
-          </div>
-
-          {/* Subscription */}
-          <div>
-            <label className="block text-sm font-medium mb-1">Subscription</label>
-            <input
-              type="text"
-              value={selectedDomain.emails[0]?.subscription || ""}
-              onChange={(e) =>
-                setSelectedDomain({
-                  ...selectedDomain,
-                  emails: [
-                    {
-                      ...selectedDomain.emails[0],
-                      subscription: e.target.value,
-                    },
-                  ],
-                })
-              }
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 
-              bg-white text-gray-800 focus:ring-2 focus:ring-blue-400 focus:outline-none"
-            />
-          </div>
-
-          {/* Username */}
-          <div>
-            <label className="block text-sm font-medium mb-1">Username</label>
-            <input
-              type="text"
-              value={selectedDomain.emails[0]?.username || ""}
-              onChange={(e) =>
-                setSelectedDomain({
-                  ...selectedDomain,
-                  emails: [
-                    {
-                      ...selectedDomain.emails[0],
-                      username: e.target.value,
-                    },
-                  ],
-                })
-              }
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 
-              bg-white text-gray-800 focus:ring-2 focus:ring-blue-400 focus:outline-none"
-            />
-          </div>
-
-          {/* Status */}
-          <div>
-            <label className="block text-sm font-medium mb-1">Status</label>
-            <select
-              value={selectedDomain.emails[0]?.status || ""}
-              onChange={(e) =>
-                setSelectedDomain({
-                  ...selectedDomain,
-                  emails: [
-                    {
-                      ...selectedDomain.emails[0],
-                      status: e.target.value,
-                    },
-                  ],
-                })
-              }
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 
-              bg-white text-gray-800 focus:ring-2 focus:ring-blue-400 focus:outline-none"
-            >
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="INACTIVE">INACTIVE</option>
-              <option value="SUSPENDED">SUSPENDED</option>
-              <option value="CANCELLED">CANCELLED</option>
-            </select>
-          </div>
-
-          {/* Footer Buttons */}
-          <div className="col-span-2 flex justify-end gap-4 mt-6">
-            <button
-              type="button"
-              onClick={closeModal}
-              className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              Save
-            </button>
-          </div>
-        </form>
-      )}
-    </div>
-  )}
-</Modal>
 
 
     </div>
