@@ -1,27 +1,31 @@
-// src/api.tsx
 import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-// Fetch all domains safely
+interface DomainResponse {
+  domains?: any[];
+  data?: any[];
+}
+
 export const fetchDomains = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/domains_list`);
+    const response = await axios.get<DomainResponse>(`${API_BASE_URL}/api/domains_list`);
+
+    const data = response.data;
 
     // Case 1: API returns an array directly
-    if (Array.isArray(response.data)) {
-      return response.data;
+    if (Array.isArray(data)) {
+      return data;
     }
 
     // Case 2: API wraps inside "domains" or "data"
-    if (Array.isArray(response.data.domains)) {
-      return response.data.domains;
+    if (Array.isArray((data as DomainResponse).domains)) {
+      return (data as DomainResponse).domains!;
     }
-    if (Array.isArray(response.data.data)) {
-      return response.data.data;
+    if (Array.isArray((data as DomainResponse).data)) {
+      return (data as DomainResponse).data!;
     }
 
-    // Fallback
     return [];
   } catch (error) {
     console.error("Error fetching domains:", error);
