@@ -213,6 +213,8 @@ const Domains = () => {
               key={idx}
               src="/resellerclub-logo-2x.png"
               alt="ResellerClub"
+              width={24}
+              height={24}
               className="w-6 h-6 object-contain"
             />
           );
@@ -231,6 +233,8 @@ const Domains = () => {
   <img
     src="/download.png"
     alt="Google Workspace"
+    width={20}
+    height={20}
     className="w-5 h-5"
     title="Google Workspace enabled"
   />
@@ -238,6 +242,8 @@ const Domains = () => {
   <img
     src="/microsoft.png"
     alt="Microsoft"
+    width={20}
+    height={20}
     className="w-5 h-5"
     title="Microsoft email enabled"
   />
