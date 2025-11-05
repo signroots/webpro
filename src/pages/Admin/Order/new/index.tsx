@@ -1,0 +1,896 @@
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { createOrder, fetchPlanEmailsByType } from "../api";
+import {getExistingCustomers,getEmailTypes,getHostTypes,getPlansByEmailType,getHostSubTypes, getStoragesByHostType} from "./api"
+import { fetchStatesByCountry, fetchCountries } from "../../Customer/api";
+import { useEnterNavigation } from "../../../../hooks/useEnterNavigation";
+import { notify } from "../../../../Common/Toastify";
+
+interface Client {
+  _id: string;
+  c_name: string;
+  c_email: string;
+  c_phone?: string;
+}
+
+interface EmailPlan {
+  email_service?: string;
+  selected_plan?: string;
+  plans?: { _id: string; plan: string }[];
+  workspace_plan?: string;
+  microsoft_plan?: string;
+  registrationDate?: string;
+  expiryDate?: string;
+  users?: number;
+  google_email?: boolean;       // ✅ added
+  microsoft_email?: boolean;
+  businessEmail?: boolean;// ✅ added
+  email_flag?: boolean; 
+}
+interface NewOrderForm {
+  domainName: string;
+  status?: string;
+  managedBy: "Signroots" | "Customer" | "";
+  registrationDate?: string;
+  expiryDate?: string;
+  subscription?: string;
+  plan?: string;
+  email_status?: string;
+  username?: string;
+  password?: string;
+  users?: number;
+  customer?: string;
+  client?: string;
+  provider?: string;
+  email_expiryDate?: string;
+  email_registrationDate?: string;
+  email_service?: "Google Workspace" | "Microsoft 365" | "Business Email" | "TITAN Email";
+  hosting?: boolean;
+  cloudflareRegistered?: boolean;
+  website_flag?: boolean;
+  ssl_flag?: boolean;
+  host_flag?: boolean;
+  lockStatus?: string;
+  domainSource?: string;
+  workspace_plan?: string;
+  microsoft_plan?: string;
+  hosting_subplan?: string;
+  hosting_plan?: string;
+  storage?: string;
+  subResellerName?: string;
+  subResellerEmail?: string;
+  newCustomer: {
+  c_name: string;
+  c_company: string;
+  c_address: string;
+  c_city: string;
+  c_gst: string;
+  c_zipCode: string;
+  c_phone: string;
+  c_email: string[];
+  c_country: string;
+  c_state: string;
+};
+
+}
+
+const NewOrder: React.FC = () => {
+  const formRef = React.useRef<HTMLFormElement>(null);
+  useEnterNavigation(formRef);
+  const navigate = useNavigate();
+
+  const [formData, setFormData] = useState<NewOrderForm>({
+    domainName: "",
+    managedBy: "",
+    users: 1,
+    client: "",
+    email_registrationDate: "",
+    email_expiryDate: "",
+    email_service: undefined,
+    workspace_plan: "",
+    microsoft_plan: "",
+    storage: "",
+    hosting_subplan: "",
+    hosting_plan: "",
+    hosting: false,
+    cloudflareRegistered: false,
+    website_flag: false,
+    ssl_flag: false,
+    host_flag: false,
+    domainSource: "",
+    newCustomer: {
+      c_name: "",
+      c_company: "",
+      c_address: "",
+      c_city: "",
+      c_gst: "",
+      c_zipCode: "",
+      c_phone: "",
+      c_email: [],
+      c_country: "",
+      c_state: "",
+    }
+  });
+
+  const [emailPlans, setEmailPlans] = useState<EmailPlan[]>([
+    { email_service: "", workspace_plan: "", microsoft_plan: "", registrationDate: "", expiryDate: "", users: 1 },
+  ]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [emailChecked, setEmailChecked] = useState(false);
+  const [customerType, setCustomerType] = useState<"existing" | "new" | undefined>(undefined);
+  const [clients, setClient] = useState<Client[]>([]);
+  const [countries, setCountries] = useState<{ code: string; name: string }[]>([]);
+  const [states, setStates] = useState<{ code: string; name: string }[]>([]);
+  const [hosting, setHosting] = useState(false);
+  const [emailInput, setEmailInput] = useState("");
+  const [emailTypes, setEmailTypes] = useState<{ _id: string; name: string }[]>([]);
+  const [hostTypes, setHostTypes] = useState<{ _id: string; type: string }[]>([]);
+  const [hostSubTypes, setHostSubTypes] = useState<{ _id: string; name: string }[]>([]);
+  const [storages, setStorages] = useState<{ _id: string; storage: string }[]>([]);
+
+const [hostChecked, setHostChecked] = useState(false);
+
+
+  // Fetch existing customers
+useEffect(() => {
+  const fetchCustomers = async () => {
+    if (customerType === "existing") {
+      try {
+        const data = await getExistingCustomers();
+
+        const formattedClients = data.map((c) => ({
+          _id: c._id,
+          c_name: c.c_name || c.name || "",
+          c_email: c.c_email || c.email || "",
+          c_phone: c.c_phone || c.phone || "",
+        }));
+
+        setClient(formattedClients); // ✅ Works safely
+      } catch (err) {
+        console.error("Failed to fetch customers:", err);
+      }
+    } else {
+      setClient([]);
+    }
+  };
+
+  fetchCustomers();
+}, [customerType]);
+
+
+useEffect(() => {
+  const fetchEmailTypes = async () => {
+    if (emailChecked) {
+      try {
+        const data = await getEmailTypes();
+        setEmailTypes(data);
+      } catch (err: any) {
+        notify(err.message, "error");
+      }
+    }
+  };
+
+  fetchEmailTypes();
+}, [emailChecked]);
+
+
+useEffect(() => {
+  const setDefaultCountryAndState = async () => {
+    if (customerType === "new") {
+      try {
+        // Fetch countries list
+        const countryList = await fetchCountries();
+        setCountries(countryList);
+
+        // Find India from the list
+        const india = countryList.find(
+          (c) => c.name.toLowerCase() === "india"
+        );
+
+        if (india) {
+          // Fetch states for India
+          const stateList = await fetchStatesByCountry(india.code);
+          setStates(stateList);
+
+          // Find Kerala
+          const kerala = stateList.find(
+            (s) => s.name.toLowerCase() === "kerala"
+          );
+
+          // ✅ Set defaults in form
+          setFormData((prev) => ({
+            ...prev,
+            newCustomer: {
+              ...(prev.newCustomer || {}),
+              c_country: india.code,
+              c_state: kerala ? kerala.name : "",
+            },
+          }));
+        }
+      } catch (err) {
+        console.error("Failed to set default country/state", err);
+      }
+    }
+  };
+
+  setDefaultCountryAndState();
+}, [customerType]);
+
+
+useEffect(() => {
+  const fetchHostTypes = async () => {
+    if (hosting) {
+      try {
+        const data = await getHostTypes();
+        setHostTypes(data);
+      } catch (err: any) {
+        console.error("❌ Failed to fetch host types:", err.message);
+      }
+    }
+  };
+
+  fetchHostTypes();
+}, [hosting]);
+
+
+
+
+
+
+  // Input handler
+const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const { name, value } = e.target;
+
+  if (customerType === "new" && name.startsWith("newCustomer.")) {
+    const key = name.split(".")[1] as keyof NewOrderForm["newCustomer"];
+
+    setFormData((prev) => {
+      const updatedCustomer = { ...(prev.newCustomer || {}) };
+
+      if (key === "c_email") {
+        // Only handle if you type in the comma-separated input
+        updatedCustomer.c_email = value
+          .split(",")
+          .map((email) => email.trim())
+          .filter(Boolean);
+      } else if (key === "c_phone") {
+        // Allow only numbers and max 10 digits
+        updatedCustomer.c_phone = value.replace(/\D/g, "").slice(0, 10);
+      } else {
+        updatedCustomer[key] = value;
+      }
+
+      return { ...prev, newCustomer: updatedCustomer };
+    });
+  } else {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  }
+};
+
+const fetchPlansByEmailType = async (typeId: string, index: number) => {
+  try {
+    const plans = await getPlansByEmailType(typeId);
+
+    setEmailPlans((prev) => {
+      const updated = [...prev];
+      updated[index].plans = plans;
+      updated[index].selected_plan = ""; // reset selection
+      return updated;
+    });
+
+    // ✅ Update domainSource as string
+    const selectedType = emailTypes.find((t) => t._id === typeId);
+    if (selectedType) {
+      setFormData((prev) => ({
+        ...prev,
+        domainSource: selectedType.name, // ✅ fixed
+      }));
+    }
+  } catch (err) {
+    console.error("❌ Failed to fetch plans:", err);
+  }
+};
+
+
+  // Checkbox handler
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    if (name === "email_services") {
+      setEmailChecked(checked);
+      if (!checked) setFormData((prev) => ({ ...prev, email_service: undefined }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: checked }));
+    }
+  };
+  const validatePhone = (phone: string) => {
+  const regex = /^[0-9]{10}$/; // exactly 10 digits, numbers only
+  return regex.test(phone);
+};
+
+
+  // Add new email plan row
+ const addEmailPlan = () => {
+  setEmailPlans((prev) => [
+    ...prev,
+    {
+      email_service: "",      // default empty
+      workspace_plan: "",
+      microsoft_plan: "",
+      registrationDate: "",
+      expiryDate: "",
+      users: 1,
+      google_email: false,
+      microsoft_email: false,
+      plans: [],
+      selected_plan: "",
+    },
+  ]);
+};
+
+
+  // Remove email plan row
+  const removeEmailPlan = (index: number) => {
+    setEmailPlans((prev) => prev.filter((_, i) => i !== index));
+  };
+
+const handleHostTypeChange = async (hostTypeId: string) => {
+  // Reset related fields
+  setFormData(prev => ({
+    ...prev,
+    hosting_plan: hostTypeId,
+    hosting_subplan: "", // reset subplan
+    storage: "",         // reset storage
+  }));
+
+  if (!hostTypeId) {
+    setHostSubTypes([]);
+    setStorages([]);
+    return;
+  }
+
+  try {
+    // ✅ Fetch data using centralized APIs
+    const [subTypes, storages] = await Promise.all([
+      getHostSubTypes(hostTypeId),
+      getStoragesByHostType(hostTypeId),
+    ]);
+
+    setHostSubTypes(subTypes);
+    setStorages(storages);
+  } catch (err: any) {
+    console.error("❌ Failed to fetch host subtypes or storages:", err.message || err);
+    notify("⚠️ Failed to load host subtype or storage list.", "error");
+    setHostSubTypes([]);
+    setStorages([]);
+  }
+};
+
+const handleEmailPlanChange = (index: number, key: keyof EmailPlan, value: any) => {
+  setEmailPlans((prevPlans) => {
+    const updatedPlans = [...prevPlans];
+    const updatedPlan = { ...updatedPlans[index], [key]: value };
+
+    // 🔹 Automatically set flags when email service changes
+    if (key === "email_service") {
+      updatedPlan.email_flag = !!value; // true if any type is selected
+      updatedPlan.google_email = value === "Google Workspace";
+      updatedPlan.microsoft_email = value === "Microsoft 365";
+      updatedPlan.businessEmail = value === "Business Email";
+    }
+
+    updatedPlans[index] = updatedPlan;
+    return updatedPlans;
+  });
+};
+
+
+
+  // Form submit
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  setError(null);
+
+  try {
+    // ✅ Base payload
+    const payload: any = {
+      ...formData,
+      is_customer: customerType === "existing",
+      email_flag: emailChecked,
+      host_flag: hosting,
+    };
+
+    // ✅ Existing Customer
+    if (customerType === "existing" && formData.client) {
+      payload.client = formData.client; // already _id reference
+    }
+
+    // ✅ New Customer
+    if (
+      customerType === "new" &&
+      formData.newCustomer?.c_name &&
+      formData.newCustomer?.c_email
+    ) {
+      const phone = formData.newCustomer.c_phone || "";
+      if (!validatePhone(phone)) {
+        setError("Phone number must be exactly 10 digits and numeric");
+        notify("Phone number must be exactly 10 digits and numeric", "error");
+        setLoading(false);
+        return;
+      }
+
+      payload.newCustomer = {
+        ...formData.newCustomer,
+        // Convert to reference IDs if available
+        country:
+          countries.find((c) => c.code === formData.newCustomer.c_country)
+            ?.code || "",
+        state:
+          states.find((s) => s.name === formData.newCustomer.c_state)?.code ||
+          "",
+      };
+    }
+
+    // ✅ Hosting reference fields
+    if (hosting) {
+      payload.hosting_plan = formData.hosting_plan;
+      payload.hosting_subplan = formData.hosting_subplan;
+      payload.storage = formData.storage;
+    }
+
+    // ✅ Email Plans: use reference IDs instead of names
+    payload.emailPlans = emailPlans
+      .filter((plan) => plan.email_service && plan.selected_plan)
+      .map((plan) => {
+        const typeObj = emailTypes.find((t) => t.name === plan.email_service);
+        const planObj = plan.plans?.find((p) => p.plan === plan.selected_plan);
+
+        return {
+          email_service: typeObj?._id || null,
+          selected_plan: planObj?._id || null,
+          registrationDate: plan.registrationDate,
+          expiryDate: plan.expiryDate,
+          users: plan.users,
+          google_email: plan.email_service === "Google Workspace",
+          microsoft_email: plan.email_service === "Microsoft 365",
+          businessEmail: plan.email_service === "Business Email",
+          email_flag: !!plan.email_service,
+        };
+      });
+
+    // ✅ Clean unused optional keys
+    if (!emailChecked) delete payload.emailPlans;
+    if (!hosting) {
+      delete payload.hosting_plan;
+      delete payload.hosting_subplan;
+      delete payload.storage;
+    }
+// ✅ Automatically set email flags based on domainSource
+payload.google_email = payload.domainSource.toLowerCase().includes("google workspace");
+payload.microsoft_email = payload.domainSource.toLowerCase().includes("microsoft 365");
+
+// Optionally ensure only one is true
+if (payload.google_email) payload.microsoft_email = false;
+if (payload.microsoft_email) payload.google_email = false;
+
+    // ✅ Final API call
+    const response = await createOrder(payload);
+
+    // ✅ Success toast
+    notify("Order created successfully ✅", "success");
+    navigate("/admin/orders");
+
+  } catch (err: any) {
+    console.error("Order creation failed:", err);
+
+    const errorMsg =
+      err?.response?.data?.message ||
+      err?.response?.data?.error ||
+      err?.message ||
+      "Failed to create order";
+
+    setError(errorMsg);
+    notify(errorMsg, "error"); // ❌ Red toast for error
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+  return (
+    <div className="min-h-screen bg-gray-100 p-1">
+      <div className="max-w-6xl mx-auto bg-white shadow-md rounded-lg p-6">
+        <h1 className="text-3xl font-bold mb-6 text-gray-700">Create New Order</h1>
+        {error && <p className="bg-red-100 text-red-700 px-4 py-2 rounded mb-4">{error}</p>}
+
+        <form ref={formRef} className="space-y-6" onSubmit={handleSubmit}>
+          {/* Customer Type */}
+          <div>
+            <label className="mr-4 text-black">
+              <input type="radio" value="existing" checked={customerType === "existing"} onChange={() => setCustomerType("existing")} /> Existing Customer
+            </label>
+            <label className="ml-4 text-black">
+              <input type="radio" value="new" checked={customerType === "new"} onChange={() => setCustomerType("new")} /> New Customer
+            </label>
+          </div>
+
+          {/* Existing Customer Dropdown */}
+          {customerType === "existing" && (
+            <div className="mb-4">
+              <label className="block mb-2 text-black">Select Customer</label>
+              <select name="client" value={formData.client || ""} onChange={handleInputChange} className="w-full border rounded px-3 py-2">
+                <option value="">-- Select Customer --</option>
+                {clients.map((c) => (
+                  <option key={c._id} value={c._id}>
+                    {c.c_name} ({c.c_email})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+   {/* ✅ New Customer Fields */}
+    {customerType === "new" && (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Other fields */}
+        {[
+          { key: "c_name", label: "Name" },
+          { key: "c_company", label: "Company" },
+          { key: "c_address", label: "Address" },
+          { key: "c_city", label: "City" },
+          { key: "c_gst", label: "GST" },
+          { key: "c_zipCode", label: "Zip Code" },
+        ].map(({ key, label }) => {
+          const typedKey = key as keyof NewOrderForm["newCustomer"];
+          return (
+            <div key={key}>
+              <label className="block text-gray-700 font-medium mb-2">{label}</label>
+              <input
+                type="text"
+                name={`newCustomer.${key}`}
+                value={formData.newCustomer?.[typedKey] || ""}
+                onChange={handleInputChange}
+                className="w-full border rounded px-3 py-2"
+              />
+            </div>
+          );
+        })}
+
+        {/* Phone */}
+        <div>
+          <label className="block text-gray-700 font-medium mb-2">Phone</label>
+          <input
+            type="text"
+            name="newCustomer.c_phone"
+            value={formData.newCustomer?.c_phone || ""}
+            onChange={(e) => {
+              const val = e.target.value.replace(/\D/g, "");
+              if (val.length <= 10) {
+                setFormData((prev) => ({
+                  ...prev,
+                  newCustomer: { ...(prev.newCustomer || {}), c_phone: val },
+                }));
+              }
+            }}
+            placeholder="Enter 10-digit phone number"
+            className="w-full border rounded px-3 py-2"
+          />
+        </div>
+
+        {/* Email */}
+        <div className="col-span-2">
+          <label className="block text-gray-700 font-medium mb-2">Email</label>
+          <div className="flex flex-wrap gap-2 border rounded p-2 min-h-[44px] items-center">
+            {(formData.newCustomer.c_email || []).map((email, idx) => (
+              <div
+                key={idx}
+                className="flex items-center bg-blue-100 text-blue-800 rounded-full px-3 py-1 text-sm"
+              >
+                {email}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      newCustomer: {
+                        ...prev.newCustomer,
+                        c_email: prev.newCustomer.c_email.filter((e) => e !== email),
+                      },
+                    }))
+                  }
+                  className="ml-2 text-blue-500 hover:text-blue-700"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            <input
+              type="text"
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === ",") {
+                  e.preventDefault();
+                  const newEmail = emailInput.trim();
+                  if (
+                    newEmail &&
+                    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail) &&
+                    !formData.newCustomer.c_email.includes(newEmail)
+                  ) {
+                    setFormData((prev) => ({
+                      ...prev,
+                      newCustomer: {
+                        ...prev.newCustomer,
+                        c_email: [...prev.newCustomer.c_email, newEmail],
+                      },
+                    }));
+                    setEmailInput("");
+                  }
+                }
+              }}
+              placeholder="Type email and press enter"
+              className="flex-grow border-none focus:ring-0 outline-none min-w-[150px]"
+            />
+          </div>
+        </div>
+
+     {/* Country */}
+<div className="w-full">
+  <label className="block text-sm font-medium mb-1">Country</label>
+  <select
+    name="newCustomer.c_country"
+    value={formData.newCustomer.c_country || ""}
+    onChange={handleInputChange}
+    className="w-full border rounded px-3 py-2"
+  >
+    <option value="">-- Select Country --</option>
+    {countries.map((country) => (
+      <option key={country.code} value={country.code}>
+        {country.name}
+      </option>
+    ))}
+  </select>
+</div>
+
+       {/* State */}
+<div className="w-full">
+  <label className="block text-sm font-medium mb-1">State</label>
+  <select
+    name="newCustomer.c_state"
+    value={formData.newCustomer.c_state || ""}
+    onChange={handleInputChange}
+    className="w-full border rounded px-3 py-2"
+  >
+    <option value="">-- Select State --</option>
+    {states.map((state) => (
+      <option key={state.code} value={state.name}>
+        {state.name}
+      </option>
+    ))}
+  </select>
+</div>
+      </div>
+)}
+
+          {/* Domain Details */}
+          <h2 className="text-xl font-semibold underline text-indigo-600 mb-3">Domain Details</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">Domain Name</label>
+              <input type="text" name="domainName" value={formData.domainName} onChange={handleInputChange} className="w-full border rounded px-3 py-2" required />
+            </div>
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">Managed By</label>
+              <select name="managedBy" value={formData.managedBy} onChange={handleInputChange} className="w-full border rounded px-3 py-2">
+                <option value="">-- Select Managed By --</option>
+                <option value="Signroots">Signroots</option>
+                <option value="Customer">Customer</option>
+              </select>
+            </div>
+
+            {formData.managedBy === "Signroots" && (
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">Registrar By</label>
+                <select name="domainSource" value={formData.domainSource} onChange={handleInputChange} className="w-full border rounded px-3 py-2">
+                  <option value="Reseller">RESELLER CLUB</option>
+                  <option value="HOSTINGER">HOSTINGER</option>
+                  <option value="SQUARESPACE">SQUARESPACE</option>
+                  <option value="SAHARA">SAHARA</option>
+                  <option value="Cloudflare">CLOUDFLARE</option>
+                  <option value="AE Server">AE SERVER</option>
+                </select>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">Registration Date</label>
+              <input type="date" name="registrationDate" value={formData.registrationDate || ""} onChange={(e) => {
+                const newDate = e.target.value;
+                let expiryDate = "";
+                if (newDate) {
+                  const reg = new Date(newDate);
+                  const exp = new Date(reg);
+                  exp.setFullYear(reg.getFullYear() + 1);
+                  expiryDate = exp.toISOString().split("T")[0];
+                }
+                setFormData((prev) => ({ ...prev, registrationDate: newDate, expiryDate }));
+              }} className="w-full border rounded px-3 py-2" />
+            </div>
+
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">Expiry Date</label>
+              <input type="date" name="expiryDate" value={formData.expiryDate || ""} readOnly className="w-full border rounded px-3 py-2 bg-gray-100 cursor-not-allowed" />
+            </div>
+          </div>
+
+          {/* Services Section */}
+          <div>
+            <label className="block text-gray-700 font-medium mb-2">Services</label>
+            <div className="flex flex-col gap-2">
+              <label className="flex items-center gap-2 text-black">
+                <input type="checkbox" name="email_services" checked={emailChecked} onChange={handleCheckboxChange} className="h-4 w-4" /> Email Services
+              </label>
+
+              {/* Email Plans */}
+              {emailChecked && emailPlans.map((plan, idx) => (
+                <div key={idx} className="border rounded p-4 mt-2">
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-2 items-end">
+                    <div>
+  <label>Email Type</label>
+ <select
+  value={plan.email_service}
+  onChange={(e) => {
+    const selectedTypeName = e.target.value;
+    handleEmailPlanChange(idx, "email_service", selectedTypeName);
+
+    // Reset all flags first
+    handleEmailPlanChange(idx, "google_email", false);
+    handleEmailPlanChange(idx, "microsoft_email", false);
+    handleEmailPlanChange(idx, "businessEmail", false);
+
+    // Set the correct flag based on selection
+    if (selectedTypeName === "Google Workspace") {
+      handleEmailPlanChange(idx, "google_email", true);
+    } else if (selectedTypeName === "Microsoft 365") {
+      handleEmailPlanChange(idx, "microsoft_email", true);
+    } else if (selectedTypeName === "Business Email") {
+      handleEmailPlanChange(idx, "businessEmail", true);
+    }
+
+    // Find the selected type ID from emailTypes
+    const typeObj = emailTypes.find((t) => t.name === selectedTypeName);
+    if (typeObj) {
+      fetchPlansByEmailType(typeObj._id, idx);
+    }
+  }}
+  className="w-full border rounded px-2 py-1"
+>
+  <option value="">-- Select Type --</option>
+  {emailTypes.map((type) => (
+    <option key={type._id} value={type.name}>
+      {type.name}
+    </option>
+  ))}
+</select>
+</div>
+                 {plan.plans && plan.plans.length > 0 && (
+  <div>
+    <label>Select Plan</label>
+    <select
+      value={plan.selected_plan || ""}
+      onChange={(e) => handleEmailPlanChange(idx, "selected_plan", e.target.value)}
+      className="w-full border rounded px-2 py-1"
+    >
+      <option value="">-- Select Plan --</option>
+      {plan.plans.map((p) => (
+        <option key={p._id} value={p.plan}>
+          {p.plan}
+        </option>
+      ))}
+    </select>
+  </div>
+)}
+
+                    <div>
+                      <label>Users</label>
+                      <input type="number" value={plan.users} min={1} onChange={(e) => handleEmailPlanChange(idx, "users", e.target.value)} className="w-full border rounded px-2 py-1" />
+                    </div>
+                    <div>
+                      <label>Registration Date</label>
+                      <input type="date" value={plan.registrationDate || ""} onChange={(e) => handleEmailPlanChange(idx, "registrationDate", e.target.value)} className="w-full border rounded px-2 py-1" />
+                    </div>
+                    <div>
+                      <label>Expiry Date</label>
+                      <input type="date" value={plan.expiryDate || ""} onChange={(e) => handleEmailPlanChange(idx, "expiryDate", e.target.value)} className="w-full border rounded px-2 py-1" />
+                    </div>
+                  </div>
+                  <button type="button" onClick={() => removeEmailPlan(idx)} className="text-red-500 mt-2">Remove</button>
+                </div>
+              ))}
+              {emailChecked && <button type="button" onClick={addEmailPlan} className="text-blue-500 mt-2">Add Another Email Plan</button>}
+
+              {/* Hosting */}
+              <label className="flex items-center gap-2 text-black mt-3">
+                <input type="checkbox" name="hosting" checked={hosting} onChange={(e) => setHosting(e.target.checked)} className="h-4 w-4" /> Hosting
+              </label>
+           {hosting && (
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2 p-3 border rounded bg-gray-50">
+  <div>
+      <label className="block text-gray-700 font-medium mb-2">Hosting Type</label>
+      <select
+        name="hosting_plan"
+        value={formData.hosting_plan || ""}
+        onChange={(e) => handleHostTypeChange(e.target.value)}
+        className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+      >
+        <option value="">-- Select Hosting Type --</option>
+        {hostTypes.map(ht => (
+          <option key={ht._id} value={ht._id}>{ht.type}</option>
+        ))}
+      </select>
+    </div>
+
+    {/* Sub Type dropdown remains, you can make it dynamic later */}
+    <div>
+      <label className="block text-gray-700 font-medium mb-2">Hosting Sub Type</label>
+      <select
+        name="hosting_subplan"
+        value={formData.hosting_subplan || ""}
+        onChange={(e) =>
+          setFormData(prev => ({ ...prev, hosting_subplan: e.target.value }))
+        }
+        className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        disabled={!formData.hosting_plan} // disable if no host type selected
+      >
+        <option value="">-- Select Sub Type --</option>
+        {hostSubTypes.map(st => (
+          <option key={st._id} value={st._id}>{st.name}</option>
+        ))}
+      </select>
+    </div>
+
+  <div>
+  <label className="block text-gray-700 font-medium mb-2">Storage</label>
+  <select
+    name="storage"
+    value={formData.storage || ""}
+    onChange={(e) =>
+      setFormData((prev) => ({ ...prev, storage: e.target.value }))
+    }
+    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+  >
+    <option value="">-- Select Storage --</option>
+    {storages.map((s) => (
+      <option key={s._id} value={s._id}>
+        {s.storage}
+      </option>
+    ))}
+  </select>
+</div>
+
+  </div>
+)}
+
+              {/* Other services */}
+              {["website_flag", "ssl_flag"].map((field) => (
+                <label key={field} className="flex items-center gap-2 text-black">
+                  <input type="checkbox" name={field} checked={(formData as any)[field] || false} onChange={handleCheckboxChange} className="h-4 w-4" /> {field.replace("_flag", "").toUpperCase()}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Submit Buttons */}
+          <div className="flex justify-end gap-3">
+            <button type="button" onClick={() => navigate("/admin/orders")} className="bg-gray-500 text-white font-medium py-2 px-4 rounded hover:bg-gray-600">Back</button>
+            <button type="submit" disabled={loading} className="bg-blue-600 text-white font-medium py-2 px-4 rounded hover:bg-blue-700">{loading ? "Creating..." : "Create Order"}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default NewOrder;

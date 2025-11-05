@@ -1,0 +1,20 @@
+/* Custom background color when the checkbox is checked */
+.custom-checkbox .ant-checkbox-checked .ant-checkbox-inner {
+  background-color: #1d828e;
+  /* Replace with your desired color */
+  border-color: #1d828e;
+  /* Match the border color */
+}
+
+.custom-checkbox.ant-checkbox-wrapper:not(.ant-checkbox-wrapper-disabled):hover
+  .ant-checkbox-checked:not(.ant-checkbox-disabled)
+  .ant-checkbox-inner {
+  background-color: #1d828e;
+  /* Replace with your desired color */
+  border-color: #1d828e;
+  /* Match the border color */
+}
+
+.placeholder-gray-800 input::placeholder {
+  color: #1f2937;
+}
