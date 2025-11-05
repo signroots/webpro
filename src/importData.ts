@@ -2,109 +2,104 @@ import mongoose from "mongoose";
 import * as XLSX from "xlsx";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
+import Order, { IOrder } from "./models/Order"; // adjust path
+
 dayjs.extend(customParseFormat);
 
-// 1) Connect to MongoDB
+// Connect to MongoDB
 mongoose
-  .connect("mongodb://127.0.0.1:27017/domain_management")
+  .connect("mongodb://127.0.0.1:27017/domain_management_system")
   .then(() => console.log("✅ Connected to MongoDB"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-// 2) Define schema & model
-const EmailSchema = new mongoose.Schema(
-  {
-    domain: { type: String, required: true, trim: true },
-    subscription: { type: String, default: "", trim: true },
-    plan: { type: String, default: "", trim: true },
-    status: { type: String, default: "", trim: true },
-    username: { type: String, default: "", trim: true },
-    password: { type: String, default: "", trim: true },
-    users: { type: Number, default: 0 },
-    creationDate: { type: Date, default: null },
-    expiryDate: { type: Date, default: null },
-    customer: { type: String, default: "", trim: true },
-    provider: { type: String, default: "", trim: true },
-  },
-  { timestamps: false, collection: "emails" } // explicit collection name
-);
-
-const Email = mongoose.model("emails", EmailSchema);
-
-// --- Helpers ---
-
-/** Convert Excel serial date (days since 1899-12-30) to JS Date */
+// Helpers
 function excelSerialToDate(serial: number): Date {
-  // round to avoid floating point issues; 86400*1000 = ms/day
   return new Date(Math.round((serial - 25569) * 86400 * 1000));
 }
 
-/** Parse value that may be an Excel serial, JS Date, or string */
 function parseMaybeDate(v: any): Date | null {
-  if (v == null || v === "") return null;
-
-  // If already a JS Date
-  if (v instanceof Date && !isNaN(v.getTime())) return v;
-
-  // If numeric (Excel serial)
+  if (!v) return null;
+  if (v instanceof Date) return v;
   if (typeof v === "number") return excelSerialToDate(v);
-
-  // If string, try multiple formats (strict mode = true)
-  const s = String(v).trim();
-  const parsed = dayjs(s, [
-    "DD-MMM-YYYY",
-    "D-MMM-YYYY",
-    "DD-MMMM-YYYY",
-    "D-MMMM-YYYY",
-    "DD/MM/YYYY",
-    "D/M/YYYY",
-    "YYYY-MM-DD",
-  ], true);
-
+  const parsed = dayjs(
+    v,
+    ["DD-MMM-YYYY", "D-MMM-YYYY", "DD/MM/YYYY", "YYYY-MM-DD"],
+    true
+  );
   return parsed.isValid() ? parsed.toDate() : null;
 }
 
-// 3) Read file (TIP: if you use .xlsx, prefer: XLSX.readFile("data.xlsx", { cellDates: true }))
-const workbook = XLSX.readFile("./data.csv"); // works for CSV or XLSX
+// Read CSV
+const workbook = XLSX.readFile("./data.csv");
 const sheetName = workbook.SheetNames[0];
 const sheet = workbook.Sheets[sheetName];
-
-// defval: "" keeps empty cells as empty strings instead of undefined
 const rawData: any[] = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
-// 4) Map headers → schema fields, fix dates
+// Map CSV → DB schema
 const data = rawData.map((row) => ({
-  domain: (row["Domain"] ?? "").toString().trim(),
+  domainName: (row["Domain"] ?? "").toString().trim(),
   subscription: (row["Subscription"] ?? "").toString().trim(),
   plan: (row["Plan"] ?? "").toString().trim(),
-  status: (row["Status"] ?? "").toString().trim(),
+  email_status: (row["Status"] ?? "").toString().trim(),
   username: (row["Username"] ?? "").toString().trim(),
   password: (row["Password"] ?? "").toString().trim(),
   users: Number(row["Users"] ?? 0) || 0,
   creationDate: parseMaybeDate(row["Creation Date"]),
-  expiryDate: parseMaybeDate(row["Expiry Date"]),
-  customer: (row["Customer"] ?? "").toString().trim(),
+  email_expiryDate: parseMaybeDate(row["Expiry Date"]),
+  email_customer: (row["Customer"] ?? "").toString().trim(),
   provider: (row["Provider"] ?? "").toString().trim(),
 }));
 
-// Optional: quick sanity check for rows that still failed to parse dates
-for (const r of data) {
-  if (r.creationDate === null && (rawData as any[]).length) {
-    // console.warn("⚠️ Could not parse Creation Date for domain:", r.domain);
-  }
-}
-
-// 5) Insert into MongoDB
+// Import logic
 (async () => {
   try {
     if (data.length === 0) {
-      console.log("⚠️ No data found in file");
+      console.log("⚠️ No data found in CSV");
       process.exit(0);
     }
 
-    await Email.insertMany(data);
-    console.log("🎉 Data imported successfully!");
-  } catch (error) {
-    console.error("❌ Error importing data:", error);
+    for (const row of data) {
+      if (!row.domainName) continue;
+
+      const existing = await Order.findOne({ domainName: row.domainName });
+
+      if (existing) {
+        // Update all email fields
+        await Order.updateOne(
+          { domainName: row.domainName },
+          {
+            $set: {
+              subscription: row.subscription,
+              plan: row.plan,
+              email_status: row.email_status,
+              username: row.username,
+              password: row.password,
+              users: row.users,
+              creationDate: row.creationDate,
+              email_expiryDate: row.email_expiryDate,
+              email_customer: row.email_customer,
+              provider: row.provider,
+              email_flag: true,
+            },
+          }
+        );
+        console.log(`🔄 Updated email details for: ${row.domainName}`);
+      } else {
+        // Insert new
+        const newOrder: Partial<IOrder> = {
+          ...row,
+          managedBy: "Signroots", // default for required field
+          registrationDate: row.creationDate || new Date(),
+          email_flag: true,
+        };
+        await Order.create(newOrder);
+        console.log(`✨ Inserted new domain with email_flag: ${row.domainName}`);
+      }
+    }
+
+    console.log("🎉 Import/update completed!");
+  } catch (err) {
+    console.error("❌ Error importing data:", err);
   } finally {
     await mongoose.connection.close();
   }

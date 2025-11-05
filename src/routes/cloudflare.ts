@@ -1,7 +1,8 @@
 import express from "express";
 import axios from "axios";
 import dotenv from "dotenv";
-import Domain from "../models/Domain";
+// import Domain from "../models/Domain";
+import Order from "../models/Order";
 import Customer from "../models/Customer";
 // import Email from "../models/email";  
 
@@ -158,7 +159,7 @@ router.get(
         );
 
         if (bulkOps.length > 0) {
-          await Domain.bulkWrite(bulkOps);
+          await Order.bulkWrite(bulkOps);
         }
 
         page++;

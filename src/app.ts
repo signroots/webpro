@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import domainRoutes from './routes/domain'; // Make sure this exports a Router
+// import domainRoutes from './routes/domain'; // Make sure this exports a Router
 
 const app = express();
 const PORT = 5000;
@@ -10,9 +10,9 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.use('/api/domains_list', domainRoutes);
+// app.use('api/orders/', domainRoutes);
 
 // Start server
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on https://139.59.70.195:${PORT}`);
+  console.log(`Server running on http://192.168.220.33:${PORT}`);
 });

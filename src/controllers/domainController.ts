@@ -50,12 +50,13 @@ import { Email } from "../models/email";
 import { syncDomains } from "../services/domainSyncService";
 
 // GET /api/domains
-export const getDomains = async (req: Request, res: Response) => {
+export const getDomains = async (_req: Request, res: Response) => {
   try {
     const domains = await Domain.find()
       .populate("customer", "name email")
       .populate("registrarName", "name")
-      .populate("email_services"); // Populate linked emails
+      .populate("email_services")
+      .sort({ expiryDate: 1 });
 
     res.status(200).json({
       success: true,
@@ -63,6 +64,7 @@ export const getDomains = async (req: Request, res: Response) => {
       data: domains,
     });
   } catch (error) {
+    console.error("❌ Error fetching domains:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };

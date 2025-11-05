@@ -1,42 +1,38 @@
 import mongoose from "mongoose";
-import Domain from "./models/Domain";
-import { Email } from "./models/email";
+import Order from "./models/Order";
 
-const MONGO_URI = "mongodb://127.0.0.1:27017/domain_management";
+const MONGO_URI = "mongodb://127.0.0.1:27017/domain_management_system";
 
 async function syncEmailServices() {
   try {
-    // Connect to MongoDB
     await mongoose.connect(MONGO_URI);
     console.log("✅ Connected to MongoDB");
 
     // Fetch all domains
-    const domains = await Domain.find({});
+    const domains = await Order.find({});
     console.log(`🔍 Found ${domains.length} domains`);
 
     for (const domain of domains) {
-      // Fetch emails linked to this domain
-      const emails = await Email.find({ domain: domain.domainName });
-      const emailIds = emails.map(e => e._id);
+      // Normalize provider
+      const provider = domain.provider?.toLowerCase() || "";
 
-      // Determine provider flags
-      const hasGoogle = emails.some(e => e.provider === "Google Workspace");
-      const hasMicrosoft = emails.some(e => e.provider === "Microsoft 365");
+      const hasGoogle = provider.includes("google workspace");
+      const hasMicrosoft = provider.includes("microsoft 365");
 
-      // Update domain document
-      await Domain.updateOne(
+      // Update flags in the same document
+      await Order.updateOne(
         { _id: domain._id },
         {
           $set: {
-            email_services: emailIds,
             google_email: hasGoogle,
             microsoft_email: hasMicrosoft,
+            email_flag: !!domain.provider, // true if provider exists
           },
         }
       );
 
       console.log(
-        `✅ Updated domain "${domain.domainName}" with ${emailIds.length} email(s), google_email: ${hasGoogle}, microsoft_email: ${hasMicrosoft}`
+        `✅ Updated "${domain.domainName}" → google_email: ${hasGoogle}, microsoft_email: ${hasMicrosoft}`
       );
     }
 
@@ -44,11 +40,9 @@ async function syncEmailServices() {
   } catch (err) {
     console.error("❌ Error syncing email services:", err);
   } finally {
-    // Ensure MongoDB disconnects in any case
     await mongoose.disconnect();
     console.log("🔌 Disconnected from MongoDB");
   }
 }
 
-// Run the sync function
 syncEmailServices();

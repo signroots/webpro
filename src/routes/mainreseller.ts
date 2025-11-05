@@ -1,7 +1,7 @@
 import express from 'express';
 import axios from 'axios';
 import dotenv from 'dotenv';
-import Domain from '../models/Domain';
+import Order from '../models/Order';
 import Customer from '../models/Customer';
 
 dotenv.config();
@@ -27,10 +27,14 @@ router.get('/import/mainresellerclub', async (_req, res) => {
           'no-of-records': perPage,
           'page-no': page,
         },
-        headers: {
-          'User-Agent': 'Mozilla/5.0',
-          'Accept': 'application/json',
-        },
+      headers: {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+  'Accept': 'application/json, text/javascript, */*; q=0.01',
+  'Accept-Language': 'en-US,en;q=0.9',
+  'Referer': 'https://httpapi.com/',
+  'Origin': 'https://httpapi.com',
+}
+
       });
 
       const rawData = response.data;
@@ -49,7 +53,7 @@ router.get('/import/mainresellerclub', async (_req, res) => {
 
     // ✅ Step 1: Get existing domains
     const apiDomainNames = allDomains.map(d => d['entity.description']);
-    const existingDomains = await Domain.find({
+    const existingDomains = await Order.find({
       domainName: { $in: apiDomainNames }
     }).select('domainName');
 
@@ -152,6 +156,7 @@ if (d['orders.endtime']) {
           city: customerData.city,
           country: customerData.country,
           phone: customerData.mobileno,
+          state:customerData.state,
           resellerCustomerId: customerData.customerid,
         },
         { new: true, upsert: true }
@@ -167,7 +172,7 @@ if (d['orders.endtime']) {
         expiryDate,
         originalRegistrar: d['entitytype.entitytypekey'] || 'Unknown',
         lockStatus: d['orders.transferlock'] === 'true' ? 'Locked' : 'Unlocked',
-        domainSource: ['resellerclub'],
+        domainSource: "resellerclub",
         nameServers: [],
         dnsDetails: [],
         reseller_outside_inside: resellerType,
@@ -178,7 +183,7 @@ if (d['orders.endtime']) {
       };
 
       // Save domain
-      const saved = await Domain.findOneAndUpdate(
+      const saved = await Order.findOneAndUpdate(
         { domainName: domainData.domainName },
         domainData,
         { upsert: true, new: true }

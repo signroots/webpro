@@ -1,0 +1,289 @@
+import express from 'express';
+import axios from 'axios';
+import dotenv from 'dotenv';
+import Customer, { IClient } from "../models/Client";
+import Domain from '../models/Domain';
+import { Request, Response } from "express";
+import { v4 as uuidv4 } from "uuid";
+import bcrypt from "bcryptjs";
+import crypto from "crypto";
+import mongoose from 'mongoose';
+import Client from '../models/Client';
+dotenv.config();
+interface UpdateClientBody {
+  c_name?: string;
+  c_email?: string[];
+  c_phone?: string;
+  c_company?: string;
+  c_address?: string;
+  c_city?: string;
+  c_state?: string;
+  c_country?: string;
+  c_zipCode?: string;
+  password?:string;
+  resellerCustomerId?: string;
+}
+const router = express.Router();
+// router.get('/', async (_req, res) => {
+//     try {
+//       const customers = await Client.find().sort({ createdAt: -1 });
+//       res.status(200).json(customers);
+//     } catch (err: any) {
+//       console.error(' Error fetching customers:', err.message);
+//       res.status(500).json({ error: 'Failed to fetch customized customers' });
+//     }
+//   });
+
+
+router.get('/', async (_req, res) => {
+  try {
+    const customers = await Client.find().sort({ createdAt: -1 }).select("+password");
+    res.status(200).json(customers);
+  } catch (err: any) {
+    console.error('Error fetching customers:', err.message);
+    res.status(500).json({ error: 'Failed to fetch customers' });
+  }
+});
+
+
+router.post("/", async (req: Request, res: Response): Promise<any> => {
+  try {
+    console.log("Incoming request body:", req.body);
+
+    let c_email: string | string[] = req.body.c_email;
+
+    // ✅ Normalize email to array
+    if (typeof c_email === "string" && c_email.includes(",")) {
+      c_email = c_email.split(",").map((e: string) => e.trim());
+    } else if (
+      Array.isArray(c_email) &&
+      c_email.length === 1 &&
+      typeof c_email[0] === "string" &&
+      c_email[0].includes(",")
+    ) {
+      c_email = c_email[0].split(",").map((e: string) => e.trim());
+    } else if (typeof c_email === "string") {
+      c_email = [c_email.trim()];
+    } else if (!Array.isArray(c_email)) {
+      c_email = [];
+    }
+
+       // ✅ Validation: must have at least one valid email
+    if (!c_email.length || !c_email[0]) {
+      return res.status(400).json({
+        success: false,
+        error: "Customer email is required.",
+      });
+    }
+
+      // ✅ Check duplicate primary email (case-insensitive)
+    const primaryEmail = c_email[0].toLowerCase();
+    const existingCustomer = await Customer.findOne({
+      c_email: { $elemMatch: { $regex: new RegExp(`^${primaryEmail}$`, "i") } },
+    });
+
+    if (existingCustomer) {
+      return res.status(400).json({
+        success: false,
+        error: "Primary email already exists.",
+      });
+    }
+
+    // ✅ Generate password if not provided
+    let plainPassword: string;
+    if (req.body.password && req.body.password.trim() !== "") {
+      plainPassword = req.body.password.trim();
+    } else {
+      // Auto-generate a random strong password (8–12 chars)
+      plainPassword = Math.random().toString(36).slice(-8) + 
+                      crypto.randomBytes(2).toString("hex");
+      console.log("Auto-generated password:", plainPassword);
+    }
+
+    // ✅ Prepare base customer data
+    const customerData: any = {
+      c_name: req.body.c_name,
+      c_email,
+      c_phone: req.body.c_phone,
+      c_company: req.body.c_company,
+      c_address: req.body.c_address,
+      c_city: req.body.c_city,
+      c_state: req.body.c_state,
+      c_country: req.body.c_country,
+      c_zipCode: req.body.c_zipCode,
+      c_gst: req.body.c_gst,
+      is_customer: true,
+      resellerCustomerId: req.body.resellerCustomerId || uuidv4(),
+      userType: req.body.userType
+        ? new mongoose.Types.ObjectId(req.body.userType)
+        : new mongoose.Types.ObjectId("6900a4ef87b9fe9ff304e91e"), // default userType
+    };
+
+    // ✅ Hash password for login
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(plainPassword, salt);
+    customerData.password = hashedPassword;
+
+    // ✅ Encrypt password for admin view/decryption
+    const key = crypto
+      .createHash("sha256")
+      .update(process.env.ENCRYPTION_SECRET || "default_secret")
+      .digest();
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv("aes-256-cbc", key, iv);
+    let encrypted = cipher.update(plainPassword, "utf8", "hex");
+    encrypted += cipher.final("hex");
+    const encryptedPassword = iv.toString("hex") + ":" + encrypted;
+    customerData.encryptedPassword = encryptedPassword;
+
+    // ✅ Save customer
+    const customer = await Customer.create(customerData);
+
+    res.status(201).json({
+      success: true,
+      message: "Customer created successfully",
+      data: {
+        ...customer.toObject(),
+        generatedPassword: req.body.password ? undefined : plainPassword, // show only if autogenerated
+      },
+    });
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      console.error("Error creating customer:", err.message);
+      res.status(500).json({
+        success: false,
+        error: "Failed to create customer",
+        details: err.message,
+      });
+    } else {
+      console.error("Unknown error creating customer:", err);
+      res.status(500).json({ success: false, error: "Failed to create customer" });
+    }
+  }
+});
+router.put("/:id", async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { id } = req.params;
+    console.log(`[DEBUG] Updating customer with ID: ${id}`);
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, error: "Invalid customer ID" });
+    }
+
+    const updateData: Partial<UpdateClientBody & { encryptedPassword?: string }> = {};
+    const allowedFields: (keyof UpdateClientBody)[] = [
+      "c_name",
+      "c_email",
+      "c_phone",
+      "c_company",
+      "c_address",
+      "c_city",
+      "c_state",
+      "c_country",
+      "c_zipCode",
+      "password",
+      "resellerCustomerId",
+    ];
+
+    for (const field of allowedFields) {
+      let value = req.body[field];
+
+      if (value !== undefined) {
+        if (field === "c_email") {
+          // ✅ Normalize emails
+          if (typeof value === "string") {
+            value = value.includes(",")
+              ? value.split(",").map((e: string) => e.trim())
+              : [value.trim()];
+          } else if (Array.isArray(value)) {
+            value = value.map((e: string) => e.trim());
+          } else {
+            value = [];
+          }
+
+          // ✅ Ensure there's at least one email
+          if (!value.length || !value[0]) {
+            return res.status(400).json({
+              success: false,
+              error: "Customer email is required.",
+            });
+          }
+
+          // ✅ Check if primary email already exists in another customer
+          const primaryEmail = value[0].toLowerCase();
+          const existingCustomer = await Customer.findOne({
+            _id: { $ne: id }, // exclude current customer
+            c_email: { $elemMatch: { $regex: new RegExp(`^${primaryEmail}$`, "i") } },
+          });
+
+          if (existingCustomer) {
+            return res.status(400).json({
+              success: false,
+              error: "Primary email already exists for another customer.",
+            });
+          }
+
+          updateData[field] = value;
+        }
+
+        // 🔒 Handle password (hash + encrypt)
+        else if (field === "password") {
+          if (value && typeof value === "string" && value.trim() !== "") {
+            console.log("[DEBUG] Password update detected — hashing & encrypting...");
+
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(value, salt);
+            updateData.password = hashedPassword;
+
+            const key = crypto
+              .createHash("sha256")
+              .update(process.env.ENCRYPTION_SECRET || "default_secret")
+              .digest();
+            const iv = crypto.randomBytes(16);
+            const cipher = crypto.createCipheriv("aes-256-cbc", key, iv);
+            let encrypted = cipher.update(value, "utf8", "hex");
+            encrypted += cipher.final("hex");
+            updateData.encryptedPassword = iv.toString("hex") + ":" + encrypted;
+          } else {
+            console.log("[DEBUG] Password empty or unchanged — skipping hash");
+          }
+        }
+
+        // 🧱 Normal fields
+        else {
+          updateData[field] = value;
+        }
+      }
+    }
+
+    console.log("[DEBUG] Final update data:", updateData);
+
+    const updatedCustomer = await Customer.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { new: true }
+    );
+
+    if (!updatedCustomer) {
+      console.warn(`[WARN] Customer not found for ID: ${id}`);
+      return res.status(404).json({ success: false, error: "Customer not found" });
+    }
+
+    console.log(`[SUCCESS] Customer updated successfully: ${id}`);
+    return res.json({
+      success: true,
+      message: "Customer updated successfully",
+      data: updatedCustomer,
+    });
+  } catch (err: any) {
+    console.error("[ERROR] Customer update failed:", err.message);
+    return res.status(500).json({
+      success: false,
+      error: "Server error",
+      details: err.message,
+    });
+  }
+});
+
+
+export default router;

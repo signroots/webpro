@@ -1,9 +1,9 @@
 import express from "express";
 import axios from "axios";
-import dotenv from "dotenv";
-import Domain from "../models/Domain";    // ✅ correct
+import dotenv from "dotenv";    // ✅ correct
 import Customer from "../models/Customer"; // ✅ correct
 import { Email } from "../models/email";      // ✅ must match file name
+import Order from "../models/Order";
 
 dotenv.config();
 const router = express.Router();
@@ -11,7 +11,7 @@ const router = express.Router();
 // ✅ Get all domains with customer + emails populated
 router.get("/", async (_req, res) => {
   try {
-    const domains = await Domain.find()
+    const domains = await Order.find()
       .populate("customer")
       .populate("email_services")
       .sort({ expiryDate: 1 });
@@ -84,7 +84,7 @@ router.get("/import/resellerclub", async (_req, res) => {
         expiryDate: new Date(Number(d["orders.endtime"]) * 1000),
         originalRegistrar: "-",
         lockStatus: d["orders.transferlock"] === "true" ? "Locked" : "Unlocked",
-        domainSource: ["resellerclub"],
+        domainSource:"resellerclub",
         nameServers: [],
         dnsDetails: [],
         reseller_outside_inside: "SubReseller",
@@ -93,12 +93,12 @@ router.get("/import/resellerclub", async (_req, res) => {
       };
 
       // ✅ save/update domain
-      const saved = await Domain.findOneAndUpdate({ domainName }, domainData, { upsert: true, new: true });
+      const saved = await Order.findOneAndUpdate({ domainName }, domainData, { upsert: true, new: true });
 
       // ✅ link any existing email accounts
       const matchingEmails = await Email.find({ domain: domainName });
       if (matchingEmails.length > 0) {
-        await Domain.findByIdAndUpdate(saved._id, {
+        await Order.findByIdAndUpdate(saved._id, {
           $addToSet: { email_services: { $each: matchingEmails.map((e) => e._id) } },
         });
       }
@@ -112,9 +112,13 @@ router.get("/import/resellerclub", async (_req, res) => {
       data: savedDomains,
     });
   } catch (error: any) {
-    console.error("❌ Import Error:", error.message);
-    res.status(500).json({ error: "❌ Failed to import domains" });
-  }
+  console.error("❌ Import Error:", error);
+  res.status(500).json({
+    error: "❌ Failed to import domains",
+    message: error.response?.data || error.message,
+    stack: error.stack,
+  });
+}
 });
 
 export default router;
