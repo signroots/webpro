@@ -46,20 +46,26 @@ router.post("/", async (req: Request<{}, {}, Partial<IHostType>>, res: Response)
 });
 
 // UPDATE HostType
-router.put("/:id", async (req: Request<{ id: string }, {}, Partial<IHostType>>, res: Response): Promise<void> => {
-  try {
-    const updates = req.body;
-    const updatedHost = await HostType.findByIdAndUpdate(req.params.id, updates, { new: true });
-    if (!updatedHost) {
-      res.status(404).json({ success: false, message: "HostType not found" });
-      return;
-    }
-    res.json({ success: true, data: updatedHost });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
+router.put(
+  "/:id",
+  async (req: Request<{ id: string }, {}, Partial<IHostType>>, res: Response): Promise<void> => {
+    try {
+      const updates = req.body;
+      const updatedHost = await HostType.findByIdAndUpdate(req.params.id, updates, {
+        new: true,
+      });
 
+      if (!updatedHost) {
+        res.status(404).json({ success: false, message: "HostType not found" });
+        return;
+      }
+
+      res.json({ success: true, data: updatedHost });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  }
+);
 // DELETE HostType
 router.delete("/:id", async (req: Request<{ id: string }>, res: Response): Promise<void> => {
   try {
