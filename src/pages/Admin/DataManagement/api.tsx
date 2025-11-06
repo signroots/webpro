@@ -108,9 +108,11 @@ export const fetchHostTypeById = async (id: string) => {
 };
 
 // Update HostType by ID
-export const updateHostType = async (id: string, updates: any) => {
-  const res = await axios.put(`${API_BASE_URL}/api/hosttypes/${id}`, updates);
-  return res.data;
+export const updateHostType = async (id: string, type: string) => {
+  const response = await axios.put(`${API_BASE_URL}/api/hosttypes/${id}/`, {
+    type, // field name must match your backend model field
+  });
+  return response.data;
 };
 
 // Delete HostType by ID
@@ -128,10 +130,11 @@ export const toggleHostType = async (id: string) => {
 // =====================
 
 // Create a new HostSubType
-export const createHostSubType = async (hostType: string, name: string) => {
-  const res = await axios.post(`${API_BASE_URL}/api/hostsubtype`, { hostType, name });
+export const createHostSubType = async (payload: { hostType: string; name: string }) => {
+  const res = await axios.post(`${API_BASE_URL}/api/hostsubtype`, payload);
   return res.data;
 };
+
 
 // Get all HostSubTypes
 export const fetchHostSubTypes = async () => {
@@ -159,7 +162,7 @@ export const deleteHostSubType = async (id: string) => {
 
 // Toggle isActive
 export const toggleHostSubType = async (id: string) => {
-  const res = await axios.patch(`${API_BASE_URL}/api/hostsubtype/${id}/toggle`);
+  const res = await axios.put(`${API_BASE_URL}/api/hostsubtype/${id}`);
   return res.data;
 };
 // Storage APIs

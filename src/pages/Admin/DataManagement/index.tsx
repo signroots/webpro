@@ -12,6 +12,9 @@ import {
   createHostType,
   fetchHostTypes,
   toggleHostType,
+ updateHostType ,
+ updateHostSubType,
+ updateStorage,
   deleteHostType,
   createHostSubType,
   fetchHostSubTypes,
@@ -23,6 +26,20 @@ import {
   toggleStorage,
 } from "./api";
 import { ArrowLeft } from "lucide-react";
+import { notify } from "../../../Common/Toastify";
+interface Column {
+  header: string;
+  field?: string; // e.g., "plan", "emailType.name", "name"
+  render?: (item: any) => React.ReactNode; // custom render function
+}
+
+interface DataTableProps {
+  data: any[];
+  onToggle: (item: any) => void;
+  onDelete: (id: string) => void;
+  showImage?: boolean; 
+  columns: Column[];
+}
 
 interface TypeEmail {
   _id: string;
@@ -31,6 +48,7 @@ interface TypeEmail {
   createdAt: string;
   image?: string;
 }
+
 
 interface PlanEmail {
   _id: string;
@@ -79,18 +97,32 @@ const DataManagement: React.FC = () => {
   const [planName, setPlanName] = useState("");
   const [planEmailType, setPlanEmailType] = useState<string>("");
   const [planEmails, setPlanEmails] = useState<PlanEmail[]>([]);
+  const [editTypePlaneId, setEditTypePlaneId] = useState<string | null>(null);
+
 
   const [hostName, setHostName] = useState("");
   const [hostTypes, setHostTypes] = useState<HostType[]>([]);
+  // For Host Type section
+const [hostTypeName, setHostTypeName] = useState<string>("");
+const [editHostTypeId, setEditHostTypeId] = useState<string | null>(null);
+const [editHostId, setEditHostId] = useState<string | null>(null);
+
+
 
   const [subTypeName, setSubTypeName] = useState("");
   const [subHostType, setSubHostType] = useState<string>("");
   const [hostSubTypes, setHostSubTypes] = useState<HostSubType[]>([]);
+  const [hostSubTypeName, setHostSubTypeName] = useState(""); // dropdown for HostType
+const [editHostSubTypeId, setEditHostSubTypeId] = useState<string | null>(null);
+
+
 
   const [storageName, setStorageName] = useState("");
   const [selectedHostType, setSelectedHostType] = useState("");
   const [selectedHostSubType, setSelectedHostSubType] = useState("");
   const [storages, setStorages] = useState<Storage[]>([]);
+  const [editStorageId, setEditStorageId] = useState<string | null>(null);
+
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -123,6 +155,61 @@ const DataManagement: React.FC = () => {
   setTypeImage(null);            // reset image input (optional)
 };
 
+
+
+
+const handleUpdatePlaneEmail = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!editTypePlaneId) return showMessage("No plan selected for update", "error");
+  if (!planName.trim()) return showMessage("Plan Name is required", "error");
+  if (!planEmailType) return showMessage("Select Type Email", "error");
+
+  setLoading(true);
+  try {
+    const res = await axios.put(
+      `${import.meta.env.VITE_API_BASE_URL}/api/plans/${editTypePlaneId}/`,
+      { plan: planName, emailType: planEmailType }
+    );
+    if (res.data.success) {
+      showMessage("Plan Email updated successfully!", "success");
+      setPlanName("");
+      setPlanEmailType("");
+      setEditTypePlaneId(null);
+      loadPlanEmails();
+    } else {
+      showMessage("Failed to update Plan Email", "error");
+    }
+  } catch (err) {
+    console.error(err);
+    showMessage("Something went wrong", "error");
+  } finally {
+    setLoading(false);
+  }
+};
+
+// 3️⃣ Edit Plan Email (populate form)
+const handleEditPlaneEmail = (plan: PlanEmail) => {
+  setPlanName(plan.plan);
+  setPlanEmailType(plan.emailType._id);
+  setEditTypePlaneId(plan._id);
+};
+
+// Edit button click (fills form)
+const handleEditHostType = (item: any) => {
+  setEditHostTypeId(item._id);
+  setHostTypeName(item.type);
+};
+const handleEditHostSubType = (item: any) => {
+  setEditHostSubTypeId(item._id);
+  setHostSubTypeName(item.name);
+  setSelectedHostType(item.hostType?._id || "");
+};
+const handleEditStorage = (item: any) => {
+  setEditStorageId(item._id);
+  setStorageName(item.storage);
+  setSelectedHostType(item.hostType?._id || "");
+  setSelectedHostSubType(item.hostSubType?._id || "");
+};
   useEffect(() => {
     if (activePage === "typeEmail") loadTypeEmails();
     if (activePage === "planEmail") {
@@ -227,20 +314,199 @@ const handleUpdateTypeEmail = async (e: React.FormEvent) => {
     setLoading(false);
   }
 };
+const handleCreatePlanEmail = async (e: React.FormEvent) => {
+  e.preventDefault();
 
+  if (!planName.trim()) return showMessage("Plan Name is required", "error");
+  if (!planEmailType) return showMessage("Select Type Email", "error");
 
-  const handleToggleTypeEmail = async (item: any) => {
-    try {
-      const res = await toggleTypeEmail(item._id);
-      if (res.success) {
-        showMessage("Status updated!", "success");
-        loadTypeEmails();
-      }
-    } catch (err) {
-      showMessage("Failed to toggle status", "error");
+  setLoading(true);
+
+  try {
+    // Pass the two arguments separately
+    const res = await createPlanEmail(planName, planEmailType);
+
+    if (res.success) {
+      showMessage(`Plan Email "${res.data.plan}" created successfully!`, "success");
+      setPlanName("");           // reset form
+      setPlanEmailType("");      // reset select
+      loadPlanEmails();          // refresh table
+    } else {
+      showMessage("Failed to create Plan Email", "error");
     }
-  };
+  } catch (err) {
+    console.error("Error creating Plan Email:", err);
+    showMessage("Something went wrong", "error");
+  } finally {
+    setLoading(false);
+  }
+};
 
+const handleCreateHostType = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!hostTypeName.trim()) return alert("Please enter a host name");
+  setLoading(true);
+  try {
+    await createHostType(hostTypeName);
+    setHostTypeName("");
+    await loadHostTypes();
+    notify("Created successfully!", "success");
+
+    // ✅ show success message
+    // showMessage("Host type created successfully", "success");
+  } catch (error) {
+    console.error("Error creating host type:", error);
+    notify("Failed to create Host Type", "error");
+  } finally {
+    setLoading(false);
+  }
+};
+// ✅ Update Storage
+const handleUpdateStorage = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  // Basic validation
+  if (!editStorageId) return showMessage("No storage selected for update", "error");
+  if (!storageName.trim()) return showMessage("Storage name is required", "error");
+  if (!selectedHostType) return showMessage("Select Host Type", "error");
+  if (!selectedHostSubType) return showMessage("Select Host SubType", "error");
+
+  setLoading(true);
+  try {
+    // Make API call
+    const res = await updateStorage(editStorageId, {
+      storage: storageName,
+      hostType: selectedHostType,
+      hostSubType: selectedHostSubType,
+    });
+
+    // Handle response
+    if (res.success) {
+      showMessage("✅ Storage updated successfully!", "success");
+      setEditStorageId(null);
+      setStorageName("");
+      setSelectedHostType("");
+      setSelectedHostSubType("");
+      await loadStorages(); // Refresh list
+    } else {
+      showMessage("❌ Failed to update storage", "error");
+    }
+  } catch (err) {
+    console.error("Error updating storage:", err);
+    showMessage("⚠️ Something went wrong while updating storage", "error");
+  } finally {
+    setLoading(false);
+  }
+};
+
+// Update Host Type
+const handleUpdateHostType = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!hostTypeName.trim() || !editHostTypeId) return alert("Please enter a host name");
+  setLoading(true);
+  try {
+    await updateHostType(editHostTypeId, hostTypeName);
+    setHostTypeName("");
+    setEditHostTypeId(null);
+    await loadHostTypes();
+    notify("Updated successfully!", "success");
+  } catch (error) {
+    console.error("Error updating host type:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
+
+const handleCreateHostSubType = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  if (!hostSubTypeName.trim()) return showMessage("SubType Name is required", "error");
+  if (!selectedHostType) return showMessage("Select Host Type", "error");
+
+  setLoading(true);
+  try {
+    const res = await createHostSubType({
+      name: hostSubTypeName,
+      hostType: selectedHostType,
+    });
+
+    if (res.success) {
+      showMessage(`✅ Host SubType "${res.data.name}" created successfully!`, "success");
+      setHostSubTypeName("");
+      setSelectedHostType("");
+      await loadHostSubTypes();
+    } else {
+      showMessage("❌ Failed to create Host SubType", "error");
+    }
+  } catch (err) {
+    console.error(err);
+    showMessage("⚠️ Something went wrong", "error");
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleUpdateHostSubType = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  if (!hostSubTypeName.trim()) return showMessage("Sub Type Name is required", "error");
+  if (!selectedHostType) return showMessage("Select Host Type", "error");
+
+  setLoading(true);
+  try {
+    const res = await updateHostSubType(editHostSubTypeId!, {
+      name: hostSubTypeName,
+      hostType: selectedHostType,
+    });
+
+    if (res.success) {
+      showMessage(`✅ Host Sub Type updated successfully!`, "success");
+      setEditHostSubTypeId(null);
+      setHostSubTypeName("");
+      setSelectedHostType("");
+      await loadHostSubTypes();
+    } else {
+      showMessage("❌ Failed to update Host Sub Type", "error");
+    }
+  } catch (err) {
+    console.error(err);
+    showMessage("⚠️ Something went wrong", "error");
+  } finally {
+    setLoading(false);
+  }
+};
+// EDIT (prefill data into form)
+
+const handleCreateStorage = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!storageName.trim()) return showMessage("Storage name is required", "error");
+  if (!selectedHostType) return showMessage("Select Host Type", "error");
+  if (!selectedHostSubType) return showMessage("Select Host SubType", "error");
+
+  setLoading(true);
+  try {
+    const res = await createStorage(storageName, selectedHostType, selectedHostSubType);
+    if (res.success) {
+      showMessage(`Storage "${res.data.storage}" created successfully!`, "success");
+      setStorageName("");
+      setSelectedHostType("");
+      setSelectedHostSubType("");
+      loadStorages();
+    } else {
+      showMessage("Failed to create Storage", "error");
+    }
+  } catch (err) {
+    console.error(err);
+    showMessage("Something went wrong", "error");
+  } finally {
+    setLoading(false);
+  }
+};
+
+ 
   const handleDeleteTypeEmail = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this item?")) return;
     setLoading(true);
@@ -262,7 +528,7 @@ const handleUpdateTypeEmail = async (e: React.FormEvent) => {
     try {
       const res = await apiToggleFunc(id);
       if (res.success) {
-        showMessage("Status updated!", "success");
+        showMessage("Deleted Sucessfully.", "success");
         reloadFunc();
       }
     } catch {
@@ -378,48 +644,336 @@ const handleUpdateTypeEmail = async (e: React.FormEvent) => {
       )}
     </form>
 
+   <DataTable
+  data={typeEmails}
+  onToggle={(item) => handleEditTypeEmail(item)}
+  onDelete={(id) => handleDeleteTypeEmail(id)}
+  showImage
+  columns={[
+    { header: "Email Type", field: "name" },
+    { header: "Active", render: (item) => (item.isActive ? "Yes" : "No") },
+    { header: "Created At", render: (item) => new Date(item.createdAt).toLocaleString() },
+  ]}
+/>
+  </>
+)}
+{activePage === "planEmail" && (
+  <>
+    <form
+      onSubmit={editTypePlaneId ? handleUpdatePlaneEmail : handleCreatePlanEmail}
+      className="mb-6 flex flex-col gap-2"
+    >
+      <input
+        type="text"
+        value={planName}
+        onChange={(e) => setPlanName(e.target.value)}
+        placeholder="Enter Plan Name"
+        className="border px-3 py-2 rounded"
+      />
+      <select
+        value={planEmailType}
+        onChange={(e) => setPlanEmailType(e.target.value)}
+        className="border px-3 py-2 rounded"
+      >
+        <option value="">Select Type Email</option>
+        {typeEmails.map((type) => (
+          <option key={type._id} value={type._id}>
+            {type.name}
+          </option>
+        ))}
+      </select>
+
+      <button
+        type="submit"
+        className={`${
+          editTypePlaneId ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700"
+        } text-white px-4 py-2 rounded disabled:opacity-50`}
+        disabled={loading}
+      >
+        {loading ? "Processing..." : editTypePlaneId ? "Update Plan Email" : "Create Plan Email"}
+      </button>
+
+      {editTypePlaneId && (
+        <button
+          type="button"
+          onClick={() => {
+            setEditTypePlaneId(null);
+            setPlanName("");
+            setPlanEmailType("");
+          }}
+          className="bg-gray-400 text-white px-4 py-2 rounded mt-2 hover:bg-gray-500"
+        >
+          Cancel Edit
+        </button>
+      )}
+    </form>
+
+   <DataTable
+  data={planEmails}
+  onToggle={(item) => handleEditPlaneEmail(item)}
+  onDelete={(id) => handleToggle(deletePlanEmail, id, loadPlanEmails)}
+  columns={[
+    { header: "Plan Name", field: "plan" },
+    { header: "Type Email", field: "emailType.name" },
+    { header: "Active", render: (item) => (item.isActive ? "Yes" : "No") },
+    { header: "Created At", render: (item) => new Date(item.createdAt).toLocaleString() },
+  ]}
+/>
+
+  </>
+)}
+
+
+{activePage === "hostType" && (
+  <>
+    {/* Create / Update Form */}
+    <form
+      onSubmit={editHostTypeId ? handleUpdateHostType : handleCreateHostType}
+      className="mb-6 flex flex-col gap-2"
+    >
+      {/* Input: Host Type */}
+      <input
+        type="text"
+        value={hostTypeName}
+        onChange={(e) => setHostTypeName(e.target.value)}
+        placeholder="Enter Host Type Name"
+        className="border px-3 py-2 rounded"
+      />
+
+      {/* Submit Button */}
+      <button
+        type="submit"
+        className={`${
+          editHostTypeId
+            ? "bg-green-600 hover:bg-green-700"
+            : "bg-blue-600 hover:bg-blue-700"
+        } text-white px-4 py-2 rounded disabled:opacity-50`}
+        disabled={loading}
+      >
+        {loading
+          ? "Processing..."
+          : editHostTypeId
+          ? "Update Host Type"
+          : "Create Host Type"}
+      </button>
+
+      {/* Cancel Edit Button */}
+      {editHostTypeId && (
+        <button
+          type="button"
+          onClick={() => {
+            setEditHostTypeId(null);
+            setHostTypeName("");
+          }}
+          className="bg-gray-400 text-white px-4 py-2 rounded mt-2 hover:bg-gray-500"
+        >
+          Cancel Edit
+        </button>
+      )}
+    </form>
+
+    {/* Table */}
     <DataTable
-      data={typeEmails}
-      onToggle={(item) => handleEditTypeEmail(item)} // 👈 changed this
-      onDelete={(id) => handleDeleteTypeEmail(id)}
-      showImage
+      data={hostTypes}
+      onToggle={(item) => handleEditHostType(item)}
+      onDelete={(id) => handleToggle(deleteHostType, id, loadHostTypes)}
+      columns={[
+        { header: "Host Name", field: "type" },
+        {
+          header: "Active",
+          render: (item) => (item.isActive ? "Yes" : "No"),
+        },
+        {
+          header: "Created At",
+          render: (item) => new Date(item.createdAt).toLocaleString(),
+        },
+      ]}
     />
   </>
 )}
 
-        {activePage === "planEmail" && (
-          <DataTable
-            data={planEmails}
-            onToggle={(item) => handleToggle(togglePlanEmail, item._id, loadPlanEmails)}
-            onDelete={(id) => handleToggle(deletePlanEmail, id, loadPlanEmails)}
-          />
-        )}
+  {activePage === "hostSubType" && (
+  <>
+    {/* Create / Update Form */}
+    <form
+      onSubmit={editHostSubTypeId ? handleUpdateHostSubType : handleCreateHostSubType}
+      className="mb-6 flex flex-col gap-3"
+    >
+      {/* Input: Sub Type Name */}
+      <input
+        type="text"
+        value={hostSubTypeName}
+        onChange={(e) => setHostSubTypeName(e.target.value)}
+        placeholder="Enter Host Sub Type Name"
+        className="border px-3 py-2 rounded"
+      />
 
-        {activePage === "hostType" && (
-          <DataTable
-            data={hostTypes}
-            onToggle={(item) => handleToggle(toggleHostType, item._id, loadHostTypes)}
-            onDelete={(id) => handleToggle(deleteHostType, id, loadHostTypes)}
-          />
-        )}
+      {/* Dropdown: Host Type */}
+      <select
+        value={selectedHostType}
+        onChange={(e) => setSelectedHostType(e.target.value)}
+        className="border px-3 py-2 rounded"
+      >
+        <option value="">Select Host Type</option>
+        {hostTypes.map((type: any) => (
+          <option key={type._id} value={type._id}>
+            {type.type}
+          </option>
+        ))}
+      </select>
 
-        {activePage === "hostSubType" && (
-          <DataTable
-            data={hostSubTypes}
-            onToggle={(item) =>
-              handleToggle(toggleHostSubType, item._id, loadHostSubTypes)
-            }
-            onDelete={(id) => handleToggle(deleteHostSubType, id, loadHostSubTypes)}
-          />
-        )}
+      {/* Submit Button */}
+      <button
+        type="submit"
+        className={`${
+          editHostSubTypeId
+            ? "bg-green-600 hover:bg-green-700"
+            : "bg-blue-600 hover:bg-blue-700"
+        } text-white px-4 py-2 rounded disabled:opacity-50`}
+        disabled={loading}
+      >
+        {loading
+          ? "Processing..."
+          : editHostSubTypeId
+          ? "Update Host Sub Type"
+          : "Create Host Sub Type"}
+      </button>
 
-        {activePage === "storage" && (
-          <DataTable
-            data={storages}
-            onToggle={(item) => handleToggle(toggleStorage, item._id, loadStorages)}
-            onDelete={(id) => handleToggle(deleteStorage, id, loadStorages)}
-          />
-        )}
+      {/* Cancel Button (when editing) */}
+      {editHostSubTypeId && (
+        <button
+          type="button"
+          onClick={() => {
+            setEditHostSubTypeId(null);
+            setHostSubTypeName("");
+            setSelectedHostType("");
+          }}
+          className="bg-gray-400 text-white px-4 py-2 rounded mt-2 hover:bg-gray-500"
+        >
+          Cancel Edit
+        </button>
+      )}
+    </form>
+
+    {/* Table */}
+    <DataTable
+      data={hostSubTypes}
+      onToggle={(item) => handleEditHostSubType(item)}
+      onDelete={(id) =>
+        handleToggle(deleteHostSubType, id, loadHostSubTypes)
+      }
+      columns={[
+        { header: "Host Sub Type", field: "name" },
+        { header: "Host Type", field: "hostType.type" },
+        { header: "Active", render: (item) => (item.isActive ? "Yes" : "No") },
+        {
+          header: "Created At",
+          render: (item) => new Date(item.createdAt).toLocaleString(),
+        },
+      ]}
+    />
+  </>
+)}
+
+
+       {activePage === "storage" && (
+  <>
+    {/* Create / Update Form */}
+    <form
+      onSubmit={editStorageId ? handleUpdateStorage : handleCreateStorage}
+      className="mb-6 flex flex-col gap-3"
+    >
+      {/* Input: Storage Name */}
+      <input
+        type="text"
+        value={storageName}
+        onChange={(e) => setStorageName(e.target.value)}
+        placeholder="Enter Storage Name"
+        className="border px-3 py-2 rounded"
+      />
+
+      {/* Dropdown: Host Type */}
+      <select
+        value={selectedHostType}
+        onChange={(e) => setSelectedHostType(e.target.value)}
+        className="border px-3 py-2 rounded"
+      >
+        <option value="">Select Host Type</option>
+        {hostTypes.map((type: any) => (
+          <option key={type._id} value={type._id}>
+            {type.type}
+          </option>
+        ))}
+      </select>
+
+      {/* Dropdown: Host Sub Type */}
+      <select
+        value={selectedHostSubType}
+        onChange={(e) => setSelectedHostSubType(e.target.value)}
+        className="border px-3 py-2 rounded"
+      >
+        <option value="">Select Host Sub Type</option>
+        {hostSubTypes
+          .filter((sub: any) => sub.hostType?._id === selectedHostType)
+          .map((sub: any) => (
+            <option key={sub._id} value={sub._id}>
+              {sub.name}
+            </option>
+          ))}
+      </select>
+
+      {/* Submit Button */}
+      <button
+        type="submit"
+        className={`${
+          editStorageId
+            ? "bg-green-600 hover:bg-green-700"
+            : "bg-blue-600 hover:bg-blue-700"
+        } text-white px-4 py-2 rounded disabled:opacity-50`}
+        disabled={loading}
+      >
+        {loading
+          ? "Processing..."
+          : editStorageId
+          ? "Update Storage"
+          : "Create Storage"}
+      </button>
+
+      {/* Cancel Edit Button */}
+      {editStorageId && (
+        <button
+          type="button"
+          onClick={() => {
+            setEditStorageId(null);
+            setStorageName("");
+            setSelectedHostType("");
+            setSelectedHostSubType("");
+          }}
+          className="bg-gray-400 text-white px-4 py-2 rounded mt-2 hover:bg-gray-500"
+        >
+          Cancel Edit
+        </button>
+      )}
+    </form>
+
+    {/* Table */}
+    <DataTable
+      data={storages}
+      onToggle={(item) => handleEditStorage(item)}
+      onDelete={(id) => handleToggle(deleteStorage, id, loadStorages)}
+      columns={[
+        { header: "Storage", field: "storage" },
+        { header: "Host Type", field: "hostType.type" },
+        { header: "Host Sub Type", field: "hostSubType.name" },
+        { header: "Active", render: (item) => (item.isActive ? "Yes" : "No") },
+        {
+          header: "Created At",
+          render: (item) => new Date(item.createdAt).toLocaleString(),
+        },
+      ]}
+    />
+  </>
+)}
       </div>
     </div>
   );
@@ -437,15 +991,16 @@ const DataTable: React.FC<DataTableProps> = ({
   data,
   onToggle,
   onDelete,
+  columns,
   showImage,
 }) => (
   <table className="w-full border-collapse border border-gray-300">
     <thead>
       <tr className="bg-gray-200 text-center">
-        <th className="border px-2 py-1">Name</th>
         {showImage && <th className="border px-2 py-1">Image</th>}
-        <th className="border px-2 py-1">Active</th>
-        <th className="border px-2 py-1">Created At</th>
+        {columns.map((col, idx) => (
+          <th key={idx} className="border px-2 py-1">{col.header}</th>
+        ))}
         <th className="border px-2 py-1">Actions</th>
       </tr>
     </thead>
@@ -453,28 +1008,29 @@ const DataTable: React.FC<DataTableProps> = ({
       {data.length > 0 ? (
         data.map((item) => (
           <tr key={item._id} className="text-center">
-            <td className="border px-2 py-1">
-              {item.name || item.type || item.plan || item.storage}
-            </td>
+            {/* ✅ Show image if enabled */}
             {showImage && (
               <td className="border px-2 py-1">
                 {item.image ? (
                   <img
-                    src={`${import.meta.env.VITE_API_BASE_URL.replace(/\/$/, "")}/${
-                      item.image.startsWith("/") ? item.image.slice(1) : item.image
-                    }`}
+                    src={`${import.meta.env.VITE_API_BASE_URL}${item.image}`}
                     alt={item.name}
                     className="w-12 h-12 object-cover mx-auto rounded"
                   />
                 ) : (
-                  <span className="text-gray-400">No image</span>
+                  "-"
                 )}
               </td>
             )}
-            <td className="border px-2 py-1">{item.isActive ? "Yes" : "No"}</td>
-            <td className="border px-2 py-1">
-              {new Date(item.createdAt).toLocaleString()}
-            </td>
+
+            {columns.map((col, idx) => (
+              <td key={idx} className="border px-2 py-1">
+                {col.render
+                  ? col.render(item)
+                  : col.field?.split(".").reduce((o, k) => o?.[k], item) || "-"}
+              </td>
+            ))}
+
             <td className="border px-2 py-1 flex justify-center gap-2">
               <button
                 className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
@@ -493,10 +1049,7 @@ const DataTable: React.FC<DataTableProps> = ({
         ))
       ) : (
         <tr>
-          <td
-            colSpan={showImage ? 5 : 4}
-            className="text-center py-4 text-gray-500"
-          >
+          <td colSpan={columns.length + (showImage ? 2 : 1)} className="text-center py-4 text-gray-500">
             No records found
           </td>
         </tr>
