@@ -37,7 +37,7 @@ interface NewOrderForm {
     subResellerEmail?: string;
       // New customer fields
    newCustomer: {   // remove optional ?
-    resellerCustomerId: string;
+    resellerCustomerId?: string;
     name: string;
     email: string;
     phone?: string;
