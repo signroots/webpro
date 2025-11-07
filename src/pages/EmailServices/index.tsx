@@ -152,12 +152,16 @@ const Emails: React.FC = () => {
 
             {/* Month Picker */}
             <DatePicker
-              selected={selectedDate}
-              onChange={(date) => filterEmailsByMonth(date)}
-              dateFormat="MM"
-              showMonthYearPicker
-              placeholderText="Select Date"
-            />
+  selected={selectedDate}
+  onChange={(date) => {
+    if (Array.isArray(date)) return; // ignore multi-date case
+    filterEmailsByMonth(date);
+  }}
+  dateFormat="MM"
+  showMonthYearPicker
+  placeholderText="Select Date"
+/>
+
           </div>
         </div>
 
