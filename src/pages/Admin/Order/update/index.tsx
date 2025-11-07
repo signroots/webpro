@@ -49,8 +49,8 @@ interface OrderForm {
   client?: string;
   plans?: any[];
   newCustomer: {
-    c_name: string;
-    c_email: string;
+    c_name?: string;
+    c_email?: string;
     c_phone?: string;
     c_company?: string;
     c_address?: string;
@@ -187,28 +187,15 @@ const [storages, setStorages] = useState<Storage[]>([]);
   };
 
   // ------------------- INPUT & CHECKBOX HANDLERS -------------------
- const handleInputChange = (
-  e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-) => {
-  const { name, value } = e.target;
-
-  if (customerType === "new" && name.startsWith("newCustomer.")) {
-    const key = name.split(".")[1];
-    setFormData((prev) => ({
-      ...prev,
-      newCustomer: {
-        ...(prev.newCustomer || {}),
-        [key]: value,
-      },
-    }));
-  } else {
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  }
-};
-
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    if (customerType === "new" && name.startsWith("newCustomer.")) {
+      const key = name.split(".")[1];
+      setFormData((prev) => ({ ...prev, newCustomer: { ...(prev.newCustomer || {}), [key]: value } }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = e.target;
