@@ -62,12 +62,12 @@ interface NewOrderForm {
   subResellerEmail?: string;
   newCustomer: {
   c_name: string;
-  c_company: string;
-  c_address: string;
-  c_city: string;
-  c_gst: string;
-  c_zipCode: string;
-  c_phone: string;
+  c_company?: string;
+  c_address?: string;
+  c_city?: string;
+  c_gst?: string;
+  c_zipCode?: string;
+  c_phone?: string;
   c_email: string[];
   c_country: string;
   c_state: string;
