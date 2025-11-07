@@ -560,24 +560,28 @@ if (payload.microsoft_email) payload.google_email = false;
 
         {/* Phone */}
         <div>
-          <label className="block text-gray-700 font-medium mb-2">Phone</label>
-          <input
-            type="text"
-            name="newCustomer.c_phone"
-            value={formData.newCustomer?.c_phone || ""}
-            onChange={(e) => {
-              const val = e.target.value.replace(/\D/g, "");
-              if (val.length <= 10) {
-                setFormData((prev) => ({
-                  ...prev,
-                  newCustomer: { ...(prev.newCustomer || {}), c_phone: val },
-                }));
-              }
-            }}
-            placeholder="Enter 10-digit phone number"
-            className="w-full border rounded px-3 py-2"
-          />
-        </div>
+  <label className="block text-gray-700 font-medium mb-2">Phone</label>
+  <input
+    type="text"
+    name="newCustomer.c_phone"
+    value={formData.newCustomer?.c_phone || ""}
+    onChange={(e) => {
+      const val = e.target.value.replace(/\D/g, "");
+      if (val.length <= 10) {
+        setFormData((prev) => ({
+          ...prev,
+          newCustomer: {
+            ...prev.newCustomer!, // ✅ ensures required fields stay
+            c_phone: val,         // ✅ update only this field
+          },
+        }));
+      }
+    }}
+    placeholder="Enter 10-digit phone number"
+    className="w-full border rounded px-3 py-2"
+  />
+</div>
+
 
         {/* Email */}
         <div className="col-span-2">
