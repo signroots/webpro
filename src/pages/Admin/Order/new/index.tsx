@@ -199,11 +199,11 @@ useEffect(() => {
             (s) => s.name.toLowerCase() === "kerala"
           );
 
-          // ✅ Set defaults in form
+          // ✅ Safely update formData with non-null assertion
           setFormData((prev) => ({
             ...prev,
             newCustomer: {
-              ...(prev.newCustomer || {}),
+              ...prev.newCustomer!, // ✅ ensures all required keys stay
               c_country: india.code,
               c_state: kerala ? kerala.name : "",
             },
