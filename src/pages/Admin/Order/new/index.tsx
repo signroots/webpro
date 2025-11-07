@@ -247,16 +247,17 @@ const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectEle
     const key = name.split(".")[1] as keyof NewOrderForm["newCustomer"];
 
     setFormData((prev) => {
-      const updatedCustomer = { ...(prev.newCustomer || {}) };
+      // Use non-null assertion (!) to satisfy TypeScript that required fields exist
+      const updatedCustomer: NewOrderForm["newCustomer"] = { ...prev.newCustomer! };
 
       if (key === "c_email") {
-        // Only handle if you type in the comma-separated input
+        // Split comma-separated emails into an array
         updatedCustomer.c_email = value
           .split(",")
           .map((email) => email.trim())
           .filter(Boolean);
       } else if (key === "c_phone") {
-        // Allow only numbers and max 10 digits
+        // Allow only digits and max 10 characters
         updatedCustomer.c_phone = value.replace(/\D/g, "").slice(0, 10);
       } else {
         updatedCustomer[key] = value;
@@ -268,6 +269,7 @@ const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectEle
     setFormData((prev) => ({ ...prev, [name]: value }));
   }
 };
+
 
 const fetchPlansByEmailType = async (typeId: string, index: number) => {
   try {
