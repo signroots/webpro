@@ -163,16 +163,16 @@ const UpdateOrder: React.FC = () => {
   ) => {
     const { name, value } = e.target;
 
-    if (customerType === "new" && name.startsWith("newCustomer.")) {
-      const key = name.split(".")[1];
-      setFormData((prev) => ({
-        ...prev,
-        newCustomer: {
-          ...(prev.newCustomer || {}),
-          [key]: value,
-        },
-      }));
-    } else {
+   if (customerType === "new" && name.startsWith("newCustomer.")) {
+  const key = name.split(".")[1] as keyof OrderForm["newCustomer"];
+  setFormData((prev) => ({
+    ...prev,
+    newCustomer: {
+      ...prev.newCustomer,
+      [key]: value,
+    },
+  }));
+} else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
