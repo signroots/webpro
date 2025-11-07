@@ -36,7 +36,7 @@ interface OrderForm {
   subResellerEmail?: string;
 
   newCustomer: {
-    resellerCustomerId: string;
+    resellerCustomerId?: string;
     name: string;
     email: string;
     phone?: string;
