@@ -38,8 +38,8 @@ interface NewOrderForm {
       // New customer fields
    newCustomer: {   // remove optional ?
     resellerCustomerId?: string;
-    name: string;
-    email: string;
+    name?: string;
+    email?: string;
     phone?: string;
     company?: string;
     address?: string;
