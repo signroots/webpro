@@ -42,6 +42,18 @@ export const fetchOrders = async (): Promise<Order[]> => {
   });
   return response.data.data;
 };
+// ✅ Fetch DNS Orders (Cloudflare filter)
+// api.tsx
+export const fetchDNSOrders = async () => {
+  const token = localStorage.getItem("token"); 
+  const response = await axios.get(`${API_BASE_URL}/api/orders/dnsorders?filter=Cloudflare`,{
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response?.data?.data || [];
+};
+
 // ✅ Fetch orders by provider (Google Workspace or Microsoft 365)
 export const fetchOrdersByProvider = async (provider: string): Promise<Order[]> => {
   const response = await axios.get(`${FULL_API_URL}/orders/provider/${encodeURIComponent(provider)}`);

@@ -11,6 +11,7 @@ import CustomerOrders from "../../pages/Admin/Order/details";
 import UpdateOrder from "../../pages/Admin/Order/update";
 import Categories from "../../pages/Admin/Category";
 import UserTypes from "../../pages/Admin/UserTypes";
+import DnsOrder from "../../pages/Admin/DnsOrder";
 
 export default function AdminRoutes() {
   return (
@@ -29,6 +30,7 @@ export default function AdminRoutes() {
         <Route path="orders/new" element={<NewOrder />} />
         <Route path="orders/customer/:customerId" element={<CustomerOrders />} />
         <Route path="orders/update/:orderId" element={<UpdateOrder />} />
+        <Route path="dns-order" element={<DnsOrder />} /> 
 
         <Route path="categories" element={<Categories />} />
         <Route path="user-types" element={<UserTypes />} />

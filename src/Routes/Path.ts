@@ -1,4 +1,4 @@
-// paths.ts
+// src/routes/paths.ts
 
 export interface PathsType {
   signIn: string;
@@ -19,9 +19,11 @@ export interface PathsType {
       new: string;
       details: (orderId?: string | number) => string;
       edit: (orderId?: string | number) => string;
+      dnsOrder: string; // ✅ Added DNS Order
     };
     categories: string;
     userTypes: string;
+    dataManagement: string; // ✅ Added Data Management
   };
 
   Customer: {
@@ -56,9 +58,11 @@ const Paths: PathsType = {
       new: '/admin/orders/new',
       details: (orderId = ':orderId') => `/admin/orders/${orderId}`,
       edit: (orderId = ':orderId') => `/admin/orders/update/${orderId}`,
+      dnsOrder: '/admin/dns-order', // ✅ Added new route
     },
     categories: '/admin/categories',
     userTypes: '/admin/user-types',
+    dataManagement: '/admin/data-management', // ✅ Added new route
   },
 
   Customer: {
