@@ -127,6 +127,8 @@ const Orders: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
   const [customerType, setCustomerType] = useState<"existing" | "new" | undefined>(undefined);
   const [emailChecked, setEmailChecked] = useState(false);
+const [dropdownOpen, setDropdownOpen] = useState(false);
+
 
   // Selected order & modal type
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -418,6 +420,94 @@ const handleSubmit = async (e: React.FormEvent) => {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-4 mb-4 items-center">
+  {/* 🔍 Search Field */}
+  <input
+    type="text"
+    placeholder="Search domain..."
+    value={searchTerm}
+    onChange={(e) => setSearchTerm(e.target.value)}
+    className="border px-3 py-2 rounded-lg text-black"
+  />
+
+  {/* 🌐 Provider Dropdown */}
+  {/* Provider Dropdown */}
+<div className="relative inline-block w-60">
+  <button
+    type="button"
+    onClick={() => setDropdownOpen((prev) => !prev)}
+    className="w-full border px-4 py-2 rounded-lg bg-white flex items-center justify-between text-black"
+  >
+    <div className="flex items-center gap-2">
+      {provider === "Google Workspace" && (
+        <img src="/download.png" alt="Google Workspace" className="w-5 h-5" />
+      )}
+      {provider === "Microsoft 365" && (
+        <img src="/microsoft.png" alt="Microsoft 365" className="w-5 h-5" />
+      )}
+      {!provider && (
+        <img src="/reset.png" alt="All Providers" className="w-5 h-5" />
+      )}
+      <span>
+        {provider || "All Providers"}
+      </span>
+    </div>
+    <span className="text-gray-500">▼</span>
+  </button>
+
+  {dropdownOpen && (
+    <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg">
+      <div
+        onClick={() => {
+          setProvider(undefined);
+          setDropdownOpen(false);
+        }}
+        className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer"
+      >
+        <img src="/reset.png" alt="All Providers" className="w-5 h-5" />
+        <span>All Providers</span>
+      </div>
+
+      <div
+        onClick={() => {
+          setProvider("Google Workspace");
+          setDropdownOpen(false);
+        }}
+        className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer"
+      >
+        <img src="/download.png" alt="Google Workspace" className="w-5 h-5" />
+        <span>Google Workspace</span>
+      </div>
+
+      <div
+        onClick={() => {
+          setProvider("Microsoft 365");
+          setDropdownOpen(false);
+        }}
+        className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer"
+      >
+        <img src="/microsoft.png" alt="Microsoft 365" className="w-5 h-5" />
+        <span>Microsoft 365</span>
+      </div>
+    </div>
+  )}
+</div>
+
+
+
+  {/* ⚙️ Status Filter */}
+  <select
+    value={statusFilter || ""}
+    onChange={(e) => setStatusFilter(e.target.value || undefined)}
+    className="border px-3 py-2 rounded-lg text-black bg-white"
+  >
+    <option value="">All Status</option>
+    <option value="Active">Active</option>
+    <option value="Inactive">Inactive</option>
+    <option value="Expired">Expired</option>
+  </select>
+</div>
+
+      {/* <div className="flex flex-wrap gap-4 mb-4 items-center">
         <input
           type="text"
           placeholder="Search domain..."
@@ -464,7 +554,7 @@ const handleSubmit = async (e: React.FormEvent) => {
           <option value="Inactive">Inactive</option>
           <option value="Expired">Expired</option>
         </select>
-      </div>
+      </div> */}
 
       {/* Orders Table */}
       <div className="bg-white shadow rounded-lg overflow-x-auto">
