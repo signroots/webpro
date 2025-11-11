@@ -7,8 +7,8 @@ import Order, { IOrder } from "./models/Order"; // adjust path
 dayjs.extend(customParseFormat);
 
 // Connect to MongoDB
-mongoose
-  .connect("mongodb://127.0.0.1:27017/domain_management_system")
+mongoose.connect("mongodb://root:StrongRootPassword123@127.0.0.1:27017/webpro_db?authSource=admin")
+
   .then(() => console.log("✅ Connected to MongoDB"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 

@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import Order from "./models/Order";
 
-const MONGO_URI = "mongodb://127.0.0.1:27017/domain_management_system";
+const MONGO_URI ="mongodb://root:StrongRootPassword123@127.0.0.1:27017/webpro_db?authSource=admin";
 
 async function syncEmailServices() {
   try {
