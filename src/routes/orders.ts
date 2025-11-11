@@ -46,6 +46,148 @@ router.get('/existing_customers', async (_req: Request, res: Response): Promise<
 //   }
 // });
 
+router.get("/dnsorders", authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const loggedInUser = req.user;
+
+    if (!loggedInUser || !loggedInUser._id) {
+      console.log("Unauthorized access attempt.");
+      res.status(401).json({ success: false, error: "Unauthorized" });
+      return;
+    }
+
+    const { filter } = req.query;
+
+    const updateOrderStatuses = async (orders: any[]) => {
+      const today = new Date();
+
+      const updates = orders.map(async (order) => {
+        let newStatus = "";
+
+        if (!order.expiryDate || isNaN(new Date(order.expiryDate).getTime())) {
+          newStatus = "";
+        } else {
+          const expiryDate = new Date(order.expiryDate);
+          newStatus = expiryDate < today ? "EXPIRED" : "ACTIVE";
+        }
+
+        if (order.status !== newStatus) {
+          order.status = newStatus;
+          await order.save();
+        }
+
+        return order;
+      });
+
+      return Promise.all(updates);
+    };
+
+    const user = await User.findById(loggedInUser._id).populate("userType").exec();
+
+    if (user && user.userType && typeof user.userType === "object") {
+      const userRole = (user.userType as IUserType).name.toLowerCase();
+      console.log("Resolved user role (User model):", userRole);
+
+      // ---------------- ADMIN ----------------
+    if (userRole === "admin") {
+  const query: any = {};
+
+  if (filter === "Cloudflare") {
+    query.domainSource = "Cloudflare";
+    query.$or = [
+      { expiryDate: null },        // expiryDate is null
+      { expiryDate: { $exists: false } }, // expiryDate field does not exist
+    ];
+  }
+
+ 
+
+        let orders = await Order.find(query).populate("client", "c_name c_email").exec();
+        orders = await updateOrderStatuses(orders);
+
+        res.status(200).json({ success: true, data: orders });
+        return;
+      }
+
+      // ---------------- CUSTOMER ----------------
+      if (userRole === "customer") {
+        const customer = await Client.findOne({ userType: user._id }).exec();
+
+        if (!customer) {
+          res.status(404).json({ success: false, error: "Customer profile not found" });
+          return;
+        }
+
+        const query: any = { customer: customer._id };
+
+        if (filter === "cloudflare") {
+          query.domainSource = "cloudflare";
+          query.$or = [
+            { expiryDate: null },
+            { expiryDate: "" },
+            { expiryDate: { $exists: false } },
+          ];
+        }
+
+        let orders = await Order.find(query).populate("customer", "name email").exec();
+        orders = await updateOrderStatuses(orders);
+
+        res.status(200).json({
+          success: true,
+          customer: {
+            _id: customer._id,
+            name: customer.c_name,
+            email: customer.c_email,
+          },
+          data: orders,
+        });
+        return;
+      }
+    }
+
+    // ---------------- CLIENT ----------------
+    const client = await Client.findById(loggedInUser._id).populate("userType").exec();
+
+    if (client && client.userType && typeof client.userType === "object") {
+      const userRole = (client.userType as IUserType).name.toLowerCase();
+      console.log("Resolved user role (Customer model):", userRole);
+
+      if (userRole === "customer") {
+        const query: any = { client: client._id };
+
+        if (filter === "Cloudflare") {
+          query.domainSource = "Cloudflare";
+          query.$or = [
+            { expiryDate: null },
+            { expiryDate: "" },
+            { expiryDate: { $exists: false } },
+          ];
+        }
+
+        let orders = await Order.find(query).populate("client", "name email").exec();
+        orders = await updateOrderStatuses(orders);
+
+        res.status(200).json({
+          success: true,
+          client: {
+            _id: client._id,
+            name: client.c_name,
+            email: client.c_email,
+          },
+          data: orders,
+        });
+        return;
+      }
+    }
+
+    res.status(403).json({ success: false, error: "Access denied: Invalid role or user not found" });
+  } catch (err) {
+    console.error("❌ Error fetching orders:", err);
+    res.status(500).json({ success: false, error: "Server error" });
+  }
+});
+
+
 router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const loggedInUser = req.user;
@@ -450,122 +592,122 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
   }
 });
 // PUT update order
-router.put("/:id", async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { newCustomer, client: existingClient, is_customer, plans, ...rest }: any = req.body;
+// router.put("/:id", async (req: Request, res: Response): Promise<void> => {
+//   try {
+//     const { newCustomer, client: existingClient, is_customer, plans, ...rest }: any = req.body;
 
-    let clientId;
+//     let clientId;
 
-    // -------------------------
-    // Determine client
-    // -------------------------
-    if (is_customer) {
-      if (existingClient) {
-        // ✅ Handle both object and string client
-        const clientIdValue =
-          typeof existingClient === "object" && existingClient._id
-            ? existingClient._id
-            : existingClient;
+//     // -------------------------
+//     // Determine client
+//     // -------------------------
+//     if (is_customer) {
+//       if (existingClient) {
+//         // ✅ Handle both object and string client
+//         const clientIdValue =
+//           typeof existingClient === "object" && existingClient._id
+//             ? existingClient._id
+//             : existingClient;
 
-        if (!mongoose.Types.ObjectId.isValid(clientIdValue)) {
-          res.status(400).json({ success: false, message: "Invalid client ID" });
-          return;
-        }
+//         if (!mongoose.Types.ObjectId.isValid(clientIdValue)) {
+//           res.status(400).json({ success: false, message: "Invalid client ID" });
+//           return;
+//         }
 
-        clientId = new mongoose.Types.ObjectId(clientIdValue);
-      } else {
-        res.status(400).json({ success: false, message: "Existing client ID is required" });
-        return;
-      }
-    } else if (newCustomer?.c_name && newCustomer?.c_email?.length) {
-      // ✅ Create new client if not existing
-      const { _id, ...customerData } = newCustomer;
-      const createdClient = await Client.create(customerData);
-      clientId = createdClient._id;
-    } else {
-      res.status(400).json({ success: false, message: "New customer data is required" });
-      return;
-    }
+//         clientId = new mongoose.Types.ObjectId(clientIdValue);
+//       } else {
+//         res.status(400).json({ success: false, message: "Existing client ID is required" });
+//         return;
+//       }
+//     } else if (newCustomer?.c_name && newCustomer?.c_email?.length) {
+//       // ✅ Create new client if not existing
+//       const { _id, ...customerData } = newCustomer;
+//       const createdClient = await Client.create(customerData);
+//       clientId = createdClient._id;
+//     } else {
+//       res.status(400).json({ success: false, message: "New customer data is required" });
+//       return;
+//     }
 
-    // -------------------------
-    // Prepare update payload
-    // -------------------------
-    const updatePayload: any = {
-      ...rest,
-      client: clientId,
-      hoststorageId: rest.hoststorageId?._id || rest.hoststorageId,
-    };
+//     // -------------------------
+//     // Prepare update payload
+//     // -------------------------
+//     const updatePayload: any = {
+//       ...rest,
+//       client: clientId,
+//       hoststorageId: rest.hoststorageId?._id || rest.hoststorageId,
+//     };
 
-    // -------------------------
-    // Update order
-    // -------------------------
-    const updatedOrder = await Order.findByIdAndUpdate(req.params.id, updatePayload, {
-      new: true,
-      runValidators: true,
-    });
+//     // -------------------------
+//     // Update order
+//     // -------------------------
+//     const updatedOrder = await Order.findByIdAndUpdate(req.params.id, updatePayload, {
+//       new: true,
+//       runValidators: true,
+//     });
 
-    if (!updatedOrder) {
-      res.status(404).json({ success: false, message: "Order not found" });
-      return;
-    }
+//     if (!updatedOrder) {
+//       res.status(404).json({ success: false, message: "Order not found" });
+//       return;
+//     }
 
-    // -------------------------
-    // Handle Order Plans
-    // -------------------------
-    if (plans && Array.isArray(plans)) {
-      // ✅ Clear existing plans first
-      await OrderPlan.deleteMany({ orderId: updatedOrder._id });
+//     // -------------------------
+//     // Handle Order Plans
+//     // -------------------------
+//     if (plans && Array.isArray(plans)) {
+//       // ✅ Clear existing plans first
+//       await OrderPlan.deleteMany({ orderId: updatedOrder._id });
 
-      const planDocs = await Promise.all(
-        plans.map(async (p: any) => {
-          // ✅ Validate PlanEmail
-          let planId = p.planId;
-          if (!planId) {
-            const plan = await PlanEmail.findOne({ name: p.planName });
-            if (!plan) throw new Error(`PlanEmail not found: ${p.planName}`);
-            planId = plan._id;
-          }
+//       const planDocs = await Promise.all(
+//         plans.map(async (p: any) => {
+//           // ✅ Validate PlanEmail
+//           let planId = p.planId;
+//           if (!planId) {
+//             const plan = await PlanEmail.findOne({ name: p.planName });
+//             if (!plan) throw new Error(`PlanEmail not found: ${p.planName}`);
+//             planId = plan._id;
+//           }
 
-          // ✅ Validate TypeEmail
-          let emailTypeId = p.emailTypeId;
-          if (!emailTypeId) {
-            const emailType = await TypeEmail.findOne({ type: p.emailType });
-            if (!emailType) throw new Error(`TypeEmail not found: ${p.emailType}`);
-            emailTypeId = emailType._id;
-          }
+//           // ✅ Validate TypeEmail
+//           let emailTypeId = p.emailTypeId;
+//           if (!emailTypeId) {
+//             const emailType = await TypeEmail.findOne({ type: p.emailType });
+//             if (!emailType) throw new Error(`TypeEmail not found: ${p.emailType}`);
+//             emailTypeId = emailType._id;
+//           }
 
-          return {
-            orderId: updatedOrder._id,
-            planId: new mongoose.Types.ObjectId(planId),
-            emailTypeId: new mongoose.Types.ObjectId(emailTypeId),
-            registrationDate: new Date(p.registrationDate),
-            expiryDate: new Date(p.expiryDate),
-            noOfUsers: Number(p.noOfUsers || 1),
-          };
-        })
-      );
+//           return {
+//             orderId: updatedOrder._id,
+//             planId: new mongoose.Types.ObjectId(planId),
+//             emailTypeId: new mongoose.Types.ObjectId(emailTypeId),
+//             registrationDate: new Date(p.registrationDate),
+//             expiryDate: new Date(p.expiryDate),
+//             noOfUsers: Number(p.noOfUsers || 1),
+//           };
+//         })
+//       );
 
-      // ✅ Insert all plans
-      await OrderPlan.insertMany(planDocs);
-    }
+//       // ✅ Insert all plans
+//       await OrderPlan.insertMany(planDocs);
+//     }
 
-    // -------------------------
-    // Populate for response
-    // -------------------------
-    const populatedOrder = await Order.findById(updatedOrder._id)
-      .populate("client")
-      .populate({
-        path: "hoststorageId",
-        populate: [{ path: "hostType" }, { path: "hostSubType" }],
-      });
+//     // -------------------------
+//     // Populate for response
+//     // -------------------------
+//     const populatedOrder = await Order.findById(updatedOrder._id)
+//       .populate("client")
+//       .populate({
+//         path: "hoststorageId",
+//         populate: [{ path: "hostType" }, { path: "hostSubType" }],
+//       });
 
-    // ✅ Send success response
-    res.status(200).json({ success: true, data: populatedOrder });
-  } catch (err: any) {
-    console.error("Error updating order:", err);
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
+//     // ✅ Send success response
+//     res.status(200).json({ success: true, data: populatedOrder });
+//   } catch (err: any) {
+//     console.error("Error updating order:", err);
+//     res.status(500).json({ success: false, error: err.message });
+//   }
+// });
 
 
 // router.put("/:id", async (req: Request<{ id: string }, {}, Partial<IOrder>>, res: Response): Promise<void> => {
