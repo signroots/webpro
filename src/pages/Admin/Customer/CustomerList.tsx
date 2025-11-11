@@ -187,11 +187,10 @@ const CustomerList: React.FC<Props> = ({
         <tbody>
           {paginated.map((c, index) => {
             const slNo = startIndex + index + 1;
-            const emailArray: string[] = c.c_email
-              ? Array.isArray(c.c_email)
-                ? c.c_email[0].split(",")
-                : c.c_email.split(",")
-              : [];
+            const emailArray: string[] = Array.isArray(c.c_email)
+          ? (c.c_email[0] ? c.c_email[0].split(",") : [])
+          : (c.c_email ? c.c_email.split(",") : []);
+
             const firstEmail = emailArray[0] || "";
             const remainingEmails = emailArray.slice(1);
 
