@@ -494,11 +494,19 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
       }
       customerId = data.client.toString();
     } else if (data.newCustomer) {
+      // Ensure 'c_name' is provided
       if (!data.newCustomer.c_name || data.newCustomer.c_name.trim() === "") {
         res.status(400).json({ success: false, message: "New customer name is required" });
         return;
       }
 
+      // Ensure 'c_email' is provided and is a valid string
+      if (!data.newCustomer.c_email || typeof data.newCustomer.c_email !== "string" || data.newCustomer.c_email.trim() === "") {
+        res.status(400).json({ success: false, message: "New customer email is required and must be a valid string" });
+        return;
+      }
+
+      // Check if the email already exists
       const existingCustomer = await Client.findOne({
         c_email: data.newCustomer.c_email,
       });
@@ -506,6 +514,7 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
       if (existingCustomer) {
         customerId = existingCustomer._id.toString();
       } else {
+        // Create new customer
         const newCust = new Client(data.newCustomer);
         const savedCustomer = await newCust.save();
         customerId = savedCustomer._id.toString();
@@ -540,7 +549,7 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
       hoststorageId: data.storage || undefined,
     };
 
-    // Ensure domainSource is array
+    // Ensure domainSource is an array
     if (data.domainSource && typeof data.domainSource === "string") {
       mappedData.domainSource = data.domainSource;
     }
@@ -591,123 +600,125 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
     }
   }
 });
+
+
 // PUT update order
-// router.put("/:id", async (req: Request, res: Response): Promise<void> => {
-//   try {
-//     const { newCustomer, client: existingClient, is_customer, plans, ...rest }: any = req.body;
+router.put("/:id", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { newCustomer, client: existingClient, is_customer, plans, ...rest }: any = req.body;
 
-//     let clientId;
+    let clientId;
 
-//     // -------------------------
-//     // Determine client
-//     // -------------------------
-//     if (is_customer) {
-//       if (existingClient) {
-//         // ✅ Handle both object and string client
-//         const clientIdValue =
-//           typeof existingClient === "object" && existingClient._id
-//             ? existingClient._id
-//             : existingClient;
+    // -------------------------
+    // Determine client
+    // -------------------------
+    if (is_customer) {
+      if (existingClient) {
+        // ✅ Handle both object and string client
+        const clientIdValue =
+          typeof existingClient === "object" && existingClient._id
+            ? existingClient._id
+            : existingClient;
 
-//         if (!mongoose.Types.ObjectId.isValid(clientIdValue)) {
-//           res.status(400).json({ success: false, message: "Invalid client ID" });
-//           return;
-//         }
+        if (!mongoose.Types.ObjectId.isValid(clientIdValue)) {
+          res.status(400).json({ success: false, message: "Invalid client ID" });
+          return;
+        }
 
-//         clientId = new mongoose.Types.ObjectId(clientIdValue);
-//       } else {
-//         res.status(400).json({ success: false, message: "Existing client ID is required" });
-//         return;
-//       }
-//     } else if (newCustomer?.c_name && newCustomer?.c_email?.length) {
-//       // ✅ Create new client if not existing
-//       const { _id, ...customerData } = newCustomer;
-//       const createdClient = await Client.create(customerData);
-//       clientId = createdClient._id;
-//     } else {
-//       res.status(400).json({ success: false, message: "New customer data is required" });
-//       return;
-//     }
+        clientId = new mongoose.Types.ObjectId(clientIdValue);
+      } else {
+        res.status(400).json({ success: false, message: "Existing client ID is required" });
+        return;
+      }
+    } else if (newCustomer?.c_name && newCustomer?.c_email?.length) {
+      // ✅ Create new client if not existing
+      const { _id, ...customerData } = newCustomer;
+      const createdClient = await Client.create(customerData);
+      clientId = createdClient._id;
+    } else {
+      res.status(400).json({ success: false, message: "New customer data is required" });
+      return;
+    }
 
-//     // -------------------------
-//     // Prepare update payload
-//     // -------------------------
-//     const updatePayload: any = {
-//       ...rest,
-//       client: clientId,
-//       hoststorageId: rest.hoststorageId?._id || rest.hoststorageId,
-//     };
+    // -------------------------
+    // Prepare update payload
+    // -------------------------
+    const updatePayload: any = {
+      ...rest,
+      client: clientId,
+      hoststorageId: rest.hoststorageId?._id || rest.hoststorageId,
+    };
 
-//     // -------------------------
-//     // Update order
-//     // -------------------------
-//     const updatedOrder = await Order.findByIdAndUpdate(req.params.id, updatePayload, {
-//       new: true,
-//       runValidators: true,
-//     });
+    // -------------------------
+    // Update order
+    // -------------------------
+    const updatedOrder = await Order.findByIdAndUpdate(req.params.id, updatePayload, {
+      new: true,
+      runValidators: true,
+    });
 
-//     if (!updatedOrder) {
-//       res.status(404).json({ success: false, message: "Order not found" });
-//       return;
-//     }
+    if (!updatedOrder) {
+      res.status(404).json({ success: false, message: "Order not found" });
+      return;
+    }
 
-//     // -------------------------
-//     // Handle Order Plans
-//     // -------------------------
-//     if (plans && Array.isArray(plans)) {
-//       // ✅ Clear existing plans first
-//       await OrderPlan.deleteMany({ orderId: updatedOrder._id });
+    // -------------------------
+    // Handle Order Plans
+    // -------------------------
+    if (plans && Array.isArray(plans)) {
+      // ✅ Clear existing plans first
+      await OrderPlan.deleteMany({ orderId: updatedOrder._id });
 
-//       const planDocs = await Promise.all(
-//         plans.map(async (p: any) => {
-//           // ✅ Validate PlanEmail
-//           let planId = p.planId;
-//           if (!planId) {
-//             const plan = await PlanEmail.findOne({ name: p.planName });
-//             if (!plan) throw new Error(`PlanEmail not found: ${p.planName}`);
-//             planId = plan._id;
-//           }
+      const planDocs = await Promise.all(
+        plans.map(async (p: any) => {
+          // ✅ Validate PlanEmail
+          let planId = p.planId;
+          if (!planId) {
+            const plan = await PlanEmail.findOne({ name: p.planName });
+            if (!plan) throw new Error(`PlanEmail not found: ${p.planName}`);
+            planId = plan._id;
+          }
 
-//           // ✅ Validate TypeEmail
-//           let emailTypeId = p.emailTypeId;
-//           if (!emailTypeId) {
-//             const emailType = await TypeEmail.findOne({ type: p.emailType });
-//             if (!emailType) throw new Error(`TypeEmail not found: ${p.emailType}`);
-//             emailTypeId = emailType._id;
-//           }
+          // ✅ Validate TypeEmail
+          let emailTypeId = p.emailTypeId;
+          if (!emailTypeId) {
+            const emailType = await TypeEmail.findOne({ type: p.emailType });
+            if (!emailType) throw new Error(`TypeEmail not found: ${p.emailType}`);
+            emailTypeId = emailType._id;
+          }
 
-//           return {
-//             orderId: updatedOrder._id,
-//             planId: new mongoose.Types.ObjectId(planId),
-//             emailTypeId: new mongoose.Types.ObjectId(emailTypeId),
-//             registrationDate: new Date(p.registrationDate),
-//             expiryDate: new Date(p.expiryDate),
-//             noOfUsers: Number(p.noOfUsers || 1),
-//           };
-//         })
-//       );
+          return {
+            orderId: updatedOrder._id,
+            planId: new mongoose.Types.ObjectId(planId),
+            emailTypeId: new mongoose.Types.ObjectId(emailTypeId),
+            registrationDate: new Date(p.registrationDate),
+            expiryDate: new Date(p.expiryDate),
+            noOfUsers: Number(p.noOfUsers || 1),
+          };
+        })
+      );
 
-//       // ✅ Insert all plans
-//       await OrderPlan.insertMany(planDocs);
-//     }
+      // ✅ Insert all plans
+      await OrderPlan.insertMany(planDocs);
+    }
 
-//     // -------------------------
-//     // Populate for response
-//     // -------------------------
-//     const populatedOrder = await Order.findById(updatedOrder._id)
-//       .populate("client")
-//       .populate({
-//         path: "hoststorageId",
-//         populate: [{ path: "hostType" }, { path: "hostSubType" }],
-//       });
+    // -------------------------
+    // Populate for response
+    // -------------------------
+    const populatedOrder = await Order.findById(updatedOrder._id)
+      .populate("client")
+      .populate({
+        path: "hoststorageId",
+        populate: [{ path: "hostType" }, { path: "hostSubType" }],
+      });
 
-//     // ✅ Send success response
-//     res.status(200).json({ success: true, data: populatedOrder });
-//   } catch (err: any) {
-//     console.error("Error updating order:", err);
-//     res.status(500).json({ success: false, error: err.message });
-//   }
-// });
+    // ✅ Send success response
+    res.status(200).json({ success: true, data: populatedOrder });
+  } catch (err: any) {
+    console.error("Error updating order:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 
 // router.put("/:id", async (req: Request<{ id: string }, {}, Partial<IOrder>>, res: Response): Promise<void> => {
@@ -821,26 +832,26 @@ router.get(
     }
   }
 );
-router.put("/:id", async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { id } = req.params;
-    const updateData = req.body as Partial<IOrder>;
+// router.put("/:id", async (req: Request, res: Response): Promise<void> => {
+//   try {
+//     const { id } = req.params;
+//     const updateData = req.body as Partial<IOrder>;
 
-    const updatedOrder = await mongoose.model<IOrder>("Order").findByIdAndUpdate(id, updateData, {
-      new: true, // return the updated document
-      runValidators: true, // validate before updating
-    }).populate("customer registrarName"); // optional: populate references
+//     const updatedOrder = await mongoose.model<IOrder>("Order").findByIdAndUpdate(id, updateData, {
+//       new: true, // return the updated document
+//       runValidators: true, // validate before updating
+//     }).populate("customer registrarName"); // optional: populate references
 
-    if (!updatedOrder) {
-      res.status(404).json({ message: "Order not found" });
-      return;
-    }
+//     if (!updatedOrder) {
+//       res.status(404).json({ message: "Order not found" });
+//       return;
+//     }
 
-    res.status(200).json(updatedOrder);
-  } catch (error) {
-    console.error("Error updating order:", error);
-    res.status(500).json({ message: "Server error", error });
-  }
-});
+//     res.status(200).json(updatedOrder);
+//   } catch (error) {
+//     console.error("Error updating order:", error);
+//     res.status(500).json({ message: "Server error", error });
+//   }
+// });
 
 export default router;
