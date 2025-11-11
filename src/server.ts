@@ -24,8 +24,6 @@ import storageRoutes from "./routes/storageroute"
 import path from "path";
 // Import cron starter
 import { startDomainSyncCron } from "./utils/cronjob";
-// import { use } from "react";
-
 dotenv.config();
 const app = express();
 
