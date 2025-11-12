@@ -132,7 +132,7 @@ const [storages, setStorages] = useState<Storage[]>([]);
   // ------------------- FETCH EMAIL TYPES -------------------
   const fetchPlansByEmailType = async (typeId: string, index: number) => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/${typeId}`);
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/plans/planlist/${typeId}`);
       if (res.data.success) {
         setEmailPlans((prev) => {
           const updated = [...prev];
@@ -256,7 +256,7 @@ const [storages, setStorages] = useState<Storage[]>([]);
   useEffect(() => {
     const fetchEmailTypes = async () => {
       try {
-         const res = await axios.get(`${API_BASE_URL}/api/typeemail`);
+        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/typeemail`);
         if (res.data.success) setEmailTypes(res.data.data.filter((t: any) => t.isActive));
       } catch (err) {
         console.error(err);
@@ -265,7 +265,7 @@ const [storages, setStorages] = useState<Storage[]>([]);
 
     const fetchHostTypes = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/api/hosttypes`);
+        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/hosttypes`);
         setHostTypes(res.data.data || []);
       } catch (err) {
         console.error(err);
@@ -341,7 +341,7 @@ useEffect(() => {
             let plans: any[] = [];
             if (typeObj) {
               const planRes = await axios.get(
-                `${API_BASE_URL}/api/plans/planlist/${typeObj._id}`
+                `${import.meta.env.VITE_API_BASE_URL}/api/plans/planlist/${typeObj._id}`
               );
               plans = planRes.data.data.filter((pl: any) => pl.isActive);
             }
@@ -496,12 +496,12 @@ const handleHostTypeChange = (hostTypeId: string) => {
 
       const res = await axios.put(`${import.meta.env.VITE_API_BASE_URL}/api/orders/${orderId}`, payload);
 
-      if (res.data.success) {
-        alert("✅ Order updated successfully!");
-        navigate("/admin/orders");
-      } else {
-        alert("❌ Failed to update order");
-      }
+     if (res.data && res.data._id) {
+  alert("✅ Order updated successfully!");
+  navigate("/admin/orders");
+} else {
+  alert("❌ Failed to update order");
+}
     } catch (err) {
       console.error(err);
       setError("Failed to update order");
@@ -568,7 +568,7 @@ return (
 {customerType === "new" && (
   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
     {[
-      { key: "c_name", label: "Nameeeeeeeeeeeee" },
+      { key: "c_name", label: "Name" },
       { key: "c_email", label: "Email" },
       { key: "c_phone", label: "Phone" },
       { key: "c_company", label: "Company" },
