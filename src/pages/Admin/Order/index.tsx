@@ -890,22 +890,25 @@ const resetFormData = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
               <InfoItem label="Domain" value={selectedOrder.domainName} />
               <InfoItem label="Status" value={selectedOrder.status || "Unknown"} />
-              <InfoItem
+  <InfoItem
   label="Registration Date"
   value={
     selectedOrder.registrationDate
-      ? new Date(selectedOrder.registrationDate).toLocaleDateString("en-GB") // dd/mm/yyyy
+      ? new Date(selectedOrder.registrationDate)
+          .toLocaleDateString("en-GB")
+          .replaceAll("/", "-")
       : "N/A"
   }
 />
-<InfoItem
+
+{/* <InfoItem
   label="Expiry Date"
   value={
     selectedOrder.expiryDate
-      ? new Date(selectedOrder.expiryDate).toLocaleDateString("en-GB")
+      ? new Date(selectedOrder.expiryDate).toLocaleDateString("en-GB").replaceAll("/","-")
       : "N/A"
   }
-/>
+/> */}
 
               <InfoItem label="Expiry Date" value={selectedOrder.expiryDate? new Date(selectedOrder.expiryDate).toLocaleDateString("en-GB"):"N/A"} />
               <InfoItem label="Provider" value={selectedOrder.provider} />
