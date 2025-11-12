@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { fetchCountries, fetchStatesByCountry } from "../../Customer/api";
-
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 interface EmailPlan {
   email_service?: string;
   selected_plan?: string;
@@ -132,7 +132,7 @@ const [storages, setStorages] = useState<Storage[]>([]);
   // ------------------- FETCH EMAIL TYPES -------------------
   const fetchPlansByEmailType = async (typeId: string, index: number) => {
     try {
-      const res = await axios.get(`http://192.168.220.35:5000/api/plans/planlist/${typeId}`);
+      const res = await axios.get(`${API_BASE_URL}/${typeId}`);
       if (res.data.success) {
         setEmailPlans((prev) => {
           const updated = [...prev];
@@ -256,7 +256,7 @@ const [storages, setStorages] = useState<Storage[]>([]);
   useEffect(() => {
     const fetchEmailTypes = async () => {
       try {
-        const res = await axios.get("http://192.168.220.35:5000/api/typeemail");
+         const res = await axios.get(`${API_BASE_URL}/api/typeemail`);
         if (res.data.success) setEmailTypes(res.data.data.filter((t: any) => t.isActive));
       } catch (err) {
         console.error(err);
@@ -265,7 +265,7 @@ const [storages, setStorages] = useState<Storage[]>([]);
 
     const fetchHostTypes = async () => {
       try {
-        const res = await axios.get("http://192.168.220.35:5000/api/hosttypes");
+        const res = await axios.get(`${API_BASE_URL}/api/hosttypes`);
         setHostTypes(res.data.data || []);
       } catch (err) {
         console.error(err);
@@ -341,7 +341,7 @@ useEffect(() => {
             let plans: any[] = [];
             if (typeObj) {
               const planRes = await axios.get(
-                `http://192.168.220.35:5000/api/plans/planlist/${typeObj._id}`
+                `${API_BASE_URL}/api/plans/planlist/${typeObj._id}`
               );
               plans = planRes.data.data.filter((pl: any) => pl.isActive);
             }
