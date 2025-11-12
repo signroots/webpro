@@ -901,16 +901,16 @@ const resetFormData = () => {
   }
 />
 
-{/* <InfoItem
+<InfoItem
   label="Expiry Date"
   value={
     selectedOrder.expiryDate
       ? new Date(selectedOrder.expiryDate).toLocaleDateString("en-GB").replaceAll("/","-")
       : "N/A"
   }
-/> */}
+/>
 
-              <InfoItem label="Expiry Date" value={selectedOrder.expiryDate? new Date(selectedOrder.expiryDate).toLocaleDateString("en-GB"):"N/A"} />
+              {/* <InfoItem label="Expiry Date" value={selectedOrder.expiryDate? new Date(selectedOrder.expiryDate).toLocaleDateString("en-GB"):"N/A"} /> */}
               <InfoItem label="Provider" value={selectedOrder.provider} />
               <InfoItem label="Subscription" value={selectedOrder.subscription} />
             </div>
