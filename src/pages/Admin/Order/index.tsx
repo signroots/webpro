@@ -215,7 +215,7 @@ const handleView = async (order: Order) => {
   // 👇 open modal immediately
   setModalType("view");
   setSelectedOrder(null); // clear previous data
-  setLoading(true);
+  // setLoading(true);
 
   try {
     const latestOrder = await fetchCustomerOrder(order._id);
@@ -894,9 +894,11 @@ const resetFormData = () => {
   label="Registration Date"
   value={
     selectedOrder.registrationDate
-      ? new Date(selectedOrder.registrationDate)
-          .toLocaleDateString("en-GB")
-          .replaceAll("/", "-")
+      ? new Date(selectedOrder.registrationDate).toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }).replaceAll(" ", "-")
       : "N/A"
   }
 />
@@ -905,7 +907,11 @@ const resetFormData = () => {
   label="Expiry Date"
   value={
     selectedOrder.expiryDate
-      ? new Date(selectedOrder.expiryDate).toLocaleDateString("en-GB").replaceAll("/","-")
+      ? new Date(selectedOrder.expiryDate).toLocaleDateString("en-GB",{
+        day: "2-digit",
+          month: "short",
+          year: "numeric",
+      }).replaceAll("/","-")
       : "N/A"
   }
 />
