@@ -661,35 +661,22 @@ const resetFormData = () => {
                  {/* Services */}
 <td className="px-6 py-4 flex items-center gap-2">
   {/* Domain Source */}
-  {order.domainSource ? (
-    order.domainSource.toLowerCase() === "resellerclub" ? (
-      <img
-        src="/resellerclub-logo-2x.png"
-        className="w-6 h-6"
-        title="ResellerClub"
-      />
-    ) : order.domainSource.toLowerCase() === "cloudflare" ? (
-      <SiCloudflare
-        className="w-6 h-6 text-orange-500"
-        title="Cloudflare"
-      />
-    ) : order.domainSource.toLowerCase() === "hostinger" ? (
-      <SiHostinger
-        className="w-6 h-6 text-blue-500"
-        title="Hostinger"
-      />
-    ) : (
-      <FaGlobe
-        className="w-6 h-6 text-gray-400"
-        title={order.domainSource}
-      />
-    )
+{order.domainSource ? (
+  order.domainSource.toLowerCase() === "resellerclub" ? (
+    <img src="/images/resellerclub.png" className="w-6 h-6" title="ResellerClub" />
+  ) : order.domainSource.toLowerCase() === "cloudflare" ? (
+    <img src="/images/cloudflare.png" className="w-8 h-8 " title="Cloudflare" />
+  ) : order.domainSource.toLowerCase() === "hostinger" ? (
+    <SiHostinger className="w-6 h-6 text-blue-500" title="Hostinger" />
+  ) : order.domainSource.toLowerCase() === "ae server" ? (
+    <img src="/images/aeserverlogo.png" className="w-8 h-8 " title="AE Server" />
   ) : (
-    <FaGlobe
-      className="w-6 h-6 text-gray-300"
-      title="No Domain Source"
-    />
-  )}
+    <FaGlobe className="w-6 h-6 text-gray-400" title={order.domainSource} />
+  )
+) : (
+  <FaGlobe className="w-6 h-6 text-gray-300" title="No Domain Source" />
+)}
+
 
   {/* Email Service */}
   {order.google_email ? (
@@ -712,14 +699,19 @@ const resetFormData = () => {
   )}
 
   {/* Hosting */}
-  <FaServer
-    className="w-5 h-5 text-purple-400"
-    title="Hosting"
-  />
+<FaServer
+  className={`w-5 h-5 ${
+    order.hosting ? "text-purple-400" : "text-gray-400 opacity-40"
+  }`}
+  title="Hosting"
+/>
+
 
   {/* Website */}
   <FaLaptopCode
-    className="w-5 h-5 text-pink-400"
+    className={`w-5 h-5 ${
+    order.website_flag ? "text-purple-400" : "text-gray-400 opacity-40"
+  }`}
     title="Website"
   />
 </td>
