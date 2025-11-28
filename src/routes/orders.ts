@@ -477,25 +477,32 @@ router.get("/:id", async (req: Request<{ id: string }>, res: Response): Promise<
     }
 
     // Fetch related email plans
-    const orderPlansRaw = await OrderPlan.find({ orderId: order._id })
-      .populate({
-        path: "planId",
-        model: "PlanEmail",
-        populate: { path: "emailType", model: "TypeEmail" },
-      })
-      .lean();
+   const orderPlansRaw = await OrderPlan.find({ orderId: order._id })
+  .populate({
+    path: "planId",
+    model: "PlanEmail",
+  })
+  .populate({
+    path: "emailTypeId",
+    model: "TypeEmail",
+  })
+  .lean();
 
-    const orderPlans: IOrderPlanResponse[] = orderPlansRaw.map((p: any) => ({
-      _id: p._id.toString(),
-      orderId: p.orderId.toString(),
-      planName: p.planId?.plan || "",
-      planId: p.planId?._id?.toString() || "",
-      emailType: p.planId?.emailType?.name || "",
-      serviceType: "email",
-      registrationDate: p.registrationDate,
-      expiryDate: p.expiryDate,
-      noOfUsers: p.noOfUsers,
-    }));
+
+ const orderPlans: IOrderPlanResponse[] = orderPlansRaw.map((p: any) => ({
+  _id: p._id.toString(),
+  orderId: p.orderId.toString(),
+  planName: p.planId?.plan || "",
+  planId: p.planId?._id?.toString() || "",
+  emailType: p.emailTypeId?.name || "",  // ✅ now shows "Microsoft 365"
+  serviceType: p.type,
+  type: p.type,
+  registrationDate: p.registrationDate,
+  expiryDate: p.expiryDate,
+  noOfUsers: p.noOfUsers,
+}));
+
+
 
     // Merge client and customer details
     const clientData = order.client
@@ -834,6 +841,7 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
             registrationDate: new Date(p.registrationDate),
             expiryDate: new Date(p.expiryDate),
             noOfUsers: Number(p.noOfUsers || 1),
+             type: p.type,
           };
         })
       );
@@ -972,6 +980,23 @@ router.get(
     }
   }
 );
+router.get("/orderplans/:orderid", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const orderplans = await OrderPlan.find({ orderId: req.params.orderid });
+
+    if (!orderplans || orderplans.length === 0) {
+      res.status(404).json({ error: "No order plans found for this order" });
+      return;
+    }
+
+    res.json(orderplans);
+  } catch (err) {
+    console.error("Error fetching order plans:", err);
+    res.status(500).json({ error: "Failed to fetch order plans" });
+  }
+});
+
+
 // router.put("/:id", async (req: Request, res: Response): Promise<void> => {
 //   try {
 //     const { id } = req.params;
@@ -993,5 +1018,6 @@ router.get(
 //     res.status(500).json({ message: "Server error", error });
 //   }
 // });
+
 
 export default router;
