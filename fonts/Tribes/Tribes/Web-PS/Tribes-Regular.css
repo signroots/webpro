@@ -1,0 +1,9 @@
+/* Webfont: Tribes-Regular */@font-face {
+    font-family: 'Tribes';
+    src: url('Voodo-Regular.woff2') format('woff2'), /* Modern Browsers */
+         url('Voodo-Regular.ttf') format('truetype'); /* Safari, Android, iOS */
+             font-style: normal;
+    font-weight: normal;
+    text-rendering: optimizeLegibility;
+}
+

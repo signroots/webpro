@@ -1,0 +1,12 @@
+/* Webfont: Malak-Italic-Demo */@font-face {
+    font-family: 'MalakDemo';
+    src: url('Malak-Italic-Demo.eot'); /* IE9 Compat Modes */
+    src: url('Malak-Italic-Demo.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+         url('Malak-Italic-Demo.woff') format('woff'), /* Modern Browsers */
+         url('Malak-Italic-Demo.ttf') format('truetype'), /* Safari, Android, iOS */
+         url('Malak-Italic-Demo.svg#Malak-Italic-Demo') format('svg'); /* Legacy iOS */
+    font-style: italic;
+    font-weight: normal;
+    text-rendering: optimizeLegibility;
+}
+

@@ -1,0 +1,33 @@
+FONTLOG for the Aneo fonts
+
+This file provides detailed information on the Aneo fonts.
+This information should be distributed along with the Aneo fonts
+and any derivative works.
+
+Basic Font Information
+
+Aneo is a family of unicode fonts that supports basic Latin
+and Greek languages and could be expanded to support other scripts and variants.
+
+ChangeLog
+
+12 August 2017 (Anastasios Pappas) Aneo Regular v1.0
+- Initial release
+
+12 August 2017 (Anastasios Pappas) Aneo Bold v1.0
+- Initial release
+
+12 August 2017 (Anastasios Pappas) Aneo Italic v1.0
+- Initial release
+
+12 August 2017 (Anastasios Pappas) Aneo Bold Italic v1.0
+- Initial release
+
+Acknowledgements
+
+If you make modifications be sure to add your name (N), email (E), web-address
+(if you have one) (W) and description (D). This list is in alphabetical order.
+
+N: Anastasios Pappas
+W: http://rbdk.eu
+D: UI/UX Designer - Original glyphs

@@ -1,0 +1,12 @@
+/* Webfont: EdinguDemo */@font-face {
+    font-family: 'EdinguDemo';
+    src: url('EdinguDemo.eot'); /* IE9 Compat Modes */
+    src: url('EdinguDemo.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+         url('EdinguDemo.woff') format('woff'), /* Modern Browsers */
+         url('EdinguDemo.ttf') format('truetype'), /* Safari, Android, iOS */
+         url('EdinguDemo.svg#EdinguDemo') format('svg'); /* Legacy iOS */
+    font-style: normal;
+    font-weight: normal;
+    text-rendering: optimizeLegibility;
+}
+
