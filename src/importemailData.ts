@@ -9,14 +9,13 @@ import { PlanEmail } from "./models/PlanEmail";
 import { TypeEmail } from "./models/TypeEmail";
 
 dayjs.extend(customParseFormat);
-
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/yourdbname';
 // ----------------------------------
 // CONNECT TO MONGODB
 // ----------------------------------
-mongoose
-  .connect("mongodb://127.0.0.1:27017/domain_management_system")
-  .then(() => console.log("✅ Connected to MongoDB"))
-  .catch((err) => console.error("❌ MongoDB connection error:", err));
+mongoose.
+  connect(MONGO_URI)
+  console.log('✅ Connected to MongoDB');
 
 /* ----------------------------------
    HELPERS
