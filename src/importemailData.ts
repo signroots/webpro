@@ -13,10 +13,15 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/yourdbname
 // ----------------------------------
 // CONNECT TO MONGODB
 // ----------------------------------
-mongoose.
-  connect(MONGO_URI)
-  console.log('✅ Connected to MongoDB');
-
+mongoose.connect(MONGO_URI)
+  .then(() => {
+    console.log('✅ Connected to MongoDB');
+    // start your import logic here
+  })
+  .catch((err) => {
+    console.error('❌ MongoDB Connection Error:', err);
+    process.exit(1);
+  });
 /* ----------------------------------
    HELPERS
 ---------------------------------- */
