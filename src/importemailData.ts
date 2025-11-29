@@ -6,8 +6,10 @@ import { Order } from "./models/Order";
 import { OrderPlan } from "./models/OrderPlan";
 import { PlanEmail } from "./models/PlanEmail";
 import { TypeEmail } from "./models/TypeEmail";
+import dotenv from 'dotenv';
+dotenv.config();
 dayjs.extend(customParseFormat);
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/yourdbname';
+const MONGO_URI =  process.env.MONGO_URI!;
 // ----------------------------------
 // CONNECT TO MONGODB
 // ----------------------------------
