@@ -63,19 +63,20 @@ async function getEmailTypeId(typeName: string) {
 async function getPlanId(planName: string, typeName: string) {
   if (!planName || !typeName) return null;
 
-  const emailType = await getEmailTypeId(typeName);
+  const emailType = await TypeEmail.findOne({ name: typeName });
+  if (!emailType) throw new Error(`TypeEmail '${typeName}' not found`);
 
-  let plan = await PlanEmail.findOne({ plan: planName, emailType });
-
+  let plan = await PlanEmail.findOne({ plan: planName, emailType: emailType._id });
   if (!plan) {
     plan = await PlanEmail.create({
       plan: planName,
-      emailType,
+      emailType: emailType._id,
     });
   }
 
   return plan._id;
 }
+
 
 /* ----------------------------------
    READ CSV FILE
