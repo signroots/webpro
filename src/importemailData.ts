@@ -177,7 +177,7 @@ const hasMSOffice = !!(row.ms_plan && row.ms_users > 0);
           orderId,
           planId: await getPlanId(row.email_plan, "Email Licence"),
           // emailTypeId: await getEmailTypeId("Email Licence"),
-          emailTypeId: "69294e938b1a73e433793f08",
+          emailTypeId: "690ee93ad56f11bcc3d0f904",
 
           registrationDate: regDate,
           expiryDate: expDate,
@@ -198,7 +198,7 @@ const hasMSOffice = !!(row.ms_plan && row.ms_users > 0);
         await OrderPlan.create({
           orderId,
           planId: await getPlanId(row.storage_plan, "Storage"),
-          emailTypeId: "69294e938b1a73e433793f08",
+          emailTypeId: "690ee93ad56f11bcc3d0f904",
 
           registrationDate: regDate,
           expiryDate: expDate,
@@ -219,7 +219,7 @@ const hasMSOffice = !!(row.ms_plan && row.ms_users > 0);
         await OrderPlan.create({
           orderId,
           planId: await getPlanId(row.ms_plan, "MS Office"),
-          emailTypeId: "69294e938b1a73e433793f08",
+          emailTypeId: "690ee93ad56f11bcc3d0f904",
 
           registrationDate: regDate,
           expiryDate: expDate,
