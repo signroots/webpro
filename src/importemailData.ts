@@ -2,12 +2,10 @@ import mongoose from "mongoose";
 import * as XLSX from "xlsx";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
-
-import Order from "./models/Order";
+import { Order } from "./models/Order";
 import { OrderPlan } from "./models/OrderPlan";
 import { PlanEmail } from "./models/PlanEmail";
 import { TypeEmail } from "./models/TypeEmail";
-
 dayjs.extend(customParseFormat);
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/yourdbname';
 // ----------------------------------
