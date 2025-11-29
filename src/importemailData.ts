@@ -172,33 +172,50 @@ const hasMSOffice = !!(row.ms_plan && row.ms_users > 0);
       /* ---------------- ORDER PLAN TABLE ---------------- */
 
       // EMAIL PLAN
-      if (row.email_plan && row.email_users > 0) {
-        await OrderPlan.create({
-          orderId,
-          planId: await getPlanId(row.email_plan, "Email Licence"),
-          // emailTypeId: await getEmailTypeId("Email Licence"),
-          emailTypeId: "690ee93ad56f11bcc3d0f904",
+    // EMAIL PLAN
+if (row.email_plan && row.email_users > 0) {
+  // Fetch plan ID
+  const planId = await getPlanId(row.email_plan, "Email Licence");
 
-          registrationDate: regDate,
-          expiryDate: expDate,
+  // Fetch Microsoft 365 type id
+  const microsoftType = await TypeEmail.findOne({ name: "Microsoft 365" });
+  if (!microsoftType) {
+    throw new Error("TypeEmail 'Microsoft 365' does not exist in the database");
+  }
 
-          noOfUsers: row.email_users,
-          type: "email",
+  const emailTypeId = microsoftType._id;
 
-          adminEmail: row.adminEmail,
-          adminPassword: row.adminPassword,
-          status: row.status,
-        });
+  // Create the order plan
+  await OrderPlan.create({
+    orderId,
+    planId,
+    emailTypeId,
+    registrationDate: regDate,
+    expiryDate: expDate,
+    noOfUsers: row.email_users,
+    type: "email",
+    adminEmail: row.adminEmail,
+    adminPassword: row.adminPassword,
+    status: row.status,
+  });
 
-        console.log(`📨 Email Plan Added: ${row.domain}`);
-      }
+  console.log(`📨 Email Plan Added: ${row.domain}`);
+}
+
 
       // STORAGE PLAN
       if (row.storage_plan && row.storage_users > 0) {
+        // Fetch Microsoft 365 type id
+  const microsoftType = await TypeEmail.findOne({ name: "Microsoft 365" });
+  if (!microsoftType) {
+    throw new Error("TypeEmail 'Microsoft 365' does not exist in the database");
+  }
+
+  const emailTypeId = microsoftType._id;
         await OrderPlan.create({
           orderId,
           planId: await getPlanId(row.storage_plan, "Storage"),
-          emailTypeId: "690ee93ad56f11bcc3d0f904",
+          emailTypeId,
 
           registrationDate: regDate,
           expiryDate: expDate,
@@ -216,10 +233,16 @@ const hasMSOffice = !!(row.ms_plan && row.ms_users > 0);
 
       // MS OFFICE PLAN
       if (row.ms_plan && row.ms_users > 0) {
+          const microsoftType = await TypeEmail.findOne({ name: "Microsoft 365" });
+  if (!microsoftType) {
+    throw new Error("TypeEmail 'Microsoft 365' does not exist in the database");
+  }
+
+  const emailTypeId = microsoftType._id;
         await OrderPlan.create({
           orderId,
           planId: await getPlanId(row.ms_plan, "MS Office"),
-          emailTypeId: "690ee93ad56f11bcc3d0f904",
+          emailTypeId,
 
           registrationDate: regDate,
           expiryDate: expDate,
