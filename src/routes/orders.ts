@@ -899,30 +899,36 @@ router.delete("/:id", async (req: Request<{ id: string }>, res: Response): Promi
 
 // ✅ GET orders by provider
 // ✅ GET orders by provider
-router.get(
-  "/provider/:name",
-  async (req: Request<{ name: string }>, res: Response): Promise<void> => {
-    try {
-      const provider = req.params.name; // e.g. "Google Workspace"
+router.get("/provider/:name", async (req, res) => {
+  try {
+    const provider = req.params.name;
 
-      // Filter by exact provider value
-      const orders = await mongoose.model<IOrder>("Order").find({ provider })
-        .populate("customer")
-        .exec();
+    const orders = await mongoose
+      .model("Order")
+      .find({ provider })
+      .populate("client")     // ⭐ include related client data
+      .populate("customer")   // for backward compatibility
+      .exec();
 
-      res.status(200).json({
-        success: true,
-        count: orders.length,
-        data: orders,
-      });
-    } catch (err) {
-      res.status(500).json({
-        success: false,
-        error: (err as Error).message,
-      });
-    }
+    res.status(200).json({
+      success: true,
+      count: orders.length,
+      data: orders,           // ✔ identical to /api/orders response
+    });
+
+  } catch (err) {
+    console.error(err);
+
+    const message = err instanceof Error ? err.message : "Unknown error";
+
+    res.status(500).json({
+      success: false,
+      error: message,
+    });
   }
-);
+});
+
+
 router.get(
   "/customer_order_details/:customerId",
   async (req: Request<{ customerId: string }>, res: Response): Promise<void> => {

@@ -48,17 +48,17 @@ function parseMaybeDate(value: any): Date | null {
    LOOKUP HELPERS
 ---------------------------------- */
 
-async function getEmailTypeId(typeName: string) {
-  if (!typeName) return null;
+// async function getEmailTypeId(typeName: string) {
+//   if (!typeName) return null;
 
-  let type = await TypeEmail.findOne({ name: typeName });
+//   let type = await TypeEmail.findOne({ name: typeName });
 
-  if (!type) {
-    type = await TypeEmail.create({ name: typeName });
-  }
+//   if (!type) {
+//     type = await TypeEmail.create({ name: typeName });
+//   }
 
-  return type._id;
-}
+//   return type._id;
+// }
 
 async function getPlanId(planName: string, typeName: string) {
   if (!planName || !typeName) return null;
@@ -176,7 +176,7 @@ const hasMSOffice = !!(row.ms_plan && row.ms_users > 0);
     // EMAIL PLAN
 if (row.email_plan && row.email_users > 0) {
   // Fetch plan ID
-  const planId = await getPlanId(row.email_plan, "Email Licence");
+  const planId = await getPlanId(row.email_plan, "Microsoft 365");
 
   // Fetch Microsoft 365 type id
   const microsoftType = await TypeEmail.findOne({ name: "Microsoft 365" });
@@ -215,7 +215,7 @@ if (row.email_plan && row.email_users > 0) {
   const emailTypeId = microsoftType._id;
         await OrderPlan.create({
           orderId,
-          planId: await getPlanId(row.storage_plan, "Storage"),
+          planId: await getPlanId(row.storage_plan, "Microsoft 365"),
           emailTypeId,
 
           registrationDate: regDate,
@@ -242,7 +242,7 @@ if (row.email_plan && row.email_users > 0) {
   const emailTypeId = microsoftType._id;
         await OrderPlan.create({
           orderId,
-          planId: await getPlanId(row.ms_plan, "MS Office"),
+          planId: await getPlanId(row.ms_plan, "Microsoft 365"),
           emailTypeId,
 
           registrationDate: regDate,
