@@ -1175,19 +1175,19 @@ return (
           <div>
             <label>Email Type</label>
  <select
-              value={plan.email_service || ""}
-              onChange={(e) =>
-                handleEmailPlanChange(idx, "email_service", e.target.value)
-              }
-              className="w-full border rounded px-2 py-1"
-            >
-              <option value="">-- Select Type --</option>
-              {emailTypes.map((type) => (
-                <option key={type._id} value={type.name}>
-                  {type.name}
-                </option>
-              ))}
-            </select>
+  value={plan.email_service_id || ""}
+  onChange={(e) =>
+    handleEmailPlanChange(idx, "email_service_id", e.target.value)
+  }
+  className="w-full border rounded px-2 py-1"
+>
+  <option value="">-- Select Type --</option>
+  {emailTypes.map((type) => (
+    <option key={type._id} value={type._id}>
+      {type.name}
+    </option>
+  ))}
+</select>
 
           </div>
 

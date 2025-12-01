@@ -208,7 +208,7 @@ useEffect(() => {
     };
 
     applyFilters();
-  }, [provider, statusFilter, allOrders]);
+  }, [provider, statusFilter, allOrders,customerType]);
 
   // -------------------- Handlers --------------------
 const handleView = async (order: Order) => {
