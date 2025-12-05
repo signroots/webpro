@@ -6,22 +6,24 @@ import { Order } from "./models/Order";
 import { OrderPlan } from "./models/OrderPlan";
 import { PlanEmail } from "./models/PlanEmail";
 import { TypeEmail } from "./models/TypeEmail";
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
+
 dotenv.config();
 dayjs.extend(customParseFormat);
-const MONGO_URI =  process.env.MONGO_URI!;
+
+const MONGO_URI = process.env.MONGO_URI!;
+
 // ----------------------------------
 // CONNECT TO MONGODB
 // ----------------------------------
-mongoose.connect(MONGO_URI)
-  .then(() => {
-    console.log('✅ Connected to MongoDB');
-    // start your import logic here
-  })
+mongoose
+  .connect(MONGO_URI)
+  .then(() => console.log("✅ Connected to MongoDB"))
   .catch((err) => {
-    console.error('❌ MongoDB Connection Error:', err);
+    console.error("❌ MongoDB Connection Error:", err);
     process.exit(1);
   });
+
 /* ----------------------------------
    HELPERS
 ---------------------------------- */
@@ -48,25 +50,17 @@ function parseMaybeDate(value: any): Date | null {
    LOOKUP HELPERS
 ---------------------------------- */
 
-// async function getEmailTypeId(typeName: string) {
-//   if (!typeName) return null;
-
-//   let type = await TypeEmail.findOne({ name: typeName });
-
-//   if (!type) {
-//     type = await TypeEmail.create({ name: typeName });
-//   }
-
-//   return type._id;
-// }
-
 async function getPlanId(planName: string, typeName: string) {
   if (!planName || !typeName) return null;
 
   const emailType = await TypeEmail.findOne({ name: typeName });
   if (!emailType) throw new Error(`TypeEmail '${typeName}' not found`);
 
-  let plan = await PlanEmail.findOne({ plan: planName, emailType: emailType._id });
+  let plan = await PlanEmail.findOne({
+    plan: planName,
+    emailType: emailType._id,
+  });
+
   if (!plan) {
     plan = await PlanEmail.create({
       plan: planName,
@@ -76,7 +70,6 @@ async function getPlanId(planName: string, typeName: string) {
 
   return plan._id;
 }
-
 
 /* ----------------------------------
    READ CSV FILE
@@ -114,8 +107,11 @@ const rows = rawRows.map((row) => ({
   try {
     for (const row of rows) {
       if (!row.domain) continue;
-const hasStorage = !!(row.storage_plan && row.storage_users > 0);
-const hasMSOffice = !!(row.ms_plan && row.ms_users > 0);
+
+      // Determine available services
+      const hasEmail = !!(row.email_plan && row.email_users > 0);
+      const hasStorage = !!(row.storage_plan && row.storage_users > 0);
+      const hasMSOffice = !!(row.ms_plan && row.ms_users > 0);
 
       /* ---------------- ORDER TABLE ---------------- */
       let order = await Order.findOne({ domainName: row.domain });
@@ -128,12 +124,12 @@ const hasMSOffice = !!(row.ms_plan && row.ms_users > 0);
           password: row.adminPassword,
 
           email_status: row.status,
-          email_flag: true,
-          storage_services_flag:hasStorage,
-          
-          msoffice_services_flag:hasMSOffice,
 
-          microsoft_email: true,
+          email_flag: hasEmail,
+          storage_services_flag: hasStorage,
+          msoffice_services_flag: hasMSOffice,
+
+          microsoft_email: hasEmail,
 
           registrationDate: row.creationDate || new Date(),
           email_expiryDate: row.renewalDate,
@@ -145,21 +141,21 @@ const hasMSOffice = !!(row.ms_plan && row.ms_users > 0);
         console.log(`✨ Created Order: ${row.domain}`);
       } else {
         await order.updateOne({
-  $set: {
-    username: row.adminEmail,
-    password: row.adminPassword,
-    provider: "Microsoft 365",
+          $set: {
+            username: row.adminEmail,
+            password: row.adminPassword,
+            provider: "Microsoft 365",
 
-    email_status: row.status,
-    email_expiryDate: row.renewalDate,
+            email_status: row.status,
+            email_expiryDate: row.renewalDate,
 
-    storage_services_flag: hasStorage,
-    msoffice_services_flag: hasMSOffice,
+            email_flag: hasEmail,
+            storage_services_flag: hasStorage,
+            msoffice_services_flag: hasMSOffice,
 
-    microsoft_email: true,
-    email_flag: true,
-  },
-});
+            microsoft_email: hasEmail,
+          },
+        });
 
         console.log(`🔄 Updated Order: ${row.domain}`);
       }
@@ -168,55 +164,50 @@ const hasMSOffice = !!(row.ms_plan && row.ms_users > 0);
 
       /* ---------------- DATES ---------------- */
       const regDate = row.creationDate || order.registrationDate || new Date();
-      const expDate = row.renewalDate || order.email_expiryDate || new Date();
+      const expDate =
+        row.renewalDate || order.email_expiryDate || new Date();
 
       /* ---------------- ORDER PLAN TABLE ---------------- */
 
       // EMAIL PLAN
-    // EMAIL PLAN
-if (row.email_plan && row.email_users > 0) {
-  // Fetch plan ID
-  const planId = await getPlanId(row.email_plan, "Microsoft 365");
+      if (hasEmail) {
+        const planId = await getPlanId(row.email_plan, "Microsoft 365");
+        const microsoftType = await TypeEmail.findOne({
+          name: "Microsoft 365",
+        });
+        if (!microsoftType)
+          throw new Error("TypeEmail 'Microsoft 365' missing");
 
-  // Fetch Microsoft 365 type id
-  const microsoftType = await TypeEmail.findOne({ name: "Microsoft 365" });
-  if (!microsoftType) {
-    throw new Error("TypeEmail 'Microsoft 365' does not exist in the database");
-  }
-
-  const emailTypeId = microsoftType._id;
-
-  // Create the order plan
-  await OrderPlan.create({
-    orderId,
-    planId,
-    emailTypeId,
-    registrationDate: regDate,
-    expiryDate: expDate,
-    noOfUsers: row.email_users,
-    type: "email",
-    adminEmail: row.adminEmail,
-    adminPassword: row.adminPassword,
-    status: row.status,
-  });
-
-  console.log(`📨 Email Plan Added: ${row.domain}`);
-}
-
-
-      // STORAGE PLAN
-      if (row.storage_plan && row.storage_users > 0) {
-        // Fetch Microsoft 365 type id
-  const microsoftType = await TypeEmail.findOne({ name: "Microsoft 365" });
-  if (!microsoftType) {
-    throw new Error("TypeEmail 'Microsoft 365' does not exist in the database");
-  }
-
-  const emailTypeId = microsoftType._id;
         await OrderPlan.create({
           orderId,
-          planId: await getPlanId(row.storage_plan, "Microsoft 365"),
-          emailTypeId,
+          planId,
+          emailTypeId: microsoftType._id,
+
+          registrationDate: regDate,
+          expiryDate: expDate,
+
+          noOfUsers: row.email_users,
+          type: "email",
+
+          adminEmail: row.adminEmail,
+          adminPassword: row.adminPassword,
+          status: row.status,
+        });
+
+        console.log(`📨 Email Plan Added: ${row.domain}`);
+      }
+
+      // STORAGE PLAN
+      if (hasStorage) {
+        const planId = await getPlanId(row.storage_plan, "Microsoft 365");
+        const microsoftType = await TypeEmail.findOne({
+          name: "Microsoft 365",
+        });
+
+        await OrderPlan.create({
+          orderId,
+          planId,
+          emailTypeId: microsoftType!._id,
 
           registrationDate: regDate,
           expiryDate: expDate,
@@ -233,17 +224,16 @@ if (row.email_plan && row.email_users > 0) {
       }
 
       // MS OFFICE PLAN
-      if (row.ms_plan && row.ms_users > 0) {
-          const microsoftType = await TypeEmail.findOne({ name: "Microsoft 365" });
-  if (!microsoftType) {
-    throw new Error("TypeEmail 'Microsoft 365' does not exist in the database");
-  }
+      if (hasMSOffice) {
+        const planId = await getPlanId(row.ms_plan, "Microsoft 365");
+        const microsoftType = await TypeEmail.findOne({
+          name: "Microsoft 365",
+        });
 
-  const emailTypeId = microsoftType._id;
         await OrderPlan.create({
           orderId,
-          planId: await getPlanId(row.ms_plan, "Microsoft 365"),
-          emailTypeId,
+          planId,
+          emailTypeId: microsoftType!._id,
 
           registrationDate: regDate,
           expiryDate: expDate,

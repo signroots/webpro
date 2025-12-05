@@ -171,12 +171,14 @@ router.get(
         totalRegistrarDomains: Object.keys(registrarDomainMap).length,
         domainNames: allDomains.map((zone: any) => zone.name),
       });
-    } catch (error: any) {
-      console.error("❌ Import Error:", error.response?.data || error.message);
-      res
-        .status(500)
-        .json({ error: "Failed to import domains from Cloudflare" });
-    }
+   } catch (error: any) {
+  console.error("❌ Import Error:", error.response?.data || error.message || error);
+  res.status(500).json({
+    error: "Failed to import domains from Cloudflare",
+    details: error.response?.data || error.message || error,
+  });
+}
+
   }
 );
 
