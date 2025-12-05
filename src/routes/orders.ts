@@ -489,18 +489,19 @@ router.get("/:id", async (req: Request<{ id: string }>, res: Response): Promise<
   .lean();
 
 
- const orderPlans: IOrderPlanResponse[] = orderPlansRaw.map((p: any) => ({
+const orderPlans: IOrderPlanResponse[] = orderPlansRaw.map((p: any) => ({
   _id: p._id.toString(),
   orderId: p.orderId.toString(),
   planName: p.planId?.plan || "",
   planId: p.planId?._id?.toString() || "",
-  emailType: p.emailTypeId?.name || "",  // ✅ now shows "Microsoft 365"
-  serviceType: p.type,
-  type: p.type,
+  emailType: p.emailTypeId?.name || "",
+  serviceType: p.serviceType || "",   // ← optional, only if you need it
+  type: p.type || "",                 // ← ensures type from DB is used
   registrationDate: p.registrationDate,
   expiryDate: p.expiryDate,
   noOfUsers: p.noOfUsers,
 }));
+
 
 
 
