@@ -462,12 +462,12 @@ router.get("/:id", async (req: Request<{ id: string }>, res: Response): Promise<
       return;
     }
 
-    // Fetch order and populate only relevant fields (without hoststorageId)
+    // Fetch order and populate relevant fields
     const order = await Order.findById(id)
       .populate("customer")
       .populate("client")
-      .populate("hosttypeid")      // populate host type
-      .populate("subHostTypeId")   // populate host sub-type
+      .populate("hosttypeid")
+      .populate("subHostTypeId")
       .populate("hoststorageId")
       .exec();
 
@@ -477,66 +477,52 @@ router.get("/:id", async (req: Request<{ id: string }>, res: Response): Promise<
     }
 
     // Fetch related email plans
-   const orderPlansRaw = await OrderPlan.find({ orderId: order._id })
-  .populate({
-    path: "planId",
-    model: "PlanEmail",
-  })
-  .populate({
-    path: "emailTypeId",
-    model: "TypeEmail",
-  })
-  .lean();
+    const orderPlansRaw = await OrderPlan.find({ orderId: order._id })
+      .populate({ path: "planId", model: "PlanEmail" })
+      .populate({ path: "emailTypeId", model: "TypeEmail" })
+      .lean({ virtuals: true }); // ← keep all root fields
 
-
-const orderPlans: IOrderPlanResponse[] = orderPlansRaw.map((p: any) => ({
-  _id: p._id.toString(),
-  orderId: p.orderId.toString(),
-  planName: p.planId?.plan || "",
-  planId: p.planId?._id?.toString() || "",
-  emailType: p.emailTypeId?.name || "",
-  serviceType: p.serviceType || "",   // ← optional, only if you need it
-  type: p.type || "",                 // ← ensures type from DB is used
-  registrationDate: p.registrationDate,
-  expiryDate: p.expiryDate,
-  noOfUsers: p.noOfUsers,
-}));
-
-
-
+    const orderPlans: IOrderPlanResponse[] = orderPlansRaw.map((p: any) => ({
+      _id: p._id.toString(),
+      orderId: p.orderId.toString(),
+      planName: p.planId?.plan || "",
+      planId: p.planId?._id?.toString() || "",
+      emailType: p.emailTypeId?.name || "",
+      serviceType: p.serviceType || "", 
+      type: p.type || "",               // ← now ensures type is always included
+      registrationDate: p.registrationDate,
+      expiryDate: p.expiryDate,
+      noOfUsers: p.noOfUsers,
+    }));
 
     // Merge client and customer details
-    const clientData = order.client
-      ? {
-          c_name: (order.client as any).c_name,
-          c_email: (order.client as any).c_email,
-          c_phone: (order.client as any).c_phone,
-          c_company: (order.client as any).c_company,
-          c_address: (order.client as any).c_address,
-          c_city: (order.client as any).c_city,
-          c_state: (order.client as any).c_state,
-          c_country: (order.client as any).c_country,
-          c_zipCode: (order.client as any).c_zipCode,
-        }
-      : {};
+    const clientData = order.client ? {
+      c_name: (order.client as any).c_name,
+      c_email: (order.client as any).c_email,
+      c_phone: (order.client as any).c_phone,
+      c_company: (order.client as any).c_company,
+      c_address: (order.client as any).c_address,
+      c_city: (order.client as any).c_city,
+      c_state: (order.client as any).c_state,
+      c_country: (order.client as any).c_country,
+      c_zipCode: (order.client as any).c_zipCode,
+    } : {};
 
-    const customerData = order.customer
-      ? {
-          name: (order.customer as any).name,
-          email: (order.customer as any).email,
-          phone: (order.customer as any).phone,
-          company: (order.customer as any).company,
-          address: (order.customer as any).address,
-          city: (order.customer as any).city,
-          state: (order.customer as any).state,
-          country: (order.customer as any).country,
-          zipCode: (order.customer as any).zipCode,
-        }
-      : {};
+    const customerData = order.customer ? {
+      name: (order.customer as any).name,
+      email: (order.customer as any).email,
+      phone: (order.customer as any).phone,
+      company: (order.customer as any).company,
+      address: (order.customer as any).address,
+      city: (order.customer as any).city,
+      state: (order.customer as any).state,
+      country: (order.customer as any).country,
+      zipCode: (order.customer as any).zipCode,
+    } : {};
 
     const mergedCustomerDetails = { ...clientData, ...customerData };
 
-    // Return full response without hoststorageId
+    // Return full response
     res.status(200).json({
       success: true,
       data: {
@@ -550,6 +536,7 @@ const orderPlans: IOrderPlanResponse[] = orderPlansRaw.map((p: any) => ({
     res.status(500).json({ success: false, error: (err as Error).message });
   }
 });
+
 
 // POST create order
 // router.post(
