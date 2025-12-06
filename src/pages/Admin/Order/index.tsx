@@ -11,7 +11,8 @@ import {
 } from "react-icons/fa";
 import { SiCloudflare,SiHostinger } from "react-icons/si";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { fetchOrders, fetchOrderById,fetchOrdersByProvider ,fetchCustomerOrder} from "./api";
+import { fetchOrders,fetchOrdersByProvider ,fetchCustomerOrder} from "./api";
+import { fetchOrderById } from "./update/api";
 import { createOrder } from "./new/api";
 import axios from "axios";
 import { updateOrder } from "./update/api";
@@ -45,6 +46,18 @@ interface ICountry {
   _id: string;
   name: string;
 }
+interface MSOfficeDetails {
+  _id: string;
+  orderId: string;
+  planName: string;
+  emailType: string;
+  noOfUsers: number;
+  serviceType: string;
+  type: string;
+  registrationDate: string;
+  expiryDate: string;
+  planId?: string;
+}
 
 interface Order {
   _id: string;
@@ -64,6 +77,7 @@ interface Order {
   website_flag?: boolean;
   ssl_flag?: boolean;
   host_flag?: boolean;
+  msoffice_services_flag?: boolean;
   customer?: Customer | null;
   client?: Client | null;
   subResellerName?: string;
@@ -71,23 +85,35 @@ interface Order {
   subscription?: string;
   provider?: string;
   email_status?: string;
+  plans?: {
+    _id: string;
+    orderId: string;
+    planName: string;
+    emailType: string;
+    noOfUsers: number;
+    serviceType: string;
+    type: string;
+    registrationDate: string;
+    expiryDate: string;
+    planId?: string;
+  }[];  // <-- make this an array
   email_service?: "Google Workspace" | "Microsoft 365";
   email_expiryDate?: string;
+
   newCustomer?: {
-  // resellerCustomerId?: string;
-  c_name?: string;
-  c_email?:string[];
-  c_phone?: string;
-  c_company?: string;
-  c_address?: string;
-  c_city?: string;
-  c_state?: string;
-  c_country?: string;
+    c_name?: string;
+    c_email?: string[];
+    c_phone?: string;
+    c_company?: string;
+    c_address?: string;
+    c_city?: string;
+    c_state?: string;
+    c_country?: string;
     c_zipCode?: string;
     c_gst?: string;
-};
-
+  };
 }
+
 
 // -------------------- Component --------------------
 const Orders: React.FC = () => {
@@ -135,6 +161,15 @@ const [dropdownOpen, setDropdownOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [modalType, setModalType] = useState<"view" | "edit" | "addCustomer" | null>(null);
 const [countries, setCountries] = useState<{ code: string; name: string }[]>([]);
+const [msofficeDetails, setMsofficeDetails] = useState<MSOfficeDetails[]>([]);
+const [isHovering, setIsHovering] = useState(false);
+const [hasFetchedMsoffice, setHasFetchedMsoffice] = useState(false);
+const [msofficeCache, setMsofficeCache] = useState<Record<string, any[]>>({});
+const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+
+
+
+
   const [states, setStates] = useState<{ code: string; name: string }[]>([]);
      const InfoItem = ({
   label,
@@ -591,231 +626,253 @@ const resetFormData = () => {
       </div> */}
 
       {/* Orders Table */}
-      <div className="bg-white shadow rounded-lg overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 text-sm">
-          <thead className="bg-gray-50">
-            <tr>
-              {[
-                "SL No",
-                "Domain Name",
-                "Customer",
-                "Services",
-                "Expiry Date",
-                "Domain Status",
-                "Email Status",
-                "Actions",
-              ].map((col) => (
-                <th
-                  key={col}
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  {col}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedOrders.map((order, idx) => {
-              return (
-                <tr key={order._id} className="hover:bg-gray-50 text-black">
-                  <td className="px-6 py-4">
-                    {(currentPage - 1) * itemsPerPage + idx + 1}
-                  </td>
+     <div className="bg-white shadow rounded-lg overflow-auto">
+  <table className="min-w-full divide-y divide-gray-200 text-sm">
+    
+    {/* ================= HEADER ================== */}
+    <thead className="bg-gray-100 text-gray-600 uppercase text-xs tracking-wider">
+      <tr>
+        {["SL No", "Domain Name", "Customer", "Services", "Expiry Date", "Status", "Actions"].map(
+          (col) => (
+            <th key={col} className="px-6 py-3 text-left font-medium">
+              {col}
+            </th>
+          )
+        )}
+      </tr>
+    </thead>
 
-                  {/* Domain Name + Lock */}
-                  <td className="px-6 py-4 flex items-center gap-2">
-                    {order.lockStatus === "Locked" ? (
-                      <FaLock className="text-red-500" />
-                    ) : (
-                      <FaLock className="text-green-500" />
-                    )}
-                    {order.domainName}
-                  </td>
+    {/* ================= BODY ================== */}
+    <tbody className="divide-y divide-gray-100 text-gray-900">
+      {paginatedOrders.map((order, idx) => (
+        <tr key={order._id} className="hover:bg-gray-50">
 
-                  {/* Customer */}
-                <td className="px-4 py-2 text-black">
-  {order.client ? (
-    <Link
-      to={`/customer/${order.client._id}/orders`}
-      className="text-blue-600 hover:underline"
-    >
-      {order.client.c_name?.trim()
-        ? order.client.c_name
-        : order.client.c_name?.trim()
-        ? order.client.c_name
-        : "N/A"}
-    </Link>
-  ) : (
-    <button
-      className="text-red-600 hover:underline"
-      onClick={() => {
-        setSelectedOrder(order);
-        setModalType("addCustomer");
-      }}
-    >
-      Add Customer
-    </button>
-  )}
-</td>
+          {/* SL NO */}
+          <td className="px-6 py-4">
+            {(currentPage - 1) * itemsPerPage + idx + 1}
+          </td>
 
-                 {/* Services */}
-<td className="px-6 py-4 flex items-center gap-2">
-  {/* Domain Source */}
-{order.domainSource ? (
-  order.domainSource.toLowerCase() === "resellerclub" ? (
-    <img src="/images/resellerclub.png" className="w-6 h-6" title="ResellerClub" />
-  ) : order.domainSource.toLowerCase() === "cloudflare" ? (
-    <img src="/images/cloudflare.png" className="w-8 h-8 " title="Cloudflare" />
-  ) : order.domainSource.toLowerCase() === "hostinger" ? (
-    <SiHostinger className="w-6 h-6 text-blue-500" title="Hostinger" />
-  ) : order.domainSource.toLowerCase() === "ae server" ? (
-    <img src="/images/aeserverlogo.png" className="w-8 h-8 " title="AE Server" />
-  ) : (
-    <FaGlobe className="w-6 h-6 text-gray-400" title={order.domainSource} />
-  )
-) : (
-  <FaGlobe className="w-6 h-6 text-gray-300" title="No Domain Source" />
+          {/* DOMAIN + LOCK */}
+          <td className="px-6 py-4 flex items-center gap-2">
+            {order.lockStatus === "Locked" ? (
+              <FaLock className="text-red-500 text-lg" />
+            ) : (
+              <FaLock className="text-green-500 text-lg" />
+            )}
+            <span className="font-medium">{order.domainName}</span>
+          </td>
+
+          {/* CUSTOMER */}
+          <td className="px-6 py-4">
+            {order.client ? (
+              <Link
+                to={`/customer/${order.client._id}/orders`}
+                className="text-blue-600 hover:underline font-medium"
+              >
+                {order.client.c_name?.trim() || "N/A"}
+              </Link>
+            ) : (
+              <button
+                className="text-red-600 hover:underline font-medium"
+                onClick={() => {
+                  setSelectedOrder(order);
+                  setModalType("addCustomer");
+                }}
+              >
+                Add Customer
+              </button>
+            )}
+          </td>
+
+          {/* SERVICES */}
+          <td className="px-6 py-4">
+            <div className="flex items-center gap-3">
+
+              {/* Domain Source */}
+              {order.domainSource ? (
+                order.domainSource.toLowerCase() === "resellerclub" ? (
+                  <img src="/images/resellerclub.png" className="w-6 h-6" title="ResellerClub" />
+                ) : order.domainSource.toLowerCase() === "cloudflare" ? (
+                  <img src="/images/cloudflare.png" className="w-7 h-7" title="Cloudflare" />
+                ) : order.domainSource.toLowerCase() === "hostinger" ? (
+                  <SiHostinger className="w-6 h-6 text-blue-500" title="Hostinger" />
+                ) : order.domainSource.toLowerCase() === "ae server" ? (
+                  <img src="/images/aeserverlogo.png" className="w-7 h-7" title="AE Server" />
+                ) : (
+                  <FaGlobe className="w-6 h-6 text-gray-400" title={order.domainSource} />
+                )
+              ) : (
+                <FaGlobe className="w-6 h-6 text-gray-300" title="No Domain Source" />
+              )}
+
+              {/* Email Service */}
+              {order.google_email ? (
+                <img src="/download.png" className="w-5 h-5" title="Google Workspace" />
+              ) : order.microsoft_email ? (
+                <img src="/microsoft.png" className="w-5 h-5" title="Microsoft 365" />
+              ) : (
+                <FaEnvelope className="w-5 h-5 text-gray-300" title="No Email" />
+              )}
+
+            {/* MS OFFICE */}
+{/* MS OFFICE */}
+{order.msoffice_services_flag && (
+  <div
+    className="relative"
+    onMouseEnter={async () => {
+      setSelectedOrderId(order._id); // track which row is hovered
+      setIsHovering(true);
+
+      // Only fetch if this order's data hasn't been fetched yet
+      if (msofficeCache[order._id]) return;
+
+      try {
+        const fullOrder = await fetchOrderById(order._id);
+        const plans = fullOrder?.data?.plans || [];
+
+        const msofficePlans = plans.filter(
+          (p) =>
+            p?.serviceType?.toLowerCase() === "msoffice" ||
+            p?.type?.toLowerCase() === "msoffice"
+        );
+
+        // Save in cache keyed by order ID
+        setMsofficeCache((prev) => ({ ...prev, [order._id]: msofficePlans }));
+      } catch (err) {
+        console.error("Error fetching MS Office details:", err);
+      }
+    }}
+    onMouseLeave={() => setIsHovering(false)}
+  >
+    <img
+      src="/MSOffice.png"
+      className="w-5 h-5 cursor-pointer"
+      title="MS Office Services"
+    />
+
+    {/* POPUP */}
+    {isHovering &&
+      selectedOrderId === order._id &&
+      msofficeCache[order._id]?.length > 0 && (
+        <div className="
+          absolute left-0 top-full mt-2
+          bg-gray-900 text-white text-xs
+          p-3 w-64 max-h-64 overflow-y-auto
+          rounded-lg shadow-xl z-50
+        ">
+          {msofficeCache[order._id].map((plan, idx) => (
+            <div
+              key={idx}
+              className="mb-2 pb-2 border-b border-gray-700 last:border-0"
+            >
+              <p><b>Plan:</b> {plan.planName}</p>
+              <p><b>Users:</b> {plan.noOfUsers}</p>
+              <p><b>Type:</b> {plan.emailType}</p>
+              <p>
+                <b>Registered:</b>{" "}
+                {plan.registrationDate
+                  ? new Date(plan.registrationDate).toLocaleDateString()
+                  : "-"}
+              </p>
+              <p>
+                <b>Expires:</b>{" "}
+                {plan.expiryDate
+                  ? new Date(plan.expiryDate).toLocaleDateString()
+                  : "-"}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+  </div>
 )}
 
 
-  {/* Email Service */}
-  {order.google_email ? (
-    <img
-      src="/download.png"
-      className="w-5 h-5"
-      title="Google Workspace"
-    />
-  ) : order.microsoft_email ? (
-    <img
-      src="/microsoft.png"
-      className="w-5 h-5"
-      title="Microsoft 365"
-    />
-  ) : (
-    <FaEnvelope
-      className="w-5 h-5 text-gray-300"
-      title="No Email"
-    />
-  )}
 
-  {/* Hosting */}
-<FaServer
-  className={`w-5 h-5 ${
-    order.hosting ? "text-purple-400" : "text-gray-400 opacity-40"
-  }`}
-  title="Hosting"
-/>
+              {/* Hosting */}
+              <FaServer
+                className={`w-5 h-5 ${
+                  order.hosting ? "text-purple-500" : "text-gray-400 opacity-40"
+                }`}
+                title="Hosting"
+              />
 
+              {/* Website */}
+              <FaLaptopCode
+                className={`w-5 h-5 ${
+                  order.website_flag ? "text-purple-500" : "text-gray-400 opacity-40"
+                }`}
+                title="Website"
+              />
+            </div>
+          </td>
 
-  {/* Website */}
-  <FaLaptopCode
-    className={`w-5 h-5 ${
-    order.website_flag ? "text-purple-400" : "text-gray-400 opacity-40"
-  }`}
-    title="Website"
-  />
-</td>
-
-{/* Expiry Date */}
-<td className="px-6 py-4">
+         {/* EXPIRY DATE */}
+<td className="px-6 py-4 font-medium">
   {(() => {
-    const formatDate = (dateStr: string | null | undefined) => {
-      if (!dateStr) return null;
-      const date = new Date(dateStr);
-      const day = String(date.getDate()).padStart(2, "0");
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const year = date.getFullYear();
-      return `${day}-${month}-${year}`;
+    const formatDate = (date?: string) => {
+      if (!date) return "N/A";
+      const d = new Date(date);
+      return d.toLocaleDateString("en-GB");
     };
 
-    const domainExpiry = formatDate(order.expiryDate);
-    const emailExpiry = formatDate(order.email_expiryDate);
-
-    if (!domainExpiry && !emailExpiry) return "N/A";
-    if (domainExpiry && !emailExpiry) return domainExpiry;
-    if (!domainExpiry && emailExpiry) return emailExpiry;
-
-    // If both exist
-    return domainExpiry === emailExpiry
-      ? domainExpiry
-      : `${domainExpiry} / ${emailExpiry}`;
+    return formatDate(order.expiryDate);
   })()}
 </td>
 
-                  {/* Domain Status */}
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                        order.status?.toLowerCase() === "active"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {order.status || "N/A"}
-                    </span>
-                  </td>
 
-               {/* Email Expiry */}
-{/* <td className="px-6 py-4">
-  {(() => {
-    const formatDate = (dateStr: string | null | undefined) => {
-      if (!dateStr) return null;
-      const date = new Date(dateStr);
-      const day = String(date.getDate()).padStart(2, "0");
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const year = date.getFullYear();
-      return `${day}-${month}-${year}`;
-    };
+          {/* STATUS */}
+          <td className="px-6 py-4 space-y-2">
 
-    const emailExpiry = formatDate(order.email_expiryDate);
-    return emailExpiry || "N/A";
-  })()}
-</td> */}
+  {/* Domain */}
+  <div
+    className={`flex items-center gap-2 px-3 h-8 rounded-md text-xs font-medium
+      ${order.status?.toLowerCase() === "active"
+        ? "bg-green-100 text-green-800"
+        : "bg-red-100 text-red-800"}`}
+  >
+    <span className="w-5 h-5 flex justify-center items-center rounded-full bg-white text-black text-[10px]">D</span>
+    {order.status || "N/A"}
+  </div>
+
+  {/* Email */}
+  <div
+    className={`flex items-center gap-2 px-3 h-8 rounded-md text-xs font-medium
+      ${order.email_status?.toLowerCase() === "active"
+        ? "bg-green-100 text-green-800"
+        : "bg-red-100 text-red-800"}`}
+  >
+    <span className="w-5 h-5 flex justify-center items-center rounded-full bg-white text-black text-[10px]">E</span>
+    {order.email_status || "N/A"}
+  </div>
+</td>
 
 
-                  {/* Email Status */}
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                        order.email_status?.toLowerCase() === "active"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {order.email_status || "N/A"}
-                    </span>
-                  </td>
+          {/* ACTIONS */}
+          <td className="px-8 py-4 flex gap-3 text-gray-500">
+            <button
+              className="hover:text-blue-600"
+              title="View"
+              onClick={() => handleView(order)}
+            >
+              <FaEye />
+            </button>
 
-                  {/* Provider */}
-                  {/* <td className="px-6 py-4">{order.provider || "Unknown"}</td> */}
+            <Link
+              to={`/admin/orders/update/${order._id}`}
+              className="hover:text-yellow-600"
+              title="Edit"
+            >
+              <FaEdit />
+            </Link>
+          </td>
 
-                  {/* Subscription */}
-                  {/* <td className="px-6 py-4">{order.subscription || "Unknown"}</td> */}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
 
-                  {/* Actions */}
-                  <td className="px-10 py-4 flex gap-3 text-gray-400">
-                    <button
-                      className="text-blue-400 hover:text-blue-600 mr-2"
-                      title="View"
-                      onClick={() => handleView(order)}
-                    >
-                      <FaEye />
-                    </button>
-
-                    <Link
-                      to={`/admin/orders/update/${order._id}`}
-                      className="text-yellow-400 hover:text-yellow-600"
-                      title="Edit"
-                    >
-                      <FaEdit />
-                    </Link>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
 
       {/* Pagination */}
       {!provider && (

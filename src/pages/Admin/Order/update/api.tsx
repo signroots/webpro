@@ -49,13 +49,30 @@ export interface Order {
   host_flag?: boolean;
   createdAt?: string;
   updatedAt?: string;
+  plans?: {
+    _id: string;
+    orderId: string;
+    planName: string;
+    emailType: string;
+    noOfUsers: number;
+    serviceType: string;
+    type: string;
+    registrationDate: string;
+    expiryDate: string;
+    planId?: string;
+  }[]; 
+}
+export interface OrderResponse {
+  success: boolean;
+  data: Order;
 }
 
 // ✅ Fetch single order
-export const fetchOrderById = async (id: string): Promise<Order> => {
-  const response = await axios.get(`${API_BASE_URL}/${id}`);
+export const fetchOrderById = async (id: string): Promise<OrderResponse> => {
+  const response = await axios.get(`${API_BASE_URL}/api/orders/${id}`);
   return response.data;
 };
+
 
 // ✅ Update order (PUT)
 export const updateOrder = async (id: string, data: Partial<Order>): Promise<Order> => {
