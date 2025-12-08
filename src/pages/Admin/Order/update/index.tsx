@@ -1115,7 +1115,7 @@ return (
                   className="w-full border rounded px-3 py-2"
                 >
                   <option value="">-- Select Registrar --</option>
-                  <option value="Reseller">RESELLER CLUB</option>
+                  <option value="resellerclub">RESELLER CLUB</option>
                   <option value="HOSTINGER">HOSTINGER</option>
                   <option value="SQUARESPACE">SQUARESPACE</option>
                   <option value="SAHARA">SAHARA</option>
