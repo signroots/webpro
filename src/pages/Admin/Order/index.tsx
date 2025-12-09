@@ -806,8 +806,6 @@ const resetFormData = () => {
               />
             </div>
           </td>
-
-         {/* EXPIRY DATE */}
 <td className="px-6 py-4 font-medium">
   {(() => {
     const formatDate = (date?: string) => {
@@ -816,9 +814,51 @@ const resetFormData = () => {
       return d.toLocaleDateString("en-GB");
     };
 
-    return formatDate(order.expiryDate);
+    const emailExp = order.email_expiryDate;
+    const domainExp = order.expiryDate;
+
+    // Check if both dates are same (comparing only date part)
+    const sameDate =
+      emailExp &&
+      domainExp &&
+      new Date(emailExp).toDateString() === new Date(domainExp).toDateString();
+
+    return (
+      <div className="flex flex-col gap-2">
+
+        {/* If both expiry dates are same → show one badge */}
+        {sameDate ? (
+          <div className="flex items-center gap-2 px-3 h-8 rounded-md bg-green-100 text-green-800 text-xs font-medium">
+            <span className="w-5 h-5 flex justify-center items-center rounded-full bg-white text-black text-[10px]">
+              EX
+            </span>
+            {formatDate(emailExp)}
+          </div>
+        ) : (
+          <>
+            {/* Email Expiry */}
+            <div className="flex items-center gap-2 px-3 h-8 rounded-md bg-blue-100 text-blue-800 text-xs font-medium">
+              <span className="w-5 h-5 flex justify-center items-center rounded-full bg-white text-black text-[10px]">
+                EE
+              </span>
+              {formatDate(emailExp)}
+            </div>
+
+            {/* Domain Expiry */}
+            <div className="flex items-center gap-2 px-3 h-8 rounded-md bg-purple-100 text-purple-800 text-xs font-medium">
+              <span className="w-5 h-5 flex justify-center items-center rounded-full bg-white text-black text-[10px]">
+                DE
+              </span>
+              {formatDate(domainExp)}
+            </div>
+          </>
+        )}
+
+      </div>
+    );
   })()}
 </td>
+
 
 
           {/* STATUS */}
