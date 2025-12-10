@@ -85,6 +85,33 @@ interface Order {
   subscription?: string;
   provider?: string;
   email_status?: string;
+
+  // ✅ Email Plans (OrderPlanSchema)
+  emailPlans?: {
+    _id: string;
+    orderId: string;
+    planId: {
+      _id: string;
+      plan: string;
+      emailType: string;
+      isActive: boolean;
+    };
+    emailTypeId: {
+      _id: string;
+      name: string;
+    };
+    registrationDate: string;
+    expiryDate: string; // 👈 IMPORTANT
+    noOfUsers: number;
+    type: "email" | "storage" | "msoffice";
+    adminEmail: string;
+    adminPassword: string;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+  }[];
+
+  // ✅ Plans array (From your previous system)
   plans?: {
     _id: string;
     orderId: string;
@@ -96,10 +123,13 @@ interface Order {
     registrationDate: string;
     expiryDate: string;
     planId?: string;
-  }[];  // <-- make this an array
+  }[];
+
+  // Flags merged from API
   email_service?: "Google Workspace" | "Microsoft 365";
   email_expiryDate?: string;
 
+  // Customer Details
   newCustomer?: {
     c_name?: string;
     c_email?: string[];
@@ -113,7 +143,6 @@ interface Order {
     c_gst?: string;
   };
 }
-
 
 // -------------------- Component --------------------
 const Orders: React.FC = () => {
@@ -814,10 +843,13 @@ const resetFormData = () => {
       return d.toLocaleDateString("en-GB");
     };
 
-    const emailExp = order.email_expiryDate;
+    // 📌 Get Email Expiry (first email plan)
+    const emailExp = order.emailPlans?.[0]?.expiryDate;
+
+    // 📌 Get Domain Expiry
     const domainExp = order.expiryDate;
 
-    // Check if both dates are same (comparing only date part)
+    // Check if both dates are same → compare date only
     const sameDate =
       emailExp &&
       domainExp &&
@@ -826,7 +858,7 @@ const resetFormData = () => {
     return (
       <div className="flex flex-col gap-2">
 
-        {/* If both expiry dates are same → show one badge */}
+        {/* If both expiry dates are same → single badge */}
         {sameDate ? (
           <div className="flex items-center gap-2 px-3 h-8 rounded-md bg-green-100 text-green-800 text-xs font-medium">
             <span className="w-5 h-5 flex justify-center items-center rounded-full bg-white text-black text-[10px]">
@@ -836,28 +868,32 @@ const resetFormData = () => {
           </div>
         ) : (
           <>
-            {/* Email Expiry */}
-            <div className="flex items-center gap-2 px-3 h-8 rounded-md bg-blue-100 text-blue-800 text-xs font-medium">
-              <span className="w-5 h-5 flex justify-center items-center rounded-full bg-white text-black text-[10px]">
-                EE
-              </span>
-              {formatDate(emailExp)}
-            </div>
+            {/* Email Expiry Date */}
+            {emailExp && (
+              <div className="flex items-center gap-2 px-3 h-8 rounded-md bg-blue-100 text-blue-800 text-xs font-medium">
+                <span className="w-5 h-5 flex justify-center items-center rounded-full bg-white text-black text-[10px]">
+                  EE
+                </span>
+                {formatDate(emailExp)}
+              </div>
+            )}
 
-            {/* Domain Expiry */}
-            <div className="flex items-center gap-2 px-3 h-8 rounded-md bg-purple-100 text-purple-800 text-xs font-medium">
-              <span className="w-5 h-5 flex justify-center items-center rounded-full bg-white text-black text-[10px]">
-                DE
-              </span>
-              {formatDate(domainExp)}
-            </div>
+            {/* Domain Expiry Date */}
+            {domainExp && (
+              <div className="flex items-center gap-2 px-3 h-8 rounded-md bg-purple-100 text-purple-800 text-xs font-medium">
+                <span className="w-5 h-5 flex justify-center items-center rounded-full bg-white text-black text-[10px]">
+                  DE
+                </span>
+                {formatDate(domainExp)}
+              </div>
+            )}
           </>
         )}
-
       </div>
     );
   })()}
 </td>
+
 
 
 
