@@ -338,14 +338,35 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    // ✅ Helper: update order statuses based on expiry date
+    // 🔵 Attach Email OrderPlans to each Order
+    const attachEmailPlans = async (orders: any[]) => {
+      const updated = await Promise.all(
+        orders.map(async (order) => {
+          const emailPlans = await OrderPlan.find({
+            orderId: order._id,
+            type: "email",
+          })
+            .populate("planId")
+            .populate("emailTypeId")
+            .exec();
+
+          return {
+            ...order.toObject(),
+            emailPlans,
+          };
+        })
+      );
+
+      return updated;
+    };
+
+    // 🟡 Update order statuses based on expiry date
     const updateOrderStatuses = async (orders: any[]) => {
       const today = new Date();
 
       const updates = orders.map(async (order) => {
         let newStatus = "";
 
-        // 🟡 If expiryDate is missing or invalid
         if (!order.expiryDate || isNaN(new Date(order.expiryDate).getTime())) {
           newStatus = "";
         } else {
@@ -353,7 +374,6 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
           newStatus = expiryDate < today ? "EXPIRED" : "ACTIVE";
         }
 
-        // 🟢 Update only if status actually changed
         if (order.status !== newStatus) {
           order.status = newStatus;
           await order.save();
@@ -365,8 +385,10 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
       return Promise.all(updates);
     };
 
-    // ✅ Find logged-in user in User collection
-    const user = await User.findById(loggedInUser._id).populate("userType").exec();
+    // 🔍 Find logged-in user in User collection
+    const user = await User.findById(loggedInUser._id)
+      .populate("userType")
+      .exec();
 
     if (user && user.userType && typeof user.userType === "object") {
       const userRole = (user.userType as IUserType).name.toLowerCase();
@@ -379,17 +401,20 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
           .exec();
 
         orders = await updateOrderStatuses(orders);
+        orders = await attachEmailPlans(orders);
 
         res.status(200).json({ success: true, data: orders });
         return;
       }
 
-      // ---------------- CUSTOMER ----------------
+      // ---------------- CUSTOMER (via User) ----------------
       if (userRole === "customer") {
         const customer = await Client.findOne({ userType: user._id }).exec();
 
         if (!customer) {
-          res.status(404).json({ success: false, error: "Customer profile not found" });
+          res
+            .status(404)
+            .json({ success: false, error: "Customer profile not found" });
           return;
         }
 
@@ -398,6 +423,7 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
           .exec();
 
         orders = await updateOrderStatuses(orders);
+        orders = await attachEmailPlans(orders);
 
         res.status(200).json({
           success: true,
@@ -412,8 +438,10 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
       }
     }
 
-    // ---------------- CLIENT ----------------
-    const client = await Client.findById(loggedInUser._id).populate("userType").exec();
+    // ---------------- CLIENT (Direct login as Client) ----------------
+    const client = await Client.findById(loggedInUser._id)
+      .populate("userType")
+      .exec();
 
     if (client && client.userType && typeof client.userType === "object") {
       const userRole = (client.userType as IUserType).name.toLowerCase();
@@ -425,6 +453,7 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
           .exec();
 
         orders = await updateOrderStatuses(orders);
+        orders = await attachEmailPlans(orders);
 
         res.status(200).json({
           success: true,
@@ -440,14 +469,14 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
     }
 
     // ❌ Invalid role
-    res.status(403).json({ success: false, error: "Access denied: Invalid role or user not found" });
-
+    res
+      .status(403)
+      .json({ success: false, error: "Access denied: Invalid role or user not found" });
   } catch (err) {
     console.error("❌ Error fetching orders:", err);
     res.status(500).json({ success: false, error: "Server error" });
   }
 });
-
 
 
 // GET single order by ID
