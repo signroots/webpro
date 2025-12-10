@@ -843,13 +843,16 @@ const resetFormData = () => {
       return d.toLocaleDateString("en-GB");
     };
 
-    // 📌 Get Email Expiry (first email plan)
-    const emailExp = order.emailPlans?.[0]?.expiryDate;
+    // 📌 Get Email Expiry
+    const emailExp =
+      order.emailPlans?.[0]?.expiryDate ||
+      order.emailPlans?.[0]?.expiryDate || // fallback if used
+      order.email_expiryDate;
 
-    // 📌 Get Domain Expiry
+    // 📌 Domain Expiry
     const domainExp = order.expiryDate;
 
-    // Check if both dates are same → compare date only
+    // Compare dates only (no time)
     const sameDate =
       emailExp &&
       domainExp &&
@@ -868,7 +871,7 @@ const resetFormData = () => {
           </div>
         ) : (
           <>
-            {/* Email Expiry Date */}
+            {/* Show Email Expiry */}
             {emailExp && (
               <div className="flex items-center gap-2 px-3 h-8 rounded-md bg-blue-100 text-blue-800 text-xs font-medium">
                 <span className="w-5 h-5 flex justify-center items-center rounded-full bg-white text-black text-[10px]">
@@ -878,7 +881,7 @@ const resetFormData = () => {
               </div>
             )}
 
-            {/* Domain Expiry Date */}
+            {/* Show Domain Expiry */}
             {domainExp && (
               <div className="flex items-center gap-2 px-3 h-8 rounded-md bg-purple-100 text-purple-800 text-xs font-medium">
                 <span className="w-5 h-5 flex justify-center items-center rounded-full bg-white text-black text-[10px]">
@@ -893,7 +896,6 @@ const resetFormData = () => {
     );
   })()}
 </td>
-
 
 
 
