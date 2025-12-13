@@ -431,6 +431,7 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
             _id: customer._id,
             name: customer.c_name,
             email: customer.c_email,
+            c_company:customer.c_company
           },
           data: orders,
         });
