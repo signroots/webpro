@@ -698,7 +698,7 @@ const resetFormData = () => {
                 to={`/customer/${order.client._id}/orders`}
                 className="text-blue-600 hover:underline font-medium"
               >
-                {order.client.c_name?.trim() || "N/A"}
+                {order.client.c_company?.trim() || "N/A"}
               </Link>
             ) : (
               <button
@@ -846,8 +846,7 @@ const resetFormData = () => {
     // 📌 Get Email Expiry
     const emailExp =
       order.emailPlans?.[0]?.expiryDate ||
-      order.emailPlans?.[0]?.expiryDate || // fallback if used
-      order.email_expiryDate;
+      order.emailPlans?.[0]?.expiryDate // fallback if used
 
     // 📌 Domain Expiry
     const domainExp = order.expiryDate;
