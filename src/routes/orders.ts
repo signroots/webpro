@@ -397,7 +397,7 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
       // ---------------- ADMIN ----------------
       if (userRole === "admin") {
         let orders = await Order.find()
-          .populate("client", "c_name c_email")
+          .populate("client", "c_name c_email","c_company")
           .exec();
 
         orders = await updateOrderStatuses(orders);
