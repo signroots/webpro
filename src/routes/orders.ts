@@ -395,7 +395,7 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
       console.log("Resolved user role (User model):", userRole);
 
       // ---------------- ADMIN ----------------
-      if (userRole === "admin") {
+      if (userRole === "Admin") {
         let orders = await Order.find()
           .populate("client", "c_name c_email c_company")
           .exec();
