@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { fetchCustomerOrders, updateCustomer, Order, Client,ICustomer } from "./api";
+import { FaMicrosoft, FaGoogle } from "react-icons/fa";
+import { MdStore } from "react-icons/md";
 
 // Modal editing type aligned with Client
 interface EditClient extends Partial<Client> {
@@ -150,9 +152,9 @@ const handleSave = async () => {
                 <tr>
                   <th className="px-4 py-2 border">SL</th>
                   <th className="px-4 py-2 border">Domain Name</th>
+                   <th className="px-4 py-2 border">Services</th>
                   <th className="px-4 py-2 border">Expiry Date</th>
                   <th className="px-4 py-2 border">Status</th>
-                  <th className="px-4 py-2 border">Sub Reseller</th>
                 </tr>
               </thead>
               <tbody>
@@ -160,13 +162,69 @@ const handleSave = async () => {
                   <tr key={order._id} className="hover:bg-gray-100 transition-colors">
                     <td className="px-4 py-2 border">{idx + 1}</td>
                     <td className="px-4 py-2 border">{order.domainName}</td>
+<td className="px-4 py-2 border align-middle">
+  <div className="flex justify-center gap-2 leading-none">
+
+    {/* Microsoft */}
+    {order.microsoft_email && (
+      <img
+        src="/microsoft.png"
+        className="block w-5 h-5"
+        alt="Microsoft"
+      />
+    )}
+
+    {/* Google */}
+    {order.google_email && (
+      <img
+        src="/download.png"
+        className="block w-5 h-5"
+        alt="Google"
+      />
+    )}
+
+ 
+    {/* Cloudflare */}
+    {order.domainSource?.toLowerCase() === "cloudflare" && (
+      <img
+        src="/images/cloudflare.png"
+        className="block w-6 h-6"
+        alt="Cloudflare"
+      />
+    )}
+
+    {/* ResellerClub */}
+    {order.domainSource?.toLowerCase() === "resellerclub" && (
+      <img
+        src="/images/resellerclub.png"
+        className="block w-6 h-6"
+        alt="ResellerClub"
+      />
+    )}
+       {/* MS Office */}
+    {order.msoffice_services_flag && (
+      <img
+        src="/MSOffice.png"
+        className="block w-5 h-5"
+        alt="MS Office"
+      />
+    )}
+
+  </div>
+</td>
+
+
+
+
+
+
                     <td className="px-4 py-2 border">
                       {order.expiryDate
                         ? new Date(order.expiryDate).toLocaleDateString()
                         : "N/A"}
                     </td>
                     <td className="px-4 py-2 border">{order.status || "-"}</td>
-                    <td className="px-4 py-2 border">-</td>
+                    {/* <td className="px-4 py-2 border">-</td> */}
                   </tr>
                 ))}
               </tbody>

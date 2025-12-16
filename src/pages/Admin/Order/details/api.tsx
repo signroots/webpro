@@ -54,6 +54,10 @@ export interface Client
 export interface Order {
   _id: string;
   domainName: string;
+  domainSource:string;
+  microsoft_email:boolean;
+  google_email:boolean;
+  msoffice_services_flag:boolean;
   lockStatus?: string;
   status?: string;
   registrationDate?: string;
