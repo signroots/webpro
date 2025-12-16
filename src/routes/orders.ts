@@ -341,37 +341,31 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response): Promise
 
     // 🔵 Attach Email OrderPlans and ensure client c_company
     const attachEmailPlans = async (orders: any[]): Promise<any[]> => {
-      return await Promise.all(
-        orders.map(async (order) => {
-          const emailPlans = await OrderPlan.find({
-            orderId: order._id,
-            type: "email",
-          })
-            .populate("planId")
-            .populate("emailTypeId")
-            .exec();
+  return await Promise.all(
+    orders.map(async (order) => {
+      const emailPlans = await OrderPlan.find({
+        orderId: order._id,
+        type: "email",
+      })
+        .populate("planId")
+        .populate("emailTypeId")
+        .exec();
 
-          const orderObj = order.toObject();
+      const orderObj = order.toObject();
 
-          if (orderObj.client?._id) {
-            const fullClient = await Client.findById(orderObj.client._id).exec();
-            if (fullClient) {
-              orderObj.client = {
-                _id: fullClient._id,
-                c_name: fullClient.c_name,
-                c_email: fullClient.c_email,
-                c_company: fullClient.c_company || "",
-              };
-            }
-          }
+      // Keep existing client and ensure c_company
+      if (orderObj.client) {
+        orderObj.client.c_company = orderObj.client.c_company || "";
+      }
 
-          return {
-            ...orderObj,
-            emailPlans,
-          };
-        })
-      );
-    };
+      return {
+        ...orderObj,
+        emailPlans,
+      };
+    })
+  );
+};
+
 
     // 🟡 Update order statuses based on expiry date
     const updateOrderStatuses = async (orders: any[]): Promise<any[]> => {
