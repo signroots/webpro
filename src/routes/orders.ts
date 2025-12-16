@@ -399,7 +399,10 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response): Promise
 
       // ---------------- ADMIN ----------------
       if (userRole === "admin") {
-        let orders = await Order.find().populate("client").exec();
+        let orders = await Order.find().populate({
+          path: "client",
+          select: "_id c_name c_email c_company"
+        }).exec();
         orders = await updateOrderStatuses(orders);
         orders = await attachEmailPlans(orders);
 
