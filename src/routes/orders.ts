@@ -12,6 +12,7 @@ import  {OrderPlan, IOrderPlan } from "../models/OrderPlan";
 import { Storage } from "../models/Storage";
 import { PlanEmail } from "../models/PlanEmail";
 import { TypeEmail } from "../models/TypeEmail";
+import asyncHandler from "express-async-handler";
 const router = express.Router();
 interface IOrderPlanResponse {
   _id: string;
@@ -328,7 +329,7 @@ router.get("/dnsorders", authMiddleware, async (req: AuthRequest, res: Response)
 });
 
 
-router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get("/", authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const loggedInUser = req.user;
 
@@ -338,74 +339,73 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    // 🔵 Attach Email OrderPlans to each Order
-    const attachEmailPlans = async (orders: any[]) => {
-  const updated = await Promise.all(
-    orders.map(async (order) => {
-      const emailPlans = await OrderPlan.find({
-        orderId: order._id,
-        type: "email",
-      })
-        .populate("planId")
-        .populate("emailTypeId")
-        .exec();
+    // 🔵 Attach Email OrderPlans and ensure client c_company
+    const attachEmailPlans = async (orders: any[]): Promise<any[]> => {
+      return await Promise.all(
+        orders.map(async (order) => {
+          const emailPlans = await OrderPlan.find({
+            orderId: order._id,
+            type: "email",
+          })
+            .populate("planId")
+            .populate("emailTypeId")
+            .exec();
 
-      const orderObj = order.toObject();
+          const orderObj = order.toObject();
 
-      // Ensure c_company is in client object
-      if (orderObj.client) {
-        orderObj.client.c_company = orderObj.client.c_company || "";
-      }
+          if (orderObj.client?._id) {
+            const fullClient = await Client.findById(orderObj.client._id).exec();
+            if (fullClient) {
+              orderObj.client = {
+                _id: fullClient._id,
+                c_name: fullClient.c_name,
+                c_email: fullClient.c_email,
+                c_company: fullClient.c_company || "",
+              };
+            }
+          }
 
-      return {
-        ...orderObj,
-        emailPlans,
-      };
-    })
-  );
-
-  return updated;
-};
-    // 🟡 Update order statuses based on expiry date
-    const updateOrderStatuses = async (orders: any[]) => {
-      const today = new Date();
-
-      const updates = orders.map(async (order) => {
-        let newStatus = "";
-
-        if (!order.expiryDate || isNaN(new Date(order.expiryDate).getTime())) {
-          newStatus = "";
-        } else {
-          const expiryDate = new Date(order.expiryDate);
-          newStatus = expiryDate < today ? "EXPIRED" : "ACTIVE";
-        }
-
-        if (order.status !== newStatus) {
-          order.status = newStatus;
-          await order.save();
-        }
-
-        return order;
-      });
-
-      return Promise.all(updates);
+          return {
+            ...orderObj,
+            emailPlans,
+          };
+        })
+      );
     };
 
-    // 🔍 Find logged-in user in User collection
-    const user = await User.findById(loggedInUser._id)
-      .populate("userType")
-      .exec();
+    // 🟡 Update order statuses based on expiry date
+    const updateOrderStatuses = async (orders: any[]): Promise<any[]> => {
+      const today = new Date();
+      return await Promise.all(
+        orders.map(async (order) => {
+          let newStatus = "";
+
+          if (!order.expiryDate || isNaN(new Date(order.expiryDate).getTime())) {
+            newStatus = "";
+          } else {
+            const expiryDate = new Date(order.expiryDate);
+            newStatus = expiryDate < today ? "EXPIRED" : "ACTIVE";
+          }
+
+          if (order.status !== newStatus) {
+            order.status = newStatus;
+            await order.save();
+          }
+
+          return order;
+        })
+      );
+    };
+
+    // 🔍 Check user role
+    const user = await User.findById(loggedInUser._id).populate("userType").exec();
 
     if (user && user.userType && typeof user.userType === "object") {
       const userRole = (user.userType as IUserType).name.toLowerCase();
-      console.log("Resolved user role (User model):", userRole);
 
       // ---------------- ADMIN ----------------
       if (userRole === "admin") {
-        let orders = await Order.find()
-          .populate("client", "c_name c_email c_company")
-          .exec();
-
+        let orders = await Order.find().populate("client").exec();
         orders = await updateOrderStatuses(orders);
         orders = await attachEmailPlans(orders);
 
@@ -416,19 +416,12 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
       // ---------------- CUSTOMER (via User) ----------------
       if (userRole === "customer") {
         const customer = await Client.findOne({ userType: user._id }).exec();
-
         if (!customer) {
-          res
-            .status(404)
-            .json({ success: false, error: "Customer profile not found" });
+          res.status(404).json({ success: false, error: "Customer profile not found" });
           return;
         }
 
-        let orders = await Order.find({ customer: customer._id })
-          .populate("customer", "c_name c_email c_company")
-          .populate("client", "c_name c_email c_company") // include client info in orders
-          .exec();
-
+        let orders = await Order.find({ customer: customer._id }).populate("client").exec();
         orders = await updateOrderStatuses(orders);
         orders = await attachEmailPlans(orders);
 
@@ -447,19 +440,12 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
     }
 
     // ---------------- CLIENT (Direct login as Client) ----------------
-    const client = await Client.findById(loggedInUser._id)
-      .populate("userType")
-      .exec();
-
+    const client = await Client.findById(loggedInUser._id).populate("userType").exec();
     if (client && client.userType && typeof client.userType === "object") {
       const userRole = (client.userType as IUserType).name.toLowerCase();
-      console.log("Resolved user role (Customer model):", userRole);
 
       if (userRole === "customer") {
-        let orders = await Order.find({ client: client._id })
-          .populate("client", "c_name c_email c_company")
-          .exec();
-
+        let orders = await Order.find({ client: client._id }).populate("client").exec();
         orders = await updateOrderStatuses(orders);
         orders = await attachEmailPlans(orders);
 
@@ -477,103 +463,13 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
       }
     }
 
-    // ❌ Invalid role
-    res
-      .status(403)
-      .json({ success: false, error: "Access denied: Invalid role or user not found" });
+    res.status(403).json({ success: false, error: "Access denied: Invalid role or user not found" });
   } catch (err) {
     console.error("❌ Error fetching orders:", err);
     res.status(500).json({ success: false, error: "Server error" });
   }
 });
 
-
-// GET single order by ID
-
-router.get("/:id", async (req: Request<{ id: string }>, res: Response): Promise<void> => {
-  try {
-    const { id } = req.params;
-
-    // Validate ObjectId
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      res.status(400).json({ success: false, message: "Invalid order ID" });
-      return;
-    }
-
-    // Fetch order and populate relevant fields
-    const order = await Order.findById(id)
-      .populate("customer")
-      .populate("client")
-      .populate("hosttypeid")
-      .populate("subHostTypeId")
-      .populate("hoststorageId")
-      .exec();
-
-    if (!order) {
-      res.status(404).json({ success: false, message: "Order not found" });
-      return;
-    }
-
-    // Fetch related email plans
-    const orderPlansRaw = await OrderPlan.find({ orderId: order._id })
-      .populate({ path: "planId", model: "PlanEmail" })
-      .populate({ path: "emailTypeId", model: "TypeEmail" })
-      .lean({ virtuals: true }); // ← keep all root fields
-
-    const orderPlans: IOrderPlanResponse[] = orderPlansRaw.map((p: any) => ({
-      _id: p._id.toString(),
-      orderId: p.orderId.toString(),
-      planName: p.planId?.plan || "",
-      planId: p.planId?._id?.toString() || "",
-      emailType: p.emailTypeId?.name || "",
-      serviceType: p.serviceType || "", 
-      type: p.type || "",               // ← now ensures type is always included
-      registrationDate: p.registrationDate,
-      expiryDate: p.expiryDate,
-      noOfUsers: p.noOfUsers,
-    }));
-
-    // Merge client and customer details
-    const clientData = order.client ? {
-      c_name: (order.client as any).c_name,
-      c_email: (order.client as any).c_email,
-      c_phone: (order.client as any).c_phone,
-      c_company: (order.client as any).c_company,
-      c_address: (order.client as any).c_address,
-      c_city: (order.client as any).c_city,
-      c_state: (order.client as any).c_state,
-      c_country: (order.client as any).c_country,
-      c_zipCode: (order.client as any).c_zipCode,
-    } : {};
-
-    const customerData = order.customer ? {
-      name: (order.customer as any).name,
-      email: (order.customer as any).email,
-      phone: (order.customer as any).phone,
-      company: (order.customer as any).company,
-      address: (order.customer as any).address,
-      city: (order.customer as any).city,
-      state: (order.customer as any).state,
-      country: (order.customer as any).country,
-      zipCode: (order.customer as any).zipCode,
-    } : {};
-
-    const mergedCustomerDetails = { ...clientData, ...customerData };
-
-    // Return full response
-    res.status(200).json({
-      success: true,
-      data: {
-        ...order.toObject(),
-        customerDetails: mergedCustomerDetails,
-        plans: orderPlans,
-      },
-    });
-  } catch (err) {
-    console.error("❌ Error fetching order:", err);
-    res.status(500).json({ success: false, error: (err as Error).message });
-  }
-});
 
 
 // POST create order
