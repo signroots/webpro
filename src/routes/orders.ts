@@ -341,7 +341,7 @@ router.get(
         return;
       }
 
-      // 🔵 Attach Email OrderPlans
+      // 🔵 Attach Email OrderPlans (DO NOT TOUCH client)
       const attachEmailPlans = async (orders: any[]) => {
         return Promise.all(
           orders.map(async (order) => {
@@ -353,28 +353,31 @@ router.get(
               .populate("emailTypeId");
 
             return {
-              ...order.toObject(),
+              ...order.toObject(), // client stays intact
               emailPlans,
             };
           })
         );
       };
 
-      // 🟡 Update order status
+      // 🟡 Update order statuses
       const updateOrderStatuses = async (orders: any[]) => {
         const today = new Date();
 
         return Promise.all(
           orders.map(async (order) => {
-            if (order.expiryDate) {
-              const status =
-                new Date(order.expiryDate) < today ? "EXPIRED" : "ACTIVE";
+            let newStatus = "";
 
-              if (order.status !== status) {
-                order.status = status;
-                await order.save();
-              }
+            if (order.expiryDate) {
+              newStatus =
+                new Date(order.expiryDate) < today ? "EXPIRED" : "ACTIVE";
             }
+
+            if (order.status !== newStatus) {
+              order.status = newStatus;
+              await order.save();
+            }
+
             return order;
           })
         );
@@ -384,42 +387,11 @@ router.get(
         .populate("userType");
 
       // ================= ADMIN =================
-      if (user?.userType && typeof user.userType === "object") {
+      if (user && typeof user.userType === "object") {
         const role = (user.userType as IUserType).name.toLowerCase();
 
         if (role === "admin") {
           let orders = await Order.find()
-            .populate({
-              path: "client",
-              select: "_id c_name c_email c_company c_phone",
-            })
-            .populate({
-              path: "customer",
-              select: "_id name email company phone",
-            });
-
-          orders = await updateOrderStatuses(orders);
-          orders = await attachEmailPlans(orders);
-
-          res.json({ success: true, data: orders });
-          return;
-        }
-
-        // ================= CUSTOMER (User) =================
-        if (role === "customer") {
-          const customer = await Client.findOne({
-            userType: user._id,
-          });
-
-          if (!customer) {
-            res.status(404).json({
-              success: false,
-              error: "Customer profile not found",
-            });
-            return;
-          }
-
-          let orders = await Order.find({ customer: customer._id })
             .populate({
               path: "client",
               select: "_id c_name c_email c_company",
@@ -430,18 +402,9 @@ router.get(
             });
 
           orders = await updateOrderStatuses(orders);
-          orders = await attachEmailPlans(orders);
+          const data = await attachEmailPlans(orders);
 
-          res.json({
-            success: true,
-            customer: {
-              _id: customer._id,
-              name: customer.c_name,
-              email: customer.c_email,
-              c_company: customer.c_company,
-            },
-            data: orders,
-          });
+          res.status(200).json({ success: true, data });
           return;
         }
       }
@@ -450,7 +413,7 @@ router.get(
       const client = await Client.findById(loggedInUser._id)
         .populate("userType");
 
-      if (client?.userType && typeof client.userType === "object") {
+      if (client && typeof client.userType === "object") {
         const role = (client.userType as IUserType).name.toLowerCase();
 
         if (role === "customer") {
@@ -465,17 +428,17 @@ router.get(
             });
 
           orders = await updateOrderStatuses(orders);
-          orders = await attachEmailPlans(orders);
+          const data = await attachEmailPlans(orders);
 
-          res.json({
+          res.status(200).json({
             success: true,
             client: {
               _id: client._id,
-              name: client.c_name,
-              email: client.c_email,
+              c_name: client.c_name,
+              c_email: client.c_email,
               c_company: client.c_company,
             },
-            data: orders,
+            data,
           });
           return;
         }
@@ -488,6 +451,7 @@ router.get(
     }
   }
 );
+
 
 
 // POST create order
