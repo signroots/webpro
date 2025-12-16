@@ -340,26 +340,32 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
 
     // 🔵 Attach Email OrderPlans to each Order
     const attachEmailPlans = async (orders: any[]) => {
-      const updated = await Promise.all(
-        orders.map(async (order) => {
-          const emailPlans = await OrderPlan.find({
-            orderId: order._id,
-            type: "email",
-          })
-            .populate("planId")
-            .populate("emailTypeId")
-            .exec();
+  const updated = await Promise.all(
+    orders.map(async (order) => {
+      const emailPlans = await OrderPlan.find({
+        orderId: order._id,
+        type: "email",
+      })
+        .populate("planId")
+        .populate("emailTypeId")
+        .exec();
 
-          return {
-            ...order.toObject(),
-            emailPlans,
-          };
-        })
-      );
+      const orderObj = order.toObject();
 
-      return updated;
-    };
+      // Ensure c_company is in client object
+      if (orderObj.client) {
+        orderObj.client.c_company = orderObj.client.c_company || "";
+      }
 
+      return {
+        ...orderObj,
+        emailPlans,
+      };
+    })
+  );
+
+  return updated;
+};
     // 🟡 Update order statuses based on expiry date
     const updateOrderStatuses = async (orders: any[]) => {
       const today = new Date();
