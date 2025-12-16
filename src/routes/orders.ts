@@ -329,128 +329,129 @@ router.get("/dnsorders", authMiddleware, async (req: AuthRequest, res: Response)
 });
 
 
-router.get(
-  "/",
-  authMiddleware,
-  async (req: AuthRequest, res: Response): Promise<void> => {
-    try {
-      const loggedInUser = req.user;
+router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const loggedInUser = req.user;
 
-      if (!loggedInUser?._id) {
-        res.status(401).json({ success: false, error: "Unauthorized" });
+    if (!loggedInUser?._id) {
+      res.status(401).json({ success: false, error: "Unauthorized" });
+      return;
+    }
+
+    // 🔵 Attach Email Plans (SAFE)
+    const attachEmailPlans = async (orders: any[]) => {
+      return Promise.all(
+        orders.map(async (order) => {
+          const emailPlans = await OrderPlan.find({
+            orderId: order._id,
+            type: "email",
+          })
+            .populate("planId")
+            .populate("emailTypeId")
+            .lean();
+
+          return {
+            ...order,      // ✅ already plain object
+            emailPlans,
+          };
+        })
+      );
+    };
+
+    // 🟡 Update status
+    const updateOrderStatuses = async (orders: any[]) => {
+      const today = new Date();
+
+      return Promise.all(
+        orders.map(async (order) => {
+          let newStatus = "";
+
+          if (order.expiryDate) {
+            newStatus =
+              new Date(order.expiryDate) < today ? "EXPIRED" : "ACTIVE";
+          }
+
+          if (order.status !== newStatus) {
+            await Order.updateOne(
+              { _id: order._id },
+              { status: newStatus }
+            );
+            order.status = newStatus;
+          }
+
+          return order;
+        })
+      );
+    };
+
+    // ================= ADMIN =================
+    const user = await User.findById(loggedInUser._id).populate("userType");
+
+    if (user && typeof user.userType === "object") {
+      const role = (user.userType as IUserType).name.toLowerCase();
+
+      if (role === "admin") {
+        let orders = await Order.find()
+          .populate({
+            path: "client",
+            select: "_id c_name c_email c_company",
+          })
+          .populate({
+            path: "customer",
+            select: "_id name email company",
+          })
+          .lean(); // 🔥 REQUIRED
+
+        orders = await updateOrderStatuses(orders);
+        orders = await attachEmailPlans(orders);
+
+        res.status(200).json({ success: true, data: orders });
         return;
       }
-
-      // 🔵 Attach Email OrderPlans (DO NOT TOUCH client)
-      const attachEmailPlans = async (orders: any[]) => {
-        return Promise.all(
-          orders.map(async (order) => {
-            const emailPlans = await OrderPlan.find({
-              orderId: order._id,
-              type: "email",
-            })
-              .populate("planId")
-              .populate("emailTypeId");
-
-            return {
-              ...order.toObject(), // client stays intact
-              emailPlans,
-            };
-          })
-        );
-      };
-
-      // 🟡 Update order statuses
-      const updateOrderStatuses = async (orders: any[]) => {
-        const today = new Date();
-
-        return Promise.all(
-          orders.map(async (order) => {
-            let newStatus = "";
-
-            if (order.expiryDate) {
-              newStatus =
-                new Date(order.expiryDate) < today ? "EXPIRED" : "ACTIVE";
-            }
-
-            if (order.status !== newStatus) {
-              order.status = newStatus;
-              await order.save();
-            }
-
-            return order;
-          })
-        );
-      };
-
-      const user = await User.findById(loggedInUser._id)
-        .populate("userType");
-
-      // ================= ADMIN =================
-      if (user && typeof user.userType === "object") {
-        const role = (user.userType as IUserType).name.toLowerCase();
-
-        if (role === "admin") {
-          let orders = await Order.find()
-            .populate({
-              path: "client",
-              select: "_id c_name c_email c_company",
-            })
-            .populate({
-              path: "customer",
-              select: "_id name email company",
-            });
-
-          orders = await updateOrderStatuses(orders);
-          const data = await attachEmailPlans(orders);
-
-          res.status(200).json({ success: true, data });
-          return;
-        }
-      }
-
-      // ================= CLIENT LOGIN =================
-      const client = await Client.findById(loggedInUser._id)
-        .populate("userType");
-
-      if (client && typeof client.userType === "object") {
-        const role = (client.userType as IUserType).name.toLowerCase();
-
-        if (role === "customer") {
-          let orders = await Order.find({ client: client._id })
-            .populate({
-              path: "client",
-              select: "_id c_name c_email c_company",
-            })
-            .populate({
-              path: "customer",
-              select: "_id name email company",
-            });
-
-          orders = await updateOrderStatuses(orders);
-          const data = await attachEmailPlans(orders);
-
-          res.status(200).json({
-            success: true,
-            client: {
-              _id: client._id,
-              c_name: client.c_name,
-              c_email: client.c_email,
-              c_company: client.c_company,
-            },
-            data,
-          });
-          return;
-        }
-      }
-
-      res.status(403).json({ success: false, error: "Access denied" });
-    } catch (err) {
-      console.error("❌ Error fetching orders:", err);
-      res.status(500).json({ success: false, error: "Server error" });
     }
+
+    // ================= CLIENT =================
+    const client = await Client.findById(loggedInUser._id).populate("userType");
+
+    if (client && typeof client.userType === "object") {
+      const role = (client.userType as IUserType).name.toLowerCase();
+
+      if (role === "customer") {
+        let orders = await Order.find({ client: client._id })
+          .populate({
+            path: "client",
+            select: "_id c_name c_email c_company",
+          })
+          .populate({
+            path: "customer",
+            select: "_id name email company",
+          })
+          .lean(); // 🔥 REQUIRED
+
+        orders = await updateOrderStatuses(orders);
+        orders = await attachEmailPlans(orders);
+
+        res.status(200).json({
+          success: true,
+          client: {
+            _id: client._id,
+            c_name: client.c_name,
+            c_email: client.c_email,
+            c_company: client.c_company,
+          },
+          data: orders,
+        });
+        return;
+      }
+    }
+
+    res.status(403).json({ success: false, error: "Access denied" });
+  } catch (err) {
+    console.error("❌ Error:", err);
+    res.status(500).json({ success: false, error: "Server error" });
   }
-);
+});
+
 
 
 
