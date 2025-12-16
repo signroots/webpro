@@ -336,22 +336,21 @@ router.get(
     try {
       const loggedInUser = req.user;
 
-      if (!loggedInUser || !loggedInUser._id) {
+      if (!loggedInUser?._id) {
         res.status(401).json({ success: false, error: "Unauthorized" });
         return;
       }
 
-      // 🔵 Attach Email OrderPlans (NO extra Client query)
-      const attachEmailPlans = async (orders: any[]): Promise<any[]> => {
-        return await Promise.all(
+      // 🔵 Attach Email OrderPlans
+      const attachEmailPlans = async (orders: any[]) => {
+        return Promise.all(
           orders.map(async (order) => {
             const emailPlans = await OrderPlan.find({
               orderId: order._id,
               type: "email",
             })
               .populate("planId")
-              .populate("emailTypeId")
-              .exec();
+              .populate("emailTypeId");
 
             return {
               ...order.toObject(),
@@ -361,79 +360,79 @@ router.get(
         );
       };
 
-      // 🟡 Update order statuses based on expiry date
-      const updateOrderStatuses = async (orders: any[]): Promise<any[]> => {
+      // 🟡 Update order status
+      const updateOrderStatuses = async (orders: any[]) => {
         const today = new Date();
 
-        return await Promise.all(
+        return Promise.all(
           orders.map(async (order) => {
-            let newStatus = "";
-
-            if (order.expiryDate && !isNaN(new Date(order.expiryDate).getTime())) {
-              newStatus =
+            if (order.expiryDate) {
+              const status =
                 new Date(order.expiryDate) < today ? "EXPIRED" : "ACTIVE";
-            }
 
-            if (order.status !== newStatus) {
-              order.status = newStatus;
-              await order.save();
+              if (order.status !== status) {
+                order.status = status;
+                await order.save();
+              }
             }
-
             return order;
           })
         );
       };
 
-      // 🔍 Resolve user role
       const user = await User.findById(loggedInUser._id)
-        .populate("userType")
-        .exec();
+        .populate("userType");
 
       // ================= ADMIN =================
-      if (user && typeof user.userType === "object") {
-        const userRole = (user.userType as IUserType).name.toLowerCase();
+      if (user?.userType && typeof user.userType === "object") {
+        const role = (user.userType as IUserType).name.toLowerCase();
 
-        if (userRole === "admin") {
+        if (role === "admin") {
           let orders = await Order.find()
             .populate({
               path: "client",
-              select: "_id c_name c_email c_company",
+              select: "_id c_name c_email c_company c_phone",
             })
-            .exec();
+            .populate({
+              path: "customer",
+              select: "_id name email company phone",
+            });
 
           orders = await updateOrderStatuses(orders);
           orders = await attachEmailPlans(orders);
 
-          res.status(200).json({ success: true, data: orders });
+          res.json({ success: true, data: orders });
           return;
         }
 
-        // ============== CUSTOMER (User) ==============
-        if (userRole === "customer") {
+        // ================= CUSTOMER (User) =================
+        if (role === "customer") {
           const customer = await Client.findOne({
             userType: user._id,
-          }).exec();
+          });
 
           if (!customer) {
-            res
-              .status(404)
-              .json({ success: false, error: "Customer profile not found" });
+            res.status(404).json({
+              success: false,
+              error: "Customer profile not found",
+            });
             return;
           }
 
-          let orders = await Order.find({
-            customer: customer._id,
-          })
+          let orders = await Order.find({ customer: customer._id })
             .populate({
               path: "client",
               select: "_id c_name c_email c_company",
             })
-            .exec();
+            .populate({
+              path: "customer",
+              select: "_id name email company",
+            });
 
           orders = await updateOrderStatuses(orders);
           orders = await attachEmailPlans(orders);
 
-          res.status(200).json({
+          res.json({
             success: true,
             customer: {
               _id: customer._id,
@@ -447,28 +446,28 @@ router.get(
         }
       }
 
-      // ================= CLIENT (Direct login) =================
+      // ================= CLIENT LOGIN =================
       const client = await Client.findById(loggedInUser._id)
-        .populate("userType")
-        .exec();
+        .populate("userType");
 
-      if (client && typeof client.userType === "object") {
-        const userRole = (client.userType as IUserType).name.toLowerCase();
+      if (client?.userType && typeof client.userType === "object") {
+        const role = (client.userType as IUserType).name.toLowerCase();
 
-        if (userRole === "customer") {
-          let orders = await Order.find({
-            client: client._id,
-          })
+        if (role === "customer") {
+          let orders = await Order.find({ client: client._id })
             .populate({
               path: "client",
               select: "_id c_name c_email c_company",
             })
-            .exec();
+            .populate({
+              path: "customer",
+              select: "_id name email company",
+            });
 
           orders = await updateOrderStatuses(orders);
           orders = await attachEmailPlans(orders);
 
-          res.status(200).json({
+          res.json({
             success: true,
             client: {
               _id: client._id,
@@ -482,9 +481,7 @@ router.get(
         }
       }
 
-      res
-        .status(403)
-        .json({ success: false, error: "Access denied" });
+      res.status(403).json({ success: false, error: "Access denied" });
     } catch (err) {
       console.error("❌ Error fetching orders:", err);
       res.status(500).json({ success: false, error: "Server error" });
