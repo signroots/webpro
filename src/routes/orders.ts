@@ -329,144 +329,168 @@ router.get("/dnsorders", authMiddleware, async (req: AuthRequest, res: Response)
 });
 
 
-router.get("/", authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const loggedInUser = req.user;
+router.get(
+  "/",
+  authMiddleware,
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const loggedInUser = req.user;
 
-    if (!loggedInUser || !loggedInUser._id) {
-      console.log("Unauthorized access attempt.");
-      res.status(401).json({ success: false, error: "Unauthorized" });
-      return;
-    }
-
-    // 🔵 Attach Email OrderPlans and ensure client c_company
-    const attachEmailPlans = async (orders: any[]): Promise<any[]> => {
-  return await Promise.all(
-    orders.map(async (order) => {
-      const emailPlans = await OrderPlan.find({
-        orderId: order._id,
-        type: "email",
-      })
-        .populate("planId")
-        .populate("emailTypeId")
-        .exec();
-
-      const orderObj = order.toObject();
-
-      // Keep existing client and ensure c_company
-      if (orderObj.client) {
-        orderObj.client.c_company = orderObj.client.c_company || "";
-      }
-
-      return {
-        ...orderObj,
-        emailPlans,
-      };
-    })
-  );
-};
-
-
-    // 🟡 Update order statuses based on expiry date
-    const updateOrderStatuses = async (orders: any[]): Promise<any[]> => {
-      const today = new Date();
-      return await Promise.all(
-        orders.map(async (order) => {
-          let newStatus = "";
-
-          if (!order.expiryDate || isNaN(new Date(order.expiryDate).getTime())) {
-            newStatus = "";
-          } else {
-            const expiryDate = new Date(order.expiryDate);
-            newStatus = expiryDate < today ? "EXPIRED" : "ACTIVE";
-          }
-
-          if (order.status !== newStatus) {
-            order.status = newStatus;
-            await order.save();
-          }
-
-          return order;
-        })
-      );
-    };
-
-    // 🔍 Check user role
-    const user = await User.findById(loggedInUser._id).populate("userType").exec();
-
-    if (user && user.userType && typeof user.userType === "object") {
-      const userRole = (user.userType as IUserType).name.toLowerCase();
-
-      // ---------------- ADMIN ----------------
-      if (userRole === "admin") {
-        let orders = await Order.find().populate({
-          path: "client",
-          select: "_id c_name c_email c_company"
-        }).exec();
-        orders = await updateOrderStatuses(orders);
-        orders = await attachEmailPlans(orders);
-
-        res.status(200).json({ success: true, data: orders });
+      if (!loggedInUser || !loggedInUser._id) {
+        res.status(401).json({ success: false, error: "Unauthorized" });
         return;
       }
 
-      // ---------------- CUSTOMER (via User) ----------------
-      if (userRole === "customer") {
-        const customer = await Client.findOne({ userType: user._id }).exec();
-        if (!customer) {
-          res.status(404).json({ success: false, error: "Customer profile not found" });
+      // 🔵 Attach Email OrderPlans (NO extra Client query)
+      const attachEmailPlans = async (orders: any[]): Promise<any[]> => {
+        return await Promise.all(
+          orders.map(async (order) => {
+            const emailPlans = await OrderPlan.find({
+              orderId: order._id,
+              type: "email",
+            })
+              .populate("planId")
+              .populate("emailTypeId")
+              .exec();
+
+            return {
+              ...order.toObject(),
+              emailPlans,
+            };
+          })
+        );
+      };
+
+      // 🟡 Update order statuses based on expiry date
+      const updateOrderStatuses = async (orders: any[]): Promise<any[]> => {
+        const today = new Date();
+
+        return await Promise.all(
+          orders.map(async (order) => {
+            let newStatus = "";
+
+            if (order.expiryDate && !isNaN(new Date(order.expiryDate).getTime())) {
+              newStatus =
+                new Date(order.expiryDate) < today ? "EXPIRED" : "ACTIVE";
+            }
+
+            if (order.status !== newStatus) {
+              order.status = newStatus;
+              await order.save();
+            }
+
+            return order;
+          })
+        );
+      };
+
+      // 🔍 Resolve user role
+      const user = await User.findById(loggedInUser._id)
+        .populate("userType")
+        .exec();
+
+      // ================= ADMIN =================
+      if (user && typeof user.userType === "object") {
+        const userRole = (user.userType as IUserType).name.toLowerCase();
+
+        if (userRole === "admin") {
+          let orders = await Order.find()
+            .populate({
+              path: "client",
+              select: "_id c_name c_email c_company",
+            })
+            .exec();
+
+          orders = await updateOrderStatuses(orders);
+          orders = await attachEmailPlans(orders);
+
+          res.status(200).json({ success: true, data: orders });
           return;
         }
 
-        let orders = await Order.find({ customer: customer._id }).populate("client").exec();
-        orders = await updateOrderStatuses(orders);
-        orders = await attachEmailPlans(orders);
+        // ============== CUSTOMER (User) ==============
+        if (userRole === "customer") {
+          const customer = await Client.findOne({
+            userType: user._id,
+          }).exec();
 
-        res.status(200).json({
-          success: true,
-          customer: {
-            _id: customer._id,
-            name: customer.c_name,
-            email: customer.c_email,
-            c_company: customer.c_company,
-          },
-          data: orders,
-        });
-        return;
+          if (!customer) {
+            res
+              .status(404)
+              .json({ success: false, error: "Customer profile not found" });
+            return;
+          }
+
+          let orders = await Order.find({
+            customer: customer._id,
+          })
+            .populate({
+              path: "client",
+              select: "_id c_name c_email c_company",
+            })
+            .exec();
+
+          orders = await updateOrderStatuses(orders);
+          orders = await attachEmailPlans(orders);
+
+          res.status(200).json({
+            success: true,
+            customer: {
+              _id: customer._id,
+              name: customer.c_name,
+              email: customer.c_email,
+              c_company: customer.c_company,
+            },
+            data: orders,
+          });
+          return;
+        }
       }
-    }
 
-    // ---------------- CLIENT (Direct login as Client) ----------------
-    const client = await Client.findById(loggedInUser._id).populate("userType").exec();
-    if (client && client.userType && typeof client.userType === "object") {
-      const userRole = (client.userType as IUserType).name.toLowerCase();
+      // ================= CLIENT (Direct login) =================
+      const client = await Client.findById(loggedInUser._id)
+        .populate("userType")
+        .exec();
 
-      if (userRole === "customer") {
-        let orders = await Order.find({ client: client._id }).populate("client").exec();
-        orders = await updateOrderStatuses(orders);
-        orders = await attachEmailPlans(orders);
+      if (client && typeof client.userType === "object") {
+        const userRole = (client.userType as IUserType).name.toLowerCase();
 
-        res.status(200).json({
-          success: true,
-          client: {
-            _id: client._id,
-            name: client.c_name,
-            email: client.c_email,
-            c_company: client.c_company,
-          },
-          data: orders,
-        });
-        return;
+        if (userRole === "customer") {
+          let orders = await Order.find({
+            client: client._id,
+          })
+            .populate({
+              path: "client",
+              select: "_id c_name c_email c_company",
+            })
+            .exec();
+
+          orders = await updateOrderStatuses(orders);
+          orders = await attachEmailPlans(orders);
+
+          res.status(200).json({
+            success: true,
+            client: {
+              _id: client._id,
+              name: client.c_name,
+              email: client.c_email,
+              c_company: client.c_company,
+            },
+            data: orders,
+          });
+          return;
+        }
       }
-    }
 
-    res.status(403).json({ success: false, error: "Access denied: Invalid role or user not found" });
-  } catch (err) {
-    console.error("❌ Error fetching orders:", err);
-    res.status(500).json({ success: false, error: "Server error" });
+      res
+        .status(403)
+        .json({ success: false, error: "Access denied" });
+    } catch (err) {
+      console.error("❌ Error fetching orders:", err);
+      res.status(500).json({ success: false, error: "Server error" });
+    }
   }
-});
-
+);
 
 
 // POST create order
