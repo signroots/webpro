@@ -2,6 +2,7 @@ import express from 'express';
 import axios from 'axios';
 import dotenv from 'dotenv';
 import Customer, { IClient } from "../models/Client";
+import Order from '../models/Order';
 import Domain from '../models/Domain';
 import { Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
@@ -285,5 +286,56 @@ router.put("/:id", async (req: Request, res: Response): Promise<any> => {
   }
 });
 
+router.get(
+  "/:id/orders",
+  async (req: Request, res: Response): Promise<any> => {
+    try {
+      const { id } = req.params;
 
+      // ✅ Validate client id
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({
+          success: false,
+          error: "Invalid client ID",
+        });
+      }
+
+      // ✅ Check client exists
+      const client = await Client.findById(id);
+      if (!client) {
+        return res.status(404).json({
+          success: false,
+          error: "Client not found",
+        });
+      }
+
+      // ✅ Fetch orders for this client
+      const orders = await Order.find({ client: id })
+        .populate("client", "c_name c_email c_phone c_company")
+        .populate("registrarName", "name")
+        .populate("emailtypeid planid hosttypeid subHostTypeId hoststorageId")
+        .sort({ createdAt: -1 });
+
+      return res.status(200).json({
+        success: true,
+        client: {
+          _id: client._id,
+          c_name: client.c_name,
+          c_email: client.c_email,
+          c_phone: client.c_phone,
+          c_company: client.c_company,
+        },
+        totalOrders: orders.length,
+        orders,
+      });
+    } catch (err: any) {
+      console.error("Error fetching client orders:", err.message);
+      return res.status(500).json({
+        success: false,
+        error: "Failed to fetch client orders",
+        details: err.message,
+      });
+    }
+  }
+);
 export default router;

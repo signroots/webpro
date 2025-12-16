@@ -71,5 +71,5 @@ startDomainSyncCron();
 
 // Start server
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Server running on http://192.168.220.41:${PORT}`);
+  console.log(`🚀 Server running on http://192.168.220.39:${PORT}`);
 });

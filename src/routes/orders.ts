@@ -419,7 +419,8 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
         }
 
         let orders = await Order.find({ customer: customer._id })
-          .populate("customer", "name email")
+          .populate("customer", "c_name c_email c_company")
+          .populate("client", "c_name c_email c_company") // include client info in orders
           .exec();
 
         orders = await updateOrderStatuses(orders);
@@ -431,7 +432,7 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
             _id: customer._id,
             name: customer.c_name,
             email: customer.c_email,
-            c_company:customer.c_company
+            c_company: customer.c_company,
           },
           data: orders,
         });
@@ -450,7 +451,7 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
 
       if (userRole === "customer") {
         let orders = await Order.find({ client: client._id })
-          .populate("client", "name email")
+          .populate("client", "c_name c_email c_company")
           .exec();
 
         orders = await updateOrderStatuses(orders);
@@ -462,6 +463,7 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
             _id: client._id,
             name: client.c_name,
             email: client.c_email,
+            c_company: client.c_company,
           },
           data: orders,
         });
