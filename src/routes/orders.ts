@@ -453,6 +453,105 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
 });
 
 
+// GET single order by ID
+
+router.get("/:id", async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({ success: false, message: "Invalid order ID" });
+      return;
+    }
+
+    // Fetch order and populate only relevant fields (without hoststorageId)
+    const order = await Order.findById(id)
+      .populate("customer")
+      .populate("client")
+      .populate("hosttypeid")      // populate host type
+      .populate("subHostTypeId")   // populate host sub-type
+      .populate("hoststorageId")
+      .exec();
+
+    if (!order) {
+      res.status(404).json({ success: false, message: "Order not found" });
+      return;
+    }
+
+    // Fetch related email plans
+   const orderPlansRaw = await OrderPlan.find({ orderId: order._id })
+  .populate({
+    path: "planId",
+    model: "PlanEmail",
+  })
+  .populate({
+    path: "emailTypeId",
+    model: "TypeEmail",
+  })
+  .lean();
+
+
+ const orderPlans: IOrderPlanResponse[] = orderPlansRaw.map((p: any) => ({
+  _id: p._id.toString(),
+  orderId: p.orderId.toString(),
+  planName: p.planId?.plan || "",
+  planId: p.planId?._id?.toString() || "",
+  emailType: p.emailTypeId?.name || "",  // ✅ now shows "Microsoft 365"
+  serviceType: p.type,
+  type: p.type,
+  registrationDate: p.registrationDate,
+  expiryDate: p.expiryDate,
+  noOfUsers: p.noOfUsers,
+}));
+
+
+
+    // Merge client and customer details
+    const clientData = order.client
+      ? {
+          c_name: (order.client as any).c_name,
+          c_email: (order.client as any).c_email,
+          c_phone: (order.client as any).c_phone,
+          c_company: (order.client as any).c_company,
+          c_address: (order.client as any).c_address,
+          c_city: (order.client as any).c_city,
+          c_state: (order.client as any).c_state,
+          c_country: (order.client as any).c_country,
+          c_zipCode: (order.client as any).c_zipCode,
+        }
+      : {};
+
+    const customerData = order.customer
+      ? {
+          name: (order.customer as any).name,
+          email: (order.customer as any).email,
+          phone: (order.customer as any).phone,
+          company: (order.customer as any).company,
+          address: (order.customer as any).address,
+          city: (order.customer as any).city,
+          state: (order.customer as any).state,
+          country: (order.customer as any).country,
+          zipCode: (order.customer as any).zipCode,
+        }
+      : {};
+
+    const mergedCustomerDetails = { ...clientData, ...customerData };
+
+    // Return full response without hoststorageId
+    res.status(200).json({
+      success: true,
+      data: {
+        ...order.toObject(),
+        customerDetails: mergedCustomerDetails,
+        plans: orderPlans,
+      },
+    });
+  } catch (err) {
+    console.error("❌ Error fetching order:", err);
+    res.status(500).json({ success: false, error: (err as Error).message });
+  }
+});
 
 
 // POST create order
