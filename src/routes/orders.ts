@@ -337,6 +337,12 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
       res.status(401).json({ success: false, error: "Unauthorized" });
       return;
     }
+    const filterValidEmailOrders = (orders: any[]) => {
+      return orders.filter(order =>
+        order.expiryDate &&
+        (order.google_email === true || order.microsoft_email === true)
+      );
+    };
 
     // 🔵 Attach Email Plans (SAFE)
     const attachEmailPlans = async (orders: any[]) => {
@@ -404,7 +410,7 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
 
         orders = await updateOrderStatuses(orders);
         orders = await attachEmailPlans(orders);
-
+        orders = filterValidEmailOrders(orders);
         res.status(200).json({ success: true, data: orders });
         return;
       }
@@ -430,7 +436,7 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
 
         orders = await updateOrderStatuses(orders);
         orders = await attachEmailPlans(orders);
-
+        orders = filterValidEmailOrders(orders);
         res.status(200).json({
           success: true,
           client: {
