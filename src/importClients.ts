@@ -8,17 +8,20 @@
 import 'dotenv/config';
 import mongoose from 'mongoose';
 import xlsx from 'xlsx';
-import Client from './models/Client';
 
+import Client from './models/Client';
+import Country from './models/Country';
+import State from './models/State';
+
+/* ===============================
+   TYPES
+================================ */
 type ClientExcelRow = {
-  'Created Time'?: string;
-  'Last Modified Time'?: string;
   'Company Name'?: string;
   'Salutation'?: string;
   'First Name'?: string;
   'Last Name'?: string;
   'Phone'?: string;
-  'Currency Code'?: string;
   'Status'?: string;
   'Bank Account Payment'?: string;
   'Portal Enabled'?: string | boolean;
@@ -28,7 +31,6 @@ type ClientExcelRow = {
   'Billing State'?: string;
   'Billing Country'?: string;
   'Billing Code'?: string;
-  'GST Treatment'?: string;
   'GST Identification Number (GSTIN)'?: string;
   'EmailID'?: string;
   'MobilePhone'?: string;
@@ -38,103 +40,161 @@ type ClientExcelRow = {
 
 const filePath = 'clients.csv';
 
+/* ===============================
+   MAIN IMPORT FUNCTION
+================================ */
 async function importClientData() {
   try {
-    // 1️⃣ Validate env
     if (!process.env.MONGO_URI) {
-      throw new Error('❌ MONGO_URI not found in .env file');
+      throw new Error('❌ MONGO_URI not found');
     }
 
-    // 2️⃣ Connect to MongoDB
     await mongoose.connect(process.env.MONGO_URI);
     console.log('✅ MongoDB connected');
 
-    // 3️⃣ Read Excel / CSV
+    /* ===============================
+       READ EXCEL / CSV
+    =============================== */
     const workbook = xlsx.readFile(filePath);
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const rows = xlsx.utils.sheet_to_json<ClientExcelRow>(sheet, {
       defval: '',
       raw: false,
     });
+
     console.log(`📄 Total rows found: ${rows.length}`);
 
-    // 4️⃣ Transform rows → Client schema with placeholders for required fields
-    const clients = rows.map((row, index) => ({
-      _id: new mongoose.Types.ObjectId(), // Ensure unique _id
-      c_salutation: row['Salutation'] || '',
-      c_firstName: row['First Name'] || '',
-      c_lastName: row['Last Name'] || '',
-      c_name:
-        `${row['First Name'] || ''} ${row['Last Name'] || ''}`.trim() ||
-        `Unknown_${index + 1}`,
-      c_email: row['EmailID']
-        ? [row['EmailID']]
-        : [`noemail_${index + 1}@example.com`],
-      c_phone: row['Phone'] || row['MobilePhone'] || `no-phone-${index + 1}`,
-      c_mobilePhone: row['MobilePhone'] || '',
-      c_company: row['Company Name'] || `Unknown Company_${index + 1}`,
-      c_address: row['Billing Address'] || 'Unknown Address',
-      c_address2: row['Billing Street2'] || '',
-      c_city: row['Billing City'] || 'Unknown City',
-      c_state: row['Billing State'] || 'Unknown State',
-      c_country: row['Billing Country'] || 'Unknown Country',
-      c_zipCode: row['Billing Code'] || '',
-      c_gst: row['GST Identification Number (GSTIN)'] || '',
-      c_status: row['Status'] || '',
-      c_bankAccountPayment: row['Bank Account Payment'] || '',
-      c_portalEnabled:
-        row['Portal Enabled'] === true || row['Portal Enabled'] === 'true'
-          ? true
-          : false,
-      c_placeOfContact: row['Place Of Contact'] || '',
-      c_placeOfContactWithStateCode:
-        row['Place of Contact(With State Code)'] || '',
-      is_active: true,
-    }));
+    /* ===============================
+       CACHES (PERFORMANCE)
+    =============================== */
+    const countryCache = new Map<string, mongoose.Types.ObjectId>();
+    const stateCache = new Map<string, mongoose.Types.ObjectId>();
 
-    // 5️⃣ Debug duplicates in Excel before insert
-    const companyCount: Record<string, number> = {};
-    const phoneCount: Record<string, number> = {};
+    /* ===============================
+       COUNTRY HELPER
+    =============================== */
+    async function getCountryId(nameRaw: string): Promise<mongoose.Types.ObjectId> {
+      const name = nameRaw.trim() || 'Unknown Country';
 
-    clients.forEach((c) => {
-      const company = c.c_company.trim();
-      const phone = c.c_phone.trim();
-      if (company) companyCount[company] = (companyCount[company] || 0) + 1;
-      if (phone) phoneCount[phone] = (phoneCount[phone] || 0) + 1;
-    });
+      if (countryCache.has(name)) {
+        return countryCache.get(name)!;
+      }
 
-    const duplicateCompanies = Object.entries(companyCount)
-      .filter(([_, count]) => count > 1)
-      .map(([name]) => name);
+      let country = await Country.findOne({ name }).lean<{ _id: mongoose.Types.ObjectId }>();
 
-    const duplicatePhones = Object.entries(phoneCount)
-      .filter(([_, count]) => count > 1)
-      .map(([phone]) => phone);
+      if (!country) {
+        const created = await Country.create({
+          name,
+          code: name.substring(0, 3).toUpperCase(),
+        });
 
-    if (duplicateCompanies.length > 0) {
-      console.warn('⚠️ Duplicate c_company values in Excel:');
-      duplicateCompanies.forEach((d) => console.warn(' -', d));
-    } else {
-      console.log('✅ No duplicate c_company values in Excel.');
+        const id = created._id as mongoose.Types.ObjectId;
+        countryCache.set(name, id);
+        return id;
+      }
+
+      countryCache.set(name, country._id);
+      return country._id;
     }
 
-    if (duplicatePhones.length > 0) {
-      console.warn('⚠️ Duplicate c_phone values in Excel:');
-      duplicatePhones.forEach((d) => console.warn(' -', d));
-    } else {
-      console.log('✅ No duplicate c_phone values in Excel.');
+    /* ===============================
+       STATE HELPER
+    =============================== */
+    async function getStateId(
+      nameRaw: string,
+      countryId: mongoose.Types.ObjectId
+    ): Promise<mongoose.Types.ObjectId> {
+      const name = nameRaw.trim() || 'Unknown State';
+      const key = `${name}_${countryId.toString()}`;
+
+      if (stateCache.has(key)) {
+        return stateCache.get(key)!;
+      }
+
+      let state = await State.findOne({ name, country: countryId })
+        .lean<{ _id: mongoose.Types.ObjectId }>();
+
+      if (!state) {
+        const created = await State.create({
+          name,
+          country: countryId,
+        });
+
+        const id = created._id as mongoose.Types.ObjectId;
+        stateCache.set(key, id);
+        return id;
+      }
+
+      stateCache.set(key, state._id);
+      return state._id;
     }
 
-    // 6️⃣ Insert all clients into DB (insert all 318 rows)
-    await Client.insertMany(clients, { ordered: false });
-    console.log(`✅ Successfully inserted all ${clients.length} clients`);
+    /* ===============================
+       BUILD CLIENT DOCUMENTS
+    =============================== */
+    const clients: any[] = [];
 
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+
+      const countryId = await getCountryId(row['Billing Country'] || '');
+      const stateId = await getStateId(row['Billing State'] || '', countryId);
+
+      clients.push({
+        _id: new mongoose.Types.ObjectId(),
+
+        c_salutation: row['Salutation'] || '',
+        c_firstName: row['First Name'] || '',
+        c_lastName: row['Last Name'] || '',
+        c_name:
+          `${row['First Name'] || ''} ${row['Last Name'] || ''}`.trim() ||
+          `Unknown_${i + 1}`,
+
+        c_email: row['EmailID']
+          ? [row['EmailID']]
+          : [`noemail_${i + 1}@example.com`],
+
+        c_phone: row['Phone'] || row['MobilePhone'] || `no-phone-${i + 1}`,
+        c_mobilePhone: row['MobilePhone'] || '',
+
+        c_company: row['Company Name'] || `Unknown Company_${i + 1}`,
+
+        c_address: row['Billing Address'] || 'Unknown Address',
+        c_address2: row['Billing Street2'] || '',
+        c_city: row['Billing City'] || 'Unknown City',
+
+        c_state: stateId,        // ✅ ObjectId
+        c_country: countryId,    // ✅ ObjectId
+
+        c_zipCode: row['Billing Code'] || '',
+        c_gst: row['GST Identification Number (GSTIN)'] || '',
+        c_status: row['Status'] || '',
+        c_bankAccountPayment: row['Bank Account Payment'] || '',
+        c_portalEnabled:
+          row['Portal Enabled'] === true || row['Portal Enabled'] === 'true',
+
+        c_placeOfContact: row['Place Of Contact'] || '',
+        c_placeOfContactWithStateCode:
+          row['Place of Contact(With State Code)'] || '',
+
+        is_active: true,
+      });
+    }
+
+    /* ===============================
+       INSERT ALL ROWS (318/318)
+    =============================== */
+    await Client.insertMany(clients, { ordered: true });
+
+    console.log(`✅ Successfully inserted ALL ${clients.length} clients`);
     process.exit(0);
-  } catch (error: any) {
+  } catch (error) {
     console.error('❌ Import failed:', error);
     process.exit(1);
   }
 }
 
-// 🚀 Run importer
+/* ===============================
+   RUN
+================================ */
 importClientData();
