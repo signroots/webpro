@@ -35,16 +35,21 @@ const router = express.Router();
 //     }
 //   });
 
-
 router.get('/', async (_req, res) => {
   try {
-    const customers = await Client.find().sort({ createdAt: -1 }).select("+password");
+    const customers = await Client.find()
+      .sort({ createdAt: -1 })
+      .populate('c_country', 'name code')
+      .populate('c_state', 'name code country')
+      .lean();
+
     res.status(200).json(customers);
   } catch (err: any) {
     console.error('Error fetching customers:', err.message);
     res.status(500).json({ error: 'Failed to fetch customers' });
   }
 });
+
 
 
 router.post("/", async (req: Request, res: Response): Promise<any> => {

@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 import { IUserType } from "./UserType";
-
+import { ICountry } from "./Country";
+import { IState } from "./State";
 export interface IClient extends Document {
   _id: mongoose.Types.ObjectId;
   c_salutation?: string;  // New Field: Salutation
@@ -14,8 +15,8 @@ export interface IClient extends Document {
   c_address: string;
   c_address2?: string;  // New Field: Address 2 (e.g., Billing Street2)
   c_city: string;
-  c_state: string;
-  c_country: string;
+  c_state: mongoose.Types.ObjectId |IState;
+  c_country: mongoose.Types.ObjectId |ICountry;
   c_zipCode: string;
   c_gst?: string;  // New Field: GST Identification Number (GSTIN)
   c_status?: string;  // New Field: Status
@@ -45,8 +46,8 @@ const ClientSchema: Schema<IClient> = new Schema(
     c_address: { type: String, required: true, trim: true },
     c_address2: { type: String, trim: true },
     c_city: { type: String, required: true, trim: true },
-    c_state: { type: String, required: true, trim: true },
-    c_country: { type: String, required: true, trim: true },
+    c_state: { type: mongoose.Schema.Types.ObjectId, ref: 'State' }, // Reference to State collection
+    c_country: { type: mongoose.Schema.Types.ObjectId, ref: 'Country' }, // Reference to Country collection
     c_zipCode: { type: String, trim: true },
     c_gst: { type: String, trim: true },
     c_status: { type: String, trim: true },

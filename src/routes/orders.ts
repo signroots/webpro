@@ -5,14 +5,16 @@ import mongoose from "mongoose";
 import { authMiddleware,AuthRequest  } from "../middleware/auth"; 
 import User from "../models/User";
 import UserType, { IUserType } from "../models/UserType"
-import Client, { IClient } from "../models/Client";
-import Country from "../models/Country";
-import State from "../models/State";
+import Client from "../models/Client";
+import { IState } from "../models/State";
+import { ICountry  } from "../models/Country";
 import  {OrderPlan, IOrderPlan } from "../models/OrderPlan";
 import { Storage } from "../models/Storage";
 import { PlanEmail } from "../models/PlanEmail";
 import { TypeEmail } from "../models/TypeEmail";
 import asyncHandler from "express-async-handler";
+import State from "../models/State";
+import Country from "../models/Country";
 const router = express.Router();
 interface IOrderPlanResponse {
   _id: string;
@@ -328,15 +330,18 @@ router.get("/dnsorders", authMiddleware, async (req: AuthRequest, res: Response)
   }
 });
 
-
 router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const loggedInUser = req.user;
 
     if (!loggedInUser?._id) {
+      console.log("No user authenticated");
       res.status(401).json({ success: false, error: "Unauthorized" });
       return;
     }
+
+    console.log("Logged In User:", loggedInUser);  // Log the authenticated user
+
     const filterValidEmailOrders = (orders: any[]) => {
       return orders.filter(order =>
         order.expiryDate &&
@@ -344,7 +349,7 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
       );
     };
 
-    // 🔵 Attach Email Plans (SAFE)
+    // Attach email plans to orders
     const attachEmailPlans = async (orders: any[]) => {
       return Promise.all(
         orders.map(async (order) => {
@@ -357,14 +362,14 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
             .lean();
 
           return {
-            ...order,      // ✅ already plain object
+            ...order,
             emailPlans,
           };
         })
       );
     };
 
-    // 🟡 Update status
+    // Update status for orders
     const updateOrderStatuses = async (orders: any[]) => {
       const today = new Date();
 
@@ -373,15 +378,11 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
           let newStatus = "";
 
           if (order.expiryDate) {
-            newStatus =
-              new Date(order.expiryDate) < today ? "EXPIRED" : "ACTIVE";
+            newStatus = new Date(order.expiryDate) < today ? "EXPIRED" : "ACTIVE";
           }
 
           if (order.status !== newStatus) {
-            await Order.updateOne(
-              { _id: order._id },
-              { status: newStatus }
-            );
+            await Order.updateOne({ _id: order._id }, { status: newStatus });
             order.status = newStatus;
           }
 
@@ -393,8 +394,9 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
     // ================= ADMIN =================
     const user = await User.findById(loggedInUser._id).populate("userType");
 
-    if (user && typeof user.userType === "object") {
+    if (user && user.userType) {
       const role = (user.userType as IUserType).name.toLowerCase();
+      console.log("User Role:", role);  // Log the user role
 
       if (role === "admin") {
         let orders = await Order.find()
@@ -406,11 +408,16 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
             path: "customer",
             select: "_id name email company",
           })
-          .lean(); // 🔥 REQUIRED
+          .lean();
+        
+        console.log("Fetched Orders for Admin:", orders);  // Log the orders
 
         orders = await updateOrderStatuses(orders);
         orders = await attachEmailPlans(orders);
         orders = filterValidEmailOrders(orders);
+        
+        console.log("Filtered Orders:", orders);  // Log the filtered orders
+        
         res.status(200).json({ success: true, data: orders });
         return;
       }
@@ -419,8 +426,9 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
     // ================= CLIENT =================
     const client = await Client.findById(loggedInUser._id).populate("userType");
 
-    if (client && typeof client.userType === "object") {
+    if (client && client.userType) {
       const role = (client.userType as IUserType).name.toLowerCase();
+      console.log("Client Role:", role);  // Log the client role
 
       if (role === "customer") {
         let orders = await Order.find({ client: client._id })
@@ -432,11 +440,16 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
             path: "customer",
             select: "_id name email company",
           })
-          .lean(); // 🔥 REQUIRED
+          .lean();
+
+        console.log("Fetched Orders for Client:", orders);  // Log the orders
 
         orders = await updateOrderStatuses(orders);
         orders = await attachEmailPlans(orders);
         orders = filterValidEmailOrders(orders);
+        
+        console.log("Filtered Orders for Client:", orders);  // Log the filtered orders
+
         res.status(200).json({
           success: true,
           client: {
@@ -457,6 +470,7 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
     res.status(500).json({ success: false, error: "Server error" });
   }
 });
+
 
 
 // GET single order by ID
@@ -941,41 +955,37 @@ router.get("/provider/:name", async (req, res) => {
 
 router.get(
   "/customer_order_details/:customerId",
-  async (req: Request<{ customerId: string }>, res: Response): Promise<void> => {
+  async (req, res) => {
     try {
       const { customerId } = req.params;
 
       if (!mongoose.Types.ObjectId.isValid(customerId)) {
-        res.status(400).json({ status: "ERROR", message: "Invalid customer ID" });
-        return;
+        return res.status(400).json({ status: "ERROR", message: "Invalid customer ID" });
       }
 
+      // Fetch client
       const client = await Client.findById(customerId);
       if (!client) {
-        res.status(404).json({ status: "ERROR", message: "Customer not found" });
-        return;
+        return res.status(404).json({ status: "ERROR", message: "Customer not found" });
       }
 
-      // Safely fetch state and country names
-      let stateName = client.c_state;
-      let countryName = client.c_country;
+      // Helper to get name safely
+      const getName = async <T extends { name: string }>(
+        value: mongoose.Types.ObjectId | T | string | undefined,
+        model: mongoose.Model<T>
+      ): Promise<string | undefined> => {
+        if (!value) return undefined;
+        if (typeof value === "string") return value;
+        if (mongoose.Types.ObjectId.isValid(value as any)) {
+          const doc = await model.findById(value as mongoose.Types.ObjectId);
+          return doc?.name;
+        }
+        return (value as T).name;
+      };
 
-      // Try fetching by ObjectId if possible
-      if (mongoose.Types.ObjectId.isValid(client.c_state)) {
-        const state = await State.findById(client.c_state);
-        if (state) stateName = state.name;
-      } else {
-        const state = await State.findOne({ name: client.c_state });
-        if (state) stateName = state.name;
-      }
-
-      if (mongoose.Types.ObjectId.isValid(client.c_country)) {
-        const country = await Country.findById(client.c_country);
-        if (country) countryName = country.name;
-      } else {
-        const country = await Country.findOne({ name: client.c_country });
-        if (country) countryName = country.name;
-      }
+      // Get state and country names safely
+      const stateName = await getName(client.c_state, State);
+      const countryName = await getName(client.c_country, Country);
 
       const clientWithNames = {
         ...client.toObject(),
@@ -983,15 +993,12 @@ router.get(
         c_country_name: countryName,
       };
 
-      // Fetch all orders for this client
-      const orders = await mongoose
-        .model<IOrder>("Order")
-        .find({ client: customerId })
-        .sort({ createdAt: -1 });
+      // Fetch orders
+      const orders = await Order.find({ client: customerId }).sort({ createdAt: -1 });
 
       res.json({ status: "SUCCESS", client: clientWithNames, orders });
     } catch (err) {
-      console.error("❌ Error fetching customer orders:", err);
+      console.error(err);
       res.status(500).json({ status: "ERROR", message: "Server error" });
     }
   }

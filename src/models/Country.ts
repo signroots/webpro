@@ -1,3 +1,4 @@
+// ../models/Country.ts
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ICountry extends Document {
@@ -20,4 +21,4 @@ const countrySchema = new Schema<ICountry>({
 
 const Country = mongoose.model<ICountry>('Country', countrySchema);
 
-export default Country;
+export default Country; // Default export
