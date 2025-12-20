@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+// ../models/Country.ts
 var mongoose_1 = require("mongoose");
 var countrySchema = new mongoose_1.Schema({
     name: {
@@ -14,4 +15,4 @@ var countrySchema = new mongoose_1.Schema({
     },
 });
 var Country = mongoose_1.default.model('Country', countrySchema);
-exports.default = Country;
+exports.default = Country; // Default export
