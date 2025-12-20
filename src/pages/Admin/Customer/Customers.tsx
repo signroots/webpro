@@ -209,33 +209,44 @@ const Customers: React.FC = () => {
   };
 
   const handleEdit = (customer: ICustomer) => {
-    setSelectedCustomer(customer);
-    setModalForm({
-      c_name: customer.c_name || "",
-      c_email: Array.isArray(customer.c_email)
-        ? customer.c_email
-        : customer.c_email
-        ? customer.c_email.split(",")
-        : [""],
-      c_phone: customer.c_phone || "",
-      c_company: customer.c_company || "",
-      c_address: customer.c_address || "",
-      c_city: customer.c_city || "",
-      c_state: customer.c_state || "",
-      c_country: customer.c_country || "",
-      c_zipCode: customer.c_zipCode || "",
-      c_password: "",
-    });
+  setSelectedCustomer(customer);
 
-    setModalMode("edit");
-    if (customer.c_country) {
-      fetchStatesByCountry(customer.c_country).then(setStates);
-    } else {
-      setStates([]);
-    }
+  const countryId =
+    typeof customer.c_country === "object"
+      ? customer.c_country._id
+      : customer.c_country || "";
 
-    setIsModalOpen(true);
-  };
+  setModalForm({
+    c_name: customer.c_name || "",
+    c_email: Array.isArray(customer.c_email)
+      ? customer.c_email
+      : customer.c_email
+      ? customer.c_email.split(",")
+      : [""],
+    c_phone: customer.c_phone || "",
+    c_company: customer.c_company || "",
+    c_address: customer.c_address || "",
+    c_city: customer.c_city || "",
+    c_state:
+      typeof customer.c_state === "object"
+        ? customer.c_state.name
+        : customer.c_state || "",
+    c_country: countryId, // ✅ ID ONLY
+    c_zipCode: customer.c_zipCode || "",
+    c_password: "",
+  });
+
+  setModalMode("edit");
+
+  if (countryId) {
+    fetchStatesByCountry(countryId).then(setStates);
+  } else {
+    setStates([]);
+  }
+
+  setIsModalOpen(true);
+};
+
 // ✅ Submit (create/edit)
 const handleSubmitCustomer = async (form: ICustomerForm) => {
   const cleanedEmails = (form.c_email || []).filter((e) => e.trim() !== "");

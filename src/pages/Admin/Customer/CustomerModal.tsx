@@ -46,6 +46,17 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
   };
 useEffect(() => {
   if (mode === "edit" && selectedCustomer) {
+    const countryId =
+      typeof selectedCustomer.c_country === "object"
+        ? selectedCustomer.c_country._id
+        : selectedCustomer.c_country || "";
+
+    const stateId =
+  typeof selectedCustomer.c_state === "object"
+    ? selectedCustomer.c_state._id
+    : selectedCustomer.c_state || "";
+
+
     setModalForm({
       c_name: selectedCustomer.c_name || "",
       c_email: Array.isArray(selectedCustomer.c_email)
@@ -57,15 +68,19 @@ useEffect(() => {
       c_company: selectedCustomer.c_company || "",
       c_address: selectedCustomer.c_address || "",
       c_city: selectedCustomer.c_city || "",
-      c_country: selectedCustomer.c_country || "",
-      c_state: selectedCustomer.c_state || "",
+      c_country: countryId,   // ✅ STRING ID ONLY
+      c_state: stateId,     // ✅ STRING NAME ONLY
       c_zipCode: selectedCustomer.c_zipCode || "",
-      c_gst: selectedCustomer.c_gst || "",       // pre-fill GST
-      c_password: selectedCustomer.c_password || "", // pre-fill Password
-      
+      c_gst: selectedCustomer.c_gst || "",
+      c_password: "",
     });
+
+    if (countryId) {
+      fetchStatesByCountry(countryId).then(setStates);
+    }
   }
-}, [mode, selectedCustomer, setModalForm]);
+}, [mode, selectedCustomer]);
+
 
 
   const handleEnterKey = (e: React.KeyboardEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -194,10 +209,18 @@ useEffect(() => {
               {countries.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
             </select>
 
-            <select value={modalForm.c_state || ""} onChange={(e) => handleChange("c_state", e.target.value)} className="w-full p-2 border rounded">
-              <option value="">Select State</option>
-              {states.map((s) => <option key={s.code} value={s.name}>{s.name}</option>)}
-            </select>
+            <select
+  value={modalForm.c_state || ""}
+  onChange={(e) => handleChange("c_state", e.target.value)}
+  className="w-full p-2 border rounded"
+>
+  <option value="">Select State</option>
+  {states.map((s) => (
+    <option key={s.code} value={s.code}>
+      {s.name}
+    </option>
+  ))}
+</select>
 
             <input type="text" placeholder="Zip Code" value={modalForm.c_zipCode || ""} onChange={(e) => handleChange("c_zipCode", e.target.value)} className="w-full p-2 border rounded" />
              <input

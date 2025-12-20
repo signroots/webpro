@@ -14,8 +14,8 @@ export interface ICustomer {
   c_company?: string;
   c_address?: string;
   c_city?: string;
-  c_state?: string;
-  c_country?: string;
+  c_state?: string | { _id: string; name: string; code?: string };
+  c_country?: string | { _id: string; name: string; code?: string };
   c_zipCode?: string;
   c_gst?: string;
   encryptedPassword?: string;
