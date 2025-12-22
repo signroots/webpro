@@ -623,55 +623,6 @@ const resetFormData = () => {
   </select>
 </div>
 
-      {/* <div className="flex flex-wrap gap-4 mb-4 items-center">
-        <input
-          type="text"
-          placeholder="Search domain..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="border px-3 py-2 rounded-lg text-black"
-        />
-        <button
-          onClick={() => setProvider("Google Workspace")}
-          className={`px-4 py-2 rounded-lg ${
-            provider === "Google Workspace"
-              ? "bg-blue-600 text-white"
-              : "bg-gray-300 text-black"
-          }`}
-        >
-          <img src="/download.png" className="w-4 h-4 inline mr-2" /> Google
-          Workspace
-        </button>
-        <button
-          onClick={() => setProvider("Microsoft 365")}
-          className={`px-4 py-2 rounded-lg ${
-            provider === "Microsoft 365"
-              ? "bg-blue-600 text-white"
-              : "bg-gray-300 text-black"
-          }`}
-        >
-          <img src="/microsoft.png" className="w-4 h-4 inline mr-2" /> Microsoft
-          365
-        </button>
-        <button
-          onClick={() => setProvider(undefined)}
-          className="px-4 py-2 bg-gray-200 rounded-lg"
-        >
-          Reset Provider
-        </button>
-
-        <select
-          value={statusFilter || ""}
-          onChange={(e) => setStatusFilter(e.target.value || undefined)}
-          className="border px-3 py-2 rounded-lg"
-        >
-          <option value="">All Status</option>
-          <option value="Active">Active</option>
-          <option value="Inactive">Inactive</option>
-          <option value="Expired">Expired</option>
-        </select>
-      </div> */}
-
       {/* Orders Table */}
      <div className="bg-white shadow rounded-lg overflow-auto">
   <table className="min-w-full divide-y divide-gray-200 text-sm">
@@ -1275,7 +1226,7 @@ const resetFormData = () => {
               <option value="">-- Select Customer --</option>
               {client.map((c) => (
                 <option key={c._id} value={c._id}>
-                  {c.c_name} ({c.c_email})
+                  {c.c_company} ({Array.isArray(c.c_email) ? c.c_email.join(", ") : c.c_email})
                 </option>
               ))}
             </select>
