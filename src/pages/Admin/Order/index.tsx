@@ -1211,8 +1211,30 @@ const resetFormData = () => {
      {/* Add Customer Modal */}
 {/* Add Customer Modal */}
 {modalType === "addCustomer" && selectedOrder && (
-  <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50 p-4">
-    <div className="bg-white p-6 rounded w-11/12 max-w-5xl shadow-lg">
+  // <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50 p-4">
+  //   <div className="bg-white p-6 rounded w-11/12 max-w-5xl shadow-lg">
+  //     {/* Close Button */}
+  //     <button
+  //       className="absolute top-3 right-3 text-black text-2xl font-bold hover:text-red-500"
+  //       onClick={() => setModalType(null)} // Close the modal
+  //     >
+  //       ×
+  //     </button>
+   <div
+    className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50 p-4"
+    onClick={() => setModalType(null)} // click outside closes modal
+  >
+    <div
+      className="bg-white rounded w-11/12 max-w-5xl shadow-lg relative p-6"
+      onClick={(e) => e.stopPropagation()} // prevent modal close when clicking inside
+    >
+      {/* Close Button at Top Right */}
+      <button
+        className="absolute top-3 right-3 text-black text-2xl font-bold hover:text-red-500"
+        onClick={() => setModalType(null)}
+      >
+        ×
+      </button>
       <h2 className="text-xl font-bold mb-4 text-black">Add Customer</h2>
 
       <form className="space-y-6" onSubmit={handleSubmit}>
