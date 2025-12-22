@@ -32,7 +32,7 @@ interface IOrderPlanResponse {
 router.get('/existing_customers', async (_req: Request, res: Response): Promise<void> => {
   try {
     // Only select email, phone, and name
-    const clients = await Client.find({}, 'c_name c_email c_phone').sort({ createdAt: -1 });
+    const clients = await Client.find({}, 'c_name c_email c_phone c_company').sort({ createdAt: -1 });
     res.status(200).json({ success: true, data: clients });
   } catch (err: any) {
     console.error('Error fetching customers:', err.message);
@@ -340,13 +340,21 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    console.log("Logged In User:", loggedInUser);  // Log the authenticated user
+    console.log("Logged In User:", loggedInUser);
 
-    const filterValidEmailOrders = (orders: any[]) => {
-      return orders.filter(order =>
-        order.expiryDate &&
-        (order.google_email === true || order.microsoft_email === true)
-      );
+    // ================= Helper Functions =================
+
+    // Filter Cloudflare orders based on your rules
+    const filterCloudflareOrders = (orders: any[]) => {
+      return orders.filter(order => {
+        if (order.domainSource === "Cloudflare") {
+          // Keep orders if expiryDate exists OR google_email/microsoft_email is true
+          if (order.expiryDate) return true;
+          if (order.google_email === true || order.microsoft_email === true) return true;
+          return false; // remove otherwise
+        }
+        return true; // keep non-Cloudflare orders
+      });
     };
 
     // Attach email plans to orders
@@ -396,7 +404,7 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
 
     if (user && user.userType) {
       const role = (user.userType as IUserType).name.toLowerCase();
-      console.log("User Role:", role);  // Log the user role
+      console.log("User Role:", role);
 
       if (role === "admin") {
         let orders = await Order.find()
@@ -409,15 +417,13 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
             select: "_id name email company",
           })
           .lean();
-        
-        console.log("Fetched Orders for Admin:", orders);  // Log the orders
 
         orders = await updateOrderStatuses(orders);
         orders = await attachEmailPlans(orders);
-        orders = filterValidEmailOrders(orders);
-        
-        console.log("Filtered Orders:", orders);  // Log the filtered orders
-        
+        orders = filterCloudflareOrders(orders); // apply the new Cloudflare filter
+
+        console.log("Filtered Orders for Admin:", orders);
+
         res.status(200).json({ success: true, data: orders });
         return;
       }
@@ -428,7 +434,7 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
 
     if (client && client.userType) {
       const role = (client.userType as IUserType).name.toLowerCase();
-      console.log("Client Role:", role);  // Log the client role
+      console.log("Client Role:", role);
 
       if (role === "customer") {
         let orders = await Order.find({ client: client._id })
@@ -442,13 +448,11 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
           })
           .lean();
 
-        console.log("Fetched Orders for Client:", orders);  // Log the orders
-
         orders = await updateOrderStatuses(orders);
         orders = await attachEmailPlans(orders);
-        orders = filterValidEmailOrders(orders);
-        
-        console.log("Filtered Orders for Client:", orders);  // Log the filtered orders
+        orders = filterCloudflareOrders(orders); // apply the new Cloudflare filter
+
+        console.log("Filtered Orders for Client:", orders);
 
         res.status(200).json({
           success: true,
