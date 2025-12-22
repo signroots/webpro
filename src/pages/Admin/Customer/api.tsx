@@ -5,24 +5,60 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 // ---------------- Interfaces ----------------
 export interface ICustomer {
   _id?: string;
+
+  // ---------------- System ----------------
   is_customer?: boolean;
   resellerCustomerId?: string;
+
+  // ---------------- Auth ----------------
   password?: string;
+  encryptedPassword?: string;
+  generatedPassword?: string;
+
+  // ---------------- Personal ----------------
+  c_salutation?: string;
+  c_firstName?: string;
+  c_lastName?: string;
   c_name?: string;
+
+  // ---------------- Contact ----------------
   c_email?: string | string[];
   c_phone?: string;
+  c_mobilePhone?: string;
+
+  // ---------------- Company ----------------
   c_company?: string;
-  c_address?: string;
-  c_city?: string;
-  c_state?: string | { _id: string; name: string; code?: string };
-  c_country?: string | { _id: string; name: string; code?: string };
-  c_zipCode?: string;
   c_gst?: string;
-  encryptedPassword?: string;
-  generatedPassword?:string;
-  error?:string;
-  success?:string;
-  
+
+  // ---------------- Address ----------------
+  c_address?: string;
+  c_address2?: string;
+  c_city?: string;
+  c_zipCode?: string;
+
+  c_state?: string | {
+    _id: string;
+    name: string;
+    code?: string;
+  };
+
+  c_country?: string | {
+    _id: string;
+    name: string;
+    code?: string;
+  };
+
+  // ---------------- Settings ----------------
+  c_status?: string;
+  c_bankAccountPayment?: string;
+  c_portalEnabled?: boolean;
+
+  c_placeOfContact?: string;
+  c_placeOfContactWithStateCode?: string;
+
+  // ---------------- API helpers ----------------
+  success?: boolean;
+  error?: string;
 }
 
 // ✅ Define a proper API response type

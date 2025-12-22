@@ -31,6 +31,13 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
 }) => {
   const [phoneError, setPhoneError] = useState<string>("");
   const [showPassword, setShowPassword] = useState(false);
+  const [phoneCode, setPhoneCode] = useState("+91");
+const PHONE_CODES = [
+  { code: "IN", dial: "+91", name: "India" },
+  { code: "US", dial: "+1", name: "USA" },
+  { code: "AE", dial: "+971", name: "UAE" },
+  { code: "UK", dial: "+44", name: "UK" },
+];
 
   const handleChange = (field: keyof ICustomerForm, value: any) => {
     setModalForm((prev) => ({ ...prev, [field]: value }));
@@ -46,40 +53,68 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
   };
 useEffect(() => {
   if (mode === "edit" && selectedCustomer) {
-    const countryId =
-      typeof selectedCustomer.c_country === "object"
-        ? selectedCustomer.c_country._id
-        : selectedCustomer.c_country || "";
+    let phone = selectedCustomer.c_phone || "";
 
-    const stateId =
-  typeof selectedCustomer.c_state === "object"
-    ? selectedCustomer.c_state._id
-    : selectedCustomer.c_state || "";
+      const detected = PHONE_CODES.find(p =>
+        phone.startsWith(p.dial.replace("+", ""))
+      );
 
-
+      if (detected) {
+        setPhoneCode(detected.dial);
+        phone = phone.replace(detected.dial.replace("+", ""), "");
+      }
     setModalForm({
+      c_salutation: selectedCustomer.c_salutation || "",
+      c_firstName: selectedCustomer.c_firstName || "",
+      c_lastName: selectedCustomer.c_lastName || "",
       c_name: selectedCustomer.c_name || "",
+
       c_email: Array.isArray(selectedCustomer.c_email)
         ? selectedCustomer.c_email
-        : typeof selectedCustomer.c_email === "string"
-        ? selectedCustomer.c_email.split(",").map((e: string) => e.trim())
         : [],
-      c_phone: selectedCustomer.c_phone || "",
+
+      c_phone: phone,
+      c_mobilePhone: selectedCustomer.c_mobilePhone || "",
+
       c_company: selectedCustomer.c_company || "",
       c_address: selectedCustomer.c_address || "",
+      c_address2: selectedCustomer.c_address2 || "",
       c_city: selectedCustomer.c_city || "",
-      c_country: countryId,   // ✅ STRING ID ONLY
-      c_state: stateId,     // ✅ STRING NAME ONLY
+
+      c_country:
+        typeof selectedCustomer.c_country === "object"
+          ? selectedCustomer.c_country._id
+          : selectedCustomer.c_country || "",
+
+      c_state:
+        typeof selectedCustomer.c_state === "object"
+          ? selectedCustomer.c_state._id
+          : selectedCustomer.c_state || "",
+
       c_zipCode: selectedCustomer.c_zipCode || "",
       c_gst: selectedCustomer.c_gst || "",
+
+      c_status: selectedCustomer.c_status || "",
+      c_bankAccountPayment: selectedCustomer.c_bankAccountPayment || "",
+      c_portalEnabled: !!selectedCustomer.c_portalEnabled,
+
+      c_placeOfContact: selectedCustomer.c_placeOfContact || "",
+      c_placeOfContactWithStateCode:
+        selectedCustomer.c_placeOfContactWithStateCode || "",
+
       c_password: "",
     });
 
-    if (countryId) {
-      fetchStatesByCountry(countryId).then(setStates);
+    if (selectedCustomer.c_country) {
+      const cid =
+        typeof selectedCustomer.c_country === "object"
+          ? selectedCustomer.c_country._id
+          : selectedCustomer.c_country;
+      fetchStatesByCountry(cid).then(setStates);
     }
   }
 }, [mode, selectedCustomer]);
+
 
 
 
@@ -122,152 +157,62 @@ useEffect(() => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
-      <div className="bg-white p-6 rounded w-11/12 max-w-4xl h-[80vh] overflow-y-auto">
+  <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-start z-50 pt-10">
+      <div className="bg-white p-6 rounded w-11/12 max-w-5xl">
         <h2 className="text-xl font-bold mb-4">{mode === "create" ? "New Customer" : "Edit Customer"}</h2>
-        <div className="flex gap-4">
-          <div className="flex-1 space-y-2">
-            <input
-              type="text"
-              placeholder="Name"
-              value={modalForm.c_name || ""}
-              onChange={(e) => handleChange("c_name", e.target.value)}
-              onKeyDown={handleEnterKey}
-              className="w-full p-2 border rounded"
-            />
 
-            {/* Emails */}
-            <div className="w-full">
-              <div className="flex flex-wrap items-center gap-2 p-2 border rounded bg-gray-50">
-                {Array.isArray(modalForm.c_email) &&
-                  modalForm.c_email
-                    .map((em: string) => em.trim())
-                    .filter((em: string) => em !== "")
-                    .map((em: string) => (
-                      <div key={em} className="flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full">
-                        <span className="mr-2">{em}</span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setModalForm((prev) => ({
-                              ...prev,
-                              c_email: (prev.c_email ?? []).filter((e) => e !== em),
-                            }))
-                          }
-                          className="text-blue-600 hover:text-red-600 font-bold"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
+        {/* GRID LAYOUT: 3 FIELDS PER ROW */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <input placeholder="Salutation" value={modalForm.c_salutation || ""} onChange={e => handleChange("c_salutation", e.target.value)} className="w-full p-2 border rounded"/>
+          <input placeholder="First Name" value={modalForm.c_firstName || ""} onChange={e => handleChange("c_firstName", e.target.value)} className="w-full p-2 border rounded"/>
+          <input placeholder="Last Name" value={modalForm.c_lastName || ""} onChange={e => handleChange("c_lastName", e.target.value)} className="w-full p-2 border rounded"/>
 
-                <input
-                  type="text"
-                  placeholder="Add email"
-                  className="flex-1 min-w-[120px] p-1 outline-none bg-transparent"
-                  onKeyDown={(e) => {
-                    if (e.key === "Tab") return;
-                    if (e.key === "Enter" || e.key === ",") {
-                      e.preventDefault();
-                      const value = (e.currentTarget.value || "").trim();
-                      if (!value) return;
-                      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                      if (!emailPattern.test(value)) {
-                        alert("Invalid email format!");
-                        return;
-                      }
-                      setModalForm((prev) => {
-                        const allEmails = prev.c_email ?? [];
-                        return {
-                          ...prev,
-                          c_email: allEmails.includes(value) ? allEmails : [...allEmails, value],
-                        };
-                      });
-                      e.currentTarget.value = "";
-                    }
-                  }}
-                />
-              </div>
-            </div>
+          <input placeholder="Name" value={modalForm.c_name || ""} onChange={e => handleChange("c_name", e.target.value)} className="w-full p-2 border rounded"/>
+          {/* Emails */} <div className="w-full"> <div className="flex flex-wrap items-center gap-2 p-2 border rounded bg-gray-50"> {Array.isArray(modalForm.c_email) && modalForm.c_email .map((em: string) => em.trim()) .filter((em: string) => em !== "") .map((em: string) => ( <div key={em} className="flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full"> <span className="mr-2">{em}</span> <button type="button" onClick={() => setModalForm((prev) => ({ ...prev, c_email: (prev.c_email ?? []).filter((e) => e !== em), })) } className="text-blue-600 hover:text-red-600 font-bold" > × </button> </div> ))} <input type="text" placeholder="Add email" className="flex-1 min-w-[120px] p-1 outline-none bg-transparent" onKeyDown={(e) => { if (e.key === "Tab") return; if (e.key === "Enter" || e.key === ",") { e.preventDefault(); const value = (e.currentTarget.value || "").trim(); if (!value) return; const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; if (!emailPattern.test(value)) { alert("Invalid email format!"); return; } setModalForm((prev) => { const allEmails = prev.c_email ?? []; return { ...prev, c_email: allEmails.includes(value) ? allEmails : [...allEmails, value], }; }); e.currentTarget.value = ""; } }} /> </div> </div>
 
-            <input
-              type="text"
-              placeholder="Phone"
-              value={modalForm.c_phone || ""}
-              onChange={(e) => { const value = e.target.value.replace(/\D/g, ""); handleChange("c_phone", value); }}
-              maxLength={10}
-              className={`w-full p-2 border rounded ${phoneError ? "border-red-500" : ""}`}
-            />
-            {phoneError && <p className="text-red-500 text-sm">{phoneError}</p>}
-
-            <input type="text" placeholder="Company" value={modalForm.c_company || ""} onChange={(e) => handleChange("c_company", e.target.value)} className="w-full p-2 border rounded" />
-            <input type="text" placeholder="Address" value={modalForm.c_address || ""} onChange={(e) => handleChange("c_address", e.target.value)} className="w-full p-2 border rounded" />
-            <input type="text" placeholder="City" value={modalForm.c_city || ""} onChange={(e) => handleChange("c_city", e.target.value)} className="w-full p-2 border rounded" />
-
-            <select value={modalForm.c_country || ""} onChange={handleCountryChange} className="w-full p-2 border rounded">
-              <option value="">Select Country</option>
-              {countries.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
+          <div className="flex gap-2 col-span-3 md:col-span-3">
+            <select value={phoneCode} onChange={e => setPhoneCode(e.target.value)} className="w-32 p-2 border rounded">
+              {PHONE_CODES.map(p => (
+                <option key={p.code} value={p.dial}>{p.dial} ({p.name})</option>
+              ))}
             </select>
+            <input placeholder="Mobile Number" value={modalForm.c_phone || ""} onChange={e => handleChange("c_phone", e.target.value.replace(/\D/g, ""))} maxLength={10} className={`flex-1 p-2 border rounded ${phoneError ? "border-red-500" : ""}`}/>
+            {/* <input placeholder="Mobile Phone" value={modalForm.c_mobilePhone || ""} onChange={e => handleChange("c_mobilePhone", e.target.value)} className="flex-1 p-2 border rounded"/> */}
+          </div>
 
-            <select
-  value={modalForm.c_state || ""}
-  onChange={(e) => handleChange("c_state", e.target.value)}
-  className="w-full p-2 border rounded"
->
-  <option value="">Select State</option>
-  {states.map((s) => (
-    <option key={s.code} value={s.code}>
-      {s.name}
-    </option>
-  ))}
-</select>
+          {phoneError && <p className="text-red-500 text-sm col-span-3">{phoneError}</p>}
 
-            <input type="text" placeholder="Zip Code" value={modalForm.c_zipCode || ""} onChange={(e) => handleChange("c_zipCode", e.target.value)} className="w-full p-2 border rounded" />
-             <input
-              type="text"
-              placeholder="GST"
-              value={modalForm.c_gst || ""}
-              onChange={(e) => handleChange("c_gst", e.target.value)}
-              onKeyDown={handleEnterKey}
-              className="w-full p-2 border rounded"
-            />
+          <input placeholder="Company" value={modalForm.c_company || ""} onChange={e => handleChange("c_company", e.target.value)} className="w-full p-2 border rounded"/>
+          <input placeholder="Address" value={modalForm.c_address || ""} onChange={e => handleChange("c_address", e.target.value)} className="w-full p-2 border rounded"/>
+          <input placeholder="Address 2" value={modalForm.c_address2 || ""} onChange={e => handleChange("c_address2", e.target.value)} className="w-full p-2 border rounded"/>
 
-            {/* Password */}
-          {/* Password field only for CREATE mode */}
-{/* {mode === "create" && (
-  <div className="relative w-full">
-    <input
-      type={showPassword ? "text" : "password"}
-      placeholder="Password"
-      value={modalForm.c_password || ""}
-      onChange={(e) => handleChange("c_password", e.target.value)}
-      className="w-full p-2 border rounded pr-10"
-    />
-    <button
-      type="button"
-      onClick={() => setShowPassword(!showPassword)}
-      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-600"
-    >
-      {showPassword ? <FaEyeSlash /> : <FaEye />}
-    </button>
-  </div>
-)} */}
+          <input placeholder="City" value={modalForm.c_city || ""} onChange={e => handleChange("c_city", e.target.value)} className="w-full p-2 border rounded"/>
+          <select value={modalForm.c_country || ""} onChange={handleCountryChange} className="w-full p-2 border rounded">
+            <option value="">Select Country</option>
+            {countries.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
+          </select>
+          <select value={modalForm.c_state || ""} onChange={e => handleChange("c_state", e.target.value)} className="w-full p-2 border rounded">
+            <option value="">Select State</option>
+            {states.map(s => <option key={s.code} value={s.code}>{s.name}</option>)}
+          </select>
 
+          <input placeholder="Zip Code" value={modalForm.c_zipCode || ""} onChange={e => handleChange("c_zipCode", e.target.value)} className="w-full p-2 border rounded"/>
+          <input placeholder="GST" value={modalForm.c_gst || ""} onChange={e => handleChange("c_gst", e.target.value)} className="w-full p-2 border rounded"/>
+          {/* <input placeholder="Status" value={modalForm.c_status || ""} onChange={e => handleChange("c_status", e.target.value)} className="w-full p-2 border rounded"/> */}
+
+          <input placeholder="Bank Account Payment" value={modalForm.c_bankAccountPayment || ""} onChange={e => handleChange("c_bankAccountPayment", e.target.value)} className="w-full p-2 border rounded"/>
+          <input placeholder="Place of Contact" value={modalForm.c_placeOfContact || ""} onChange={e => handleChange("c_placeOfContact", e.target.value)} className="w-full p-2 border rounded"/>
+          <input placeholder="Place of Contact (State Code)" value={modalForm.c_placeOfContactWithStateCode || ""} onChange={e => handleChange("c_placeOfContactWithStateCode", e.target.value)} className="w-full p-2 border rounded"/>
+
+          <div className="col-span-3 flex items-center gap-2">
+            <input type="checkbox" checked={!!modalForm.c_portalEnabled} onChange={e => handleChange("c_portalEnabled", e.target.checked)}/>
+            <span>Portal Enabled</span>
           </div>
         </div>
 
         <div className="mt-4 flex justify-end gap-2">
           <button onClick={closeModal} className="px-4 py-2 rounded border bg-gray-200">Cancel</button>
-          <button
-            onClick={() => {
-              if (phoneError) { alert("Please fix phone number before saving"); return; }
-              handleSaveCustomer(modalForm);
-            }}
-            disabled={!!phoneError}
-            className="px-4 py-2 rounded bg-blue-600 text-white disabled:opacity-50"
-          >
-            Save
-          </button>
+          <button onClick={() => { if (phoneError) { alert("Please fix phone number before saving"); return; } handleSaveCustomer(modalForm); }} disabled={!!phoneError} className="px-4 py-2 rounded bg-blue-600 text-white disabled:opacity-50">Save</button>
         </div>
       </div>
     </div>

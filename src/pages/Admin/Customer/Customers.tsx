@@ -114,6 +114,16 @@ export interface ICustomerForm {
   c_state?: string;
   c_country?: string;
   c_zipCode?: string;
+    c_status?: string;
+  c_bankAccountPayment?: string;
+  c_portalEnabled?: boolean;
+c_salutation?: string;
+  c_firstName?: string;
+  c_lastName?: string;
+  c_placeOfContact?: string;
+  c_placeOfContactWithStateCode?: string;
+  c_mobilePhone?: string;
+  c_address2?:string;
 }
 
 const Customers: React.FC = () => {
@@ -253,18 +263,28 @@ const handleSubmitCustomer = async (form: ICustomerForm) => {
 
   try {
     const payload = {
-      c_name: form.c_name,
-      c_email: cleanedEmails.join(","),
-      c_phone: form.c_phone,
-      c_company: form.c_company,
-      c_address: form.c_address,
-      c_city: form.c_city,
-      c_state: form.c_state,
-      c_country: form.c_country,
-      c_zipCode: form.c_zipCode,
-      c_gst: form.c_gst || undefined,
-      password: form.c_password || undefined,
-    };
+  c_name: form.c_name,
+  c_email: cleanedEmails.join(","),
+  c_phone: form.c_phone,
+  c_company: form.c_company,
+  c_address: form.c_address,
+  c_address2: form.c_address2,
+  c_city: form.c_city,
+  c_state: form.c_state,
+  c_country: form.c_country,
+  c_zipCode: form.c_zipCode,
+  c_gst: form.c_gst,
+  c_status: form.c_status,
+  c_bankAccountPayment: form.c_bankAccountPayment,
+  c_portalEnabled: form.c_portalEnabled,
+  c_salutation: form.c_salutation,
+  c_firstName: form.c_firstName,
+  c_lastName: form.c_lastName,
+  c_placeOfContact: form.c_placeOfContact,
+  c_placeOfContactWithStateCode: form.c_placeOfContactWithStateCode,
+  c_mobilePhone: form.c_mobilePhone,
+  password: form.c_password || undefined,
+};
 
     let response;
 

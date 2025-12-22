@@ -130,18 +130,28 @@ interface Order {
   email_expiryDate?: string;
 
   // Customer Details
-  newCustomer?: {
-    c_name?: string;
-    c_email?: string[];
-    c_phone?: string;
-    c_company?: string;
-    c_address?: string;
-    c_city?: string;
-    c_state?: string;
-    c_country?: string;
-    c_zipCode?: string;
-    c_gst?: string;
-  };
+  // Customer Details
+newCustomer?: {
+  c_salutation?: string;
+  c_firstName?: string;
+  c_lastName?: string;
+  c_name?: string;
+  c_email?: string[];
+  c_phone?: string;
+  c_company?: string;
+  c_address?: string;
+  c_address2?: string;
+  c_city?: string;
+  c_state?: string;
+  c_country?: string;
+  c_zipCode?: string;
+  c_gst?: string;
+  c_bankAccountPayment?: string;
+  c_placeOfContact?: string;
+  c_placeOfContactWithStateCode?: string;
+  c_portalEnabled?: boolean;
+};
+
 }
 
 // -------------------- Component --------------------
@@ -163,19 +173,27 @@ const Orders: React.FC = () => {
     managedBy: "Signroots",
     users: 1,
     // domainSource:"",
-    newCustomer: {
-      c_name: "",
-      c_email: [],
-      c_phone: "",
-      c_company: "",
-      c_address: "",
-      c_city: "",
-      c_state: "",
-      c_country: "",
-      c_zipCode: "",
-      c_gst:"",
-      
-    },
+newCustomer: {
+  c_salutation: "",
+  c_firstName: "",
+  c_lastName: "",
+  c_name: "",
+  c_email: [],
+  c_phone: "",
+  c_company: "",
+  c_address: "",
+  c_address2: "",
+  c_city: "",
+  c_state: "",
+  c_country: "",
+  c_zipCode: "",
+  c_gst: "",
+  c_bankAccountPayment: "",
+  c_placeOfContact: "",
+  c_placeOfContactWithStateCode: "",
+  c_portalEnabled: false,
+}
+
   });
 
   // Filters
@@ -1190,157 +1208,198 @@ const resetFormData = () => {
         </div>
       )}
 
-      {/* Add Customer */}
-      {modalType === "addCustomer" && selectedOrder && (
-        <div>
-          <h2 className="text-xl font-bold mb-4 text-black">Add Customer</h2>
+     {/* Add Customer Modal */}
+{/* Add Customer Modal */}
+{modalType === "addCustomer" && selectedOrder && (
+  <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50 p-4">
+    <div className="bg-white p-6 rounded w-11/12 max-w-5xl shadow-lg">
+      <h2 className="text-xl font-bold mb-4 text-black">Add Customer</h2>
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
-  {/* Customer Type */}
-  <div>
-    <label className="mr-4 text-black">
-      <input
-        type="radio"
-        value="existing"
-        checked={customerType === "existing"}
-        onChange={() => setCustomerType("existing")}
-      />
-      Existing Customer
-    </label>
-    <label className="ml-4 text-black">
-      <input
-        type="radio"
-        value="new"
-        checked={customerType === "new"}
-        onChange={() => setCustomerType("new")}
-      />
-      New Customer
-    </label>
-  </div>
+      <form className="space-y-6" onSubmit={handleSubmit}>
+        {/* Customer Type */}
+        <div className="flex gap-4 mb-4">
+          <label className="text-black flex items-center gap-1">
+            <input
+              type="radio"
+              value="existing"
+              checked={customerType === "existing"}
+              onChange={() => setCustomerType("existing")}
+            />
+            Existing Customer
+          </label>
+          <label className="text-black flex items-center gap-1">
+            <input
+              type="radio"
+              value="new"
+              checked={customerType === "new"}
+              onChange={() => setCustomerType("new")}
+            />
+            New Customer
+          </label>
+        </div>
 
-  {/* Existing Customer */}
-  {customerType === "existing" && (
-    <div className="mb-4">
-      <label className="block mb-2 text-black">Select Customer</label>
-      <select
-        value={formData.client?._id || ""}
-        onChange={(e) => {
-          const selected =
-            client.find((c) => c._id === e.target.value) || null;
-          setFormData((prev) => ({
-            ...prev,
-            client: selected,
-          }));
-        }}
-        className="w-full border rounded px-3 py-2"
-      >
-        <option value="">-- Select Customer --</option>
-        {client.map((c) => (
-          <option key={c._id} value={c._id}>
-            {c.c_name} ({c.c_email})
-          </option>
-        ))}
-      </select>
-    </div>
-  )}
+        {/* Existing Customer */}
+        {customerType === "existing" && (
+          <div className="mb-4">
+            <label className="block mb-2 text-black">Select Customer</label>
+            <select
+              value={formData.client?._id || ""}
+              onChange={(e) => {
+                const selected = client.find((c) => c._id === e.target.value) || null;
+                setFormData((prev) => ({ ...prev, client: selected }));
+              }}
+              className="w-full border rounded px-3 py-2"
+            >
+              <option value="">-- Select Customer --</option>
+              {client.map((c) => (
+                <option key={c._id} value={c._id}>
+                  {c.c_name} ({c.c_email})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
-  {/* New Customer Form */}
-  {customerType === "new" && (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {/* Name */}
-      <div>
-        <label className="block text-gray-700 font-medium mb-2">Name</label>
-        <input
-          type="text"
-          name="newCustomer.c_name"
-          value={formData.newCustomer?.c_name || ""}
-          onChange={handleInputChange}
-          className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          required
-        />
-      </div>
+        {/* New Customer Form */}
+        {customerType === "new" && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Salutation */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">Salutation</label>
+              <input
+                type="text"
+                name="newCustomer.c_salutation"
+                value={formData.newCustomer?.c_salutation || ""}
+                onChange={handleInputChange}
+                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
 
-      {/* Phone */}
-      <div>
-        <label className="block text-gray-700 font-medium mb-2">Phone</label>
-        <input
-          type="text"
-          name="newCustomer.c_phone"
-          value={formData.newCustomer?.c_phone || ""}
-          onChange={handleInputChange}
-          maxLength={10}
-          className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          placeholder="10-digit phone number"
-          required
-        />
-      </div>
+            {/* First Name */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">First Name</label>
+              <input
+                type="text"
+                name="newCustomer.c_firstName"
+                value={formData.newCustomer?.c_firstName || ""}
+                onChange={handleInputChange}
+                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
 
-      {/* Company */}
-      <div>
-        <label className="block text-gray-700 font-medium mb-2">Company</label>
-        <input
-          type="text"
-          name="newCustomer.c_company"
-          value={formData.newCustomer?.c_company || ""}
-          onChange={handleInputChange}
-          className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          required
-        />
-      </div>
+            {/* Last Name */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">Last Name</label>
+              <input
+                type="text"
+                name="newCustomer.c_lastName"
+                value={formData.newCustomer?.c_lastName || ""}
+                onChange={handleInputChange}
+                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
 
-      {/* Address */}
-      <div>
-        <label className="block text-gray-700 font-medium mb-2">Address</label>
-        <input
-          type="text"
-          name="newCustomer.c_address"
-          value={formData.newCustomer?.c_address || ""}
-          onChange={handleInputChange}
-          className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          required
-        />
-      </div>
+            {/* Name */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">Name</label>
+              <input
+                type="text"
+                name="newCustomer.c_name"
+                value={formData.newCustomer?.c_name || ""}
+                onChange={handleInputChange}
+                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                required
+              />
+            </div>
 
-      {/* City */}
-      <div>
-        <label className="block text-gray-700 font-medium mb-2">City</label>
-        <input
-          type="text"
-          name="newCustomer.c_city"
-          value={formData.newCustomer?.c_city || ""}
-          onChange={handleInputChange}
-          className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          required
-        />
-      </div>
+            {/* Phone */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">Phone</label>
+              <input
+                type="text"
+                name="newCustomer.c_phone"
+                value={formData.newCustomer?.c_phone || ""}
+                onChange={handleInputChange}
+                maxLength={10}
+                placeholder="10-digit phone number"
+                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                required
+              />
+            </div>
 
-      {/* ZipCode */}
-      <div>
-        <label className="block text-gray-700 font-medium mb-2">ZipCode</label>
-        <input
-          type="text"
-          name="newCustomer.c_zipCode"
-          value={formData.newCustomer?.c_zipCode || ""}
-          onChange={handleInputChange}
-          className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          required
-        />
-      </div>
+            {/* Company */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">Company</label>
+              <input
+                type="text"
+                name="newCustomer.c_company"
+                value={formData.newCustomer?.c_company || ""}
+                onChange={handleInputChange}
+                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
 
-      {/* GST */}
-      <div>
-        <label className="block text-gray-700 font-medium mb-2">GST</label>
-        <input
-          type="text"
-          name="newCustomer.c_gst"
-          value={formData.newCustomer?.c_gst || ""}
-          onChange={handleInputChange}
-          className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          required
-        />
-      </div>
+            {/* Address */}
+            <div className="md:col-span-2">
+              <label className="block text-gray-700 font-medium mb-2">Address</label>
+              <input
+                type="text"
+                name="newCustomer.c_address"
+                value={formData.newCustomer?.c_address || ""}
+                onChange={handleInputChange}
+                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
 
-    {/* Emails as pills */}
+            {/* Address 2 */}
+            <div className="md:col-span-2">
+              <label className="block text-gray-700 font-medium mb-2">Address 2</label>
+              <input
+                type="text"
+                name="newCustomer.c_address2"
+                value={formData.newCustomer?.c_address2 || ""}
+                onChange={handleInputChange}
+                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
+
+            {/* City */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">City</label>
+              <input
+                type="text"
+                name="newCustomer.c_city"
+                value={formData.newCustomer?.c_city || ""}
+                onChange={handleInputChange}
+                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
+
+            {/* ZipCode */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">Zip Code</label>
+              <input
+                type="text"
+                name="newCustomer.c_zipCode"
+                value={formData.newCustomer?.c_zipCode || ""}
+                onChange={handleInputChange}
+                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
+
+            {/* GST */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">GST</label>
+              <input
+                type="text"
+                name="newCustomer.c_gst"
+                value={formData.newCustomer?.c_gst || ""}
+                onChange={handleInputChange}
+                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
+
+         {/* Emails as pills */}
 <div className="md:col-span-3 w-full">
   <label className="block text-gray-700 font-medium mb-1">Emails</label>
   <div className="flex flex-wrap gap-1 p-2 border rounded min-h-[40px] bg-gray-50">
@@ -1406,90 +1465,118 @@ const resetFormData = () => {
   </div>
 </div>
 
+            {/* Country */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">Country</label>
+              <select
+                name="newCustomer.c_country"
+                value={formData.newCustomer?.c_country || ""}
+                onChange={async (e) => {
+                  const countryCode = e.target.value;
+                  setFormData((prev) => ({
+                    ...prev,
+                    newCustomer: { ...(prev.newCustomer || {}), c_country: countryCode, c_state: "" },
+                  }));
+                  if (countryCode) {
+                    try {
+                      const statesData = await fetchStatesByCountry(countryCode);
+                      setStates(statesData);
+                    } catch {
+                      setStates([]);
+                    }
+                  } else setStates([]);
+                }}
+                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              >
+                <option value="">-- Select Country --</option>
+                {countries.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-      {/* Country */}
-      <div>
-        <label className="block text-gray-700 font-medium mb-2">Country</label>
-        <select
-          name="newCustomer.c_country"
-          value={formData.newCustomer?.c_country || ""}
-          onChange={async (e) => {
-            const countryCode = e.target.value;
-            setFormData((prev) => ({
-              ...prev,
-              newCustomer: {
-                ...(prev.newCustomer || {}),
-                c_country: countryCode,
-                c_state: "",
-              },
-            }));
+            {/* State */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">State</label>
+              <select
+                name="newCustomer.c_state"
+                value={formData.newCustomer?.c_state || ""}
+                onChange={handleInputChange}
+                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              >
+                <option value="">-- Select State --</option>
+                {states.map((s) => (
+                  <option key={s.code} value={s.name}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            if (countryCode) {
-              try {
-                const statesData = await fetchStatesByCountry(countryCode);
-                setStates(statesData);
-              } catch (err) {
-                console.error("Failed to fetch states:", err);
-                setStates([]);
-              }
-            } else {
-              setStates([]);
-            }
-          }}
-          className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          required
-        >
-          <option value="">-- Select Country --</option>
-          {countries.map((c) => (
-            <option key={c.code} value={c.code}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-      </div>
+            {/* Bank Account Payment */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">Bank Account Payment</label>
+              <input
+                type="text"
+                name="newCustomer.c_bankAccountPayment"
+                value={formData.newCustomer?.c_bankAccountPayment || ""}
+                onChange={handleInputChange}
+                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
 
-      {/* State */}
-      <div>
-        <label className="block text-gray-700 font-medium mb-2">State</label>
-        <select
-          name="newCustomer.c_state"
-          value={formData.newCustomer?.c_state || ""}
-          onChange={(e) =>
-            setFormData((prev: any) => ({
-              ...prev,
-              newCustomer: {
-                ...(prev.newCustomer || {}),
-                c_state: e.target.value,
-              },
-            }))
-          }
-          className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          required
-        >
-          <option value="">-- Select State --</option>
-          {states.map((s) => (
-            <option key={s.code} value={s.name}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-      </div>
-    </div>
-  )}
+            {/* Place of Contact */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">Place of Contact</label>
+              <input
+                type="text"
+                name="newCustomer.c_placeOfContact"
+                value={formData.newCustomer?.c_placeOfContact || ""}
+                onChange={handleInputChange}
+                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
 
-  {/* Submit Button */}
-  <div className="mt-4">
-    <button
-      type="submit"
-      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-    >
-      Add Customer
-    </button>
-  </div>
-</form>
+            {/* Place of Contact (State Code) */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">Place of Contact (State Code)</label>
+              <input
+                type="text"
+                name="newCustomer.c_placeOfContactWithStateCode"
+                value={formData.newCustomer?.c_placeOfContactWithStateCode || ""}
+                onChange={handleInputChange}
+                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
 
+            {/* Portal Enabled */}
+            <div className="md:col-span-3 flex items-center gap-2">
+              <input
+                type="checkbox"
+                name="newCustomer.c_portalEnabled"
+                checked={!!formData.newCustomer?.c_portalEnabled}
+                onChange={handleInputChange}
+              />
+              <span>Portal Enabled</span>
+            </div>
+          </div>
+        )}
+
+        {/* Submit Button */}
+        <div className="mt-4">
+          <button
+            type="submit"
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+          >
+            Add Customer
+          </button>
         </div>
-      )}
+      </form>
+    </div>
+  </div>
+)}
     </div>
   </div>
 )}
