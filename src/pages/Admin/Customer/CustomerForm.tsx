@@ -106,7 +106,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
               className="w-full p-2 border rounded"
             />
 
-            <input
+            {/* <input
               placeholder="First Name"
               value={formData.newCustomer?.c_firstName || ""}
               onChange={(e) =>
@@ -122,7 +122,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
                 handleNewCustomerChange("c_lastName", e.target.value)
               }
               className="w-full p-2 border rounded"
-            />
+            /> */}
 
             <input
               placeholder="Name"

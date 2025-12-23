@@ -1179,7 +1179,7 @@ const resetFormData = () => {
   //       ×
   //     </button>
    <div
-  className="fixed inset-0 bg-black bg-opacity-30 z-50 flex justify-center items-start overflow-y-auto"
+  className="fixed inset-0 bg-black bg-opacity-30 z-50 flex justify-center items-center"
   onClick={() => setModalType(null)}
 >
     <div
@@ -1255,8 +1255,8 @@ const resetFormData = () => {
               />
             </div>
 
-            {/* First Name */}
-            <div>
+           {/* First Name*/}
+            {/* <div>
               <label className="block text-gray-700 font-medium mb-2">First Name</label>
               <input
                 type="text"
@@ -1265,10 +1265,10 @@ const resetFormData = () => {
                 onChange={handleInputChange}
                 className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
-            </div>
+            </div> */}
 
             {/* Last Name */}
-            <div>
+            {/* <div>
               <label className="block text-gray-700 font-medium mb-2">Last Name</label>
               <input
                 type="text"
@@ -1277,7 +1277,7 @@ const resetFormData = () => {
                 onChange={handleInputChange}
                 className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
-            </div>
+            </div> */}
 
             {/* Name */}
             <div>
