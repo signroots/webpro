@@ -280,6 +280,7 @@ router.get("/dnsorders", authMiddleware, async (req: AuthRequest, res: Response)
           customer: {
             _id: customer._id,
             name: customer.c_name,
+            c_comapny:customer.c_company,
             email: customer.c_email,
           },
           data: orders,
