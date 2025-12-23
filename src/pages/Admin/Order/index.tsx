@@ -153,6 +153,13 @@ newCustomer?: {
 };
 
 }
+const PHONE_CODES = [
+  { code: "IN", dial: "+91", name: "India" },
+  { code: "US", dial: "+1", name: "USA" },
+  { code: "AE", dial: "+971", name: "UAE" },
+  { code: "UK", dial: "+44", name: "UK" },
+];
+
 
 // -------------------- Component --------------------
 const Orders: React.FC = () => {
@@ -166,7 +173,7 @@ const Orders: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
    const [client, setClient] = useState<Client[]>([]);
   const navigate = useNavigate();
-
+  const [phoneCode, setPhoneCode] = useState("+91");
   const [formData, setFormData] = useState<Order>({
     _id: "",
     domainName: "",
@@ -1172,11 +1179,11 @@ const resetFormData = () => {
   //       ×
   //     </button>
    <div
-    className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50 p-4"
-    onClick={() => setModalType(null)} // click outside closes modal
-  >
+  className="fixed inset-0 bg-black bg-opacity-30 z-50 flex justify-center items-start overflow-y-auto"
+  onClick={() => setModalType(null)}
+>
     <div
-      className="bg-white rounded w-11/12 max-w-5xl shadow-lg relative p-6"
+      className="bg-white rounded w-8/12 max-w-5xl shadow-lg relative p-4"
       onClick={(e) => e.stopPropagation()} // prevent modal close when clicking inside
     >
       {/* Close Button at Top Right */}
@@ -1286,7 +1293,7 @@ const resetFormData = () => {
             </div>
 
             {/* Phone */}
-            <div>
+            {/* <div>
               <label className="block text-gray-700 font-medium mb-2">Phone</label>
               <input
                 type="text"
@@ -1298,7 +1305,49 @@ const resetFormData = () => {
                 className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 required
               />
-            </div>
+            </div> */}
+          {/* Phone */}
+<div className="col-span-3">
+  <label className="block text-gray-700 font-medium mb-2">Phone</label>
+
+  <div className="flex gap-2">
+    {/* Phone Code */}
+    <select
+      value={phoneCode}
+      onChange={e => setPhoneCode(e.target.value)}
+      className="w-28 border rounded px-3 py-2"
+    >
+      {PHONE_CODES.map(p => (
+        <option key={p.code} value={p.dial}>
+          {p.dial} ({p.name})
+        </option>
+      ))}
+    </select>
+
+    {/* Phone Number */}
+    <input
+      type="text"
+      name="newCustomer.c_phone"
+      value={formData.newCustomer?.c_phone || ""}
+      onChange={e => {
+        const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+
+        // create a fake event so old handler still works
+        handleInputChange({
+          ...e,
+          target: {
+            ...e.target,
+            value: `${phoneCode}${digits}`,
+          },
+        } as React.ChangeEvent<HTMLInputElement>);
+      }}
+      placeholder="10-digit phone number"
+      maxLength={10}
+      className="flex-1 border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+      required
+    />
+  </div>
+</div>
 
             {/* Company */}
             <div>
