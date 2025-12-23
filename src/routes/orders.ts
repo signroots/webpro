@@ -245,7 +245,7 @@ router.get("/dnsorders", authMiddleware, async (req: AuthRequest, res: Response)
 
  
 
-        let orders = await Order.find(query).populate("client", "c_name c_email").exec();
+        let orders = await Order.find(query).populate("client", "c_name c_email  c_company").exec();
         orders = await updateOrderStatuses(orders);
 
         res.status(200).json({ success: true, data: orders });
