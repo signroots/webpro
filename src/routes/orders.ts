@@ -189,117 +189,100 @@ router.get('/existing_customers', async (_req: Request, res: Response): Promise<
 //   }
 // });
 
-router.get("/dnsorders", authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const loggedInUser = req.user;
+router.get(
+  "/dnsorders",
+  authMiddleware,
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const loggedInUser = req.user;
 
-    if (!loggedInUser || !loggedInUser._id) {
-      console.log("Unauthorized access attempt.");
-      res.status(401).json({ success: false, error: "Unauthorized" });
-      return;
-    }
-
-    const { filter } = req.query;
-
-    const updateOrderStatuses = async (orders: any[]) => {
-      const today = new Date();
-
-      const updates = orders.map(async (order) => {
-        let newStatus = "";
-
-        if (!order.expiryDate || isNaN(new Date(order.expiryDate).getTime())) {
-          newStatus = "";
-        } else {
-          const expiryDate = new Date(order.expiryDate);
-          newStatus = expiryDate < today ? "EXPIRED" : "ACTIVE";
-        }
-
-        if (order.status !== newStatus) {
-          order.status = newStatus;
-          await order.save();
-        }
-
-        return order;
-      });
-
-      return Promise.all(updates);
-    };
-
-    const user = await User.findById(loggedInUser._id).populate("userType").exec();
-
-    if (user && user.userType && typeof user.userType === "object") {
-      const userRole = (user.userType as IUserType).name.toLowerCase();
-      console.log("Resolved user role (User model):", userRole);
-
-      // ---------------- ADMIN ----------------
-    if (userRole === "admin") {
-  const query: any = {};
-
-  if (filter === "Cloudflare") {
-    query.domainSource = "Cloudflare";
-    query.$or = [
-      { expiryDate: null },        // expiryDate is null
-      { expiryDate: { $exists: false } }, // expiryDate field does not exist
-    ];
-  }
-
- 
-
-        let orders = await Order.find(query)
-  .populate("customer", "name email company")
-  .populate("client", "c_name c_email c_company")
-  .exec();
-        orders = await updateOrderStatuses(orders);
-
-        res.status(200).json({ success: true, data: orders });
+      if (!loggedInUser || !loggedInUser._id) {
+        res.status(401).json({ success: false, error: "Unauthorized" });
         return;
       }
 
-      // ---------------- CUSTOMER ----------------
-      if (userRole === "customer") {
-        const customer = await Client.findOne({ userType: user._id }).exec();
+      const { filter } = req.query;
 
-        if (!customer) {
-          res.status(404).json({ success: false, error: "Customer profile not found" });
-          return;
-        }
+      // ---------------- UPDATE STATUS HELPER ----------------
+      const updateOrderStatuses = async (orders: any[]) => {
+        const today = new Date();
 
-        const query: any = { customer: customer._id };
+        await Promise.all(
+          orders.map(async (order) => {
+            let newStatus = "";
 
-        if (filter === "cloudflare") {
-          query.domainSource = "cloudflare";
+            if (order.expiryDate && !isNaN(new Date(order.expiryDate).getTime())) {
+              const expiryDate = new Date(order.expiryDate);
+              newStatus = expiryDate < today ? "EXPIRED" : "ACTIVE";
+            }
+
+            if (order.status !== newStatus) {
+              order.status = newStatus;
+              await order.save();
+            }
+          })
+        );
+
+        return orders;
+      };
+
+      // ---------------- LOAD USER ----------------
+      const user = await User.findById(loggedInUser._id)
+        .populate("userType")
+        .exec();
+
+      if (!user || !user.userType || typeof user.userType !== "object") {
+        res.status(403).json({ success: false, error: "Invalid user role" });
+        return;
+      }
+
+      const userRole = (user.userType as IUserType).name.toLowerCase();
+      console.log("Resolved user role:", userRole);
+
+      // =====================================================
+      // ===================== ADMIN =========================
+      // =====================================================
+      if (userRole === "admin") {
+        const query: any = {};
+
+        if (filter === "Cloudflare") {
+          query.domainSource = "Cloudflare";
           query.$or = [
             { expiryDate: null },
-            { expiryDate: "" },
             { expiryDate: { $exists: false } },
           ];
         }
 
-        let orders = await Order.find(query).populate("customer", "name email").exec();
+        let orders = await Order.find(query)
+          // Customer model → uses `company`
+          .populate("customer", "name email company")
+          // Client model → uses `c_company`
+          .populate("client", "c_name c_email c_company")
+          .exec();
+
         orders = await updateOrderStatuses(orders);
 
         res.status(200).json({
           success: true,
-          customer: {
-            _id: customer._id,
-            name: customer.c_name,
-            c_comapny:customer.c_company,
-            email: customer.c_email,
-          },
           data: orders,
         });
         return;
       }
-    }
 
-    // ---------------- CLIENT ----------------
-    const client = await Client.findById(loggedInUser._id).populate("userType").exec();
-
-    if (client && client.userType && typeof client.userType === "object") {
-      const userRole = (client.userType as IUserType).name.toLowerCase();
-      console.log("Resolved user role (Customer model):", userRole);
-
+      // =====================================================
+      // =================== CUSTOMER (USER) =================
+      // =====================================================
       if (userRole === "customer") {
+        const client = await Client.findOne({ userType: user._id }).exec();
+
+        if (!client) {
+          res.status(404).json({
+            success: false,
+            error: "Customer profile not found",
+          });
+          return;
+        }
+
         const query: any = { client: client._id };
 
         if (filter === "Cloudflare") {
@@ -311,28 +294,41 @@ router.get("/dnsorders", authMiddleware, async (req: AuthRequest, res: Response)
           ];
         }
 
-        let orders = await Order.find(query).populate("client", "name email").exec();
+        let orders = await Order.find(query)
+          .populate("client", "c_name c_email c_company")
+          .exec();
+
         orders = await updateOrderStatuses(orders);
 
         res.status(200).json({
           success: true,
-          client: {
+          customer: {
             _id: client._id,
             name: client.c_name,
+            c_company: client.c_company, // ✅ FIXED
             email: client.c_email,
           },
           data: orders,
         });
         return;
       }
-    }
 
-    res.status(403).json({ success: false, error: "Access denied: Invalid role or user not found" });
-  } catch (err) {
-    console.error("❌ Error fetching orders:", err);
-    res.status(500).json({ success: false, error: "Server error" });
+      // =====================================================
+      // =================== FALLBACK =========================
+      // =====================================================
+      res.status(403).json({
+        success: false,
+        error: "Access denied",
+      });
+    } catch (err) {
+      console.error("❌ Error fetching DNS orders:", err);
+      res.status(500).json({
+        success: false,
+        error: "Server error",
+      });
+    }
   }
-});
+);
 
 router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
