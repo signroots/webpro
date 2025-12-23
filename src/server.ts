@@ -25,6 +25,9 @@ import path from "path";
 // Import cron starter
 import { startDomainSyncCron } from "./utils/cronjob";
 import "./cron/resellerClub.cron";
+import "./cron/cloudflareCron";
+import "./cron/SubresellerclubCron";
+
 dotenv.config();
 const app = express();
 
