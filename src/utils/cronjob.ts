@@ -1,18 +1,16 @@
-// src/utils/cronjob.ts
 import cron from "node-cron";
 import { syncDomains } from "../services/domainSyncService";
 
 export const startDomainSyncCron = () => {
-  // Runs every 5 minutes
   cron.schedule("*/5 * * * *", async () => {
-    console.log("⏳ Running domain sync job...");
+    console.log("⏳ Running domain sync...");
     try {
-      const synced = await syncDomains();
-      console.log(`✅ Synced ${synced.length} domains`);
-    } catch (err: any) {
-      console.error("❌ Domain sync failed:", err.message || err);
+      await syncDomains();
+      console.log("✅ Domain sync finished");
+    } catch (err) {
+      console.error("❌ Domain sync failed", err);
     }
   });
 
-  console.log("🔄 Domain sync cron started (runs every 5 minutes)");
+  console.log("🔄 Domain cron started (every 5 minutes)");
 };

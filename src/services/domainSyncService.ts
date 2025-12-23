@@ -1,109 +1,140 @@
-// src/services/domainSyncService.ts
-import Domain from "../models/Domain";
 import axios, { AxiosError } from "axios";
 import dotenv from "dotenv";
+import Domain from "../models/Domain";
+import { CloudflareRegistrarDomain } from "../types/cloudflare";
+
 dotenv.config();
 
-// --- Cloudflare config ---
-const CLOUDFLARE_ZONES_API = "https://api.cloudflare.com/client/v4/zones";
-const CLOUDFLARE_REGISTRAR_API = `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/registrar/domains`;
+/* ================= CLOUDflare CONFIG ================= */
+const CF_ZONES_API = "https://api.cloudflare.com/client/v4/zones";
+const CF_REGISTRAR_API = `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/registrar/domains`;
 
-// Cloudflare headers using API Token if available
 const cfHeaders = process.env.CLOUDFLARE_TOKEN
   ? { Authorization: `Bearer ${process.env.CLOUDFLARE_TOKEN}` }
   : {
-      "X-Auth-Key": process.env.CLOUDFLARE_API_KEY,
-      "X-Auth-Email": process.env.CLOUDFLARE_EMAIL,
+      "X-Auth-Key": process.env.CLOUDFLARE_API_KEY!,
+      "X-Auth-Email": process.env.CLOUDFLARE_EMAIL!,
     };
 
-// --- Reseller config (not used in this version) ---
-const RESELLER_API = "https://httpapi.com/api/domains/details.json";
-const SUB_RESELLER_KEY = process.env.RESELLER_API_KEY;
-const SUB_RESELLER_USER_ID = process.env.RESELLER_USER_ID;
-const MAIN_RESELLER_KEY = process.env.MAIN_RESELLER_API_KEY;
-const MAIN_RESELLER_USER_ID = process.env.MAIN_RESELLER_USER_ID;
+/* ================= RESELLER CONFIG ================= */
+const RESELLER_SEARCH_API = "https://httpapi.com/api/domains/search.json";
+const MAIN_USER = process.env.MAIN_RESELLER_USER_ID!;
+const MAIN_KEY = process.env.MAIN_RESELLER_API_KEY!;
 
+/* =================================================== */
 export const syncDomains = async () => {
+  const syncedDomains: any[] = [];
+
   try {
-    // 1️⃣ Fetch Cloudflare zones
-    const cfZonesRes = await axios.get(CLOUDFLARE_ZONES_API, { headers: cfHeaders });
-    const cfZones = cfZonesRes.data?.result || [];
-    console.log(`📌 Cloudflare zones fetched: ${cfZones.length}`);
+    /* ================= CLOUDflare ================= */
+    const zonesRes = await axios.get(CF_ZONES_API, { headers: cfHeaders });
+    const zones = zonesRes.data?.result || [];
 
-    // 2️⃣ Fetch Cloudflare registrar (for expiry dates)
-    let registrarDomains: any[] = [];
+    let registrarDomains: CloudflareRegistrarDomain[] = [];
     try {
-      const registrarRes = await axios.get(CLOUDFLARE_REGISTRAR_API, { headers: cfHeaders });
-      registrarDomains = registrarRes.data?.result || [];
-      console.log(`📌 Registrar domains fetched: ${registrarDomains.length}`);
-    } catch (err) {
-      const error = err as AxiosError;
-      console.warn("⚠️ Could not fetch registrar domains:", error.response?.data || error.message);
+      const regRes = await axios.get(CF_REGISTRAR_API, { headers: cfHeaders });
+      registrarDomains = regRes.data?.result || [];
+    } catch (e) {
+      console.warn("⚠️ Cloudflare Registrar API failed");
     }
 
-    // Map registrar info by domain name
-    const registrarMap = new Map<string, any>();
-    for (const r of registrarDomains) {
+    const registrarMap = new Map<string, CloudflareRegistrarDomain>();
+    registrarDomains.forEach(r => {
       if (r.name) registrarMap.set(r.name.toLowerCase(), r);
-    }
-
-    // 3️⃣ Merge zones + registrar data
-    const cfDomains = cfZones.map((z: any) => {
-      const domainKey = z.name.toLowerCase();
-      const reg = registrarMap.get(domainKey);
-
-      const expiryDate = reg?.expires_at ? new Date(reg.expires_at) : null;
-      if (!expiryDate) console.warn(`⚠️ Domain ${domainKey} has no expiry date in Registrar API`);
-
-      return {
-        domainName: domainKey,
-        expiryDate,
-        registrationDate: reg?.registered_at ? new Date(reg.registered_at) : null,
-        status: z.status || reg?.last_known_status || "active",
-        source: "Cloudflare",
-        nameServers: reg?.name_servers || z.name_servers || [],
-        originalRegistrar: reg?.current_registrar || null,
-        lockStatus: reg?.locked ? "Locked" : "Unlocked",
-        cloudflareRegistered: true,
-      };
     });
 
-    // 4️⃣ Upsert into MongoDB
-    for (const domain of cfDomains) {
-      await Domain.findOneAndUpdate(
-        { domainName: domain.domainName },
+    for (const z of zones) {
+      const reg = registrarMap.get(z.name.toLowerCase());
+
+      const expiryDate = reg?.expires_at
+        ? new Date(reg.expires_at)
+        : null;
+
+      const domain = await Domain.findOneAndUpdate(
+        { domainName: z.name.toLowerCase() },
         {
           $set: {
-            expiryDate: domain.expiryDate,
-            registrationDate: domain.registrationDate,
-            status: domain.status,
-            source: domain.source,
-            nameServers: domain.nameServers,
-            originalRegistrar: domain.originalRegistrar,
-            lockStatus: domain.lockStatus,
-            cloudflareRegistered: domain.cloudflareRegistered,
+            domainName: z.name.toLowerCase(),
+            expiryDate,
+            registrationDate: reg?.registered_at
+              ? new Date(reg.registered_at)
+              : null,
+            status: expiryDate && expiryDate < new Date() ? "EXPIRED" : "ACTIVE",
+            domainSource: "Cloudflare",
+            lockStatus: reg?.locked ? "Locked" : "Unlocked",
+            nameServers: reg?.name_servers || z.name_servers || [],
+            cloudflareRegistered: true,
             updatedAt: new Date(),
           },
           $setOnInsert: { createdAt: new Date() },
         },
         { upsert: true, new: true }
       );
+
+      syncedDomains.push(domain);
     }
 
-    console.log(`✅ Synced ${cfDomains.length} Cloudflare domains with expiryDate`);
-    return cfDomains;
+    /* ================= RESELLER / SUB RESELLER ================= */
+    let page = 1;
+    while (true) {
+      const res = await axios.get(RESELLER_SEARCH_API, {
+        params: {
+          "auth-userid": MAIN_USER,
+          "api-key": MAIN_KEY,
+          "no-of-records": 100,
+          "page-no": page,
+        },
+      });
+
+      const data = res.data;
+      const keys = Object.keys(data).filter(k => /^\d+$/.test(k));
+      if (!keys.length) break;
+
+      for (const k of keys) {
+        const d = data[k];
+        const expiryDate = d["orders.endtime"]
+          ? new Date(Number(d["orders.endtime"]) * 1000)
+          : null;
+
+        const domain = await Domain.findOneAndUpdate(
+          { domainName: d["entity.description"].toLowerCase() },
+          {
+            $set: {
+              domainName: d["entity.description"].toLowerCase(),
+              expiryDate,
+              status:
+                expiryDate && expiryDate < new Date()
+                  ? "EXPIRED"
+                  : d["entity.currentstatus"]?.toUpperCase() || "ACTIVE",
+              domainSource: "ResellerClub",
+              lockStatus: d["orders.transferlock"] === "true" ? "Locked" : "Unlocked",
+              resellerCustomerId: d["entity.customerid"],
+              updatedAt: new Date(),
+            },
+            $setOnInsert: { createdAt: new Date() },
+          },
+          { upsert: true, new: true }
+        );
+
+        syncedDomains.push(domain);
+      }
+
+      page++;
+    }
+
+    console.log(`✅ Synced ${syncedDomains.length} domains`);
+    return syncedDomains;
+
   } catch (err) {
-    const error = err as AxiosError;
-    if (error.response) console.error("❌ API Error:", error.response.data);
-    else if (error.request) console.error("❌ No response from API:", error.request);
-    else console.error("❌ Unexpected error:", error.message);
-    throw error;
+    const e = err as AxiosError;
+    console.error("❌ Domain sync error:", e.response?.data || e.message);
+    throw err;
   }
 };
 
-// --- Run manually if needed ---
+/* ================= MANUAL RUN ================= */
 if (require.main === module) {
   syncDomains()
-    .then(() => console.log("📌 Domain sync finished"))
-    .catch(err => console.error("❌ Domain sync failed:", err));
+    .then(() => console.log("✔ Sync completed"))
+    .catch(console.error);
 }
