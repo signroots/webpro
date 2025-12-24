@@ -19,9 +19,9 @@ const CustomerList: React.FC<Props> = ({
   onView,
   onEdit,
 }) => {
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginated = customers.slice(startIndex, startIndex + itemsPerPage);
-  const totalPages = Math.ceil(customers.length / itemsPerPage);
+  // const startIndex = (currentPage - 1) * itemsPerPage;
+  // const paginated = customers.slice(startIndex, startIndex + itemsPerPage);
+  // const totalPages = Math.ceil(customers.length / itemsPerPage);
 
   const [copied, setCopied] = useState<Record<string, boolean>>({});
   const [showModal, setShowModal] = useState(false);
@@ -34,7 +34,7 @@ const CustomerList: React.FC<Props> = ({
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [savedPassword, setSavedPassword] = useState("");
 
-
+const [searchTerm, setSearchTerm] = useState("");
   const onAddPassword = (customer: ICustomer) => {
     setSelectedCustomer(customer);
     setShowModal(true);
@@ -99,6 +99,18 @@ const CustomerList: React.FC<Props> = ({
       setIsSaving(false);
     }
   };
+const filteredCustomers = customers.filter((c) =>
+  `${c.c_company ?? ""} ${c.c_name ?? ""}`
+    .toLowerCase()
+    .includes(searchTerm.toLowerCase())
+);
+
+const startIndex = (currentPage - 1) * itemsPerPage;
+const paginated = filteredCustomers.slice(
+  startIndex,
+  startIndex + itemsPerPage
+);
+const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
 
   // ✅ Copy password helper
   const handleCopyPassword = async (id: string) => {
@@ -173,6 +185,19 @@ const CustomerList: React.FC<Props> = ({
   return (
     <div>
       {/* Table */}
+      {/* 🔍 Search Customer */}
+<div className="flex justify-between items-center mb-4">
+  <input
+    type="text"
+    placeholder="Search by company or customer name..."
+    value={searchTerm}
+    onChange={(e) => {
+      setSearchTerm(e.target.value);
+      onPageChange(1); // reset page when searching
+    }}
+    className="w-80 px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
+  />
+</div>
       <table className="w-full border">
         <thead>
           <tr className="bg-gray-200">
