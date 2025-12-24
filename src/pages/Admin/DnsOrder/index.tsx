@@ -522,10 +522,10 @@ const handleSubmit = async (e: React.FormEvent) => {
       to={`/customer/${order.client._id}/orders`}
       className="text-blue-600 hover:underline"
     >
-      {order.client.c_name?.trim()
-        ? order.client.c_name
-        : order.client.c_name?.trim()
-        ? order.client.c_name
+      {order.client.c_company?.trim()
+        ? order.client.c_company
+        : order.client.c_company?.trim()
+        ? order.client.c_company
         : "N/A"}
     </Link>
   ) : (
@@ -962,7 +962,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                   <option value="">-- Select Customer --</option>
                   {client.map((c) => (
                     <option key={c._id} value={c._id}>
-                      {c.c_name} ({c.c_email})
+                      {c.c_company} ({c.c_email})
                     </option>
                   ))}
                 </select>

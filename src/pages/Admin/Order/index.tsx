@@ -18,7 +18,7 @@ import axios from "axios";
 import { updateOrder } from "./update/api";
 import { fetchCountries, fetchStatesByCountry } from "../Customer/api";
 import { notify } from "../../../Common/Toastify";
-
+import { Select } from "antd";
 // -------------------- Types --------------------
 interface Customer {
   _id: string;
@@ -1218,27 +1218,48 @@ const resetFormData = () => {
           </label>
         </div>
 
-        {/* Existing Customer */}
-        {customerType === "existing" && (
-          <div className="mb-4">
-            <label className="block mb-2 text-black">Select Customer</label>
-            <select
-              value={formData.client?._id || ""}
-              onChange={(e) => {
-                const selected = client.find((c) => c._id === e.target.value) || null;
-                setFormData((prev) => ({ ...prev, client: selected }));
-              }}
-              className="w-full border rounded px-3 py-2"
-            >
-              <option value="">-- Select Customer --</option>
-              {client.map((c) => (
-                <option key={c._id} value={c._id}>
-                  {c.c_company} ({Array.isArray(c.c_email) ? c.c_email.join(", ") : c.c_email})
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+{customerType === "existing" && (
+  <div className="mb-4">
+    <label className="block mb-2 text-black">Select Customer</label>
+
+    <Select
+      showSearch
+      placeholder="Search by customer name or email"
+      className="w-full"
+      value={formData.client?._id || undefined}
+      onChange={(value) => {
+        const selected = client.find((c) => c._id === value) || null;
+        setFormData((prev) => ({ ...prev, client: selected }));
+      }}
+      filterOption={(input, option) =>
+        (option?.searchText ?? "")
+          .toLowerCase()
+          .includes(input.toLowerCase())
+      }
+      options={client.map((c) => ({
+        value: c._id,
+        label: `${c.c_company || c.c_name || "-"} (${
+          Array.isArray(c.c_email)
+            ? c.c_email.join(", ")
+            : c.c_email
+        })`,
+        searchText: `
+          ${c.c_company || ""}
+          ${c.c_name || ""}
+          ${
+            Array.isArray(c.c_email)
+              ? c.c_email.join(" ")
+              : c.c_email || ""
+          }
+        `,
+      }))}
+    />
+  </div>
+)}
+
+
+
+
 
         {/* New Customer Form */}
         {customerType === "new" && (
