@@ -100,7 +100,9 @@ const [searchTerm, setSearchTerm] = useState("");
     }
   };
 const filteredCustomers = customers.filter((c) =>
-  `${c.c_company ?? ""} ${c.c_name ?? ""}`
+  `${c.c_company ?? ""} ${c.c_name ?? ""} ${
+    Array.isArray(c.c_email) ? c.c_email.join(" ") : c.c_email ?? ""
+  }`
     .toLowerCase()
     .includes(searchTerm.toLowerCase())
 );

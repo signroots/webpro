@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo,useRef } from "react";
 import {
   FaEye,
   FaEdit,
@@ -169,6 +169,8 @@ const Orders: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(50);
+  const modalRef = useRef<HTMLDivElement>(null);
+const firstFieldRef = useRef<HTMLInputElement>(null);
   const { orderId } = useParams<{ orderId: string }>();
   const [error, setError] = useState<string | null>(null);
    const [client, setClient] = useState<Client[]>([]);
@@ -262,6 +264,20 @@ useEffect(() => {
 
   if (modalType === "addCustomer") loadCountries();
 }, [modalType]);
+useEffect(() => {
+  if (modalType === "addCustomer") {
+    setTimeout(() => {
+      firstFieldRef.current?.focus();
+    }, 100);
+  }
+}, [modalType]);
+useEffect(() => {
+  if (modalType === "addCustomer") {
+    setTimeout(() => {
+      modalRef.current?.focus();
+    }, 0);
+  }
+}, [modalType]);
   // Fetch existing customers when "existing" is selected
   useEffect(() => {
     if (customerType === "existing") {
@@ -298,6 +314,29 @@ useEffect(() => {
 
     applyFilters();
   }, [provider, statusFilter, allOrders,customerType]);
+const handleTabKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
+  if (e.key !== "Tab") return;
+  if (!modalRef.current) return;
+
+  const focusableElements = modalRef.current.querySelectorAll<
+    HTMLInputElement | HTMLSelectElement | HTMLButtonElement | HTMLTextAreaElement
+  >(
+    'input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])'
+  );
+
+  const first = focusableElements[0];
+  const last = focusableElements[focusableElements.length - 1];
+
+  if (!e.shiftKey && document.activeElement === last) {
+    e.preventDefault();
+    first.focus();
+  }
+
+  if (e.shiftKey && document.activeElement === first) {
+    e.preventDefault();
+    last.focus();
+  }
+};
 
   // -------------------- Handlers --------------------
 const handleView = async (order: Order) => {
@@ -1178,14 +1217,20 @@ const resetFormData = () => {
   //     >
   //       ×
   //     </button>
+   <>
+    {/* Disable background interaction */}
+    <div className="fixed inset-0 bg-black bg-opacity-30 z-40" />
    <div
   className="fixed inset-0 bg-black bg-opacity-30 z-50 flex justify-center items-center"
   onClick={() => setModalType(null)}
 >
-    <div
-      className="bg-white rounded w-8/12 max-w-5xl shadow-lg relative p-4"
-      onClick={(e) => e.stopPropagation()} // prevent modal close when clicking inside
-    >
+  <div
+    ref={modalRef}
+    onKeyDown={handleTabKey}
+    tabIndex={-1}
+    className="bg-white rounded w-8/12 max-w-5xl shadow-lg relative p-4"
+    onClick={(e) => e.stopPropagation()}
+  >
       {/* Close Button at Top Right */}
       <button
         className="absolute top-3 right-3 text-black text-2xl font-bold hover:text-red-500"
@@ -1197,26 +1242,32 @@ const resetFormData = () => {
 
       <form className="space-y-6" onSubmit={handleSubmit}>
         {/* Customer Type */}
-        <div className="flex gap-4 mb-4">
-          <label className="text-black flex items-center gap-1">
-            <input
-              type="radio"
-              value="existing"
-              checked={customerType === "existing"}
-              onChange={() => setCustomerType("existing")}
-            />
-            Existing Customer
-          </label>
-          <label className="text-black flex items-center gap-1">
-            <input
-              type="radio"
-              value="new"
-              checked={customerType === "new"}
-              onChange={() => setCustomerType("new")}
-            />
-            New Customer
-          </label>
-        </div>
+ <div className="flex gap-4 mb-4">
+  <label className="text-black flex items-center gap-1">
+    <input
+      type="radio"
+      value="existing"
+      checked={customerType === "existing"}
+      onChange={() => setCustomerType("existing")}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") setCustomerType("existing");
+      }}
+    />
+    Existing Customer
+  </label>
+  <label className="text-black flex items-center gap-1">
+    <input
+      type="radio"
+      value="new"
+      checked={customerType === "new"}
+      onChange={() => setCustomerType("new")}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") setCustomerType("new");
+      }}
+    />
+    New Customer
+  </label>
+</div>
 
 {customerType === "existing" && (
   <div className="mb-4">
@@ -1619,6 +1670,7 @@ const resetFormData = () => {
       </form>
     </div>
   </div>
+  </>
 )}
     </div>
   </div>
