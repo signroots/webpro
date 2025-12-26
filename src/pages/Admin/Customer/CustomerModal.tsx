@@ -40,76 +40,51 @@ const PHONE_CODES = [
 ];
 
   const handleChange = (field: keyof ICustomerForm, value: any) => {
-    setModalForm((prev) => ({ ...prev, [field]: value }));
+  // Strip non-digits for phone
+  if (field === "c_phone") value = value.replace(/\D/g, "");
 
-    if (field === "c_phone") {
-      const phonePattern = /^[0-9]{10}$/;
-      if (!phonePattern.test(value)) {
-        setPhoneError("Mobile number must be exactly 10 digits");
-      } else {
-        setPhoneError("");
-      }
+  setModalForm((prev) => ({ ...prev, [field]: value }));
+
+  // Phone validation
+  if (field === "c_phone") {
+    const phonePattern = /^[0-9]{10}$/;
+    if (!phonePattern.test(value)) {
+      setPhoneError("Mobile number must be exactly 10 digits");
+    } else {
+      setPhoneError("");
     }
-  };
+  }
+};
+
 useEffect(() => {
   if (mode === "edit" && selectedCustomer) {
     let phone = selectedCustomer.c_phone || "";
 
-      const detected = PHONE_CODES.find(p =>
-        phone.startsWith(p.dial.replace("+", ""))
-      );
+    // Remove any non-digit characters
+    phone = phone.replace(/\D/g, "");
 
-      if (detected) {
-        setPhoneCode(detected.dial);
-        phone = phone.replace(detected.dial.replace("+", ""), "");
-      }
-    setModalForm({
-      c_salutation: selectedCustomer.c_salutation || "",
-      c_firstName: selectedCustomer.c_firstName || "",
-      c_lastName: selectedCustomer.c_lastName || "",
-      c_name: selectedCustomer.c_name || "",
+    // Detect country code from PHONE_CODES
+    const detected = PHONE_CODES.find(p => phone.startsWith(p.dial.replace("+", "")));
+    if (detected) {
+      setPhoneCode(detected.dial);
+      phone = phone.slice(detected.dial.replace("+", "").length); // remove code from number
+    }
 
-      c_email: Array.isArray(selectedCustomer.c_email)
-        ? selectedCustomer.c_email
-        : [],
+    // Keep only last 10 digits
+    phone = phone.slice(-10);
 
+    setModalForm(prev => ({
+      ...prev,
+      ...selectedCustomer,
       c_phone: phone,
-      c_mobilePhone: selectedCustomer.c_mobilePhone || "",
-
-      c_company: selectedCustomer.c_company || "",
-      c_address: selectedCustomer.c_address || "",
-      c_address2: selectedCustomer.c_address2 || "",
-      c_city: selectedCustomer.c_city || "",
-
-      c_country:
-        typeof selectedCustomer.c_country === "object"
-          ? selectedCustomer.c_country._id
-          : selectedCustomer.c_country || "",
-
-      c_state:
-        typeof selectedCustomer.c_state === "object"
-          ? selectedCustomer.c_state._id
-          : selectedCustomer.c_state || "",
-
-      c_zipCode: selectedCustomer.c_zipCode || "",
-      c_gst: selectedCustomer.c_gst || "",
-
-      c_status: selectedCustomer.c_status || "",
-      c_bankAccountPayment: selectedCustomer.c_bankAccountPayment || "",
-      c_portalEnabled: !!selectedCustomer.c_portalEnabled,
-
-      c_placeOfContact: selectedCustomer.c_placeOfContact || "",
-      c_placeOfContactWithStateCode:
-        selectedCustomer.c_placeOfContactWithStateCode || "",
-
+      c_email: Array.isArray(selectedCustomer.c_email) ? selectedCustomer.c_email : [],
+      c_country: typeof selectedCustomer.c_country === "object" ? selectedCustomer.c_country._id : selectedCustomer.c_country || "",
+      c_state: typeof selectedCustomer.c_state === "object" ? selectedCustomer.c_state._id : selectedCustomer.c_state || "",
       c_password: "",
-    });
+    }));
 
     if (selectedCustomer.c_country) {
-      const cid =
-        typeof selectedCustomer.c_country === "object"
-          ? selectedCustomer.c_country._id
-          : selectedCustomer.c_country;
+      const cid = typeof selectedCustomer.c_country === "object" ? selectedCustomer.c_country._id : selectedCustomer.c_country;
       fetchStatesByCountry(cid).then(setStates);
     }
   }
@@ -170,17 +145,21 @@ useEffect(() => {
           <input placeholder="Name" value={modalForm.c_name || ""} onChange={e => handleChange("c_name", e.target.value)} className="w-full p-2 border rounded"/>
           {/* Emails */} <div className="col-span-3"> <div className="flex flex-wrap items-center gap-2 p-2 border rounded bg-gray-50"> {Array.isArray(modalForm.c_email) && modalForm.c_email .map((em: string) => em.trim()) .filter((em: string) => em !== "") .map((em: string) => ( <div key={em} className="flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full"> <span className="mr-2">{em}</span> <button type="button" onClick={() => setModalForm((prev) => ({ ...prev, c_email: (prev.c_email ?? []).filter((e) => e !== em), })) } className="text-blue-600 hover:text-red-600 font-bold" > × </button> </div> ))} <input type="text" placeholder="Add email" className="flex-1 min-w-[120px] p-1 outline-none bg-transparent" onKeyDown={(e) => { if (e.key === "Tab") return; if (e.key === "Enter" || e.key === ",") { e.preventDefault(); const value = (e.currentTarget.value || "").trim(); if (!value) return; const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; if (!emailPattern.test(value)) { alert("Invalid email format!"); return; } setModalForm((prev) => { const allEmails = prev.c_email ?? []; return { ...prev, c_email: allEmails.includes(value) ? allEmails : [...allEmails, value], }; }); e.currentTarget.value = ""; } }} /> </div> </div>
 
-          <div className="flex gap-2 col-span-3 md:col-span-3">
-            <select value={phoneCode} onChange={e => setPhoneCode(e.target.value)} className="w-32 p-2 border rounded">
-              {PHONE_CODES.map(p => (
-                <option key={p.code} value={p.dial}>{p.dial} ({p.name})</option>
-              ))}
-            </select>
-            <input placeholder="Mobile Number" value={modalForm.c_phone || ""} onChange={e => handleChange("c_phone", e.target.value.replace(/\D/g, ""))} maxLength={10} className={`flex-1 p-2 border rounded ${phoneError ? "border-red-500" : ""}`}/>
-            {/* <input placeholder="Mobile Phone" value={modalForm.c_mobilePhone || ""} onChange={e => handleChange("c_mobilePhone", e.target.value)} className="flex-1 p-2 border rounded"/> */}
-          </div>
+         <div className="flex gap-2 col-span-3 md:col-span-3">
+  <select value={phoneCode} onChange={e => setPhoneCode(e.target.value)} className="w-32 p-2 border rounded">
+    {PHONE_CODES.map(p => (
+      <option key={p.code} value={p.dial}>{p.dial} ({p.name})</option>
+    ))}
+  </select>
 
-          {phoneError && <p className="text-red-500 text-sm col-span-3">{phoneError}</p>}
+  <input
+    placeholder="Mobile Number"
+    value={modalForm.c_phone || ""}
+    onChange={e => handleChange("c_phone", e.target.value)}
+    maxLength={10}
+    className={`flex-1 p-2 border rounded ${phoneError ? "border-red-500" : ""}`}
+  />
+</div>
 
           <input placeholder="Company" value={modalForm.c_company || ""} onChange={e => handleChange("c_company", e.target.value)} className="w-full p-2 border rounded"/>
           <input placeholder="Address" value={modalForm.c_address || ""} onChange={e => handleChange("c_address", e.target.value)} className="w-full p-2 border rounded"/>

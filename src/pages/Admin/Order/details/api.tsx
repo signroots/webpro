@@ -1,81 +1,102 @@
 import axios from "axios";
 
-export interface Customer
-{
-   _id: string; 
+/* ===================== BASIC CUSTOMER (LIST / READ) ===================== */
+export interface Customer {
+  _id: string;
   name: string;
-  email: string;
+  email: string[];
   phone: string;
-  phoneCc?: string; // optional
+  phoneCc?: string;
   address?: string;
   city?: string;
   state?: string;
   country?: string;
-  zipCode?: string; // ✅ match backend
+  zipCode?: string;
   company?: string;
   resellerCustomerId?: string;
 }
+
+/* ===================== UPDATE CUSTOMER (PAYLOAD) ===================== */
+/**
+ * IMPORTANT:
+ * - c_country MUST be ObjectId string
+ * - c_email MUST be array
+ */
 export interface ICustomer {
   _id?: string;
   is_customer?: boolean;
   resellerCustomerId?: string;
   password?: string;
+
   c_name?: string;
-  c_email?: string;
+  c_email: string[];        // ✅ FIXED (ARRAY)
   c_phone?: string;
+  c_phoneCc?: string;
+
   c_company?: string;
   c_address?: string;
   c_city?: string;
   c_state?: string;
-  c_country?: string;
+
+  c_country?: string;        // ✅ ObjectId ONLY
   c_zipCode?: string;
   c_gst?: string;
 }
 
-export interface Client
-{
-   _id: string; 
+/* ===================== CLIENT (FRONTEND MODEL) ===================== */
+export interface Client {
+  _id: string;
+
   c_name: string;
-  c_email: string;
+  c_email: string[];         // ✅ FIXED (ARRAY)
   c_phone: string;
-  c_phoneCc?: string; // optional
+  c_phoneCc?: string;
+
   c_address?: string;
   c_city?: string;
   c_state?: string;
-  c_country?: string;
-  c_zipCode?: string; // ✅ match backend
+
+  c_country?: string;        // ✅ ObjectId (used for update)
+  c_country_name?: string;   // ✅ Display only
+  c_state_name?: string;
+
+  c_zipCode?: string;
   c_company?: string;
-  c_country_name?: string;
-  c_state_name?: string
   c_gst?: string;
-
-
 }
+
+/* ===================== ORDER ===================== */
 export interface Order {
   _id: string;
   domainName: string;
-  domainSource:string;
-  microsoft_email:boolean;
-  google_email:boolean;
-  msoffice_services_flag:boolean;
+  domainSource: string;
+
+  microsoft_email: boolean;
+  google_email: boolean;
+  msoffice_services_flag: boolean;
+
   lockStatus?: string;
   status?: string;
   registrationDate?: string;
   expiryDate?: string;
+
   customer?: Customer | null;
   client?: Client | null;
 }
 
+/* ===================== API RESPONSE ===================== */
 interface CustomerOrdersResponse {
   status: "SUCCESS" | "ERROR";
   customer: Customer;
-  client: Client;
+  client: any;               // backend sends populated object
   orders: Order[];
   message?: string;
 }
 
+/* ===================== API ===================== */
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+/* ===================== FETCH CUSTOMER ORDERS ===================== */
 export const fetchCustomerOrders = async (
   customerId: string
 ): Promise<CustomerOrdersResponse> => {
@@ -90,8 +111,14 @@ export const fetchCustomerOrders = async (
   }
 };
 
-export const updateCustomer = async (id: string, data: Partial<ICustomer>): Promise<ICustomer> => {
-  const res = await axios.put<ICustomer>(`${API_BASE_URL}/api/client/${id}`, data);
+/* ===================== UPDATE CUSTOMER ===================== */
+export const updateCustomer = async (
+  id: string,
+  data: Partial<ICustomer>
+): Promise<ICustomer> => {
+  const res = await axios.put<ICustomer>(
+    `${API_BASE_URL}/api/client/${id}`,
+    data
+  );
   return res.data;
 };
-

@@ -176,6 +176,7 @@ const firstFieldRef = useRef<HTMLInputElement>(null);
    const [client, setClient] = useState<Client[]>([]);
   const navigate = useNavigate();
   const [phoneCode, setPhoneCode] = useState("+91");
+   const [phoneNumber, setPhoneNumber] = useState("");
   const [formData, setFormData] = useState<Order>({
     _id: "",
     domainName: "",
@@ -1379,47 +1380,32 @@ const resetFormData = () => {
               />
             </div> */}
           {/* Phone */}
-<div className="col-span-3">
-  <label className="block text-gray-700 font-medium mb-2">Phone</label>
+<div className="flex gap-2 items-center">
+  {/* Country Code */}
+  <select
+    value={phoneCode}
+    onChange={(e) => setPhoneCode(e.target.value)}
+    className="border px-2 py-1 rounded-lg text-black"
+  >
+    {PHONE_CODES.map((c) => (
+      <option key={c.code} value={c.dial}>
+        {c.dial} ({c.name})
+      </option>
+    ))}
+  </select>
 
-  <div className="flex gap-2">
-    {/* Phone Code */}
-    <select
-      value={phoneCode}
-      onChange={e => setPhoneCode(e.target.value)}
-      className="w-28 border rounded px-3 py-2"
-    >
-      {PHONE_CODES.map(p => (
-        <option key={p.code} value={p.dial}>
-          {p.dial} ({p.name})
-        </option>
-      ))}
-    </select>
-
-    {/* Phone Number */}
-    <input
-      type="text"
-      name="newCustomer.c_phone"
-      value={formData.newCustomer?.c_phone || ""}
-      onChange={e => {
-        const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
-
-        // create a fake event so old handler still works
-        handleInputChange({
-          ...e,
-          target: {
-            ...e.target,
-            value: `${phoneCode}${digits}`,
-          },
-        } as React.ChangeEvent<HTMLInputElement>);
-      }}
-      placeholder="10-digit phone number"
-      maxLength={10}
-      className="flex-1 border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-      required
-    />
-  </div>
+  {/* Phone Number */}
+  <input
+    type="text"
+    name="newCustomer.c_phone"
+    placeholder="Phone Number"
+    value={formData.newCustomer?.c_phone || ""}
+    onChange={(e) => handleInputChange(e)}
+    className="border px-3 py-2 rounded-lg text-black flex-1"
+  />
 </div>
+
+
 
             {/* Company */}
             <div>
