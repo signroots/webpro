@@ -1399,7 +1399,7 @@ const resetFormData = () => {
     <input
       type="text"
       placeholder="Add email"
-      className="flex-1 min-w-[120px] p-1 outline-none"
+      className="flex-1 min-w-[120px] p-2 outline-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === ",") {
           e.preventDefault();
@@ -1446,14 +1446,29 @@ const resetFormData = () => {
 
 
   {/* Phone Number */}
-  <input
-    type="text"
-    name="newCustomer.c_phone"
-    placeholder="Phone Number"
-    value={formData.newCustomer?.c_phone || ""}
-    onChange={(e) => handleInputChange(e)}
-    className="border px-3 py-2 rounded-lg text-black flex-1"
-  />
+<input
+  type="text"
+  name="newCustomer.c_phone"
+  placeholder="Phone Number"
+  value={formData.newCustomer?.c_phone || ""}
+  inputMode="numeric"
+  pattern="[0-9]*"
+  maxLength={10}
+  onChange={(e) => {
+    const numericValue = e.target.value.replace(/\D/g, "").slice(0, 10);
+
+    setFormData((prev: any) => ({
+      ...prev,
+      newCustomer: {
+        ...prev.newCustomer,
+        c_phone: numericValue,
+      },
+    }));
+  }}
+  className="border px-3 py-2 rounded-lg text-black flex-1"
+/>
+
+ 
 </div>
 
 
@@ -1552,7 +1567,7 @@ const resetFormData = () => {
               >
                 <option value="">-- Select State --</option>
                 {states.map((s) => (
-                  <option key={s.code} value={s.name}>
+                  <option key={s.code} value={s.code}>
                     {s.name}
                   </option>
                 ))}
@@ -1641,18 +1656,12 @@ const resetFormData = () => {
        {/* Submit/Add Customer Button */}
 <div className="mt-4 text-right">
   <button
-    type="button"
-    className={`px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 ${
-      !customerType ? "opacity-50 cursor-not-allowed" : ""
-    }`}
-    onClick={() => {
-      if (!customerType) return; // prevent action if no type selected
-      setModalType("addCustomer");
-    }}
-    disabled={!customerType} // disable button if no type selected
-  >
-    {customerType === "existing" ? "Save" : "Save"}
-  </button>
+  type="button"
+  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+  onClick={handleSubmit} // <-- call handleSubmit here
+>
+  Save
+</button>
 </div>
 
       </form>
