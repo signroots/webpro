@@ -1,411 +1,411 @@
-Created Time,Last Modified Time,Company Name,Salutation,First Name,Last Name,Phone,Currency Code,Status,Bank Account Payment,Portal Enabled,Billing Address,Billing Street2,Billing City,Billing State,Billing Country,Billing Code,GST Treatment,GST Identification Number (GSTIN),EmailID,MobilePhone,Place Of Contact,Place of Contact(With State Code)
-2021-01-18 18:34:23,2025-11-11 18:52:02,SITICS LOGISTIC SOLUTIONS (P) LTD,,,,+91 4912530681,INR,Active,false,false,18/802 English Church Road,,Palakkad,Kerala,India,678014,business_registered_composition,32AALCS5294A1ZG,it@sitics.co,+919072613300,KL,32-Kerala
+Created Time,Last Modified Time,Company Name,Salutation,First Name,Last Name,Phone,Currency Code,Status,Bank Account Payment,Portal Enabled,Billing Address,Billing Street2,Billing City,Billing State,Billing Country,Billing Code,GST Treatment,GST Identification Number (GSTIN),EmailID,Country Code,MobilePhone,Place Of Contact,Place of Contact(With State Code)
+2021-01-18 18:34:23,2025-11-11 18:52:02,SITICS LOGISTIC SOLUTIONS (P) LTD,,,,+91 4912530681,INR,Active,false,false,18/802 English Church Road,,Palakkad,Kerala,India,678014,business_registered_composition,32AALCS5294A1ZG,it@sitics.co,+91,9072613300,KL,32-Kerala
 2021-01-21 16:34:45,2025-10-31 17:04:50,STORILABS SYSTEM TECHNOLOGIES LLP,,,,,INR,Active,false,false,"Technology Business Incubator (TBI)
 114, NIT Calicut
-Chathamangalam P O",,Kozhikode,Kerala,India,673601,business_gst,32ACUFS4531J1ZS,finance@storilabs.com,+919567996638,KL,32-Kerala
-2021-01-25 12:25:40,2023-09-30 23:45:44,IGIENIC Private Limited,Mr.,Sirajul Haque,,,INR,Active,false,false,Porunnumpramba,,Malappuram,Kerala,India,676507,business_gst,32AAFCI7452Q1Z3,siraj.ulhaq@igienic.com,8590690945,KL,32-Kerala
+Chathamangalam P O",,Kozhikode,Kerala,India,673601,business_gst,32ACUFS4531J1ZS,finance@storilabs.com,+91,9567996638,KL,32-Kerala
+2021-01-25 12:25:40,2023-09-30 23:45:44,IGIENIC Private Limited,Mr.,Sirajul Haque,,,INR,Active,false,false,Porunnumpramba,,Malappuram,Kerala,India,676507,business_gst,32AAFCI7452Q1Z3,siraj.ulhaq@igienic.com,,8590690945,KL,32-Kerala
 2021-02-08 13:11:51,2024-02-06 12:08:28,FIRST STEP EDUCATION,,,,,INR,Active,false,false,"2nd Floor, Nandanam Building
 Changampuza Park, Edappally
 Near State Bank Of India
-Metro Pillar No: 456",,Cochin,Kerala,India,682024,business_gst,32BUGPA3787B1Z2,info@firststep-edu.com,,KL,32-Kerala
-2021-02-18 17:53:36,2024-02-24 10:44:11,signrOots Cloud Solutions,,,,09447232332,INR,Active,false,false,NIT Calicut,,Kozhikode,Kerala,India,673601,business_none,,accounts@signroots.com,,KL,32-Kerala
+Metro Pillar No: 456",,Cochin,Kerala,India,682024,business_gst,32BUGPA3787B1Z2,info@firststep-edu.com,,,KL,32-Kerala
+2021-02-18 17:53:36,2024-02-24 10:44:11,signrOots Cloud Solutions,,,,09447232332,INR,Active,false,false,NIT Calicut,,Kozhikode,Kerala,India,673601,business_none,,accounts@signroots.com,,,KL,32-Kerala
 2021-03-01 22:17:29,2021-03-01 22:32:34,Green Worms Eco Solutions LLP,,,,,INR,Active,false,false,"140 B, The Crest Building,
 Varakkal Arcade Road junction,
-West Hill",,Kozhikode,Kerala,India,673005,business_gst,32AAOFG8683M1ZN,accounts@greenworms.org,,KL,32-Kerala
+West Hill",,Kozhikode,Kerala,India,673005,business_gst,32AAOFG8683M1ZN,accounts@greenworms.org,,,KL,32-Kerala
 2021-03-27 17:49:57,2023-11-15 18:54:11,Kleanfab GV Tex P Ltd,,,,+91 99436 33301,INR,Active,false,false,"Door No : 18-B Ashok Layout,
-Civil Aerodrome Post",,Coimbatore,Tamil Nadu,India,641014,business_gst,33AAHCK5620L1ZH,venkatesan@kleanfabgvtex.com,+91 88389 29602,TN,33-Tamil Nadu
+Civil Aerodrome Post",,Coimbatore,Tamil Nadu,India,641014,business_gst,33AAHCK5620L1ZH,venkatesan@kleanfabgvtex.com,+91, 88389 29602,TN,33-Tamil Nadu
 2021-04-03 14:09:46,2021-06-21 01:06:31,Shalfin Group,,,,,INR,Active,false,false,"Building 66, Zone 91, Street 3086
 Birkat Al Awamer, Logistic Area
-Bu Sulba",,Wukair,Wukair,Qatar,,business_none,,niyaz@shalfin.com,,KL,32-Kerala
+Bu Sulba",,Wukair,Wukair,Qatar,,business_none,,niyaz@shalfin.com,,,KL,32-Kerala
 2021-06-21 00:59:22,2025-08-26 18:19:08,CERTIFIED PROFESSIONAL ADVISORY SERVICES PRIVATE LIMITED,,,,,INR,Active,false,false,"J.B house, 2nd floor, 19, 
-R.D street, Fort,",,Mumbai,Maharashtra,India,400001,business_gst,27AAGCC1668M2Z8,cochin@cpasconsultancy.com,+918907617002,MH,27-Maharashtra
+R.D street, Fort,",,Mumbai,Maharashtra,India,400001,business_gst,27AAGCC1668M2Z8,cochin@cpasconsultancy.com,+91,8907617002,MH,27-Maharashtra
 2021-07-30 17:50:14,2021-11-13 20:19:26,Singapore Infotech (India) Pvt. Ltd,Mr.,Suraj,,,INR,Active,false,false,"3A, 3rd floor, No. 4 Raghavendra Layout,
-Tumkur Road, Yeshwantpur",,Bangalore,Karnataka,India,560022,business_gst,29AAQCS7234M1ZH,suraj@singaporeinfotech.com,,KA,29-Karnataka
-2021-09-22 00:24:33,2021-09-22 00:33:23,QBRAINX INDIA PRIVATE LIMITED,Kannan,,,,INR,Active,false,false,"SF NO.559/4, D BLOCK, HANUDEV INFOPARK PVT LTD,, UDAYAMPALAYAM ROAD, NAVA INDIA",,Coimbatore,,India,641028,business_gst,33AAACQ6098H1Z9,kannan.v@qbrainx.com,,TN,33-Tamil Nadu
+Tumkur Road, Yeshwantpur",,Bangalore,Karnataka,India,560022,business_gst,29AAQCS7234M1ZH,suraj@singaporeinfotech.com,,,KA,29-Karnataka
+2021-09-22 00:24:33,2021-09-22 00:33:23,QBRAINX INDIA PRIVATE LIMITED,Kannan,,,,INR,Active,false,false,"SF NO.559/4, D BLOCK, HANUDEV INFOPARK PVT LTD,, UDAYAMPALAYAM ROAD, NAVA INDIA",,Coimbatore,,India,641028,business_gst,33AAACQ6098H1Z9,kannan.v@qbrainx.com,,,TN,33-Tamil Nadu
 2021-11-13 23:29:35,2024-01-20 22:41:26,CISO Institute of Oceanic Studies Pvt Ltd,,,,,INR,Active,false,false,"Punnayur, Panchavadi Beach
-Edakkazhiyur",,Thrissur,Kerala,India,680515,business_gst,32AADCC2386D1Z3,it@marineworld.in,+918589980541,KL,32-Kerala
+Edakkazhiyur",,Thrissur,Kerala,India,680515,business_gst,32AADCC2386D1Z3,it@marineworld.in,+91,8589980541,KL,32-Kerala
 2021-11-16 15:04:10,2022-03-04 21:22:24,House of Blue Beans Interactive Media Pvt Ltd,,,,,INR,Active,false,false,"3rd Floor Victoria Annex
 314/6 Patel Rama Reddy Road
-Domlur Layout",,Bangalore,Karnataka,India,560071,business_gst,29AADCH5773R1ZN,kaushik.v@houseofbluebeans.com,+919880806210,KA,29-Karnataka
+Domlur Layout",,Bangalore,Karnataka,India,560071,business_gst,29AADCH5773R1ZN,kaushik.v@houseofbluebeans.com,+91,9880806210,KA,29-Karnataka
 2021-12-22 19:38:05,2025-05-29 00:33:49,ALAMAT Trading,,,,+97444509070,INR,Active,false,false,"Office No 4, Al Hattab Building, 
-Salwa Road, Doha",,,Ad Dawhah,Qatar,,overseas,,accounts@alamat.me,+97444509070,,
-2022-02-14 22:20:56,2024-02-07 11:15:23,NKN Ventures,Mr.,Tshering Dorji,,,INR,Active,false,false,"Post Box : 279, Bèlpi Lam-4",,Thimphu,Thimphu,Bhutan,11001,overseas,,tdorji@nknventures.com,,,
+Salwa Road, Doha",,,Ad Dawhah,Qatar,,overseas,,accounts@alamat.me,+974,44509070,,
+2022-02-14 22:20:56,2024-02-07 11:15:23,NKN Ventures,Mr.,Tshering Dorji,,,INR,Active,false,false,"Post Box : 279, Bèlpi Lam-4",,Thimphu,Thimphu,Bhutan,11001,overseas,,tdorji@nknventures.com,,,,
 2022-02-22 00:46:31,2024-01-22 21:12:47,GENOVA TECHNOLOGIES,Mr.,Jinesh,,,INR,Active,false,false,"1st Floor, 68/159, Basil Building, 
 Horse Ride Road, 
-Opp. St. Michels Church, Westhill",,Kozhikode,Kerala,India,673005,business_gst,32AKLPL0387L1ZW,info@genovatechnologies.com,+91 96332 63624,KL,32-Kerala
+Opp. St. Michels Church, Westhill",,Kozhikode,Kerala,India,673005,business_gst,32AKLPL0387L1ZW,info@genovatechnologies.com,+91, 96332 63624,KL,32-Kerala
 2022-03-03 12:04:03,2024-03-05 11:16:16,Pro Partners,Mr.,FUAD PARAKKADAVAN,,,INR,Active,false,false,"Samprasiddhi Greenedge, 
 B 310, 2nd B Cross Road 
 Shirdhi Sai Rathan Layout, 
-Rachenahalli Off Thannisandra Main Road Hegde Nagar,",,Bengaluru,Karnataka,India,560077,business_gst,29AMWPP0422B1Z1,fuad@propartners.group,+91 98443 83456,KA,29-Karnataka
-2022-05-07 11:51:08,2023-09-13 17:35:58,MIRAMAX Communication,Mr.,Manish Vaghella,,,INR,Active,false,true,P O Box 39380-00623,,Parkland,Nairobi,Kenya,,overseas,,manish@vaghella.com,+254733938333,,
+Rachenahalli Off Thannisandra Main Road Hegde Nagar,",,Bengaluru,Karnataka,India,560077,business_gst,29AMWPP0422B1Z1,fuad@propartners.group,+91, 98443 83456,KA,29-Karnataka
+2022-05-07 11:51:08,2023-09-13 17:35:58,MIRAMAX Communication,Mr.,Manish Vaghella,,,INR,Active,false,true,P O Box 39380-00623,,Parkland,Nairobi,Kenya,,overseas,,manish@vaghella.com,254,733938333,,
 2022-05-07 22:16:30,2025-09-01 15:43:59,NALAKATH GRANITES,,,,,INR,Active,false,false,"Poopalam,Valamboor Post
-Pattikad Via, Perinthalmanna",,Malappuram,Kerala,India,679325,business_gst,32AAIFN6386N1ZO,accounts@nalakathgranites.com,+919744794400,KL,32-Kerala
+Pattikad Via, Perinthalmanna",,Malappuram,Kerala,India,679325,business_gst,32AAIFN6386N1ZO,accounts@nalakathgranites.com,,9744794400,KL,32-Kerala
 2022-05-08 00:18:29,2025-05-21 14:04:09,ALTERNATIVE INVESTMENTS AND CREDITS LIMITED,,,,,INR,Active,false,false,"Room No.40,3 rd Floor, 
 CD TOWER, Mini Bypass Road, Eranhippalam Bye-Pass, 
-Arayidathupalam",,Kozhikode,Kerala,India,673004,business_gst,32AADCA4072A1ZG,info@aicl-india.com,+919539677886,KL,32-Kerala
-2022-05-23 10:49:42,2024-05-28 12:10:23,Galaxy Laundry and Dry Cleaners,,,,,INR,Active,false,false,1712,,Abu DHabi,Abu Dhabi,United Arab Emirates,1712,overseas,,mail@galaxylaundry.ae,+971506329281,,
+Arayidathupalam",,Kozhikode,Kerala,India,673004,business_gst,32AADCA4072A1ZG,info@aicl-india.com,+91,9539677886,KL,32-Kerala
+2022-05-23 10:49:42,2024-05-28 12:10:23,Galaxy Laundry and Dry Cleaners,,,,,INR,Active,false,false,1712,,Abu DHabi,Abu Dhabi,United Arab Emirates,1712,overseas,,mail@galaxylaundry.ae,+971,506329281,,
 2022-06-07 00:40:00,2023-12-11 19:01:42,AUF WAY LLP,,,,,INR,Active,false,false,"13/22/F7, Chullikkaparambu
-Cheruvadi, Mavoor Post",,Kozhikode,Kerala,India,673661,business_gst,32ABXFA1730B1ZV,info@aufway.co,+918592024111,KL,32-Kerala
+Cheruvadi, Mavoor Post",,Kozhikode,Kerala,India,673661,business_gst,32ABXFA1730B1ZV,info@aufway.co,+91,8592024111,KL,32-Kerala
 2022-06-19 23:38:28,2025-07-18 09:44:40,Evolv Trading W.L.L,,,,,INR,Active,false,false,"P O Box 11622
-Salwa Road",,Doha,Ad Dawhah,Qatar,00000,overseas,,shameemsa@gmail.com,,,
+Salwa Road",,Doha,Ad Dawhah,Qatar,00000,overseas,,shameemsa@gmail.com,,,,
 2022-06-20 12:34:22,2023-04-18 00:23:29,AMALGAMATE Technology,,,,,INR,Active,false,false,"P.B: 9800, Office Room No: 102,
-Building Number 59",Al eez Commercial Complex,,Ad Dawhah,Qatar,,overseas,,info@amalgamatetechnologies.com,+91 99463 60134,,
+Building Number 59",Al eez Commercial Complex,,Ad Dawhah,Qatar,,overseas,,info@amalgamatetechnologies.com,+91, 99463 60134,,
 2022-06-23 12:31:28,2022-06-27 17:26:57,LAMIT ROOF TECH (INDIA) PVT LTD,,,,,INR,Active,false,false,"8/891/Z-17, VBC Tower
 Rajeev Gandhi Bypass Road
-Manjeri",,Malappuram,Kerala,India,676517,business_gst,32AACCL4721C1Z6,branding.lamit@gmail.com,+91 75930 07500,KL,32-Kerala
-2022-06-27 00:08:42,2025-11-20 14:33:43,Advanced Care Medical Center,,,,,INR,Active,false,false,"Office # 1, Al Saud Building,",Industrial Area-17,Muwaileh,Sharjah,United Arab Emirates,,overseas,,accounts@acuae.org,+971554629442,,
-2022-07-01 12:21:51,2025-08-02 13:46:17,AZURE END TO END SOLUTIONS PRIVATE LIMITED,,,,,INR,Active,false,false,"No 17 & 18, 19th Cross Road, 5th Block,",HBR  Layout,Bangalore,Karnataka,India,560043,business_gst,29AALCA1025H1ZU,accounts@azureits.com,+918095763665,KA,29-Karnataka
+Manjeri",,Malappuram,Kerala,India,676517,business_gst,32AACCL4721C1Z6,branding.lamit@gmail.com,+91, 75930 07500,KL,32-Kerala
+2022-06-27 00:08:42,2025-11-20 14:33:43,Advanced Care Medical Center,,,,,INR,Active,false,false,"Office # 1, Al Saud Building,",Industrial Area-17,Muwaileh,Sharjah,United Arab Emirates,,overseas,,accounts@acuae.org,+971,554629442,,
+2022-07-01 12:21:51,2025-08-02 13:46:17,AZURE END TO END SOLUTIONS PRIVATE LIMITED,,,,,INR,Active,false,false,"No 17 & 18, 19th Cross Road, 5th Block,",HBR  Layout,Bangalore,Karnataka,India,560043,business_gst,29AALCA1025H1ZU,accounts@azureits.com,+91,8095763665,KA,29-Karnataka
 2022-07-27 21:01:38,2024-08-29 06:53:08,RBN Group Co. WLL.,,,,,INR,Active,false,false,"PB No: 202425
-Building No 9, Street No 744",Muaither North,,Ad Dawhah,Qatar,,overseas,,info@rbnsoft.com,+97444983386,,
+Building No 9, Street No 744",Muaither North,,Ad Dawhah,Qatar,,overseas,,info@rbnsoft.com,+974,44983386,,
 2022-08-04 16:19:18,2025-03-09 19:27:25,ELLORA GROUP WLL,,,,,INR,Active,false,false,"PB NO.13873
-Street 32, Wakalath street",,,Ad Dawhah,Qatar,,overseas,,info@elloragroupwll.com,+97455042939,,
-2022-08-07 12:44:56,2024-10-05 09:52:25,Klean Care Hygiene Solutions Trading Co,,,,,INR,Active,false,false,AL Muhammediya,,,Dammam,Saudi Arabia,,overseas,,info@kleancarehygiene.com,+966596466022,,
-2022-08-07 12:51:49,2025-11-02 23:39:15,Pillar of Excellence Trading Co,,,,,INR,Active,false,false,,,,Al Khobar,Saudi Arabia,,overseas,,info@pillarsaudi.com,,,
-2022-08-19 10:21:32,2023-08-19 11:11:15,Riya Tours & Travels,,,,,INR,Active,false,false,Batha Commercial Centre,Riyadh,,Ar Riyad,Saudi Arabia,,overseas,,info@riyaonline.com,+919995738566,,
-2022-08-27 12:12:03,2022-08-31 17:27:23,CW Resources,,,,,INR,Active,false,false,"Khan Tower (Floor-09, 10 & 11), Sonargaon Janapath","Sector 11, Uttara",Dhaka,Dhaka bibhag,Bangladesh,1230,overseas,,towfiquehshovon@gmail.com,+880 1932-527268,,
+Street 32, Wakalath street",,,Ad Dawhah,Qatar,,overseas,,info@elloragroupwll.com,+974,55042939,,
+2022-08-07 12:44:56,2024-10-05 09:52:25,Klean Care Hygiene Solutions Trading Co,,,,,INR,Active,false,false,AL Muhammediya,,,Dammam,Saudi Arabia,,overseas,,info@kleancarehygiene.com,+966,596466022,,
+2022-08-07 12:51:49,2025-11-02 23:39:15,Pillar of Excellence Trading Co,,,,,INR,Active,false,false,,,,Al Khobar,Saudi Arabia,,overseas,,info@pillarsaudi.com,,,,
+2022-08-19 10:21:32,2023-08-19 11:11:15,Riya Tours & Travels,,,,,INR,Active,false,false,Batha Commercial Centre,Riyadh,,Ar Riyad,Saudi Arabia,,overseas,,info@riyaonline.com,+91,9995738566,,
+2022-08-27 12:12:03,2022-08-31 17:27:23,CW Resources,,,,,INR,Active,false,false,"Khan Tower (Floor-09, 10 & 11), Sonargaon Janapath","Sector 11, Uttara",Dhaka,Dhaka bibhag,Bangladesh,1230,overseas,,towfiquehshovon@gmail.com,+880, 1932-527268,,
 2022-08-31 17:23:11,2024-07-19 14:41:55,Talents Tree Care,,,,,INR,Active,false,false,"25 east paddock court
 Northampton 
-NN38LF",,,Northamptonshire,United Kingdom,,overseas,,manager@talentstree.co.uk,+447883638102,,
+NN38LF",,,Northamptonshire,United Kingdom,,overseas,,manager@talentstree.co.uk,+44,7883638102,,
 2022-09-13 20:53:01,2024-12-16 11:27:10,WOODENBOX Interiors Design LLC,,,,,INR,Active,false,false,"Warehouse No. 01/14
-Ras Al Khor Industrial Area 2",,,Dubai,United Arab Emirates,,overseas,,accounts@woodenbox.ae,+971545821967,,
-2022-10-11 11:19:00,2023-10-06 18:41:08,EMITAC Stationary and Toner LLC,,,,,INR,Active,false,false,Mohamed Bin Zayed City,,MUSAFFAH,Abu Dhabi,United Arab Emirates,24596,overseas,,mail@emitacuae.com,+971 52 294 8341,,
-2022-10-11 15:16:26,2023-10-10 23:29:46,Marine Logistics Services Est.,,,,,INR,Active,false,false,"1st floor, No. 4, Al Kaseeh Building, P.O. Box 15025, Opp. Halwaani Bros.",,,Jeddah,Saudi Arabia,21444,overseas,,info@zoyon.com,+91 99952 23922,,
+Ras Al Khor Industrial Area 2",,,Dubai,United Arab Emirates,,overseas,,accounts@woodenbox.ae,+971,545821967,,
+2022-10-11 11:19:00,2023-10-06 18:41:08,EMITAC Stationary and Toner LLC,,,,,INR,Active,false,false,Mohamed Bin Zayed City,,MUSAFFAH,Abu Dhabi,United Arab Emirates,24596,overseas,,mail@emitacuae.com,+971, 52 294 8341,,
+2022-10-11 15:16:26,2023-10-10 23:29:46,Marine Logistics Services Est.,,,,,INR,Active,false,false,"1st floor, No. 4, Al Kaseeh Building, P.O. Box 15025, Opp. Halwaani Bros.",,,Jeddah,Saudi Arabia,21444,overseas,,info@zoyon.com,+91, 99952 23922,,
 2022-10-12 22:55:29,2025-02-12 10:56:41,Shafeer General Trading LLC,,,,+971 50 451 7678,INR,Active,false,false,"P O Box 18882,
-Industrial Area - 1",,,Ajman,United Arab Emirates,,overseas,,info@shafeergroup.com,+971 52 898 4210,,
+Industrial Area - 1",,,Ajman,United Arab Emirates,,overseas,,info@shafeergroup.com,+971, 52 898 4210,,
 2022-10-13 23:26:01,2024-02-15 01:42:40,Al Harmous Contracting General Transporting Establishment,,,,+97128844420,INR,Active,false,false,"P.O Box: 58191
-Madinat Zayed (Al Dhafra Region)",,,Abu Dhabi,United Arab Emirates,,overseas,,accounts@alharmous.com,+971505887637,,
+Madinat Zayed (Al Dhafra Region)",,,Abu Dhabi,United Arab Emirates,,overseas,,accounts@alharmous.com,+971,505887637,,
 2022-10-15 23:10:15,2025-12-08 09:33:10,Ali Abdulla AlYafei Certified Auditors & Accountants,,,,+97455558125,INR,Active,false,false,"Office No. 2, Al Mana Business Centre, 
-Suhaim bin Hamad Street",,,Ad Dawhah,Qatar,,overseas,,info@alyafeiauditors.qa,+97459900310,,
+Suhaim bin Hamad Street",,,Ad Dawhah,Qatar,,overseas,,info@alyafeiauditors.qa,+974,59900310,,
 2022-10-17 23:11:40,2025-10-27 11:33:12,SAFEWAY TRADING EST,,,,,INR,Active,false,false,"PO Box  4628
-Dammam",,,,Saudi Arabia,31412,consumer,,sales@safewaytrading.sa,+966561224686,KL,32-Kerala
-2022-10-29 14:45:38,2023-11-17 20:22:27,The Food Containers Ltd,,,,,INR,Active,false,false,8 Alderley rise,,Stoke on Trent,Staffordshire,United Kingdom,ST6 3EN,overseas,,info@thefoodcontainers.co.uk,,,
-2022-10-31 20:36:48,2023-12-14 21:16:03,Comfort Placement,,,,,INR,Active,false,false,Al Adamah,,,Dammam,Saudi Arabia,,overseas,,ismail@comfortplacement.com,+966535087870,,
+Dammam",,,,Saudi Arabia,31412,consumer,,sales@safewaytrading.sa,+966,561224686,KL,32-Kerala
+2022-10-29 14:45:38,2023-11-17 20:22:27,The Food Containers Ltd,,,,,INR,Active,false,false,8 Alderley rise,,Stoke on Trent,Staffordshire,United Kingdom,ST6 3EN,overseas,,info@thefoodcontainers.co.uk,,,,
+2022-10-31 20:36:48,2023-12-14 21:16:03,Comfort Placement,,,,,INR,Active,false,false,Al Adamah,,,Dammam,Saudi Arabia,,overseas,,ismail@comfortplacement.com,+966,535087870,,
 2022-11-06 13:06:19,2024-02-24 10:16:37,Gulf Contracts Company,,,,,INR,Active,false,false,"King Abdul Aziz Street,
-Cross No.27, Shamaiyah",,Al Khobar,Al Hudud ash Shamaliyah,Saudi Arabia,31952,overseas,,info@gccsaudi.com,,,
-2022-11-18 21:30:20,2025-10-11 01:04:22,AL HADEER GENERAL TRADING LLC,,,,,INR,Active,false,false,"Al Karran, Ras Al Khaimah",,,Ras al-Khaimah,United Arab Emirates,,overseas,,info@hadeerpack.com,+971504517678,,
-2022-11-26 20:01:33,2025-05-05 13:20:50,NEPTON SOFTWARE SOLUTIONS WLL,,,,,INR,Active,false,false,"No.11, Street No.13","Barwa Village,",DOHA,Ad Dawhah,Qatar,,overseas,,shafi@neptonglobal.com,+974-66191051,,
+Cross No.27, Shamaiyah",,Al Khobar,Al Hudud ash Shamaliyah,Saudi Arabia,31952,overseas,,info@gccsaudi.com,,,,
+2022-11-18 21:30:20,2025-10-11 01:04:22,AL HADEER GENERAL TRADING LLC,,,,,INR,Active,false,false,"Al Karran, Ras Al Khaimah",,,Ras al-Khaimah,United Arab Emirates,,overseas,,info@hadeerpack.com,+971,504517678,,
+2022-11-26 20:01:33,2025-05-05 13:20:50,NEPTON SOFTWARE SOLUTIONS WLL,,,,,INR,Active,false,false,"No.11, Street No.13","Barwa Village,",DOHA,Ad Dawhah,Qatar,,overseas,,shafi@neptonglobal.com,+974,-66191051,,
 2022-12-07 01:12:39,2024-03-04 19:09:17,MONOPACK LTD,,,,,INR,Active,false,false,"NIT R05 Regent Works, Lawley Street
-Longton, Stoke-On-Trent, ST3 1LZ",,,Staffordshire,United Kingdom,,overseas,,admin@monopackglobal.com,+44 7555960200,,
-2022-12-12 18:59:29,2025-10-13 15:21:09,KIMSHEALTH Hospital,,,,,INR,Active,false,false,"P.O Box: 1522, Jibroo, P.C. 114,Darsait, Muscat",,,Masqat,Oman,,overseas,,it@kimshealth.om,+968 99272820,,
-2022-12-13 11:42:00,2025-10-14 18:06:20,Hundred Media Advertising LLC,,,,+971551083100,INR,Active,false,false,Al Quoz Industrial Area 4,,,Dubai,United Arab Emirates,,overseas,,accounts@hundredmedia.ae,+971551083100,,
-2022-12-17 20:42:46,2023-03-01 17:42:23,BE ICE,,,,,INR,Active,false,false,,,Doha,Ad Dawhah,Qatar,,overseas,,shameemsa@gmail.com,,,
-2022-12-24 23:59:24,2024-03-04 16:48:36,Aries Global Logistics WLL,,,,,INR,Active,false,false,,,,Ad Dawhah,Qatar,,overseas,,aneespattalam@gmail.com,+97455720203,,
-2023-01-06 11:08:17,2024-01-15 13:20:02,JAIHIND Holidays Ltd,,,,+2349123035151,INR,Active,false,false,"30,Akinola Sholanke Street",,Ajao Estate,Lagos,Nigeria,,overseas,,jaihindlagos@gmail.com,9045596666,,
+Longton, Stoke-On-Trent, ST3 1LZ",,,Staffordshire,United Kingdom,,overseas,,admin@monopackglobal.com,+44,7555960200,,
+2022-12-12 18:59:29,2025-10-13 15:21:09,KIMSHEALTH Hospital,,,,,INR,Active,false,false,"P.O Box: 1522, Jibroo, P.C. 114,Darsait, Muscat",,,Masqat,Oman,,overseas,,it@kimshealth.om,+968,99272820,,
+2022-12-13 11:42:00,2025-10-14 18:06:20,Hundred Media Advertising LLC,,,,+971551083100,INR,Active,false,false,Al Quoz Industrial Area 4,,,Dubai,United Arab Emirates,,overseas,,accounts@hundredmedia.ae,+971,551083100,,
+2022-12-17 20:42:46,2023-03-01 17:42:23,BE ICE,,,,,INR,Active,false,false,,,Doha,Ad Dawhah,Qatar,,overseas,,shameemsa@gmail.com,,,,
+2022-12-24 23:59:24,2024-03-04 16:48:36,Aries Global Logistics WLL,,,,,INR,Active,false,false,,,,Ad Dawhah,Qatar,,overseas,,aneespattalam@gmail.com,+974,55720203,,
+2023-01-06 11:08:17,2024-01-15 13:20:02,JAIHIND Holidays Ltd,,,,+2349123035151,INR,Active,false,false,"30,Akinola Sholanke Street",,Ajao Estate,Lagos,Nigeria,,overseas,,jaihindlagos@gmail.com,,9045596666,,
 2023-01-14 12:46:03,2023-10-17 09:06:53,Pageants (FZE),Mr.,Nithish Ravindran,,,INR,Active,false,false,"SAIF ZONE P08 - 06 -26,
-P.O BOX 9679",,,Sharjah,United Arab Emirates,,overseas,,care@gsuite.signroots.com,+919633789799,,
+P.O BOX 9679",,,Sharjah,United Arab Emirates,,overseas,,care@gsuite.signroots.com,+91,9633789799,,
 2023-01-19 19:51:01,2025-03-09 19:31:05,BOLTEC METAL WORKSHOP,,,,,INR,Active,false,false,"PB NO.13873
-Street 32, Wakalath street",,,Ad Dawhah,Qatar,,overseas,,info@boltec-metal.com,,,
-2023-01-26 22:12:22,2024-01-25 22:53:45,I CAPITAL LLC,,,,,INR,Active,false,false,,,,Abu Dhabi,United Arab Emirates,,overseas,,akzafer.amin@gmail.com,054 4469559,,
+Street 32, Wakalath street",,,Ad Dawhah,Qatar,,overseas,,info@boltec-metal.com,,,,
+2023-01-26 22:12:22,2024-01-25 22:53:45,I CAPITAL LLC,,,,,INR,Active,false,false,,,,Abu Dhabi,United Arab Emirates,,overseas,,akzafer.amin@gmail.com,,054 4469559,,
 2023-03-09 14:04:02,2025-05-28 01:19:27,INFINITE SOLUTIONS,,,,,INR,Active,false,false,"Ground Floor, CC 36/126 64//84A,
-Ayyaril Complex, Lissie Junction, Pullepady",,Kochi,Kerala,India,,business_gst,32AWTPT5775E1ZX,sales@infinitecochin.in,,KL,32-Kerala
+Ayyaril Complex, Lissie Junction, Pullepady",,Kochi,Kerala,India,,business_gst,32AWTPT5775E1ZX,sales@infinitecochin.in,,,KL,32-Kerala
 2023-03-16 23:54:13,2024-03-16 09:58:11,PureStar Employment,,,,,INR,Active,false,false,"Building No : 164 
-Mezzanine Floor",,New Shahama,Abu Dhabi,United Arab Emirates,,overseas,,gm@cornichegroup.co,+91 98477 98888,,
-2023-03-27 13:24:34,2023-11-15 18:28:14,Nalakath Spices & Food Products LLP,,,,,INR,Active,false,false,"7/353/D, Valambur, Perinthalmanna",,Malappuram,Kerala,India,679325,business_gst,32AATFN0003B1Z0,accounts@qspices.in,,KL,32-Kerala
+Mezzanine Floor",,New Shahama,Abu Dhabi,United Arab Emirates,,overseas,,gm@cornichegroup.co,+91, 98477 98888,,
+2023-03-27 13:24:34,2023-11-15 18:28:14,Nalakath Spices & Food Products LLP,,,,,INR,Active,false,false,"7/353/D, Valambur, Perinthalmanna",,Malappuram,Kerala,India,679325,business_gst,32AATFN0003B1Z0,accounts@qspices.in,,,KL,32-Kerala
 2023-04-07 20:15:53,2024-04-16 15:40:45,ABLE GROUP W.L.L,,,,,INR,Active,false,false,"P.O. Box No.: 40151
-Type 5 (SAYER), Block 30, 2nd Floor",Barwa Commercial Avenue,Doha,Ad Dawhah,Qatar,40151,overseas,,info@ablegroupqatar.com,,,
-2023-04-10 12:06:52,2023-05-15 12:43:45,SAS Arabia,,,,,INR,Active,false,false,Sebaiyah Al-Oraifi-35526,,,Al Jubail,Saudi Arabia,,overseas,,jishadpm@gmail.com,+966534702144,,
-2023-04-18 00:50:35,2025-06-20 17:54:23,Faisal K,,,,,INR,Active,false,false,Vazhakkad,,Malappuram,Kerala,India,673640,consumer,,faisalkkn9946@gmail.com,,KL,32-Kerala
-2023-06-20 00:04:35,2025-03-13 12:20:37,Al Mazaia MEP & IT Solutions LLC,,,,+919539207782,INR,Active,false,false,13024 RAK,,,Ras al-Khaimah,United Arab Emirates,,business_none,,shareef@mazaiauae.com,+971504773885,KL,32-Kerala
-2023-06-20 09:26:26,2023-12-14 20:36:16,Nangsel Pioneers,,,,+975 17 60 42 32,INR,Active,false,false,Babena,,,Thimphu,Bhutan,11001,overseas,,nphuntsho@gmail.com,+975 77 35 07 41,,
-2023-07-02 18:48:42,2023-09-12 12:22:57,Al Nafees Services,,,,,INR,Active,false,false,,,,Ad Dawhah,Qatar,,overseas,,iamrajaie@gmail.com,,,
-2023-07-11 13:23:50,2023-07-18 09:54:26,JOSONS,,Manu D Parakkal,,,INR,Active,false,false,"Parakkal Building, Aluva",,Ernakulam,Kerala,India,683101,business_registered_composition,32AABFJ6477F1ZG,manudparakkal@gmail.com, +91 9447029905,KL,32-Kerala
+Type 5 (SAYER), Block 30, 2nd Floor",Barwa Commercial Avenue,Doha,Ad Dawhah,Qatar,40151,overseas,,info@ablegroupqatar.com,,,,
+2023-04-10 12:06:52,2023-05-15 12:43:45,SAS Arabia,,,,,INR,Active,false,false,Sebaiyah Al-Oraifi-35526,,,Al Jubail,Saudi Arabia,,overseas,,jishadpm@gmail.com,+966,534702144,,
+2023-04-18 00:50:35,2025-06-20 17:54:23,Faisal K,,,,,INR,Active,false,false,Vazhakkad,,Malappuram,Kerala,India,673640,consumer,,faisalkkn9946@gmail.com,,,KL,32-Kerala
+2023-06-20 00:04:35,2025-03-13 12:20:37,Al Mazaia MEP & IT Solutions LLC,,,,+919539207782,INR,Active,false,false,13024 RAK,,,Ras al-Khaimah,United Arab Emirates,,business_none,,shareef@mazaiauae.com,+971,504773885,KL,32-Kerala
+2023-06-20 09:26:26,2023-12-14 20:36:16,Nangsel Pioneers,,,,+975 17 60 42 32,INR,Active,false,false,Babena,,,Thimphu,Bhutan,11001,overseas,,nphuntsho@gmail.com,,+975 77 35 07 41,,
+2023-07-02 18:48:42,2023-09-12 12:22:57,Al Nafees Services,,,,,INR,Active,false,false,,,,Ad Dawhah,Qatar,,overseas,,iamrajaie@gmail.com,,,,
+2023-07-11 13:23:50,2023-07-18 09:54:26,JOSONS,,Manu D Parakkal,,,INR,Active,false,false,"Parakkal Building, Aluva",,Ernakulam,Kerala,India,683101,business_registered_composition,32AABFJ6477F1ZG,manudparakkal@gmail.com,,9447029905,KL,32-Kerala
 2023-08-05 17:51:56,2025-08-13 13:31:04,Shael Trading Company WLL,,,,,INR,Active,false,false,"Kuwait- Dasman Area,
-Block 1 - Street No. 17 - Plot No. 800060",,Safat,Al Kuwayt,Kuwait,,overseas,,eng.dept@shaeltrading.com,,,
-2023-08-21 23:57:28,2025-09-01 12:14:27,EAGLEARABIA FABRICATION FACTORY,,,,,INR,Active,false,false,"5022 7th street, King Fahd Industrial Port",,Al Jubail,Ash Sharqiyah,Saudi Arabia,35526,overseas,,accounts@eaglearabia.com,+966508471145,,
-2023-08-29 00:05:49,2023-08-29 22:58:47,Advanced Security System Est.,,,,,INR,Active,false,false,Old Makkah Road - Kilo 6,,Jeddah,,Saudi Arabia,,overseas,,aslamkpmdy@gmail.com,+91 99460 99846,,
+Block 1 - Street No. 17 - Plot No. 800060",,Safat,Al Kuwayt,Kuwait,,overseas,,eng.dept@shaeltrading.com,,,,
+2023-08-21 23:57:28,2025-09-01 12:14:27,EAGLEARABIA FABRICATION FACTORY,,,,,INR,Active,false,false,"5022 7th street, King Fahd Industrial Port",,Al Jubail,Ash Sharqiyah,Saudi Arabia,35526,overseas,,accounts@eaglearabia.com,+966,508471145,,
+2023-08-29 00:05:49,2023-08-29 22:58:47,Advanced Security System Est.,,,,,INR,Active,false,false,Old Makkah Road - Kilo 6,,Jeddah,,Saudi Arabia,,overseas,,aslamkpmdy@gmail.com,+91, 99460 99846,,
 2023-09-05 13:01:40,2024-10-11 17:03:26,IntPurple Technologies LLP,,,,,INR,Active,false,false,"TBI NIT, Calicut Mukkam Road, 
-National Institute of Technology Calicut, Poolacode.",,Kozhikode,Kerala,India,673601,business_gst,32AAIFI2031D1Z4,accounts@intpurple.com,+919731066055,KL,32-Kerala
+National Institute of Technology Calicut, Poolacode.",,Kozhikode,Kerala,India,673601,business_gst,32AAIFI2031D1Z4,accounts@intpurple.com,+91,9731066055,KL,32-Kerala
 2023-09-17 23:41:25,2023-09-23 17:31:28,Leaf Associates Accounting Services Est,,,,,INR,Active,false,false,"Office No. 113-3, RKM Building
-Al  Karama",,Dubai,Dubai,United Arab Emirates,,overseas,,accounts@leafuae.com,+971 50 851 6200,,
-2023-10-06 19:00:05,2025-06-28 11:16:00,Al Taqwa Electrical Ware Trading L.L.C,,,,,INR,Active,false,false,Post Box NO: 67864,,,Sharjah,United Arab Emirates,,overseas,,,+971 58 103 5935,,
-2023-10-07 12:25:29,2025-10-13 11:11:47,HAMAD INDUSTRIAL SUPPLY,,,,,INR,Active,false,false,"Al Jubail 31961, KSA",,,Ash Sharqiyah,Saudi Arabia,,overseas,,accounts@hamadindustrial.com,+966563615123,,
+Al  Karama",,Dubai,Dubai,United Arab Emirates,,overseas,,accounts@leafuae.com,+971, 50 851 6200,,
+2023-10-06 19:00:05,2025-06-28 11:16:00,Al Taqwa Electrical Ware Trading L.L.C,,,,,INR,Active,false,false,Post Box NO: 67864,,,Sharjah,United Arab Emirates,,overseas,,,+971, 58 103 5935,,
+2023-10-07 12:25:29,2025-10-13 11:11:47,HAMAD INDUSTRIAL SUPPLY,,,,,INR,Active,false,false,"Al Jubail 31961, KSA",,,Ash Sharqiyah,Saudi Arabia,,overseas,,accounts@hamadindustrial.com,+966,563615123,,
 2023-10-26 10:06:57,2025-11-20 10:05:49,EVERLAST HOST,Mr.,Niyaz Kannnanchery,,,INR,Active,false,false,"B 16, Zone 91, Street 3088, 
-BIRKAT AL AWAMER",,Doha,Ad Dawhah,Qatar,,overseas,,niyazofficial@gmail.com,+97474467331,,
-2023-11-03 23:51:51,2025-10-29 13:57:47,Rational Star Technical Services LLC,,,,,INR,Active,false,false,"Kandampully House, Vadakkekad",,Thrissur,Kerala,India,679562,consumer,,adiinnovationds@gmail.com,,KL,32-Kerala
-2023-11-07 16:11:29,2025-11-05 17:48:32,INZPIRE TECHNOLOGY L.L.C,,,,+97143864 886,INR,Active,false,false,12 Al Ittihad Rd - Al Khabaisi,,,Dubai,United Arab Emirates,,overseas,,hariz@inzpiretech.com,+971553173837,,
-2023-11-14 23:08:21,2024-02-08 12:33:50,TABAYUN Human Resources Consultancies Co. LLC,,,,,INR,Active,false,false,,,,,United Arab Emirates,,overseas,,babalfozz@gmail.com,+971 52 162 4343,,
-2023-11-20 00:17:14,2025-11-24 12:54:17,RTN Computers LLC,,,,,INR,Active,false,false,"P.O.Box: 26436, Near GGICO Metro Station",,,Dubai,United Arab Emirates,,overseas,,sales@cartridgerefill.ae,+9717649453,,
-2023-11-22 13:28:15,2025-10-21 19:56:19,ORUMA Events International,,,,,INR,Active,false,false,,,,,Kuwait,,overseas,,naisamcp@gmail.com,,,
-2023-11-23 00:40:42,2024-08-12 18:51:47,Al Muzahem Technical Services,,,,,INR,Active,false,false,,,,Dubai,United Arab Emirates,,overseas,,info@almuzahem.com,+971563020824,,
+BIRKAT AL AWAMER",,Doha,Ad Dawhah,Qatar,,overseas,,niyazofficial@gmail.com,+974,74467331,,
+2023-11-03 23:51:51,2025-10-29 13:57:47,Rational Star Technical Services LLC,,,,,INR,Active,false,false,"Kandampully House, Vadakkekad",,Thrissur,Kerala,India,679562,consumer,,adiinnovationds@gmail.com,,,KL,32-Kerala
+2023-11-07 16:11:29,2025-11-05 17:48:32,INZPIRE TECHNOLOGY L.L.C,,,,+97143864 886,INR,Active,false,false,12 Al Ittihad Rd - Al Khabaisi,,,Dubai,United Arab Emirates,,overseas,,hariz@inzpiretech.com,+971,553173837,,
+2023-11-14 23:08:21,2024-02-08 12:33:50,TABAYUN Human Resources Consultancies Co. LLC,,,,,INR,Active,false,false,,,,,United Arab Emirates,,overseas,,babalfozz@gmail.com,+971, 52 162 4343,,
+2023-11-20 00:17:14,2025-11-24 12:54:17,RTN Computers LLC,,,,,INR,Active,false,false,"P.O.Box: 26436, Near GGICO Metro Station",,,Dubai,United Arab Emirates,,overseas,,sales@cartridgerefill.ae,+971,7649453,,
+2023-11-22 13:28:15,2025-10-21 19:56:19,ORUMA Events International,,,,,INR,Active,false,false,,,,,Kuwait,,overseas,,naisamcp@gmail.com,,,,
+2023-11-23 00:40:42,2024-08-12 18:51:47,Al Muzahem Technical Services,,,,,INR,Active,false,false,,,,Dubai,United Arab Emirates,,overseas,,info@almuzahem.com,+971,563020824,,
 2023-12-02 21:23:28,2023-12-21 17:33:03,Adems Travel,,,,,INR,Active,false,false,"Umm Salal Muhammed, 
-PO Box: 200167",,,Ad Dawhah,Qatar,,overseas,,info@zoyon.com,,,
-2023-12-04 14:45:21,2025-10-09 16:51:21,XO TECH TRADING,,,,,INR,Active,false,false,"Nilambur · Hindustan Enterprises Palace Road, Nilambur",,Malappuram,Kerala,India,679329,consumer,,hello@xotech.studio,+919961543503,KL,32-Kerala
+PO Box: 200167",,,Ad Dawhah,Qatar,,overseas,,info@zoyon.com,,,,
+2023-12-04 14:45:21,2025-10-09 16:51:21,XO TECH TRADING,,,,,INR,Active,false,false,"Nilambur · Hindustan Enterprises Palace Road, Nilambur",,Malappuram,Kerala,India,679329,consumer,,hello@xotech.studio,+91,9961543503,KL,32-Kerala
 2023-12-06 14:50:11,2023-12-07 13:47:19,BG PACK,,,,,INR,Active,false,false,"94M/6, CHUNGAM, 
-SOUTH ADUVASSERY, PARAVUR",,Ernakulam,Kerala,India,683578,business_gst,32AAYFB7890D1Z2,mail@bgpack.in,+91 70253 53511,KL,32-Kerala
-2023-12-14 10:51:21,2023-12-21 21:29:40,PURPOSE FIRST Management Consultancy FZCO,,,,,INR,Active,false,false,"A1, Dubai Silicon Oasis, DDP",,,Dubai,United Arab Emirates,,overseas,,afsaljalal@gmail.com,,,
-2023-12-14 20:20:12,2025-09-13 17:35:22,PRO UNION,,,,,INR,Active,false,false,"Uyun Al Jawa, Al Faisaliyah District, Dammam 32272",,,Dammam,Saudi Arabia,,overseas,,info@hanzandpartners.com,+966538531051,,
-2023-12-15 18:58:48,2023-12-19 10:53:23,Northern Lights Trans Inc.,,,,,INR,Active,false,false,"1050 MAIN ST E, 524 L9T 9M3",,,Ontario,Canada,,overseas,,abinbabu.c@gmail.com,+91 96056 85964,,
-2023-12-20 19:08:03,2024-01-07 00:29:04,LABRILO Restaurant,,,,,INR,Active,false,false,,,,,Saudi Arabia,,overseas,,azeezinma@gmail.com,,,
-2023-12-20 20:23:20,2023-12-21 21:29:12,Discovery Metals FZC,,,,,INR,Active,false,false,"Munah Street, Industrial Area# 1",,,Ajman,United Arab Emirates,,overseas,,afsaljalal@gmail.com,,,
-2023-12-21 11:10:22,2024-01-18 19:37:43,Bellamax International Trading WLL,,,,,INR,Active,false,false,"Office No D2-219, M Floor,",Dragon Mart Industrial Area Road,,Ad Dawhah,Qatar,,overseas,,rahmath@bellamaxinternational.com,+97466931871,,
+SOUTH ADUVASSERY, PARAVUR",,Ernakulam,Kerala,India,683578,business_gst,32AAYFB7890D1Z2,mail@bgpack.in,+91, 70253 53511,KL,32-Kerala
+2023-12-14 10:51:21,2023-12-21 21:29:40,PURPOSE FIRST Management Consultancy FZCO,,,,,INR,Active,false,false,"A1, Dubai Silicon Oasis, DDP",,,Dubai,United Arab Emirates,,overseas,,afsaljalal@gmail.com,,,,
+2023-12-14 20:20:12,2025-09-13 17:35:22,PRO UNION,,,,,INR,Active,false,false,"Uyun Al Jawa, Al Faisaliyah District, Dammam 32272",,,Dammam,Saudi Arabia,,overseas,,info@hanzandpartners.com,+966,538531051,,
+2023-12-15 18:58:48,2023-12-19 10:53:23,Northern Lights Trans Inc.,,,,,INR,Active,false,false,"1050 MAIN ST E, 524 L9T 9M3",,,Ontario,Canada,,overseas,,abinbabu.c@gmail.com,+91, 96056 85964,,
+2023-12-20 19:08:03,2024-01-07 00:29:04,LABRILO Restaurant,,,,,INR,Active,false,false,,,,,Saudi Arabia,,overseas,,azeezinma@gmail.com,,,,
+2023-12-20 20:23:20,2023-12-21 21:29:12,Discovery Metals FZC,,,,,INR,Active,false,false,"Munah Street, Industrial Area# 1",,,Ajman,United Arab Emirates,,overseas,,afsaljalal@gmail.com,,,,
+2023-12-21 11:10:22,2024-01-18 19:37:43,Bellamax International Trading WLL,,,,,INR,Active,false,false,"Office No D2-219, M Floor,",Dragon Mart Industrial Area Road,,Ad Dawhah,Qatar,,overseas,,rahmath@bellamaxinternational.com,+974,66931871,,
 2023-12-21 17:51:25,2025-10-30 19:33:58,DAKAT Computer Trading LLC,,,,,INR,Active,false,false,"Computer Plaza AlFahidi,
-Bur Dubai, 9717",,,Dubai,United Arab Emirates,,overseas,,accounts@dakatcomputers.com,+971509433645,,
+Bur Dubai, 9717",,,Dubai,United Arab Emirates,,overseas,,accounts@dakatcomputers.com,+971,509433645,,
 2024-01-01 15:59:59,2025-10-31 01:50:41,WEBENLIVE IT Solutions,,,,,INR,Active,false,false,"#11 Room No13, Barwa Village Building,
-Al Wakra Road",,,Ad Dawhah,Qatar,,overseas,,webenlive@gmail.com,+919947119910,,
+Al Wakra Road",,,Ad Dawhah,Qatar,,overseas,,webenlive@gmail.com,+91,9947119910,,
 2024-01-03 13:44:13,2025-01-01 12:08:47,MECHELEC,,,,,INR,Active,false,false,"Dune Centre, Near Bhavana Theatre
-Kunnamkulam",,Thrissur,Kerala,India,,business_gst,32AATFM9616R1ZB,info@mechelec.co,+91 99461 05897,KL,32-Kerala
-2024-01-03 17:24:18,2025-01-01 16:06:52,Royal Malabar Restaurant,,,,,INR,Active,false,false,"2055, 18th - As Salam - Corniche Road",,Dammam,Al Hudud ash Shamaliyah,Saudi Arabia,32416,overseas,,azeezinma@gmail.com,+966503328281,,
-2024-01-06 14:41:29,2024-01-17 15:39:17,AWAEL AL NOOR General Contracting EST,,,,,INR,Active,false,false,P.O.Box 35514 - 9174,,Jubail,Al Hudud ash Shamaliyah,Saudi Arabia,31951,overseas,,shineabduljaleel@gmail.com,,,
-2024-01-06 16:06:08,2024-01-07 15:39:22,Eminens Consulting,,,,,INR,Active,false,false,,,,Al Hudud ash Shamaliyah,Saudi Arabia,,overseas,,info@zoyon.com,,,
-2024-01-10 12:17:56,2024-01-11 11:31:28,ARAFATH AND ASSOCIATES PRIVATE LIMITED,,,,,INR,Active,false,false,5/2340A. Ashokapuram P. O,,Kozhikode,Kerala,India,673001,business_gst,32AAMCA4538Q1Z7,mail@arafathassociates.com,+919656229988,KL,32-Kerala
-2024-01-17 17:19:36,2024-01-17 20:17:32,ZABEEN,,,,,INR,Active,false,false,,,,Birmingham,United Kingdom,,overseas,,asifc.88@gmail.com,,,
+Kunnamkulam",,Thrissur,Kerala,India,,business_gst,32AATFM9616R1ZB,info@mechelec.co,+91, 99461 05897,KL,32-Kerala
+2024-01-03 17:24:18,2025-01-01 16:06:52,Royal Malabar Restaurant,,,,,INR,Active,false,false,"2055, 18th - As Salam - Corniche Road",,Dammam,Al Hudud ash Shamaliyah,Saudi Arabia,32416,overseas,,azeezinma@gmail.com,+966,503328281,,
+2024-01-06 14:41:29,2024-01-17 15:39:17,AWAEL AL NOOR General Contracting EST,,,,,INR,Active,false,false,P.O.Box 35514 - 9174,,Jubail,Al Hudud ash Shamaliyah,Saudi Arabia,31951,overseas,,shineabduljaleel@gmail.com,,,,
+2024-01-06 16:06:08,2024-01-07 15:39:22,Eminens Consulting,,,,,INR,Active,false,false,,,,Al Hudud ash Shamaliyah,Saudi Arabia,,overseas,,info@zoyon.com,,,,
+2024-01-10 12:17:56,2024-01-11 11:31:28,ARAFATH AND ASSOCIATES PRIVATE LIMITED,,,,,INR,Active,false,false,5/2340A. Ashokapuram P. O,,Kozhikode,Kerala,India,673001,business_gst,32AAMCA4538Q1Z7,mail@arafathassociates.com,+91,9656229988,KL,32-Kerala
+2024-01-17 17:19:36,2024-01-17 20:17:32,ZABEEN,,,,,INR,Active,false,false,,,,Birmingham,United Kingdom,,overseas,,asifc.88@gmail.com,,,,
 2024-01-21 13:36:44,2024-02-02 18:24:03,TOTAL SECURE LLC,,,,+97142632622,INR,Active,false,false,"S04, Ground Floor
-Plot 39 Mussaffa Industrial M 15",,,Abu Dhabi,United Arab Emirates,,overseas,,accounts@totalsecureme.com,+971504430224,,
-2024-01-26 20:56:37,2024-02-14 10:23:21,NEPTON SOFTWARE SOLUTIONS,,,,,INR,Active,false,false,"3rd Floor, Al Manara Building",,Malappuram,Kerala,India,676519,business_gst,32APQPM8501F1ZX,accounts@neptonglobal.com,,KL,32-Kerala
-2024-02-01 00:21:07,2025-02-12 10:32:47,SHARQIA General Trading LLC,,,,,INR,Active,false,false,"P O Box 18882, Industrial Area 1",,,Ajman,United Arab Emirates,,overseas,,sharqiaemirates@gmail.com,,,
-2024-02-01 21:32:57,2024-02-05 18:32:12,DEEPBLUE Technical Services,,,,,INR,Active,false,false,Al Gusais,,,Dubai,United Arab Emirates,,overseas,,deepblue.dubai@gmail.com,+971 557602290,,
+Plot 39 Mussaffa Industrial M 15",,,Abu Dhabi,United Arab Emirates,,overseas,,accounts@totalsecureme.com,+971,504430224,,
+2024-01-26 20:56:37,2024-02-14 10:23:21,NEPTON SOFTWARE SOLUTIONS,,,,,INR,Active,false,false,"3rd Floor, Al Manara Building",,Malappuram,Kerala,India,676519,business_gst,32APQPM8501F1ZX,accounts@neptonglobal.com,,,KL,32-Kerala
+2024-02-01 00:21:07,2025-02-12 10:32:47,SHARQIA General Trading LLC,,,,,INR,Active,false,false,"P O Box 18882, Industrial Area 1",,,Ajman,United Arab Emirates,,overseas,,sharqiaemirates@gmail.com,,,,
+2024-02-01 21:32:57,2024-02-05 18:32:12,DEEPBLUE Technical Services,,,,,INR,Active,false,false,Al Gusais,,,Dubai,United Arab Emirates,,overseas,,deepblue.dubai@gmail.com,+971,557602290,,
 2024-02-04 12:08:34,2024-02-13 18:54:14,GLS Laboratory,,,,,INR,Active,false,false,"28 Greville Street,
-Hatton Garden,",,London EC1N 8SU,London,United Kingdom,,overseas,,nithish@cactusprosoft.com,,,
-2024-02-05 17:42:30,2024-02-06 20:23:15,Grand Expertise Trading Company,,,,,INR,Active,false,false,"Al Amal Centre, Al Aziziyah District",,,Al Hudud ash Shamaliyah,Saudi Arabia,8228,overseas,,azhad.harris@gmail.com,+966 534340241,,
-2024-02-07 00:38:46,2024-02-07 09:24:49,Gulf Vision General Contracting Est.,,,,,INR,Active,false,false,"Al Asher, Madinat Al Ummal",,Dammam,,Saudi Arabia,32253,overseas,,info@gulfvisionksa.com,+966 599537500,,
-2024-02-08 12:39:02,2025-12-02 14:15:44,Superior Office Services LLC,,,,,INR,Active,false,false,"Plot No-22, Warehouse No-2 MW5",,Mussafah,Abu Dhabi,United Arab Emirates,,overseas,,abinbabu.c@gmail.com,+919605685964,,
-2024-02-12 11:31:24,2024-02-22 14:28:49,Fastline Computers,,,,,INR,Active,false,false,"Al Kharan, Ras Al Khaima",,,Ras al-Khaimah,United Arab Emirates,29392,overseas,,info@fastlinecomputers.com,+971501905617,,
-2024-02-13 17:43:05,2024-02-15 09:56:54,R3 Media Solutions,,,,,INR,Active,false,false,Sharjah,,,Sharjah,United Arab Emirates,,overseas,,r3medias@gmail.com,+971526974494,,
-2024-02-15 14:23:20,2024-02-24 09:22:03,SHAASTEC International General Contracting Co.,,,,,INR,Active,false,false,"Office No: 2, Floor No: 10, Block: 45",,Almuthanna street,Al Kuwayt,Kuwait,,overseas,,shaastec@gmail.com,+96590942193,,
-2024-02-26 10:43:52,2024-03-02 16:45:13,DO TECH Equipment Trading Company W.L.L,,,,+974 669 68 161,INR,Active,false,false,,,,Ad Dawhah,Qatar,,overseas,,nithish@cactusprosoft.com,,,
+Hatton Garden,",,London EC1N 8SU,London,United Kingdom,,overseas,,nithish@cactusprosoft.com,,,,
+2024-02-05 17:42:30,2024-02-06 20:23:15,Grand Expertise Trading Company,,,,,INR,Active,false,false,"Al Amal Centre, Al Aziziyah District",,,Al Hudud ash Shamaliyah,Saudi Arabia,8228,overseas,,azhad.harris@gmail.com,+966,534340241,,
+2024-02-07 00:38:46,2024-02-07 09:24:49,Gulf Vision General Contracting Est.,,,,,INR,Active,false,false,"Al Asher, Madinat Al Ummal",,Dammam,,Saudi Arabia,32253,overseas,,info@gulfvisionksa.com,+966,599537500,,
+2024-02-08 12:39:02,2025-12-02 14:15:44,Superior Office Services LLC,,,,,INR,Active,false,false,"Plot No-22, Warehouse No-2 MW5",,Mussafah,Abu Dhabi,United Arab Emirates,,overseas,,abinbabu.c@gmail.com,+91,9605685964,,
+2024-02-12 11:31:24,2024-02-22 14:28:49,Fastline Computers,,,,,INR,Active,false,false,"Al Kharan, Ras Al Khaima",,,Ras al-Khaimah,United Arab Emirates,29392,overseas,,info@fastlinecomputers.com,+971,501905617,,
+2024-02-13 17:43:05,2024-02-15 09:56:54,R3 Media Solutions,,,,,INR,Active,false,false,Sharjah,,,Sharjah,United Arab Emirates,,overseas,,r3medias@gmail.com,+971,526974494,,
+2024-02-15 14:23:20,2024-02-24 09:22:03,SHAASTEC International General Contracting Co.,,,,,INR,Active,false,false,"Office No: 2, Floor No: 10, Block: 45",,Almuthanna street,Al Kuwayt,Kuwait,,overseas,,shaastec@gmail.com,+965,90942193,,
+2024-02-26 10:43:52,2024-03-02 16:45:13,DO TECH Equipment Trading Company W.L.L,,,,+974 669 68 161,INR,Active,false,false,,,,Ad Dawhah,Qatar,,overseas,,nithish@cactusprosoft.com,,,,
 2024-03-04 22:38:11,2024-03-04 22:40:43,Medilife Healtcare Group,,,,,INR,Active,false,false,"Damac XL Tower
-1704, Business bay",,,Dubai,United Arab Emirates,,overseas,,drnavas@medilifeglobal.com,+971582759999,,
-2024-03-06 15:21:02,2024-03-06 15:27:13,PENCO MARBLES & GRANITES,,,,,INR,Active,false,false,"Thrissur Road, Kanippayoor P.O, Kunnamkulam",,Thrissur,Kerala,India,680517,business_gst,32AADFP0764D1ZQ,pencomarblesinfo@gmail.com,+919446091580,KL,32-Kerala
-2024-03-07 16:44:34,2024-03-10 10:09:53,Dimah H Arabia Contracting Co.,,,,,INR,Active,false,false,Al Khobar,,,Ash Sharqiyah,Saudi Arabia,,overseas,,rafi@kleancarehygiene.com,,,
-2024-03-08 21:22:03,2024-03-18 22:51:48,Jet shipping Ltd,,,,,INR,Active,false,false,27 East Paddock Court,,Northampton,Northamptonshire,United Kingdom,NN38LF,overseas,,jetshipping22@gmail.com,+44 7883 638102,,
-2024-03-16 19:59:53,2024-03-16 19:59:53,IBRAHIM NASERI GROUP,,,,,INR,Active,false,false,P3-02-01 Meraas Alseef,,Dubai,Dubai,United Arab Emirates,,overseas,,rashid.design29@gmail.com,,,
-2024-03-17 16:58:43,2024-03-17 16:58:43,Office Equipment Company LLC,,,,,INR,Active,false,false,P.O. Box No : 90,,Salalah,Masqat,Oman,211,overseas,,abinbabu.c@gmail.com,+91 96056 85964,,
-2024-03-19 12:27:26,2024-03-19 12:27:26,Light Magic Electrical Service L.L.C,,,,,INR,Active,false,false,Deira,,Dubai,Dubai,United Arab Emirates,,overseas,,info@lightmagicglobal.com,+971504112679,,
-2024-03-22 23:37:23,2024-03-22 23:37:23,ADI Innovation,,,,,INR,Active,false,false,,,,Abu Dhabi,United Arab Emirates,,overseas,,adiinnovation@outlook.com,+971 55 548 2885,,
-2024-03-23 00:30:59,2025-03-18 14:00:22,ALEEMAZ,,,,,INR,Active,false,false,,,,Ad Dawhah,Qatar,,consumer,,shameemsa@gmail.com,,KL,32-Kerala
-2024-03-25 12:28:20,2024-04-07 01:16:58,"Avion Travel, Tourism and Cargo",,,,,INR,Active,false,false,"P.O Box:215; P.C:61,",,Nizwa,Masqat,Oman,,overseas,,info@mechelec.co,,,
-2024-04-20 09:19:44,2024-04-20 09:19:44,PRINTZA Printing Services,,,,,INR,Active,false,false,,,,Abu Dhabi,United Arab Emirates,,overseas,,info@printza.ae,+971524885804,,
-2024-04-27 08:59:20,2024-04-29 14:42:23,Al Banan Cleaning & Pest Control,,,,,INR,Active,false,false,"P.B No 47135, Naif",,Deria,Dubai,United Arab Emirates,,overseas,,sales@albananuae.com,+971507787300,,
-2024-04-30 00:31:22,2025-07-03 10:51:51,MEDIQ Scientific Solutions LLC,,,,,INR,Active,false,false,,,,Ad Dawhah,Qatar,,overseas,,mediqscientific@gmail.com,+97430116330,,
-2024-05-09 19:37:40,2024-05-09 19:38:49,FALCON MEDIA PRODUCTION,,,,,INR,Active,false,false,Media City Sharjah,PO 515000,Al Messaned - Al Mitsannid,Sharjah,United Arab Emirates,,overseas,,info@360infomedia.com,+918589010360,,
-2024-05-09 19:40:30,2024-05-09 19:40:30,PRINTERS UAE,,,,,INR,Active,false,false,Musaffah,,Sila,Abu Dhabi,United Arab Emirates,,overseas,,info@360infomedia.com,+918589010360,,
-2024-05-10 17:29:33,2024-05-10 17:32:52,FINPAL QATAR,,,,,INR,Active,false,false,,,,Ad Dawhah,Qatar,,overseas,,rajaie@tasshamjit.com,,,
-2024-05-10 21:22:32,2025-07-25 14:48:36,HEFFL Ventures LLC,,,,,INR,Active,false,false,Khalidiyah Street,Koduvally,Kozhikode,Kerala,India,,business_none,,hadi@heffl.com,+917012179326,KL,32-Kerala
-2024-05-11 10:46:44,2024-05-11 10:50:23,Cartridge Refill,,,,,INR,Active,false,false,P.O. Box : 36615,,Sharjah,Sharjah,United Arab Emirates,,overseas,,sales@cartridgerefill.ae,+971507649453,,
-2024-05-14 06:07:58,2024-05-14 06:09:14,Afsal Jalal,,,,,INR,Active,false,false,,,,Abu Dhabi,United Arab Emirates,,overseas,,afsaljalal@gmail.com,,,
-2024-05-25 19:10:58,2024-06-14 14:56:23,WESTWOOD TISSUES MANUFACTURING LLC,,,,,INR,Active,false,false,"Shop No. 4,Bahya",,,Abu Dhabi,United Arab Emirates,,overseas,,westwoodtissues23@gmail.com,,,
-2024-05-27 13:28:22,2024-05-27 13:28:22,TechLid IT Solutions,,,,,INR,Active,false,false,Al Saada Tower - شارع الزاهية,,Al Zahiyah,Abu Dhabi,United Arab Emirates,,overseas,,abinbabu.c@gmail.com,,,
-2024-05-28 17:07:51,2024-05-28 17:07:51,IZAR TECHNOLOGY SOLUTIONS,,,,,INR,Active,false,false,"9th Main, 15th Cross",Wilson Garden,Bangalore,Karnataka,India,560030,business_gst,29AFLPN6622D1ZB,asif.nalakath@izarit.com,+919880437373,KA,29-Karnataka
-2024-06-02 10:07:17,2025-09-11 16:34:49,Momentum Consultancy QFZ LLC,,,,,INR,Active,false,false,"Markaz Almana,Ist Floor, Office No 104",,Najma,Ad Dawhah,Qatar,,overseas,,imameen44@gmail.com,,,
-2024-06-02 10:30:09,2025-05-26 23:56:31,PRIME TRADING,,,,,INR,Active,false,false,"First Floor, Door No. 13/164A, Madhav Arcade","Kottekkad Road, Kutoor",Thrissur,Kerala,India,680013,business_gst,32AAYFP9832F1ZQ,bukhariakn@gmail.com,+919544353578,KL,32-Kerala
-2024-06-08 10:11:34,2025-06-16 13:59:31,PIXELBIRD LLP,,,,,INR,Active,false,false,,,Kozhikode,Kerala,India,673004,business_gst,32ABCFP1272C1ZU,nabeel@pixelbird.co,+918921299510,KL,32-Kerala
-2024-06-08 10:40:19,2024-06-08 10:40:19,SAMER GRAPHICS,,,,,INR,Active,false,false,"Madeena Road, Near Salhiya Circle",PO BOX 40033,Riyad,Ar Riyad,Saudi Arabia,11495,overseas,,ayoob@samergraphics.com,+966507991069,,
-2024-06-10 02:07:26,2024-09-25 22:15:05,WE PLACED,Mr.,Jinshad,,,INR,Active,false,false,,,,Abu Dhabi,United Arab Emirates,,overseas,,rizwan@we-placed.com,+971554119010,,
+1704, Business bay",,,Dubai,United Arab Emirates,,overseas,,drnavas@medilifeglobal.com,+971,582759999,,
+2024-03-06 15:21:02,2024-03-06 15:27:13,PENCO MARBLES & GRANITES,,,,,INR,Active,false,false,"Thrissur Road, Kanippayoor P.O, Kunnamkulam",,Thrissur,Kerala,India,680517,business_gst,32AADFP0764D1ZQ,pencomarblesinfo@gmail.com,+91,9446091580,KL,32-Kerala
+2024-03-07 16:44:34,2024-03-10 10:09:53,Dimah H Arabia Contracting Co.,,,,,INR,Active,false,false,Al Khobar,,,Ash Sharqiyah,Saudi Arabia,,overseas,,rafi@kleancarehygiene.com,,,,
+2024-03-08 21:22:03,2024-03-18 22:51:48,Jet shipping Ltd,,,,,INR,Active,false,false,27 East Paddock Court,,Northampton,Northamptonshire,United Kingdom,NN38LF,overseas,,jetshipping22@gmail.com,+44, 7883 638102,,
+2024-03-16 19:59:53,2024-03-16 19:59:53,IBRAHIM NASERI GROUP,,,,,INR,Active,false,false,P3-02-01 Meraas Alseef,,Dubai,Dubai,United Arab Emirates,,overseas,,rashid.design29@gmail.com,,,,
+2024-03-17 16:58:43,2024-03-17 16:58:43,Office Equipment Company LLC,,,,,INR,Active,false,false,P.O. Box No : 90,,Salalah,Masqat,Oman,211,overseas,,abinbabu.c@gmail.com,+91, 96056 85964,,
+2024-03-19 12:27:26,2024-03-19 12:27:26,Light Magic Electrical Service L.L.C,,,,,INR,Active,false,false,Deira,,Dubai,Dubai,United Arab Emirates,,overseas,,info@lightmagicglobal.com,+971,504112679,,
+2024-03-22 23:37:23,2024-03-22 23:37:23,ADI Innovation,,,,,INR,Active,false,false,,,,Abu Dhabi,United Arab Emirates,,overseas,,adiinnovation@outlook.com,+971, 55 548 2885,,
+2024-03-23 00:30:59,2025-03-18 14:00:22,ALEEMAZ,,,,,INR,Active,false,false,,,,Ad Dawhah,Qatar,,consumer,,shameemsa@gmail.com,,,KL,32-Kerala
+2024-03-25 12:28:20,2024-04-07 01:16:58,"Avion Travel, Tourism and Cargo",,,,,INR,Active,false,false,"P.O Box:215; P.C:61,",,Nizwa,Masqat,Oman,,overseas,,info@mechelec.co,,,,
+2024-04-20 09:19:44,2024-04-20 09:19:44,PRINTZA Printing Services,,,,,INR,Active,false,false,,,,Abu Dhabi,United Arab Emirates,,overseas,,info@printza.ae,+971,524885804,,
+2024-04-27 08:59:20,2024-04-29 14:42:23,Al Banan Cleaning & Pest Control,,,,,INR,Active,false,false,"P.B No 47135, Naif",,Deria,Dubai,United Arab Emirates,,overseas,,sales@albananuae.com,+971,507787300,,
+2024-04-30 00:31:22,2025-07-03 10:51:51,MEDIQ Scientific Solutions LLC,,,,,INR,Active,false,false,,,,Ad Dawhah,Qatar,,overseas,,mediqscientific@gmail.com,+974,30116330,,
+2024-05-09 19:37:40,2024-05-09 19:38:49,FALCON MEDIA PRODUCTION,,,,,INR,Active,false,false,Media City Sharjah,PO 515000,Al Messaned - Al Mitsannid,Sharjah,United Arab Emirates,,overseas,,info@360infomedia.com,+91,8589010360,,
+2024-05-09 19:40:30,2024-05-09 19:40:30,PRINTERS UAE,,,,,INR,Active,false,false,Musaffah,,Sila,Abu Dhabi,United Arab Emirates,,overseas,,info@360infomedia.com,+91,8589010360,,
+2024-05-10 17:29:33,2024-05-10 17:32:52,FINPAL QATAR,,,,,INR,Active,false,false,,,,Ad Dawhah,Qatar,,overseas,,rajaie@tasshamjit.com,,,,
+2024-05-10 21:22:32,2025-07-25 14:48:36,HEFFL Ventures LLC,,,,,INR,Active,false,false,Khalidiyah Street,Koduvally,Kozhikode,Kerala,India,,business_none,,hadi@heffl.com,+91,7012179326,KL,32-Kerala
+2024-05-11 10:46:44,2024-05-11 10:50:23,Cartridge Refill,,,,,INR,Active,false,false,P.O. Box : 36615,,Sharjah,Sharjah,United Arab Emirates,,overseas,,sales@cartridgerefill.ae,+971,507649453,,
+2024-05-14 06:07:58,2024-05-14 06:09:14,Afsal Jalal,,,,,INR,Active,false,false,,,,Abu Dhabi,United Arab Emirates,,overseas,,afsaljalal@gmail.com,,,,
+2024-05-25 19:10:58,2024-06-14 14:56:23,WESTWOOD TISSUES MANUFACTURING LLC,,,,,INR,Active,false,false,"Shop No. 4,Bahya",,,Abu Dhabi,United Arab Emirates,,overseas,,westwoodtissues23@gmail.com,,,,
+2024-05-27 13:28:22,2024-05-27 13:28:22,TechLid IT Solutions,,,,,INR,Active,false,false,Al Saada Tower - شارع الزاهية,,Al Zahiyah,Abu Dhabi,United Arab Emirates,,overseas,,abinbabu.c@gmail.com,,,,
+2024-05-28 17:07:51,2024-05-28 17:07:51,IZAR TECHNOLOGY SOLUTIONS,,,,,INR,Active,false,false,"9th Main, 15th Cross",Wilson Garden,Bangalore,Karnataka,India,560030,business_gst,29AFLPN6622D1ZB,asif.nalakath@izarit.com,+91,9880437373,KA,29-Karnataka
+2024-06-02 10:07:17,2025-09-11 16:34:49,Momentum Consultancy QFZ LLC,,,,,INR,Active,false,false,"Markaz Almana,Ist Floor, Office No 104",,Najma,Ad Dawhah,Qatar,,overseas,,imameen44@gmail.com,,,,
+2024-06-02 10:30:09,2025-05-26 23:56:31,PRIME TRADING,,,,,INR,Active,false,false,"First Floor, Door No. 13/164A, Madhav Arcade","Kottekkad Road, Kutoor",Thrissur,Kerala,India,680013,business_gst,32AAYFP9832F1ZQ,bukhariakn@gmail.com,+91,9544353578,KL,32-Kerala
+2024-06-08 10:11:34,2025-06-16 13:59:31,PIXELBIRD LLP,,,,,INR,Active,false,false,,,Kozhikode,Kerala,India,673004,business_gst,32ABCFP1272C1ZU,nabeel@pixelbird.co,+91,8921299510,KL,32-Kerala
+2024-06-08 10:40:19,2024-06-08 10:40:19,SAMER GRAPHICS,,,,,INR,Active,false,false,"Madeena Road, Near Salhiya Circle",PO BOX 40033,Riyad,Ar Riyad,Saudi Arabia,11495,overseas,,ayoob@samergraphics.com,+966,507991069,,
+2024-06-10 02:07:26,2024-09-25 22:15:05,WE PLACED,Mr.,Jinshad,,,INR,Active,false,false,,,,Abu Dhabi,United Arab Emirates,,overseas,,rizwan@we-placed.com,+971,554119010,,
 2024-06-12 09:08:41,2024-06-12 09:08:41,Astralink Freight LLC,,,,,INR,Active,false,false,"Al Hudaiba Awards Buildings,
-Block C, Office #318-18",Jumeirah Road,,Dubai,United Arab Emirates,,overseas,,accounts@astralinkfreight.com,+971564086943,,
-2024-06-13 23:07:34,2024-06-13 23:07:34,MAX Lines Logistics and Shipping W.L.L,,,,,INR,Active,false,false,PO Box: 32063,,Doha,Ad Dawhah,Qatar,32063,overseas,,info@maxlineslogistics.com,+97455720203,,
-2024-06-23 22:41:54,2025-07-02 12:59:43,MINNITZ 3560,,ARUN,,,INR,Active,false,false,KKG Building,,Thrissur,Kerala,India,,consumer,,minnitz360@gmail.com,+919995310243,KL,32-Kerala
-2024-06-26 02:16:13,2024-06-26 02:16:13,WEB ARROW,,,,,INR,Active,false,false,,,,Abu Dhabi,United Arab Emirates,,overseas,,asifc.88@gmail.com,+971559354546,,
+Block C, Office #318-18",Jumeirah Road,,Dubai,United Arab Emirates,,overseas,,accounts@astralinkfreight.com,+971,564086943,,
+2024-06-13 23:07:34,2024-06-13 23:07:34,MAX Lines Logistics and Shipping W.L.L,,,,,INR,Active,false,false,PO Box: 32063,,Doha,Ad Dawhah,Qatar,32063,overseas,,info@maxlineslogistics.com,+974,55720203,,
+2024-06-23 22:41:54,2025-07-02 12:59:43,MINNITZ 3560,,ARUN,,,INR,Active,false,false,KKG Building,,Thrissur,Kerala,India,,consumer,,minnitz360@gmail.com,+91,9995310243,KL,32-Kerala
+2024-06-26 02:16:13,2024-06-26 02:16:13,WEB ARROW,,,,,INR,Active,false,false,,,,Abu Dhabi,United Arab Emirates,,overseas,,asifc.88@gmail.com,+971,559354546,,
 2024-07-09 21:48:38,2025-07-26 13:00:27,Aseel Alfa Trading,,Nasir Mohammed,,,INR,Active,false,false,"Parsi Villa 
-Maranchery Post",,Malappuram,Kerala,India,679581,consumer,,info@aseelalfatrading.com,+966536982699,KL,32-Kerala
-2024-07-23 11:01:50,2024-07-23 11:01:50,MECHWISE SOLUTION PRIVATE LIMITED,,,,,INR,Active,false,false,"Mekkadampu, Valakom PO",Muvattupuzha,Ernakulam,Kerala,India,682316,business_gst,32AARCM2121L1ZH,mechwiseparking@gmail.com,+918714488558,KL,32-Kerala
-2024-07-24 00:39:34,2024-07-24 00:39:34,D MEDIA,,,,,INR,Active,false,false,P.O.Box: 3793,,Doha,Ad Dawhah,Qatar,,overseas,,aziz@dmedia.qa,+97433894641,,
-2024-07-24 13:41:59,2025-05-08 17:39:19,Hashim Al Mosowi General Cont. Est.,,,,,INR,Active,false,false,"P. O. Box 1190,",,Saihat,Al Hudud ash Shamaliyah,Saudi Arabia,,overseas,,info@hmcsa.com,+966500049161,,
-2024-07-31 13:52:29,2024-07-31 13:53:05,Gulf Express Trading Company L.L.C,,,,,INR,Active,false,false,"Al Adamah,",9th Street – Building 7124,Dammam,Al Hudud ash Shamaliyah,Saudi Arabia,32242,overseas,,azeezinma@gmail.com,+966500523301,,
-2024-08-15 11:33:40,2024-08-31 17:36:49,Al SHAROOK AL AHMER,,Al SHAROOK AL AHMER TECHNICAL SERVICES LLC,,,INR,Active,false,false,,,,,United Arab Emirates,,overseas,,hrs1274@gmail.com,+971551400126,,
+Maranchery Post",,Malappuram,Kerala,India,679581,consumer,,info@aseelalfatrading.com,+966,536982699,KL,32-Kerala
+2024-07-23 11:01:50,2024-07-23 11:01:50,MECHWISE SOLUTION PRIVATE LIMITED,,,,,INR,Active,false,false,"Mekkadampu, Valakom PO",Muvattupuzha,Ernakulam,Kerala,India,682316,business_gst,32AARCM2121L1ZH,mechwiseparking@gmail.com,+91,8714488558,KL,32-Kerala
+2024-07-24 00:39:34,2024-07-24 00:39:34,D MEDIA,,,,,INR,Active,false,false,P.O.Box: 3793,,Doha,Ad Dawhah,Qatar,,overseas,,aziz@dmedia.qa,+974,33894641,,
+2024-07-24 13:41:59,2025-05-08 17:39:19,Hashim Al Mosowi General Cont. Est.,,,,,INR,Active,false,false,"P. O. Box 1190,",,Saihat,Al Hudud ash Shamaliyah,Saudi Arabia,,overseas,,info@hmcsa.com,+966,500049161,,
+2024-07-31 13:52:29,2024-07-31 13:53:05,Gulf Express Trading Company L.L.C,,,,,INR,Active,false,false,"Al Adamah,",9th Street – Building 7124,Dammam,Al Hudud ash Shamaliyah,Saudi Arabia,32242,overseas,,azeezinma@gmail.com,+966,500523301,,
+2024-08-15 11:33:40,2024-08-31 17:36:49,Al SHAROOK AL AHMER,,Al SHAROOK AL AHMER TECHNICAL SERVICES LLC,,,INR,Active,false,false,,,,,United Arab Emirates,,overseas,,hrs1274@gmail.com,+971,551400126,,
 2024-08-17 13:01:13,2024-08-17 13:01:13,New Vision Trading and Contracting,,,,,INR,Active,false,false,"P.O Box: 6216
-Area 24 Street Number 146 Building 950,",,Office No 4 Floor 4,Ad Dawhah,Qatar,,overseas,,najathulla@newvisiontrading.qa,+97455507518,,
-2024-08-23 10:16:49,2024-08-27 09:39:37,VOLTO PAINTS,,Bejoy John,,,INR,Active,false,false,"Kinfra , Kunnamthanan",Thiruvalla,Pathanamthitta,Kerala,India,,business_gst,32AAKFV3808M1ZV,bejoy@voltopaints.com,+919961618449,KL,32-Kerala
-2024-08-23 12:00:49,2025-03-19 00:12:15,MEPTREND ENGINEERING PRIVATE LIMITED,,,,,INR,Active,false,false,"Office No. 2A-5, A-Wing, Second Floor, Indeevaram,","Infopark Koratty,  Nalukettu Road, Koratty,",Thrissur,Kerala,India,680308,business_sez,32AASCM2019G2ZL,meptrendengineering@gmail.com,+919562011484,KL,32-Kerala
-2024-09-02 14:29:25,2024-09-02 14:29:25,HYDROFIT TRADING L.L.C,,,,,INR,Active,false,false,"Po Box:35170, Industrial Area 3",,Caterpillar Road,Sharjah,United Arab Emirates,,overseas,,harris.m@hydrofitme.com,+971568385394,,
-2024-09-24 18:27:30,2024-09-24 18:27:30,KANOTH GENERAL TRADING LLC,,,,,INR,Active,false,false,"Shop No. M12, First Floor,","Al Salam Shopping Centre, Naif,",Deira,Dubai,United Arab Emirates,,overseas,,info@kanothgt.com,+97474792353,,
-2024-09-25 17:58:48,2024-09-25 17:58:48,TREKZEAL TOURS & TRAVELS,,,,,INR,Active,false,false,"HILITE BUSINESS PARK, Olavanna Road,","Pantheerankavu,",Kozhikode,Kerala,India,673014,business_gst,32DHSPA9093M1ZP,support@trekzeal.com,+919809980902,KL,32-Kerala
-2024-09-25 18:38:21,2025-10-16 20:20:29,English Madrassa for Islamic Study,,,,,INR,Active,false,false,,,,Al Farwaniyah,Kuwait,,overseas,,info@emis-edu.com,,,
-2024-10-01 23:37:28,2024-10-01 23:37:28,CACTUS PROSOFT SOLUTIONS,,Nithish Ravindran,,,INR,Active,false,false,"No. 161-C, opposite to Classic Manor,","Chitilappilly,",Thrissur,Kerala,India,680551,business_gst,32AAKFC4300M1ZP,nithish@cactusprosoft.com,+919633789799,KL,32-Kerala
-2024-10-03 22:10:13,2024-10-11 16:16:44,PACIO PACK LLP,,,,,INR,Active,false,false,"I, 3/30, Shamshad Building,",Padoor,Thrissur,Kerala,India,680524,business_gst,32AAUFP2189F1ZY,accounts@pacio.design,,KL,32-Kerala
-2024-10-05 09:43:19,2024-10-05 09:43:19,BRIGHT ASSET TRANSIT P LTD,,,,,INR,Active,false,false,"Manalarkavu Street No.8, Viyyoor P.O",,Thrissur,Kerala,India,680010,business_gst,32AAECB5364P1ZE,mail@batsindia.in,+919846089158,KL,32-Kerala
-2024-10-23 09:59:10,2024-10-23 09:59:10,ELOMECH MEP CONTRACTING PRIVATE LIMITED,,,,,INR,Active,false,false,"First Floor, 23/326/44, N P Tower,","Poonkunnam Road, West Fort",Thrissur,Kerala,India,680004,business_gst,32AAFCE1540D1ZD,elomech@alego.in,+917034777702,KL,32-Kerala
-2024-10-30 14:01:01,2025-10-28 19:44:16,IOTA TRADING AND LOGISTICS,,,,,INR,Active,false,false,"4th Floor, No, 356, Khatha No.49/30/1/356, 1A Cross,","Winnfield Garden, Shivarama Karanth Nagar,",Bengaluru,Karnataka,India,560077,business_gst,29CAHPR8145Q1ZM,finance@gritink.com,+918618730976,KA,29-Karnataka
-2024-11-04 01:08:57,2025-03-29 16:55:13,360 INFOMEDIA,,,,,INR,Active,false,false,Doha,,Doha,Ad Dawhah,Qatar,,overseas,,info@360infomedia.com,+918589010360,,
+Area 24 Street Number 146 Building 950,",,Office No 4 Floor 4,Ad Dawhah,Qatar,,overseas,,najathulla@newvisiontrading.qa,+974,55507518,,
+2024-08-23 10:16:49,2024-08-27 09:39:37,VOLTO PAINTS,,Bejoy John,,,INR,Active,false,false,"Kinfra , Kunnamthanan",Thiruvalla,Pathanamthitta,Kerala,India,,business_gst,32AAKFV3808M1ZV,bejoy@voltopaints.com,+91,9961618449,KL,32-Kerala
+2024-08-23 12:00:49,2025-03-19 00:12:15,MEPTREND ENGINEERING PRIVATE LIMITED,,,,,INR,Active,false,false,"Office No. 2A-5, A-Wing, Second Floor, Indeevaram,","Infopark Koratty,  Nalukettu Road, Koratty,",Thrissur,Kerala,India,680308,business_sez,32AASCM2019G2ZL,meptrendengineering@gmail.com,+91,9562011484,KL,32-Kerala
+2024-09-02 14:29:25,2024-09-02 14:29:25,HYDROFIT TRADING L.L.C,,,,,INR,Active,false,false,"Po Box:35170, Industrial Area 3",,Caterpillar Road,Sharjah,United Arab Emirates,,overseas,,harris.m@hydrofitme.com,+971,568385394,,
+2024-09-24 18:27:30,2024-09-24 18:27:30,KANOTH GENERAL TRADING LLC,,,,,INR,Active,false,false,"Shop No. M12, First Floor,","Al Salam Shopping Centre, Naif,",Deira,Dubai,United Arab Emirates,,overseas,,info@kanothgt.com,+974,74792353,,
+2024-09-25 17:58:48,2024-09-25 17:58:48,TREKZEAL TOURS & TRAVELS,,,,,INR,Active,false,false,"HILITE BUSINESS PARK, Olavanna Road,","Pantheerankavu,",Kozhikode,Kerala,India,673014,business_gst,32DHSPA9093M1ZP,support@trekzeal.com,+91,9809980902,KL,32-Kerala
+2024-09-25 18:38:21,2025-10-16 20:20:29,English Madrassa for Islamic Study,,,,,INR,Active,false,false,,,,Al Farwaniyah,Kuwait,,overseas,,info@emis-edu.com,,,,
+2024-10-01 23:37:28,2024-10-01 23:37:28,CACTUS PROSOFT SOLUTIONS,,Nithish Ravindran,,,INR,Active,false,false,"No. 161-C, opposite to Classic Manor,","Chitilappilly,",Thrissur,Kerala,India,680551,business_gst,32AAKFC4300M1ZP,nithish@cactusprosoft.com,+91,9633789799,KL,32-Kerala
+2024-10-03 22:10:13,2024-10-11 16:16:44,PACIO PACK LLP,,,,,INR,Active,false,false,"I, 3/30, Shamshad Building,",Padoor,Thrissur,Kerala,India,680524,business_gst,32AAUFP2189F1ZY,accounts@pacio.design,,,KL,32-Kerala
+2024-10-05 09:43:19,2024-10-05 09:43:19,BRIGHT ASSET TRANSIT P LTD,,,,,INR,Active,false,false,"Manalarkavu Street No.8, Viyyoor P.O",,Thrissur,Kerala,India,680010,business_gst,32AAECB5364P1ZE,mail@batsindia.in,+91,9846089158,KL,32-Kerala
+2024-10-23 09:59:10,2024-10-23 09:59:10,ELOMECH MEP CONTRACTING PRIVATE LIMITED,,,,,INR,Active,false,false,"First Floor, 23/326/44, N P Tower,","Poonkunnam Road, West Fort",Thrissur,Kerala,India,680004,business_gst,32AAFCE1540D1ZD,elomech@alego.in,+91,7034777702,KL,32-Kerala
+2024-10-30 14:01:01,2025-10-28 19:44:16,IOTA TRADING AND LOGISTICS,,,,,INR,Active,false,false,"4th Floor, No, 356, Khatha No.49/30/1/356, 1A Cross,","Winnfield Garden, Shivarama Karanth Nagar,",Bengaluru,Karnataka,India,560077,business_gst,29CAHPR8145Q1ZM,finance@gritink.com,+91,8618730976,KA,29-Karnataka
+2024-11-04 01:08:57,2025-03-29 16:55:13,360 INFOMEDIA,,,,,INR,Active,false,false,Doha,,Doha,Ad Dawhah,Qatar,,overseas,,info@360infomedia.com,+91,8589010360,,
 2024-11-06 10:02:03,2024-11-06 10:07:42,ZOYON CREATE SENSE,,,,,INR,Active,false,false,"2nd floor, MSS Complex 
-Cherooty Road",,Kozhikode,Kerala,India,673001,business_none,,info@zoyon.com,+919995223922,KL,32-Kerala
-2024-11-20 17:56:45,2025-11-11 20:07:02,BEITH CONVENTION CENTRE,,,,,INR,Active,false,false,Opposite Cochin University Traffic Signal,South Kalamassery,Ernakulam,Kerala,India,682033,business_gst,32AAHFH0661H3ZO,operationmanager@beithhotel.com,+918594026555,KL,32-Kerala
-2024-11-22 11:44:50,2025-11-23 01:36:13,MESQCO TRADING LLC,,,,,INR,Active,false,false,"M-23,Arzoo building",Al Qusais,,Dubai,United Arab Emirates,,overseas,,qaise@mesqco.com,+919539157533,,
-2024-11-25 15:42:20,2024-11-25 15:42:20,ZOHOR CONCEPTS,,,,,INR,Active,false,false,,,,Ad Dawhah,Qatar,,overseas,,iamrajaie@gmail.com,+97459900310,,
-2024-11-30 19:07:30,2025-06-24 23:43:27,TECHFORM ESTABLISHMENT,,,,,INR,Active,false,false,"P O Box 2900, Taibah 16",,Al Jubail,Al Hudud ash Shamaliyah,Saudi Arabia,,overseas,,info@techformksa.com,+919544881009,,
+Cherooty Road",,Kozhikode,Kerala,India,673001,business_none,,info@zoyon.com,+91,9995223922,KL,32-Kerala
+2024-11-20 17:56:45,2025-11-11 20:07:02,BEITH CONVENTION CENTRE,,,,,INR,Active,false,false,Opposite Cochin University Traffic Signal,South Kalamassery,Ernakulam,Kerala,India,682033,business_gst,32AAHFH0661H3ZO,operationmanager@beithhotel.com,+91,8594026555,KL,32-Kerala
+2024-11-22 11:44:50,2025-11-23 01:36:13,MESQCO TRADING LLC,,,,,INR,Active,false,false,"M-23,Arzoo building",Al Qusais,,Dubai,United Arab Emirates,,overseas,,qaise@mesqco.com,+91,9539157533,,
+2024-11-25 15:42:20,2024-11-25 15:42:20,ZOHOR CONCEPTS,,,,,INR,Active,false,false,,,,Ad Dawhah,Qatar,,overseas,,iamrajaie@gmail.com,+974,59900310,,
+2024-11-30 19:07:30,2025-06-24 23:43:27,TECHFORM ESTABLISHMENT,,,,,INR,Active,false,false,"P O Box 2900, Taibah 16",,Al Jubail,Al Hudud ash Shamaliyah,Saudi Arabia,,overseas,,info@techformksa.com,+91,9544881009,,
 2024-12-10 11:56:23,2025-11-12 22:08:15,CD BUSINESS SOLUTIONS,,,,,INR,Active,false,false,"Classic Edifice,Door No : 35/189 - D,
 Ground Floor,","Beerakutty Nagar Road,
-Koonamthai,Edappally North P. O",Cochin,Kerala,India,682024,business_gst,32PWUPS0467Q1Z6,domain@globalbusinesshelper.com,+918075945439,KL,32-Kerala
-2024-12-10 13:19:15,2025-04-03 14:55:30,Abin Babu C,,,,,INR,Active,false,false,Nadakkavu,,Kozhikode,Kerala,India,673006,consumer,,abinbabu.c@gmail.com,+918921319692,KL,32-Kerala
-2024-12-15 22:22:09,2025-11-25 16:06:55,HIRA FOUNDATION TRUST,,,,,INR,Active,false,false,"No.52, St Johns Church Road",Coles Park,Bengaluru,Karnataka,India,560005,business_gst,29AAATH3070R1Z5,info@hirafoundation.org,+919449809669,KA,29-Karnataka
-2024-12-21 12:40:47,2025-05-22 18:04:11,WEBENLIVE INDIA,,Roopesh Dev,,,INR,Active,false,false,Nadakkavu,,Kozhikode,Kerala,India,,business_none,,roopeshdev@gmail.com,,KL,32-Kerala
-2024-12-24 17:28:07,2024-12-24 17:29:22,BCM BUILDERS & ENGINEERS,,,,,INR,Active,false,false,"VADAKKINETH BUILDING, MC Road, Near Federal Bank, CENTURY Junction, Mulakuzha,",Chengannur,Alappuzha,Kerala,India,689505,business_gst,32AFWPC5611E2ZQ,bcmbinu1976@gmail.com,+919747060741,KL,32-Kerala
+Koonamthai,Edappally North P. O",Cochin,Kerala,India,682024,business_gst,32PWUPS0467Q1Z6,domain@globalbusinesshelper.com,+91,8075945439,KL,32-Kerala
+2024-12-10 13:19:15,2025-04-03 14:55:30,Abin Babu C,,,,,INR,Active,false,false,Nadakkavu,,Kozhikode,Kerala,India,673006,consumer,,abinbabu.c@gmail.com,+91,8921319692,KL,32-Kerala
+2024-12-15 22:22:09,2025-11-25 16:06:55,HIRA FOUNDATION TRUST,,,,,INR,Active,false,false,"No.52, St Johns Church Road",Coles Park,Bengaluru,Karnataka,India,560005,business_gst,29AAATH3070R1Z5,info@hirafoundation.org,+91,9449809669,KA,29-Karnataka
+2024-12-21 12:40:47,2025-05-22 18:04:11,WEBENLIVE INDIA,,Roopesh Dev,,,INR,Active,false,false,Nadakkavu,,Kozhikode,Kerala,India,,business_none,,roopeshdev@gmail.com,,,KL,32-Kerala
+2024-12-24 17:28:07,2024-12-24 17:29:22,BCM BUILDERS & ENGINEERS,,,,,INR,Active,false,false,"VADAKKINETH BUILDING, MC Road, Near Federal Bank, CENTURY Junction, Mulakuzha,",Chengannur,Alappuzha,Kerala,India,689505,business_gst,32AFWPC5611E2ZQ,bcmbinu1976@gmail.com,+91,9747060741,KL,32-Kerala
 2024-12-24 18:10:15,2024-12-24 18:10:15,OXFORD COMMUNITY COLLEGE,,,,,INR,Active,false,false,"Kadeeja Building, Nilambur Road - 
-Manjeri Road Connection",Wandoor,Malappuram,Kerala,India,679328,business_gst,32GBUPS8395P1Z5,oxfordwdr@gmail.com,+919447260668,KL,32-Kerala
-2024-12-28 01:04:52,2024-12-28 01:04:52,EVESYL,,,,,INR,Active,false,false,,,Tirupur,Tamil Nadu,India,,business_none,,kovaipaneer@gmail.com,+919171123004,TN,33-Tamil Nadu
+Manjeri Road Connection",Wandoor,Malappuram,Kerala,India,679328,business_gst,32GBUPS8395P1Z5,oxfordwdr@gmail.com,+91,9447260668,KL,32-Kerala
+2024-12-28 01:04:52,2024-12-28 01:04:52,EVESYL,,,,,INR,Active,false,false,,,Tirupur,Tamil Nadu,India,,business_none,,kovaipaneer@gmail.com,+91,9171123004,TN,33-Tamil Nadu
 2024-12-30 19:07:28,2024-12-30 19:09:01,ALBAI TRADING & CONTRACTING W.L.L,,,,,INR,Active,false,false,"PO BOX 2485, B1 A1 06
-GWC AL WUKAIR LOGISTIC PARK","BUILDING NO.1, STREET NO. 2100 ZONE NO. 91",,Ad Dawhah,Qatar,2485,overseas,,Info@albaiqatar.com,+97433592257,,
+GWC AL WUKAIR LOGISTIC PARK","BUILDING NO.1, STREET NO. 2100 ZONE NO. 91",,Ad Dawhah,Qatar,2485,overseas,,Info@albaiqatar.com,+974,33592257,,
 2024-12-31 10:15:16,2024-12-31 10:15:16,ANVESNA SYSTEMS,,,,,INR,Active,false,false,"286/2, Golden Nagar,
-Pollachi Rd, Dharapuram",,Tiruppur,Tamil Nadu,India,638657,business_gst,33AXVPP5751D1Z5,kovaipaneer@gmail.com,+919171123004,TN,33-Tamil Nadu
-2024-12-31 11:06:13,2024-12-31 11:43:10,MYBABA WAY CORPORATION PRIVATE LIMITED,,Rahim Chokli,,,INR,Active,false,false,"100 feet road, 419, 6th St Ext,",,Coimbatore,Tamil Nadu,India,641012,business_gst,33AAJCM1559Q1ZX,doct_art@yahoo.com,+919745784731,TN,33-Tamil Nadu
-2024-12-31 17:13:53,2024-12-31 17:13:53,Magmax Communication Private Limited,,,,,INR,Active,false,false,Kinfra Indutrial Techno Park,"Park Centre, Kakkanchery",Malappuram,Kerala,India,673634,business_none,,sujith@magmalive.com,+971504216463,KL,32-Kerala
-2025-01-03 10:32:52,2025-05-27 00:22:51,ALEGO FIRE SYSTEMS,,,,,INR,Active,false,false,"TC-23/326/46, NP TOWER, WESTFORT.23, WESTFORT",,Thrissur,Kerala,India,680004,business_gst,32ABEFA7485L1Z5,alegofire@gmail.com,,KL,32-Kerala
-2025-01-09 13:25:27,2025-11-17 17:36:58,MARIA MANAGEMENT SERVICES PRIVATE LIMITED,,,,+91 4844300145,INR,Active,false,false,"4th Floor, Maria arcade ​Chathangattu Road,​",Palarivattom,Kochi,Kerala,India,682025,business_gst,32AAOCM0317R1Z6,info@mariamanagement.com,+919633099200,KL,32-Kerala
-2025-01-09 16:22:58,2025-02-18 23:23:38,GrowthSense Corporate Solutions Private Limited,,,,,INR,Active,false,false,"66/947 C, C.P. Ummer Road, Pullepady,",,Kochi,Kerala,India,682035,business_none,,anas.salam@growthsense.co,+919995881868,KL,32-Kerala
-2025-01-09 17:53:03,2025-01-09 17:53:03,ABC FACILITY MANAGEMENT AND SECURITY SERVICES PRIVATE LIMITED,,,,,INR,Active,false,false,"4th Floor,  Maria Arcade, Chathangattu Road,",KochiPalarivattom,,Kerala,India,682025,business_gst,32AAKCA0024F1ZF,admin@abcfacilitymanagement.com,,KL,32-Kerala
-2025-01-17 00:22:09,2025-01-17 00:22:09,Nature DOT,,,,,INR,Active,false,false,Perumpilavu,,Thrissur,Kerala,India,,business_none,,haikumediasolutions@gmail.com,,KL,32-Kerala
-2025-01-17 01:11:52,2025-01-17 01:11:52,SPACE LINE Tours And Travels,,,,,INR,Active,false,false,"Thatha Building, Kunnamkulam Road,",Chavakkad,Thrissur,Kerala,India,680506,business_none,,spacelineckd@gmail.com,,KL,32-Kerala
-2025-01-17 17:42:56,2025-01-17 17:42:56,ANJANA TECHNOLOGIES SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ,,,,,INR,Active,false,false,"ul. WILLIAMA HEERLEINA LINDLEYA, nr 16, lok",,02-013 WARSZAWA,,Poland,,overseas,,rajeshsudhakarannair@gmail.com,,,
+Pollachi Rd, Dharapuram",,Tiruppur,Tamil Nadu,India,638657,business_gst,33AXVPP5751D1Z5,kovaipaneer@gmail.com,+91,9171123004,TN,33-Tamil Nadu
+2024-12-31 11:06:13,2024-12-31 11:43:10,MYBABA WAY CORPORATION PRIVATE LIMITED,,Rahim Chokli,,,INR,Active,false,false,"100 feet road, 419, 6th St Ext,",,Coimbatore,Tamil Nadu,India,641012,business_gst,33AAJCM1559Q1ZX,doct_art@yahoo.com,+91,9745784731,TN,33-Tamil Nadu
+2024-12-31 17:13:53,2024-12-31 17:13:53,Magmax Communication Private Limited,,,,,INR,Active,false,false,Kinfra Indutrial Techno Park,"Park Centre, Kakkanchery",Malappuram,Kerala,India,673634,business_none,,sujith@magmalive.com,+971,504216463,KL,32-Kerala
+2025-01-03 10:32:52,2025-05-27 00:22:51,ALEGO FIRE SYSTEMS,,,,,INR,Active,false,false,"TC-23/326/46, NP TOWER, WESTFORT.23, WESTFORT",,Thrissur,Kerala,India,680004,business_gst,32ABEFA7485L1Z5,alegofire@gmail.com,,,KL,32-Kerala
+2025-01-09 13:25:27,2025-11-17 17:36:58,MARIA MANAGEMENT SERVICES PRIVATE LIMITED,,,,+91 4844300145,INR,Active,false,false,"4th Floor, Maria arcade ​Chathangattu Road,​",Palarivattom,Kochi,Kerala,India,682025,business_gst,32AAOCM0317R1Z6,info@mariamanagement.com,+91,9633099200,KL,32-Kerala
+2025-01-09 16:22:58,2025-02-18 23:23:38,GrowthSense Corporate Solutions Private Limited,,,,,INR,Active,false,false,"66/947 C, C.P. Ummer Road, Pullepady,",,Kochi,Kerala,India,682035,business_none,,anas.salam@growthsense.co,+91,9995881868,KL,32-Kerala
+2025-01-09 17:53:03,2025-01-09 17:53:03,ABC FACILITY MANAGEMENT AND SECURITY SERVICES PRIVATE LIMITED,,,,,INR,Active,false,false,"4th Floor,  Maria Arcade, Chathangattu Road,",KochiPalarivattom,,Kerala,India,682025,business_gst,32AAKCA0024F1ZF,admin@abcfacilitymanagement.com,,,KL,32-Kerala
+2025-01-17 00:22:09,2025-01-17 00:22:09,Nature DOT,,,,,INR,Active,false,false,Perumpilavu,,Thrissur,Kerala,India,,business_none,,haikumediasolutions@gmail.com,,,KL,32-Kerala
+2025-01-17 01:11:52,2025-01-17 01:11:52,SPACE LINE Tours And Travels,,,,,INR,Active,false,false,"Thatha Building, Kunnamkulam Road,",Chavakkad,Thrissur,Kerala,India,680506,business_none,,spacelineckd@gmail.com,,,KL,32-Kerala
+2025-01-17 17:42:56,2025-01-17 17:42:56,ANJANA TECHNOLOGIES SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ,,,,,INR,Active,false,false,"ul. WILLIAMA HEERLEINA LINDLEYA, nr 16, lok",,02-013 WARSZAWA,,Poland,,overseas,,rajeshsudhakarannair@gmail.com,,,,
 2025-01-22 14:48:08,2025-01-22 14:48:08,RASHA TRADE LINKS,,,,,INR,Active,false,false,"Tharakkandam Estate,
-Kurusupally Road",Ravipuram,Kochi,Kerala,India,682015,business_gst,32AHIPR8319J1Z0,info@rashaindia.com,+919895121416,KL,32-Kerala
-2025-01-29 11:50:01,2025-01-29 11:50:01,TERRAHOME CONCEPTS & CONSTRUCTIONS,,,,,INR,Active,false,false,"No. A-31, Kamadhenu Layout, B. Narayanpura Dooravaninagar Post, Behind Wolkswagon Showroom, Outer Ring Road, Mahadevapura",,Bengaluru,Karnataka,India,560016,business_gst,29ADIPN5484C1ZA,hamsa@terrahome.in,+919448050375,KA,29-Karnataka
-2025-02-02 11:49:36,2025-02-02 11:58:46,ANSAR HOSPITAL,,,,+919947098267,INR,Active,false,false,"SH 69, Ansar Nagar",Perumpilavu,Thrissur,Kerala,India,680519,business_gst,32AAATA3304R1ZW,info@ansarhospital.com,+919447733856,KL,32-Kerala
-2025-02-03 14:15:30,2025-05-19 00:13:10,MEDHUB,,,,,INR,Active,false,false,,,Dubai,Dubai,United Arab Emirates,,overseas,,musthafa@medhubuae.com,+971547336363,,
-2025-02-04 12:47:13,2025-02-04 12:47:13,PERIYAR CLUB,,,,,INR,Active,false,false,"Swargam Road, Desom P O",Aluva,Ernakulam,Kerala,India,683102,business_gst,32AABTP2495H4ZG,periyarclubdesom@gmail.com,+919496141283,KL,32-Kerala
-2025-02-05 16:06:48,2025-02-13 18:02:39,RYDEEASY MOBILITY PRIVATE LIMITED,,,,,INR,Active,false,false,"317 C, Thattanpadi",Edappal,Malappuram,Kerala,India,679576,business_none,,gishglobe@gmail.com,+919895889935,KL,32-Kerala
-2025-02-06 17:45:38,2025-02-06 17:45:38,QBEE Honey,,,,,INR,Active,false,false,Veliyancode,,Malappuram,Kerala,India,679579,business_none,,naeemvkd@gmail.com,+919946252076,KL,32-Kerala
+Kurusupally Road",Ravipuram,Kochi,Kerala,India,682015,business_gst,32AHIPR8319J1Z0,info@rashaindia.com,+91,9895121416,KL,32-Kerala
+2025-01-29 11:50:01,2025-01-29 11:50:01,TERRAHOME CONCEPTS & CONSTRUCTIONS,,,,,INR,Active,false,false,"No. A-31, Kamadhenu Layout, B. Narayanpura Dooravaninagar Post, Behind Wolkswagon Showroom, Outer Ring Road, Mahadevapura",,Bengaluru,Karnataka,India,560016,business_gst,29ADIPN5484C1ZA,hamsa@terrahome.in,+91,9448050375,KA,29-Karnataka
+2025-02-02 11:49:36,2025-02-02 11:58:46,ANSAR HOSPITAL,,,,+919947098267,INR,Active,false,false,"SH 69, Ansar Nagar",Perumpilavu,Thrissur,Kerala,India,680519,business_gst,32AAATA3304R1ZW,info@ansarhospital.com,+91,9447733856,KL,32-Kerala
+2025-02-03 14:15:30,2025-05-19 00:13:10,MEDHUB,,,,,INR,Active,false,false,,,Dubai,Dubai,United Arab Emirates,,overseas,,musthafa@medhubuae.com,+971,547336363,,
+2025-02-04 12:47:13,2025-02-04 12:47:13,PERIYAR CLUB,,,,,INR,Active,false,false,"Swargam Road, Desom P O",Aluva,Ernakulam,Kerala,India,683102,business_gst,32AABTP2495H4ZG,periyarclubdesom@gmail.com,+91,9496141283,KL,32-Kerala
+2025-02-05 16:06:48,2025-02-13 18:02:39,RYDEEASY MOBILITY PRIVATE LIMITED,,,,,INR,Active,false,false,"317 C, Thattanpadi",Edappal,Malappuram,Kerala,India,679576,business_none,,gishglobe@gmail.com,+91,9895889935,KL,32-Kerala
+2025-02-06 17:45:38,2025-02-06 17:45:38,QBEE Honey,,,,,INR,Active,false,false,Veliyancode,,Malappuram,Kerala,India,679579,business_none,,naeemvkd@gmail.com,+91,9946252076,KL,32-Kerala
 2025-02-07 12:17:38,2025-02-07 12:17:38,"AMBALATH BUILDERS , DEVELOPERS",,,,+914872557001,INR,Active,false,false,"Near Devaswom School Guruvayur, 
-East Nada,",Guruvayur,Thrissur,Kerala,India,680506,business_gst,32BIRPA5360H1ZE,info@ambalathbuilders.com,+919995999300,KL,32-Kerala
+East Nada,",Guruvayur,Thrissur,Kerala,India,680506,business_gst,32BIRPA5360H1ZE,info@ambalathbuilders.com,+91,9995999300,KL,32-Kerala
 2025-02-11 17:09:22,2025-02-11 17:09:22,STALWART FM,,,,,INR,Active,false,false,"Lapinta, Mini Bypass Road, 
-Kalluthnkadavu",Puthiyara PO,Kozhikode,Kerala,India,673004,business_none,,webdesign@ramal.marketing,+917293183471,KL,32-Kerala
+Kalluthnkadavu",Puthiyara PO,Kozhikode,Kerala,India,673004,business_none,,webdesign@ramal.marketing,+91,7293183471,KL,32-Kerala
 2025-02-15 16:48:34,2025-02-15 16:48:34,MEDICINA UNANI HOSPITAL PRIVATE LIMITED,,,,,INR,Active,false,false,"Behind Pisharodys Restaurant, 
-College Stop",Pattambi,Palakkad,Kerala,India,679313,business_gst,32AAKCM4375K1Z6,drvahab@medicinaunani.com,+919995409400,KL,32-Kerala
-2025-02-18 17:38:27,2025-02-18 17:49:03,Microtec Educational Services,,,,,INR,Active,false,false,"3rd floor, City Castle Building",East fort Jn.,Thrissur,Kerala,India,680005 ,business_none,,info@microtec.in,+919495222277,KL,32-Kerala
+College Stop",Pattambi,Palakkad,Kerala,India,679313,business_gst,32AAKCM4375K1Z6,drvahab@medicinaunani.com,+91,9995409400,KL,32-Kerala
+2025-02-18 17:38:27,2025-02-18 17:49:03,Microtec Educational Services,,,,,INR,Active,false,false,"3rd floor, City Castle Building",East fort Jn.,Thrissur,Kerala,India,680005 ,business_none,,info@microtec.in,+91,9495222277,KL,32-Kerala
 2025-02-19 12:31:05,2025-02-19 13:30:15,"BENU VARGESE,P W D CONTRACTOR",,,,,INR,Active,false,false,"Karimpinkalayil Towers,
-Engg. College Junction",Chengannur,Alappuzha,Kerala,India,689121,business_gst,32AKSPV5804H1ZS,benu@aescon.in,+919895806380,KL,32-Kerala
-2025-02-25 12:25:15,2025-02-25 12:25:15,HANI KHALID SALEH ALQABBA GEN. Contacting Est,,,,,INR,Active,false,false,PO Box 32817,"Danah,",Ras Tanura,Al Hudud ash Shamaliyah,Saudi Arabia,,overseas,,,+917736227745,,
-2025-02-25 18:59:07,2025-02-25 18:59:07,PANORAMA TOURISM,,,,,INR,Active,false,false,Panorama Tourism,,Dubai,,United Arab Emirates,,overseas,,admin@panorama-tourism.com,+919020080018,,
-2025-03-06 15:09:32,2025-03-06 15:09:32,SNAJ VENTURES,,,,,INR,Active,false,false,"Door No.378/B4, Calicut Road",Ramapuram,Malappuram,Kerala,India,679321,business_gst,32AEYFS3370R1Z1,info@snajventures.com,+919995965380,KL,32-Kerala
+Engg. College Junction",Chengannur,Alappuzha,Kerala,India,689121,business_gst,32AKSPV5804H1ZS,benu@aescon.in,+91,9895806380,KL,32-Kerala
+2025-02-25 12:25:15,2025-02-25 12:25:15,HANI KHALID SALEH ALQABBA GEN. Contacting Est,,,,,INR,Active,false,false,PO Box 32817,"Danah,",Ras Tanura,Al Hudud ash Shamaliyah,Saudi Arabia,,overseas,,,+91,7736227745,,
+2025-02-25 18:59:07,2025-02-25 18:59:07,PANORAMA TOURISM,,,,,INR,Active,false,false,Panorama Tourism,,Dubai,,United Arab Emirates,,overseas,,admin@panorama-tourism.com,+91,9020080018,,
+2025-03-06 15:09:32,2025-03-06 15:09:32,SNAJ VENTURES,,,,,INR,Active,false,false,"Door No.378/B4, Calicut Road",Ramapuram,Malappuram,Kerala,India,679321,business_gst,32AEYFS3370R1Z1,info@snajventures.com,+91,9995965380,KL,32-Kerala
 2025-03-07 15:04:35,2025-03-07 15:04:35,AL SAHM AL DHAHBI Cargo & Clearing LLC,,,,,INR,Active,false,false,"​25, Baghdad street
-​G Floor 49985 09749",,Rawdha 2,Ajman,United Arab Emirates,,overseas,,info@inovextec.com,+971504308258,,
-2025-03-09 19:18:28,2025-03-09 19:20:23,EAGLE AUTO SPARE PARTS,,,,,INR,Active,false,false,"St #10, Al Wakalat Street,",Industrial Area,,Ad Dawhah,Qatar,,overseas,,info@eagle-autoparts.com,+97474792353,,
-2025-03-09 19:25:17,2025-03-09 19:25:17,UNITED EAGLE TRADING COMPANY,,,,,INR,Active,false,false,,,,Ar Riyad,Saudi Arabia,,overseas,,info@boltecksa.com,+97474792353,,
-2025-03-10 14:50:03,2025-03-10 14:50:03,MIT MERCY INSTITUTE OF TECHNOLOGY LLP,,,,,INR,Active,false,false,"37/178, Punnathoor Road,","Puthenpally P.O, Guruvayur",Thrissur,Kerala,India,680103,business_gst,32ABZFM1228L1ZV,info@mercycollege.co.in,+919037218751,KL,32-Kerala
-2025-03-10 16:21:48,2025-03-10 16:21:48,WORLD AIR HOLIDAYS,,,,,INR,Active,false,false,"2/446 Ground Floor,",Trithala,Palakkad,Kerala,India,,business_gst,32AGFPN3737Q1ZZ,nisar@worldairholidays.com,+919847588087,KL,32-Kerala
-2025-03-12 11:40:44,2025-06-02 18:16:12,NEXKARE HOSPITALITY PRIVATE LIMITED,,,,,INR,Active,false,false,"8/437 - F 2nd Floor, Paramban Tower,","NH 66 Bypass Flyover, Ramanattukara",Kozhikode,Kerala,India,673633,business_gst,32AAJCN4027E1ZU,am.it@nexstay.co,+917356894333,KL,32-Kerala
-2025-03-18 16:13:58,2025-03-18 16:13:58,ARCHLINK ARCHITECTS & DESIGNERS,,,,,INR,Active,false,false,"11/194 B & C, Opp Rice and Fish Restaurant, Thrissur Road","Valayamkulam, Alamkode",Malappuram,Kerala,India,679591,business_gst,32ABMFA0466H1ZN,info@archlinkgroup.com,+919567968511,KL,32-Kerala
+​G Floor 49985 09749",,Rawdha 2,Ajman,United Arab Emirates,,overseas,,info@inovextec.com,+971,504308258,,
+2025-03-09 19:18:28,2025-03-09 19:20:23,EAGLE AUTO SPARE PARTS,,,,,INR,Active,false,false,"St #10, Al Wakalat Street,",Industrial Area,,Ad Dawhah,Qatar,,overseas,,info@eagle-autoparts.com,+974,74792353,,
+2025-03-09 19:25:17,2025-03-09 19:25:17,UNITED EAGLE TRADING COMPANY,,,,,INR,Active,false,false,,,,Ar Riyad,Saudi Arabia,,overseas,,info@boltecksa.com,+974,74792353,,
+2025-03-10 14:50:03,2025-03-10 14:50:03,MIT MERCY INSTITUTE OF TECHNOLOGY LLP,,,,,INR,Active,false,false,"37/178, Punnathoor Road,","Puthenpally P.O, Guruvayur",Thrissur,Kerala,India,680103,business_gst,32ABZFM1228L1ZV,info@mercycollege.co.in,+91,9037218751,KL,32-Kerala
+2025-03-10 16:21:48,2025-03-10 16:21:48,WORLD AIR HOLIDAYS,,,,,INR,Active,false,false,"2/446 Ground Floor,",Trithala,Palakkad,Kerala,India,,business_gst,32AGFPN3737Q1ZZ,nisar@worldairholidays.com,+91,9847588087,KL,32-Kerala
+2025-03-12 11:40:44,2025-06-02 18:16:12,NEXKARE HOSPITALITY PRIVATE LIMITED,,,,,INR,Active,false,false,"8/437 - F 2nd Floor, Paramban Tower,","NH 66 Bypass Flyover, Ramanattukara",Kozhikode,Kerala,India,673633,business_gst,32AAJCN4027E1ZU,am.it@nexstay.co,+91,7356894333,KL,32-Kerala
+2025-03-18 16:13:58,2025-03-18 16:13:58,ARCHLINK ARCHITECTS & DESIGNERS,,,,,INR,Active,false,false,"11/194 B & C, Opp Rice and Fish Restaurant, Thrissur Road","Valayamkulam, Alamkode",Malappuram,Kerala,India,679591,business_gst,32ABMFA0466H1ZN,info@archlinkgroup.com,+91,9567968511,KL,32-Kerala
 2025-03-18 17:01:26,2025-03-18 17:01:26,RN DESIGNERS,,Razi Mohamed,Abdul Razack,,INR,Active,false,false,"Thekkanthiruthumal House
-Kochanoor Post",,Thrissur,Kerala,India,679562,business_none,,info@rndesigners.com,+97433897346,KL,32-Kerala
-2025-03-19 11:14:36,2025-03-19 11:14:36,MVM Residential Higher Secondary School,,,,,INR,Active,false,false,"Valayamkulam, Kokkur",,Malappuram,Kerala,India,679591,consumer,,info@mvmrhss.com,+919947551979,KL,32-Kerala
-2025-03-19 16:04:37,2025-03-19 16:04:37,PANEL INDIA INTERIOR & CONTRACTS PVT LTD,,,,,INR,Active,false,false,"NO 259 1ST FLOOR 9TH B MAIN,  KALYAN NAGAR PO",BANASWADI,BENGALURU,Karnataka,India,,business_gst,29AAJCP0738N1ZU,abdul@panelindia.in,+919844068622,KA,29-Karnataka
-2025-03-20 16:57:11,2025-03-20 16:57:11,AMEES CLOTHING COMPANY,,,,,INR,Active,false,false,"Seegehalli Village Road, Battarahalli,",K R Puram,Bengaluru,Karnataka,India,560049,business_gst,29AAWPU1523G1Z7,usman@ameesclothing.com,+919739049147,KA,29-Karnataka
-2025-03-20 17:04:21,2025-03-20 17:04:21,MAJESTIC BUILDERS & DEVELOPERS,,,,,INR,Active,false,false,"Moidu Building, Opposit Ansar English School,",Perumpilav P O,Thrissur,Kerala,India,680519,business_gst,32ABFFM5849M1ZU,info@majesticbuilders.in,+916235104010,KL,32-Kerala
-2025-03-21 12:39:19,2025-03-21 12:39:19,PRIME INDIA,,,,,INR,Active,false,false,"1st floor. N P Tower, WestFort",,Thrissur,Kerala,India,680004,business_gst,32AASFP6760E1Z1,info@primeindia.in,+919946335555,KL,32-Kerala
-2025-03-24 15:56:55,2025-03-24 15:56:55,IDEAL PUBLICATIONS TRUST,,,,,INR,Active,false,false,"33/1570, MADHYAMAM DAILY BUILDING, WAYANAD ROAD, SILVER HILLS,",,Kozhikode,Kerala,India,673012,business_gst,32AAATI1207P1ZU,it@madhyamam.com,+914952732163,KL,32-Kerala
-2025-03-26 11:12:26,2025-03-26 11:12:26,BCM BUILDERS & ENGINEERS,,,,,INR,Active,false,false,"1ST FLOOR, 1/38, ERATTAKULANGARA JOYS BUILDING, MC ROAD,",CHENGANNUR MULAKUZHA,Alappuzha,Kerala,India,689505,business_gst,32AFWPC5611E2ZQ,info@bcmbuilders.in,+919747060741,KL,32-Kerala
-2025-03-26 16:54:13,2025-03-26 16:54:13,WADIRAHMA ENGLISH SCHOOL,,,,,INR,Active,false,false,"Kodiyathur P O, Mukkam",,Kozhikkode,Kerala,India,673602,consumer,,accountant@wadirahma.school,+918592091227,KL,32-Kerala
-2025-03-27 08:35:07,2025-03-27 08:35:07,,,Anvas Valsan,,,INR,Active,false,false,Nadakkavu,,Kozhikode,Kerala,India,,consumer,,getmeanvas@gmail.com,,KL,32-Kerala
+Kochanoor Post",,Thrissur,Kerala,India,679562,business_none,,info@rndesigners.com,+974,33897346,KL,32-Kerala
+2025-03-19 11:14:36,2025-03-19 11:14:36,MVM Residential Higher Secondary School,,,,,INR,Active,false,false,"Valayamkulam, Kokkur",,Malappuram,Kerala,India,679591,consumer,,info@mvmrhss.com,+91,9947551979,KL,32-Kerala
+2025-03-19 16:04:37,2025-03-19 16:04:37,PANEL INDIA INTERIOR & CONTRACTS PVT LTD,,,,,INR,Active,false,false,"NO 259 1ST FLOOR 9TH B MAIN,  KALYAN NAGAR PO",BANASWADI,BENGALURU,Karnataka,India,,business_gst,29AAJCP0738N1ZU,abdul@panelindia.in,+91,9844068622,KA,29-Karnataka
+2025-03-20 16:57:11,2025-03-20 16:57:11,AMEES CLOTHING COMPANY,,,,,INR,Active,false,false,"Seegehalli Village Road, Battarahalli,",K R Puram,Bengaluru,Karnataka,India,560049,business_gst,29AAWPU1523G1Z7,usman@ameesclothing.com,+91,9739049147,KA,29-Karnataka
+2025-03-20 17:04:21,2025-03-20 17:04:21,MAJESTIC BUILDERS & DEVELOPERS,,,,,INR,Active,false,false,"Moidu Building, Opposit Ansar English School,",Perumpilav P O,Thrissur,Kerala,India,680519,business_gst,32ABFFM5849M1ZU,info@majesticbuilders.in,+91,6235104010,KL,32-Kerala
+2025-03-21 12:39:19,2025-03-21 12:39:19,PRIME INDIA,,,,,INR,Active,false,false,"1st floor. N P Tower, WestFort",,Thrissur,Kerala,India,680004,business_gst,32AASFP6760E1Z1,info@primeindia.in,+91,9946335555,KL,32-Kerala
+2025-03-24 15:56:55,2025-03-24 15:56:55,IDEAL PUBLICATIONS TRUST,,,,,INR,Active,false,false,"33/1570, MADHYAMAM DAILY BUILDING, WAYANAD ROAD, SILVER HILLS,",,Kozhikode,Kerala,India,673012,business_gst,32AAATI1207P1ZU,it@madhyamam.com,+91,4952732163,KL,32-Kerala
+2025-03-26 11:12:26,2025-03-26 11:12:26,BCM BUILDERS & ENGINEERS,,,,,INR,Active,false,false,"1ST FLOOR, 1/38, ERATTAKULANGARA JOYS BUILDING, MC ROAD,",CHENGANNUR MULAKUZHA,Alappuzha,Kerala,India,689505,business_gst,32AFWPC5611E2ZQ,info@bcmbuilders.in,+91,9747060741,KL,32-Kerala
+2025-03-26 16:54:13,2025-03-26 16:54:13,WADIRAHMA ENGLISH SCHOOL,,,,,INR,Active,false,false,"Kodiyathur P O, Mukkam",,Kozhikkode,Kerala,India,673602,consumer,,accountant@wadirahma.school,+91,8592091227,KL,32-Kerala
+2025-03-27 08:35:07,2025-03-27 08:35:07,,,Anvas Valsan,,,INR,Active,false,false,Nadakkavu,,Kozhikode,Kerala,India,,consumer,,getmeanvas@gmail.com,,,KL,32-Kerala
 2025-03-27 16:05:55,2025-03-27 16:10:21,BROWN CREW,,,,,INR,Active,false,false,"Nechyil, 
-Kurissamkulam",Pirayiri P O,Palakkad,Kerala,India,678004,business_gst,32AAXFB6937C1ZB,wazimhr@gmail.com,+919846139656,KL,32-Kerala
-2025-03-27 16:42:03,2025-08-04 09:36:45,HASHQUBES DIGITAL,,,,,INR,Active,false,false,"Market Place, Taliparamba",,Kannur,Kerala,India,670141,business_none,,hashqubes@gmail.com,+919037804567,KL,32-Kerala
-2025-03-28 15:40:23,2025-03-28 15:40:23,Wylets Interiors,,,,,INR,Active,false,false,"40/600, Eden Lane, Shalom Cashew,","Edappally, Kochi",Ernakulam,Kerala,India,682024,business_gst,32DZWPM7790D1ZR,nazeer@wyletsinteriors.com,+919809807876,KL,32-Kerala
-2025-03-28 15:48:19,2025-03-28 15:55:41,MIT MERCY INSTITUTE OF TECHNOLOGY LLP,,,,+914872558487,INR,Active,false,false,"37/178,  Punnathoor Road","Puthenpally P.O, Guruvayur",Thrissur,Kerala,India,680103,business_gst,32ABZFM1228L1ZV,info@mercycollege.co.in,+918943241515,KL,32-Kerala
-2025-03-28 23:52:02,2025-03-28 23:52:02,AMEES CLOTHING COMPANY,,,,,INR,Active,false,false,"6, budigere cross, Venus Bakery & Sweets,","Bidarahalli Hobli, Virgonagar Post",Bengaluru,Karnataka,India,560049,business_gst,29AAWPU1523G1Z7,usman@ameesclothing.com,+919739049147,KA,29-Karnataka
-2025-05-04 11:22:18,2025-12-08 12:23:42,4DX Computers Trading,,,,,INR,Active,false,false,"Shop No: M29, M Floor, Computer Plaza",,Bur Dubai,Dubai,United Arab Emirates,,overseas,,accounts@4dxcomputers.com,,,
-2025-05-16 18:45:27,2025-05-16 18:45:27,Alees Homoeopathy Hospital,,,,+91- 4885 283454,INR,Active,false,false,"Perumpilavu, Karikkad PO",,Thrissur,Kerala,India,680519,consumer,,umerali29@gmail.com,,KL,32-Kerala
-2025-05-20 19:26:46,2025-12-04 17:35:18,ISLAHIYA ASSOCIATION,,,,,INR,Active,false,false,"Chennamangallur P O, Mukkam",,Kozhikode,Kerala,India,673602,consumer,,finance@islahiya.com,+918301007159,KL,32-Kerala
+Kurissamkulam",Pirayiri P O,Palakkad,Kerala,India,678004,business_gst,32AAXFB6937C1ZB,wazimhr@gmail.com,+91,9846139656,KL,32-Kerala
+2025-03-27 16:42:03,2025-08-04 09:36:45,HASHQUBES DIGITAL,,,,,INR,Active,false,false,"Market Place, Taliparamba",,Kannur,Kerala,India,670141,business_none,,hashqubes@gmail.com,+91,9037804567,KL,32-Kerala
+2025-03-28 15:40:23,2025-03-28 15:40:23,Wylets Interiors,,,,,INR,Active,false,false,"40/600, Eden Lane, Shalom Cashew,","Edappally, Kochi",Ernakulam,Kerala,India,682024,business_gst,32DZWPM7790D1ZR,nazeer@wyletsinteriors.com,+91,9809807876,KL,32-Kerala
+2025-03-28 15:48:19,2025-03-28 15:55:41,MIT MERCY INSTITUTE OF TECHNOLOGY LLP,,,,+914872558487,INR,Active,false,false,"37/178,  Punnathoor Road","Puthenpally P.O, Guruvayur",Thrissur,Kerala,India,680103,business_gst,32ABZFM1228L1ZV,info@mercycollege.co.in,+91,8943241515,KL,32-Kerala
+2025-03-28 23:52:02,2025-03-28 23:52:02,AMEES CLOTHING COMPANY,,,,,INR,Active,false,false,"6, budigere cross, Venus Bakery & Sweets,","Bidarahalli Hobli, Virgonagar Post",Bengaluru,Karnataka,India,560049,business_gst,29AAWPU1523G1Z7,usman@ameesclothing.com,+91,9739049147,KA,29-Karnataka
+2025-05-04 11:22:18,2025-12-08 12:23:42,4DX Computers Trading,,,,,INR,Active,false,false,"Shop No: M29, M Floor, Computer Plaza",,Bur Dubai,Dubai,United Arab Emirates,,overseas,,accounts@4dxcomputers.com,,,,
+2025-05-16 18:45:27,2025-05-16 18:45:27,Alees Homoeopathy Hospital,,,,+91- 4885 283454,INR,Active,false,false,"Perumpilavu, Karikkad PO",,Thrissur,Kerala,India,680519,consumer,,umerali29@gmail.com,,,KL,32-Kerala
+2025-05-20 19:26:46,2025-12-04 17:35:18,ISLAHIYA ASSOCIATION,,,,,INR,Active,false,false,"Chennamangallur P O, Mukkam",,Kozhikode,Kerala,India,673602,consumer,,finance@islahiya.com,+91,8301007159,KL,32-Kerala
 2025-05-20 20:17:52,2025-05-20 20:18:04,Oakland Passion,Mr.,Muhsinudheen,,,INR,Active,false,false,"Zamzam E Mall
 Opp Punjab National Bank,
-Vadakkekad",,Thrissur,Kerala,India,680506,consumer,,oaklandpassion@gmail.com,+918086853000,KL,32-Kerala
-2025-05-20 20:26:36,2025-05-20 20:26:36,SITICS LOGISTIC SOLUTIONS PRIVATE LIMITED,,,,+914912530681,INR,Active,false,false,"18/802, English Church Road, Thayilpatti,","Pudupalli Theruvu, Nurani",Palakkad,Kerala,India,678014,business_gst,32AALCS5294A1ZG,it@sitics.co,+919495117111,KL,32-Kerala
-2025-05-21 07:57:52,2025-05-23 18:07:21,PRINT O CRAFT,Mr.,Subair Kunjitharayil,,+917594825555,INR,Active,false,false,"11/185, Chemmannur Building, Ayyapath Line",Kunnamkulam,Thrissur,Kerala,India,680503,business_gst,32ALLPA6861D1ZF,printocraft@surumas.com,+918111920119,KL,32-Kerala
-2025-05-21 18:03:41,2025-06-17 14:07:43,KAP (INDIA) PROJECTS AND CONSTRUCTIONS PRIVATE LIMITED,,,,+914872250725,INR,Active,false,false,"33/817, NISHAT, KURIACHIRA",CHIYYARAM,Thrissur,Kerala,India,680006,business_gst,32AABCK8164F1ZP,kap@kap.co.in,+919567595956,KL,32-Kerala
-2025-05-22 00:16:09,2025-05-22 00:16:09,Amrutham Holidays,,,,,INR,Active,false,false,"Bankpadi Jn, Kavanattinkara, Kumarakom",,Kottayam,Kerala,India,686363,business_none,,info@amruthamholidays.com,+919656898980,KL,32-Kerala
-2025-05-22 07:31:32,2025-05-22 07:31:32,ACERO STRUCTURAL ENGINEERS PRIVATE LIMITED,,,,,INR,Active,false,false,"54/190, , GREEN PARK AVENUE",AYYANTHOLE,Thrissur,Kerala,India,680003,business_gst,32AAPCA2455B1Z3,nidhin@abtechllc.com,+919447774586,KL,32-Kerala
-2025-05-22 09:59:50,2025-05-22 09:59:50,ANSARI CHARITABLE TRUST,,,,,INR,Active,false,false,"VI/335, ANSARI CHARITABLE TRUST, PERUMPILAVU P O",KARIKKAD,Thrissur,Kerala,India,680519,business_gst,32AAATA3304R1ZW,finance@ansar.in,,KL,32-Kerala
-2025-05-22 17:55:59,2025-05-22 17:55:59,HITECH MEDICITY,,,,,INR,Active,false,false,"DOOR NO. 63/3362, 3363, 3364, ASPIRE MALL, Kozhikkode Mavoor Road",Kozhikode,Kozhikode,Kerala,India,673004,business_gst,32AAPFH9498A1Z3,renjithsoman.k@gmail.com,+918129622962,KL,32-Kerala
-2025-05-22 18:55:49,2025-05-22 18:55:49,Empire College of Science,,,,,INR,Active,false,false,"Moodal, Kuttippuram",,Malappuram,Kerala,India,679571,consumer,,empireinstitutions@gmail.com,+919746180022,KL,32-Kerala
-2025-05-26 23:43:46,2025-10-14 17:20:15,RENT A FURNITURE LLC,,,,,INR,Active,false,false,"Gate No. 9, Warehouse No.12, Ali Nasser Saleh Lootah ,",Jebel Ali Industrial 1,,Dubai,United Arab Emirates,,overseas,,info@rentafurniture.com,+971545930355,,
-2025-05-27 23:33:55,2025-05-27 23:33:55,ATEES INFOMEDIA PRIVATE LIMITED,,,,,INR,Active,false,false,"Kuriland Tower, Marar Road",Thrissur,Thrissur,Kerala,India,680001,business_gst,32AAKCA3830F1Z3,aneesh@atees.in,+919995074692,KL,32-Kerala
-2025-05-28 18:26:38,2025-05-28 18:26:38,KICK-OFF SPORTS WEAR,,,,,INR,Active,false,false,"II/538 B27-28, , SMART TRADE CITY",KOTTAKKAL,Malappuram,Kerala,India,676503,business_gst,32BKYPS7094H1ZA,kickoffsportswear@gmail.com,+919447261581,KL,32-Kerala
-2025-05-29 18:40:58,2025-09-15 18:07:16,AVION,,,,,INR,Active,false,false,,,Thrissur,Kerala,India,680503,consumer,,mohdali@mechelec.co,,KL,32-Kerala
+Vadakkekad",,Thrissur,Kerala,India,680506,consumer,,oaklandpassion@gmail.com,+91,8086853000,KL,32-Kerala
+2025-05-20 20:26:36,2025-05-20 20:26:36,SITICS LOGISTIC SOLUTIONS PRIVATE LIMITED,,,,+914912530681,INR,Active,false,false,"18/802, English Church Road, Thayilpatti,","Pudupalli Theruvu, Nurani",Palakkad,Kerala,India,678014,business_gst,32AALCS5294A1ZG,it@sitics.co,+91,9495117111,KL,32-Kerala
+2025-05-21 07:57:52,2025-05-23 18:07:21,PRINT O CRAFT,Mr.,Subair Kunjitharayil,,+917594825555,INR,Active,false,false,"11/185, Chemmannur Building, Ayyapath Line",Kunnamkulam,Thrissur,Kerala,India,680503,business_gst,32ALLPA6861D1ZF,printocraft@surumas.com,+91,8111920119,KL,32-Kerala
+2025-05-21 18:03:41,2025-06-17 14:07:43,KAP (INDIA) PROJECTS AND CONSTRUCTIONS PRIVATE LIMITED,,,,+914872250725,INR,Active,false,false,"33/817, NISHAT, KURIACHIRA",CHIYYARAM,Thrissur,Kerala,India,680006,business_gst,32AABCK8164F1ZP,kap@kap.co.in,+91,9567595956,KL,32-Kerala
+2025-05-22 00:16:09,2025-05-22 00:16:09,Amrutham Holidays,,,,,INR,Active,false,false,"Bankpadi Jn, Kavanattinkara, Kumarakom",,Kottayam,Kerala,India,686363,business_none,,info@amruthamholidays.com,+91,9656898980,KL,32-Kerala
+2025-05-22 07:31:32,2025-05-22 07:31:32,ACERO STRUCTURAL ENGINEERS PRIVATE LIMITED,,,,,INR,Active,false,false,"54/190, , GREEN PARK AVENUE",AYYANTHOLE,Thrissur,Kerala,India,680003,business_gst,32AAPCA2455B1Z3,nidhin@abtechllc.com,+91,9447774586,KL,32-Kerala
+2025-05-22 09:59:50,2025-05-22 09:59:50,ANSARI CHARITABLE TRUST,,,,,INR,Active,false,false,"VI/335, ANSARI CHARITABLE TRUST, PERUMPILAVU P O",KARIKKAD,Thrissur,Kerala,India,680519,business_gst,32AAATA3304R1ZW,finance@ansar.in,,,KL,32-Kerala
+2025-05-22 17:55:59,2025-05-22 17:55:59,HITECH MEDICITY,,,,,INR,Active,false,false,"DOOR NO. 63/3362, 3363, 3364, ASPIRE MALL, Kozhikkode Mavoor Road",Kozhikode,Kozhikode,Kerala,India,673004,business_gst,32AAPFH9498A1Z3,renjithsoman.k@gmail.com,+91,8129622962,KL,32-Kerala
+2025-05-22 18:55:49,2025-05-22 18:55:49,Empire College of Science,,,,,INR,Active,false,false,"Moodal, Kuttippuram",,Malappuram,Kerala,India,679571,consumer,,empireinstitutions@gmail.com,+91,9746180022,KL,32-Kerala
+2025-05-26 23:43:46,2025-10-14 17:20:15,RENT A FURNITURE LLC,,,,,INR,Active,false,false,"Gate No. 9, Warehouse No.12, Ali Nasser Saleh Lootah ,",Jebel Ali Industrial 1,,Dubai,United Arab Emirates,,overseas,,info@rentafurniture.com,+971,545930355,,
+2025-05-27 23:33:55,2025-05-27 23:33:55,ATEES INFOMEDIA PRIVATE LIMITED,,,,,INR,Active,false,false,"Kuriland Tower, Marar Road",Thrissur,Thrissur,Kerala,India,680001,business_gst,32AAKCA3830F1Z3,aneesh@atees.in,+91,9995074692,KL,32-Kerala
+2025-05-28 18:26:38,2025-05-28 18:26:38,KICK-OFF SPORTS WEAR,,,,,INR,Active,false,false,"II/538 B27-28, , SMART TRADE CITY",KOTTAKKAL,Malappuram,Kerala,India,676503,business_gst,32BKYPS7094H1ZA,kickoffsportswear@gmail.com,+91,9447261581,KL,32-Kerala
+2025-05-29 18:40:58,2025-09-15 18:07:16,AVION,,,,,INR,Active,false,false,,,Thrissur,Kerala,India,680503,consumer,,mohdali@mechelec.co,,,KL,32-Kerala
 2025-05-29 19:12:59,2025-05-29 19:12:59,Malabar Holidays,Mr.,Fazir Ahammed,,,INR,Active,false,false,"A11 - 4th Floor, Jos Annex Building,
-M G Road",,Ernakulam,Kerala,India,682016,consumer,,opsmalabarholidays@gmail.com,+918943797267,KL,32-Kerala
-2025-05-30 23:27:03,2025-05-30 23:27:16,ABHILASH ALUMINIUM & GLASS WORKERS,Mr.,JOSE VILLA JOSEPH BASIL,,,INR,Active,false,false,"20/2935A, JOSE VILLA, KONAM ROAD","Perumpadappu, Palluruthy",Ernakulam,Kerala,India,682006,business_gst,32AFDPB2667J1ZQ,info@abhilashglass.com,+919387226969,KL,32-Kerala
-2025-06-01 01:32:57,2025-06-01 01:32:57,,Mr.,Jithin N B,,,INR,Active,false,false,"Amakkavu, Peringode Post",,Palakkad,Kerala,India,679535,consumer,,jithiniyer@gmail.com,+919645246232,KL,32-Kerala
-2025-06-03 18:12:21,2025-06-03 18:12:21,TAMAR INTERNATIONAL,,,,,INR,Active,false,false,"6/559 A, TAMAR INTERNATIONAL, NEERAD",KONDOTTY,Malappuram,Kerala,India,673638,business_gst,32AARFT0104D1ZQ,tamarfoodsinternational@gmail.com,+919778239903,KL,32-Kerala
+M G Road",,Ernakulam,Kerala,India,682016,consumer,,opsmalabarholidays@gmail.com,+91,8943797267,KL,32-Kerala
+2025-05-30 23:27:03,2025-05-30 23:27:16,ABHILASH ALUMINIUM & GLASS WORKERS,Mr.,JOSE VILLA JOSEPH BASIL,,,INR,Active,false,false,"20/2935A, JOSE VILLA, KONAM ROAD","Perumpadappu, Palluruthy",Ernakulam,Kerala,India,682006,business_gst,32AFDPB2667J1ZQ,info@abhilashglass.com,+91,9387226969,KL,32-Kerala
+2025-06-01 01:32:57,2025-06-01 01:32:57,,Mr.,Jithin N B,,,INR,Active,false,false,"Amakkavu, Peringode Post",,Palakkad,Kerala,India,679535,consumer,,jithiniyer@gmail.com,+91,9645246232,KL,32-Kerala
+2025-06-03 18:12:21,2025-06-03 18:12:21,TAMAR INTERNATIONAL,,,,,INR,Active,false,false,"6/559 A, TAMAR INTERNATIONAL, NEERAD",KONDOTTY,Malappuram,Kerala,India,673638,business_gst,32AARFT0104D1ZQ,tamarfoodsinternational@gmail.com,+91,9778239903,KL,32-Kerala
 2025-06-10 23:53:46,2025-06-10 23:53:46,Malabar Holidays,Mr.,Fazir Ahammed,,,INR,Active,false,false,"A11 - 4th Floor, Jos Annex Building,
-M G Road",,Ernakulam,Kerala,India,682016,consumer,,opsmalabarholidays@gmail.com,+918943797267,KL,32-Kerala
-2025-06-12 16:56:13,2025-06-12 16:56:13,Shanthi Prakashana,,,,,INR,Active,false,false,"Hidayath Centre, Near to State Bank Of India, Bibi Alabi Road",,Mengaluru,Karnataka,India,575001,business_none,,spkarnataka@gmail.com,+919448696490,KL,32-Kerala
-2025-06-14 15:31:10,2025-11-11 19:15:30,AL SADEED for COMMERCIAL VALUATION,,,,,INR,Active,false,false,"Al Mana Towers, Suhaim Bin Hamad Street, P  Box: 23142",,,,Qatar,,overseas,,ali@alyafeiauditors.qa,,,
-2025-06-16 11:24:55,2025-06-16 11:34:05,ZEROC GLOBAL SOLUTIONS PVT LTD,,,,,INR,Active,false,false,"SUITE NO. A47 DOOR NO. 63/700, D SPACE, 6th FLOOR, SKY TOWER,","MAVOOR ROAD JUNCTION, BANK ROAD,",KOZHIKODE,Kerala,India,673001,consumer,,sales@zerocglobal.com,+918606205155,KL,32-Kerala
-2025-06-17 00:32:27,2025-06-17 00:32:27,PAN ASIAN BUILDERS,,,,,INR,Active,false,false,"63/3888, SOORYA BUILDING, PUTHIYARA",Kozhikode,Kozhikode,Kerala,India,673004,business_gst,32AAPFP9020J1Z2,sujabu@panasianbuilders.com,+919562004400,KL,32-Kerala
-2025-06-17 00:40:51,2025-06-17 00:40:51,AATMA AYURVEDIC PRIVATE LIMITED,,,,,INR,Active,false,false,"XVII/274-277, AATMA AYURVEDIC PRIVATE LIMITED, ANANDHAPURAM",MURIYAD,Thrissur,Kerala,India,680305,business_gst,32AAFCA1076J1ZX,aatma.mooss@gmail.com,+919446561397,KL,32-Kerala
-2025-06-17 11:55:27,2025-06-17 11:55:27,,,MARWAN,,,INR,Active,false,false,,,,,,,consumer,,marwan.puthiyaveettil@gmail.com,+919946014736,KL,32-Kerala
-2025-06-17 13:53:43,2025-06-17 13:55:58,GOOGLE ASIA PACIFIC PTE LTD,,,,,INR,Active,false,true,"8,MARINA BAY FINANCIAL CENTRE, MARINA BOULEVARD",,,Marine Parade,Singapore,018981,overseas,,accounts@signroots.com,,,
-2025-06-17 14:00:48,2025-06-17 14:00:48,Waseem Mohammed,,,,,INR,Active,false,false,Perumpilavu,,Thrissur,Kerala,India,680519,consumer,,waseemore@gmail.com,+918547951043,KL,32-Kerala
-2025-06-17 14:09:44,2025-06-17 14:09:44,KAP INDIA TILES,,,,,INR,Active,false,false,"11/292, KAP INDIA TILES, PERAMANGALAM",PERAMANGALAM,Thrissur,Kerala,India,680545,business_gst,32AACFK5504B1Z4,kaptiles@gmail.com,+919400996076,KL,32-Kerala
-2025-06-18 12:50:02,2025-06-18 12:50:02,Rajih Erooth,,,,,INR,Active,false,false,"Erooth, Vaniyambalam Post",,Malappuram,Kerala,India,,consumer,,rajih.wx@gmail.com,+919567380123,KL,32-Kerala
+M G Road",,Ernakulam,Kerala,India,682016,consumer,,opsmalabarholidays@gmail.com,+91,8943797267,KL,32-Kerala
+2025-06-12 16:56:13,2025-06-12 16:56:13,Shanthi Prakashana,,,,,INR,Active,false,false,"Hidayath Centre, Near to State Bank Of India, Bibi Alabi Road",,Mengaluru,Karnataka,India,575001,business_none,,spkarnataka@gmail.com,+91,9448696490,KL,32-Kerala
+2025-06-14 15:31:10,2025-11-11 19:15:30,AL SADEED for COMMERCIAL VALUATION,,,,,INR,Active,false,false,"Al Mana Towers, Suhaim Bin Hamad Street, P  Box: 23142",,,,Qatar,,overseas,,ali@alyafeiauditors.qa,,,,
+2025-06-16 11:24:55,2025-06-16 11:34:05,ZEROC GLOBAL SOLUTIONS PVT LTD,,,,,INR,Active,false,false,"SUITE NO. A47 DOOR NO. 63/700, D SPACE, 6th FLOOR, SKY TOWER,","MAVOOR ROAD JUNCTION, BANK ROAD,",KOZHIKODE,Kerala,India,673001,consumer,,sales@zerocglobal.com,+91,8606205155,KL,32-Kerala
+2025-06-17 00:32:27,2025-06-17 00:32:27,PAN ASIAN BUILDERS,,,,,INR,Active,false,false,"63/3888, SOORYA BUILDING, PUTHIYARA",Kozhikode,Kozhikode,Kerala,India,673004,business_gst,32AAPFP9020J1Z2,sujabu@panasianbuilders.com,+91,9562004400,KL,32-Kerala
+2025-06-17 00:40:51,2025-06-17 00:40:51,AATMA AYURVEDIC PRIVATE LIMITED,,,,,INR,Active,false,false,"XVII/274-277, AATMA AYURVEDIC PRIVATE LIMITED, ANANDHAPURAM",MURIYAD,Thrissur,Kerala,India,680305,business_gst,32AAFCA1076J1ZX,aatma.mooss@gmail.com,+91,9446561397,KL,32-Kerala
+2025-06-17 11:55:27,2025-06-17 11:55:27,,,MARWAN,,,INR,Active,false,false,,,,,,,consumer,,marwan.puthiyaveettil@gmail.com,+91,9946014736,KL,32-Kerala
+2025-06-17 13:53:43,2025-06-17 13:55:58,GOOGLE ASIA PACIFIC PTE LTD,,,,,INR,Active,false,true,"8,MARINA BAY FINANCIAL CENTRE, MARINA BOULEVARD",,,Marine Parade,Singapore,018981,overseas,,accounts@signroots.com,,,,
+2025-06-17 14:00:48,2025-06-17 14:00:48,Waseem Mohammed,,,,,INR,Active,false,false,Perumpilavu,,Thrissur,Kerala,India,680519,consumer,,waseemore@gmail.com,+91,8547951043,KL,32-Kerala
+2025-06-17 14:09:44,2025-06-17 14:09:44,KAP INDIA TILES,,,,,INR,Active,false,false,"11/292, KAP INDIA TILES, PERAMANGALAM",PERAMANGALAM,Thrissur,Kerala,India,680545,business_gst,32AACFK5504B1Z4,kaptiles@gmail.com,+91,9400996076,KL,32-Kerala
+2025-06-18 12:50:02,2025-06-18 12:50:02,Rajih Erooth,,,,,INR,Active,false,false,"Erooth, Vaniyambalam Post",,Malappuram,Kerala,India,,consumer,,rajih.wx@gmail.com,+91,9567380123,KL,32-Kerala
 2025-06-21 10:00:22,2025-06-21 10:00:22,ARCHICRAFT,,,,,INR,Active,false,false,"Door No. XV, 18th cross, Kanaganagar,
-R.T Nagar Post",,Bengaluru,Karnataka,India,560032,business_none,,info@archicraftmodels.com,+917592036010,KL,32-Kerala
-2025-06-21 13:24:01,2025-06-21 13:24:01,Mantra Caterers,,,,,INR,Active,false,false,"XVI/206, Kandanassery, Kandanassery P O,","Near Jyothi Laboratories, Guruvayoor",Thrissur,Kerala,India,680102,business_none,,info@mantracaterers.com,+918086018888,KL,32-Kerala
-2025-06-21 17:12:09,2025-06-21 17:15:13,NOOR INSTITUTE OF MEDICAL SPECIALITIES PVT LTD,,,,,INR,Active,false,false,"Kalikavu Road, Wandoor",Vaniyambalam Post,Malappuram,Kerala,India,679339,business_gst,32AABCN8401G1ZW,itdepartment@nimswandoor.in,+919400296889,KL,32-Kerala
-2025-06-28 00:26:38,2025-06-28 00:26:38,JEESON AND COMPANY,,,,,INR,Active,false,false,"DOOR NO. 20/9-33, OLD NO. V/44/X/ABC, ARFA COMPLEX, HERBERT ROAD",KUNNAMKULAM,Thrissur,Kerala,India,680503,business_gst,32AGZPJ3501E1ZM,ca@jeeson.com,+919387963356,KL,32-Kerala
+R.T Nagar Post",,Bengaluru,Karnataka,India,560032,business_none,,info@archicraftmodels.com,+91,7592036010,KL,32-Kerala
+2025-06-21 13:24:01,2025-06-21 13:24:01,Mantra Caterers,,,,,INR,Active,false,false,"XVI/206, Kandanassery, Kandanassery P O,","Near Jyothi Laboratories, Guruvayoor",Thrissur,Kerala,India,680102,business_none,,info@mantracaterers.com,+91,8086018888,KL,32-Kerala
+2025-06-21 17:12:09,2025-06-21 17:15:13,NOOR INSTITUTE OF MEDICAL SPECIALITIES PVT LTD,,,,,INR,Active,false,false,"Kalikavu Road, Wandoor",Vaniyambalam Post,Malappuram,Kerala,India,679339,business_gst,32AABCN8401G1ZW,itdepartment@nimswandoor.in,+91,9400296889,KL,32-Kerala
+2025-06-28 00:26:38,2025-06-28 00:26:38,JEESON AND COMPANY,,,,,INR,Active,false,false,"DOOR NO. 20/9-33, OLD NO. V/44/X/ABC, ARFA COMPLEX, HERBERT ROAD",KUNNAMKULAM,Thrissur,Kerala,India,680503,business_gst,32AGZPJ3501E1ZM,ca@jeeson.com,+91,9387963356,KL,32-Kerala
 2025-07-01 16:28:49,2025-07-01 16:28:49,Dr Nabeela’s le Dent Aesthetic,,,,,INR,Active,false,false,"Oppositie Masjidussubhan
-Devathiyal",,Malappuram,Kerala,India,673636,consumer,,irshadpkr@gmail.com,+919645464613,KL,32-Kerala
+Devathiyal",,Malappuram,Kerala,India,673636,consumer,,irshadpkr@gmail.com,+91,9645464613,KL,32-Kerala
 2025-07-02 13:56:09,2025-11-20 14:08:30,XL CREATIONS,,Fazlul Kabeer M,,,INR,Active,false,false,"Musliyarakath Kizhakke Parambil (H)
-Cheeckode (Post)",,Malappuram,Kerala,India,673645,consumer,,xlfazal@gmail.com,+919946486262,KL,32-Kerala
-2025-07-12 13:07:31,2025-07-12 16:48:49,CLOUD ASSOCIATES,,,,,INR,Active,false,false,"66/1883, Kattikaran House, Kattikaran Road",Kochi,Ernakulam,Kerala,India,682018,business_gst,32AINPN7380H1ZY,cloudassociates2020@gmail.com,+917034443118,KL,32-Kerala
-2025-07-23 19:04:48,2025-07-24 11:19:02,WELCOME GLASS,,,,,INR,Active,false,false,"DOOR NO VI/448, , GURUVAYOOR ROAD PUNNAYOORKULAM",PUNNAYOORKULAM,Thrissur,Kerala,India,679561,consumer,,info@welcomeglass.com,+919745272625,KL,32-Kerala
-2025-07-24 18:35:51,2025-07-24 18:35:51,Joy Ambooken And Associates,,,,,INR,Active,false,false,"JOY AMBOOKEN AND ASSOCIATES, Dr.O K JOHN MEMORIAL BUILDING, IKKANDA WARRIER ROAD",MISSION QUARTERS,Thrissur,Kerala,India,680001,business_gst,32ADFPA0781J1ZY,mail@joyambooken.com,+919447749508,KL,32-Kerala
-2025-07-25 09:47:51,2025-07-26 12:56:41,SHARP SOLUTIONS - SECURITY,,,,,INR,Active,false,false,Mullurkara,,Thrissur,Kerala,India,680583,consumer,,info@sharpsolutions-security.com,+966503452842,KL,32-Kerala
-2025-07-25 10:55:28,2025-09-18 10:34:17,365 INFO SECURITY,,Afsal Rahman,,,INR,Active,false,false,,,,,,,consumer,,afsalrahman@gmail.com,,KL,32-Kerala
-2025-07-25 12:02:07,2025-07-25 12:02:07,SARADHI TRAVELS,,,,,INR,Active,false,false,"1/897, ORISON COMPLEX, WADAKKANCHERY ROAD",KUNNAMKULAM,Thrissur,Kerala,India,680503,business_gst,32AAIFS7801B1ZM,info@saradhitravels.com,+919387202122,KL,32-Kerala
+Cheeckode (Post)",,Malappuram,Kerala,India,673645,consumer,,xlfazal@gmail.com,+91,9946486262,KL,32-Kerala
+2025-07-12 13:07:31,2025-07-12 16:48:49,CLOUD ASSOCIATES,,,,,INR,Active,false,false,"66/1883, Kattikaran House, Kattikaran Road",Kochi,Ernakulam,Kerala,India,682018,business_gst,32AINPN7380H1ZY,cloudassociates2020@gmail.com,+91,7034443118,KL,32-Kerala
+2025-07-23 19:04:48,2025-07-24 11:19:02,WELCOME GLASS,,,,,INR,Active,false,false,"DOOR NO VI/448, , GURUVAYOOR ROAD PUNNAYOORKULAM",PUNNAYOORKULAM,Thrissur,Kerala,India,679561,consumer,,info@welcomeglass.com,+91,9745272625,KL,32-Kerala
+2025-07-24 18:35:51,2025-07-24 18:35:51,Joy Ambooken And Associates,,,,,INR,Active,false,false,"JOY AMBOOKEN AND ASSOCIATES, Dr.O K JOHN MEMORIAL BUILDING, IKKANDA WARRIER ROAD",MISSION QUARTERS,Thrissur,Kerala,India,680001,business_gst,32ADFPA0781J1ZY,mail@joyambooken.com,+91,9447749508,KL,32-Kerala
+2025-07-25 09:47:51,2025-07-26 12:56:41,SHARP SOLUTIONS - SECURITY,,,,,INR,Active,false,false,Mullurkara,,Thrissur,Kerala,India,680583,consumer,,info@sharpsolutions-security.com,+966,503452842,KL,32-Kerala
+2025-07-25 10:55:28,2025-09-18 10:34:17,365 INFO SECURITY,,Afsal Rahman,,,INR,Active,false,false,,,,,,,consumer,,afsalrahman@gmail.com,,,KL,32-Kerala
+2025-07-25 12:02:07,2025-07-25 12:02:07,SARADHI TRAVELS,,,,,INR,Active,false,false,"1/897, ORISON COMPLEX, WADAKKANCHERY ROAD",KUNNAMKULAM,Thrissur,Kerala,India,680503,business_gst,32AAIFS7801B1ZM,info@saradhitravels.com,+91,9387202122,KL,32-Kerala
 2025-07-26 01:10:20,2025-07-26 01:10:20,Console Medical Charitable Trust,,,,,INR,Active,false,false,"IInd Floor, Emirates Tower
-Enamavu Road, Chavakkad",,Thrissur,Kerala,India,680506,consumer,,info@consolemct.com,+919846797797,KL,32-Kerala
-2025-07-26 12:16:25,2025-07-26 12:16:25,DuaCreation,,Fasaludheen,,,INR,Active,false,false,"Karukassery, Edavanakad",,Ernakulam,Kerala,India,682502,consumer,,fasalekd@gmail.com,+919496076221,KL,32-Kerala
-2025-08-06 00:18:41,2025-08-06 00:18:41,SIO Kerala,,,,,INR,Active,false,false,"VidyarthiBhavanam, Mavoor Rd, Koombara",,Kozhikode,Kerala,India,673004,consumer,,siokeralapr@gmail.com,+918281649051,KL,32-Kerala
-2025-08-06 09:03:52,2025-08-06 09:03:52,FLY FILM PRODUCTIONS,,,,,INR,Active,false,false,Vadakkekad,,Thrissur,Kerala,India,679561,consumer,,mohd.fly@gmail.com,+919747117777,KL,32-Kerala
+Enamavu Road, Chavakkad",,Thrissur,Kerala,India,680506,consumer,,info@consolemct.com,+91,9846797797,KL,32-Kerala
+2025-07-26 12:16:25,2025-07-26 12:16:25,DuaCreation,,Fasaludheen,,,INR,Active,false,false,"Karukassery, Edavanakad",,Ernakulam,Kerala,India,682502,consumer,,fasalekd@gmail.com,+91,9496076221,KL,32-Kerala
+2025-08-06 00:18:41,2025-08-06 00:18:41,SIO Kerala,,,,,INR,Active,false,false,"VidyarthiBhavanam, Mavoor Rd, Koombara",,Kozhikode,Kerala,India,673004,consumer,,siokeralapr@gmail.com,+91,8281649051,KL,32-Kerala
+2025-08-06 09:03:52,2025-08-06 09:03:52,FLY FILM PRODUCTIONS,,,,,INR,Active,false,false,Vadakkekad,,Thrissur,Kerala,India,679561,consumer,,mohd.fly@gmail.com,+91,9747117777,KL,32-Kerala
 2025-08-10 10:10:34,2025-10-04 18:28:15,MAXCOM BUSINESS SOLUTIONS,,,,,INR,Active,false,false,"506, 5th Floor, Damas Tower,
-Al Maktoum Street",,Deira,Dubai,United Arab Emirates,,overseas,,info@maxcomgcc.com,+971553337613,,
-2025-08-13 18:07:07,2025-08-13 18:07:07,CHAND V RESIDENCY,,,,+914872437777,INR,Active,false,false,"227B,C,D,E,F,G, KUNDALIYOOR",KUNDALIYOOR,Thrissur,Kerala,India,680616,business_gst,32AALFC3845J1ZE,chandvresidency@gmail.com,+919526061238,KL,32-Kerala
-2025-08-14 13:31:56,2025-08-14 13:31:56,Sabu Shefeeq,,,,,INR,Active,false,false,"F2, Andrabi Classic Apts, Ashirvad colony","1st Cross P&T Layout,  Hormavu",Bangalore,Karnataka,India,560043,consumer,,sabu.shefeeq@gmail.com,+919449809669,KL,32-Kerala
-2025-08-18 17:50:51,2025-08-18 17:50:51,THE CRYSTAL PLAZA MALL,,,,,INR,Active,false,false,,,Thrissur,Kerala,India,,consumer,,noushu.abu@gmail.com,,KL,32-Kerala
-2025-08-20 10:43:13,2025-08-22 17:35:51,CreateCap Service Consulting LLP,,,,,INR,Active,false,false,"29/1168 A, Ponmulli Parambu, Kottoolli Mavoor Road",,Kozhikode,Kerala,India,673016,business_none,,peoples.startup2@gmail.com,+917042755898,KL,32-Kerala
-2025-08-25 17:46:21,2025-12-12 19:57:28,FLYSEOSYS DIGITAL SOLUTIONS,,,,,INR,Active,false,false,"DownHill,",,Malappuram,Kerala,India,67651,business_none,,flyseosys@gmail.com,+919061616266,KL,32-Kerala
-2025-08-27 07:40:33,2025-08-27 07:43:56,Food And Joy Limited,,,,+914872276600,INR,Active,false,false,"Kunjankoodu, Post Pazhuvil (West)",,Thrissur,Kerala,India,680564,business_none,,info@foodandjoyltd.com,,KL,32-Kerala
-2025-08-27 09:53:20,2025-08-27 09:53:20,Rahmaniya VHSS,,,,,INR,Active,false,false,Medical College PO,,Kozhikode,Kerala,India,673008,consumer,,info@rahmaniyavhs.org,+919188070135,KL,32-Kerala
-2025-08-27 10:45:34,2025-08-27 10:45:34,Sukesh Roy Legal LLP,,,,,INR,Active,false,false,,,,,,,consumer,,hello@sukeshroylegal.com,,KL,32-Kerala
-2025-08-28 12:33:46,2025-08-28 12:35:00,PANTHER TECHNO LABS,,,,,INR,Active,false,false,"15/467E, , KARASSERY",MUKKAM,Kozhikode,Kerala,India,673602,business_gst,32BSJPM2489K1ZB,panthertechnolabs@gmail.com,+919447950498,KL,32-Kerala
-2025-08-30 17:45:58,2025-08-30 17:45:58,LIFELAB INTERNATIONAL,,,,,INR,Active,false,false,"3/355-A14 AsheVille, West Nadakkav",,Kozhikode,Kerala,India,673011,consumer,,kabeer@lifelabintl.com,+919746876533,KL,32-Kerala
-2025-09-02 02:19:14,2025-09-02 02:19:14,LV LINK,,,,,INR,Active,false,false,,,,,,,consumer,,akeel@lv-link.com,+971561184993,KL,32-Kerala
+Al Maktoum Street",,Deira,Dubai,United Arab Emirates,,overseas,,info@maxcomgcc.com,+971,553337613,,
+2025-08-13 18:07:07,2025-08-13 18:07:07,CHAND V RESIDENCY,,,,+914872437777,INR,Active,false,false,"227B,C,D,E,F,G, KUNDALIYOOR",KUNDALIYOOR,Thrissur,Kerala,India,680616,business_gst,32AALFC3845J1ZE,chandvresidency@gmail.com,+91,9526061238,KL,32-Kerala
+2025-08-14 13:31:56,2025-08-14 13:31:56,Sabu Shefeeq,,,,,INR,Active,false,false,"F2, Andrabi Classic Apts, Ashirvad colony","1st Cross P&T Layout,  Hormavu",Bangalore,Karnataka,India,560043,consumer,,sabu.shefeeq@gmail.com,+91,9449809669,KL,32-Kerala
+2025-08-18 17:50:51,2025-08-18 17:50:51,THE CRYSTAL PLAZA MALL,,,,,INR,Active,false,false,,,Thrissur,Kerala,India,,consumer,,noushu.abu@gmail.com,,,KL,32-Kerala
+2025-08-20 10:43:13,2025-08-22 17:35:51,CreateCap Service Consulting LLP,,,,,INR,Active,false,false,"29/1168 A, Ponmulli Parambu, Kottoolli Mavoor Road",,Kozhikode,Kerala,India,673016,business_none,,peoples.startup2@gmail.com,+91,7042755898,KL,32-Kerala
+2025-08-25 17:46:21,2025-12-12 19:57:28,FLYSEOSYS DIGITAL SOLUTIONS,,,,,INR,Active,false,false,"DownHill,",,Malappuram,Kerala,India,67651,business_none,,flyseosys@gmail.com,+91,9061616266,KL,32-Kerala
+2025-08-27 07:40:33,2025-08-27 07:43:56,Food And Joy Limited,,,,+914872276600,INR,Active,false,false,"Kunjankoodu, Post Pazhuvil (West)",,Thrissur,Kerala,India,680564,business_none,,info@foodandjoyltd.com,,,KL,32-Kerala
+2025-08-27 09:53:20,2025-08-27 09:53:20,Rahmaniya VHSS,,,,,INR,Active,false,false,Medical College PO,,Kozhikode,Kerala,India,673008,consumer,,info@rahmaniyavhs.org,+91,9188070135,KL,32-Kerala
+2025-08-27 10:45:34,2025-08-27 10:45:34,Sukesh Roy Legal LLP,,,,,INR,Active,false,false,,,,,,,consumer,,hello@sukeshroylegal.com,,,KL,32-Kerala
+2025-08-28 12:33:46,2025-08-28 12:35:00,PANTHER TECHNO LABS,,,,,INR,Active,false,false,"15/467E, , KARASSERY",MUKKAM,Kozhikode,Kerala,India,673602,business_gst,32BSJPM2489K1ZB,panthertechnolabs@gmail.com,+91,9447950498,KL,32-Kerala
+2025-08-30 17:45:58,2025-08-30 17:45:58,LIFELAB INTERNATIONAL,,,,,INR,Active,false,false,"3/355-A14 AsheVille, West Nadakkav",,Kozhikode,Kerala,India,673011,consumer,,kabeer@lifelabintl.com,+91,9746876533,KL,32-Kerala
+2025-09-02 02:19:14,2025-09-02 02:19:14,LV LINK,,,,,INR,Active,false,false,,,,,,,consumer,,akeel@lv-link.com,+971,561184993,KL,32-Kerala
 2025-09-02 02:29:31,2025-09-03 20:34:43,ELIDE GLOBAL TOURISM LLP,,,,,INR,Active,false,false,"22/625-B,SUIT 007, IDEAL CENTER, 
-NIT Campus PO",,Kozhikode,Kerala,India,673601,consumer,,info@elidegroup.com,+393483035294,KL,32-Kerala
-2025-09-02 03:01:03,2025-09-03 17:48:46,Al Jazeera Cold General Contracting Est,,,,,INR,Active,false,false,King Faisal bin Abdulaziz Street,Al Fayha District,Ras Tanura City,Al Hudud ash Shamaliyah,Saudi Arabia,32817,overseas,,info@jcgce.com.sa,+919946806208,,
-2025-09-11 12:06:40,2025-09-11 14:39:52,AJMAL SHAHIN,,,,,INR,Active,false,false,Cheruvatta,Parambili Post,Kozhikode,Kerala,India,673012,consumer,,ajmal123shahin@gmail.com,+917012013653,KL,32-Kerala
-2025-09-15 18:36:08,2025-11-07 10:03:15,SPUNIC INFRATECH LLP,,,,,INR,Active,false,false,"15/161-K,Thar Plazakacheripadi, Pandikkad Road Manjeri",,Malappuram,Kerala,India,676121,business_gst,32AEWFS9676J1ZY,spunicinfra@gmail.com,+917356854219,KL,32-Kerala
-2025-09-16 16:48:33,2025-09-16 16:48:33,HOME HELP,,,,,INR,Active,false,false,"Pulimkunnathel , Naranipuzha",,Malapuram,Kerala,India,679574,consumer,,contact@homehelpbs.com,+97470031701,KL,32-Kerala
-2025-09-19 01:26:56,2025-09-19 01:33:28,ITRAT COMPUTERS AND MOBILES,,,,,INR,Active,false,false,"Shabia, ME-12",,MUSSAFAH,,United Arab Emirates,,consumer,,info@itrat.tech,,KL,32-Kerala
-2025-09-20 16:03:09,2025-09-20 16:03:50,Integrated Education Council India,,,,,INR,Active,false,false,Puthiyara Road,,Kozhikode,Kerala,India,673004,consumer,,admin@ieci.education,+919495911470,KL,32-Kerala
-2025-09-22 18:02:26,2025-09-22 18:02:26,Bright Bloom General Contracting,,,,,INR,Active,false,false,M5 Musaffah,,,Abu Dhabi,United Arab Emirates,,overseas,,abinbabu.c@gmail.com,,,
-2025-09-30 14:47:22,2025-11-06 11:08:44,Shahir K,,,,,INR,Active,false,false,Chennamangallur,Mukkam,Kozhikode,Kerala,India,673602,consumer,,shahircmr@gmail.com,+919731066055,KL,32-Kerala
-2025-10-06 16:34:38,2025-11-20 18:33:43,INTERMAN,,,,,INR,Active,false,false,"Valanchery, Dhana Tower, Opp.Bus Stand",,Malappuram,Kerala,India,676552,consumer,,info@interman.in,+919946211243,KL,32-Kerala
+NIT Campus PO",,Kozhikode,Kerala,India,673601,consumer,,info@elidegroup.com,,+393483035294,KL,32-Kerala
+2025-09-02 03:01:03,2025-09-03 17:48:46,Al Jazeera Cold General Contracting Est,,,,,INR,Active,false,false,King Faisal bin Abdulaziz Street,Al Fayha District,Ras Tanura City,Al Hudud ash Shamaliyah,Saudi Arabia,32817,overseas,,info@jcgce.com.sa,+91,9946806208,,
+2025-09-11 12:06:40,2025-09-11 14:39:52,AJMAL SHAHIN,,,,,INR,Active,false,false,Cheruvatta,Parambili Post,Kozhikode,Kerala,India,673012,consumer,,ajmal123shahin@gmail.com,+91,7012013653,KL,32-Kerala
+2025-09-15 18:36:08,2025-11-07 10:03:15,SPUNIC INFRATECH LLP,,,,,INR,Active,false,false,"15/161-K,Thar Plazakacheripadi, Pandikkad Road Manjeri",,Malappuram,Kerala,India,676121,business_gst,32AEWFS9676J1ZY,spunicinfra@gmail.com,+91,7356854219,KL,32-Kerala
+2025-09-16 16:48:33,2025-09-16 16:48:33,HOME HELP,,,,,INR,Active,false,false,"Pulimkunnathel , Naranipuzha",,Malapuram,Kerala,India,679574,consumer,,contact@homehelpbs.com,+974,70031701,KL,32-Kerala
+2025-09-19 01:26:56,2025-09-19 01:33:28,ITRAT COMPUTERS AND MOBILES,,,,,INR,Active,false,false,"Shabia, ME-12",,MUSSAFAH,,United Arab Emirates,,consumer,,info@itrat.tech,,,KL,32-Kerala
+2025-09-20 16:03:09,2025-09-20 16:03:50,Integrated Education Council India,,,,,INR,Active,false,false,Puthiyara Road,,Kozhikode,Kerala,India,673004,consumer,,admin@ieci.education,+91,9495911470,KL,32-Kerala
+2025-09-22 18:02:26,2025-09-22 18:02:26,Bright Bloom General Contracting,,,,,INR,Active,false,false,M5 Musaffah,,,Abu Dhabi,United Arab Emirates,,overseas,,abinbabu.c@gmail.com,,,,
+2025-09-30 14:47:22,2025-11-06 11:08:44,Shahir K,,,,,INR,Active,false,false,Chennamangallur,Mukkam,Kozhikode,Kerala,India,673602,consumer,,shahircmr@gmail.com,+91,9731066055,KL,32-Kerala
+2025-10-06 16:34:38,2025-11-20 18:33:43,INTERMAN,,,,,INR,Active,false,false,"Valanchery, Dhana Tower, Opp.Bus Stand",,Malappuram,Kerala,India,676552,consumer,,info@interman.in,+91,9946211243,KL,32-Kerala
 2025-10-06 16:40:26,2025-10-07 09:22:38,Mohamed Farook,,,,,INR,Active,false,false,"Cherukattil house
-Post Kochanoor",,Thrissur,Kerala,India,679562,consumer,,admin@jazafco.com,+971503677939,KL,32-Kerala
-2025-10-06 18:24:40,2025-10-06 18:32:54,Apex Business Solutions Company,,,,,INR,Active,false,false,"Kattuppara, Perunthalmanna",,Malappuram,Kerala,India,679323,consumer,,aslamkandappath@gmail.com,+918891612680,KL,32-Kerala
-2025-10-07 10:37:57,2025-10-07 10:37:57,VETROMECH,,,,,INR,Active,false,false,Melattur,,Malappuram,Kerala,India,,consumer,,finance@vetromech.com,,KL,32-Kerala
-2025-10-11 00:35:29,2025-10-11 00:35:29,SHAHEEN THAHA,,,,,INR,Active,false,false,"40/7990A, Near Convent Jn, Market Road,",,Ernakulam,Kerala,India,682011,consumer,,shaheenthaha@gmail.com,,KL,32-Kerala
-2025-10-11 01:09:00,2025-10-11 01:09:00,GLOBION TRADING and CONTRACTING WLL,,,,,INR,Active,false,false,,,Kannur,Kerala,India,,consumer,,shameemsa@gmail.com,,KL,32-Kerala
-2025-10-11 14:46:01,2025-10-11 14:46:01,BROOK TOTAL WATER MANAGEMENT SOLUTION,,,,,INR,Active,false,false,"XI/14, ALAMKODE PANCHAYATH, VALAYAMKULAM",KOKKUR,Malappuram,Kerala,India,679591,business_registered_composition,32BJXPP5932R1Z4,info@brookindia.com,+919995877446,KL,32-Kerala
-2025-10-13 01:58:26,2025-10-13 01:58:26,ZOOMX AUTOHUB,,,,,INR,Active,false,false,"VI/147H-I, MAH Complex, AE Office Junction.",Punnayurkulam Post,Thrissur,Kerala,India,679561,business_none,,zoomxautohub@gmail.com,+917736101353,KL,32-Kerala
-2025-10-14 10:26:50,2025-10-14 10:26:50,DICTARIGHT,,,,,INR,Active,false,false,,,Kozhikode,Kerala,India,,consumer,,hasnalhk@gmail.com,+919633332878,KL,32-Kerala
-2025-10-14 10:33:56,2025-10-14 10:33:56,,Adv,Aneesh,Srekumar,,INR,Active,false,false,"906, Travancore Twingle, Ayyappankavu",Kochi,,Kerala,India, 682018,consumer,,aneeshsrekumar@gmail.com,+919496815692,KL,32-Kerala
-2025-10-14 18:05:30,2025-10-14 18:05:30,La Centinaioo Designs LLC,,,,,INR,Active,false,false,"Al Quoz Ind 4, Dulsco Warehouse E2",,Dubai,,United Arab Emirates,,overseas,,accounts@centinaioo.com,+971501067585,,
-2025-10-21 07:59:59,2025-10-21 07:59:59,SOUTHZONE HOSPITALS AND RESEARCH CENTRE PRIVATE LIMITED,,,,,INR,Active,false,false,"22/167-1,2,3,4,5, Chandanam Plaza Building, Guruvayoor Road",Kunnamkulam P. O.,Thrissur,Kerala,India,680503,business_gst,32AAOCS0384C1ZK,info@southzonehospitals.com,+919847246061,KL,32-Kerala
-2025-10-21 20:05:19,2025-10-21 20:05:19,Tass & Hamjit Qatar,,,,,INR,Active,false,false,,,,,,,consumer,,qatar.bo@tasshamjit.com,+97431621311,KL,32-Kerala
-2025-10-21 20:09:56,2025-10-21 20:10:35,AL BARUWAZ Contracting and Service,,,,,INR,Active,false,false,Alakode,,Kannur,Kerala,India,670571,consumer,,accts.albaruwaz@gmail.com,+97477987722,KL,32-Kerala
-2025-10-23 07:56:09,2025-11-28 10:19:23,"Pravasi Malayalee Association, Malaysia",,,,,INR,Active,false,false,"No.7-8-5, Jalan Munshi Abdullah,",,Kuala Lumpur,Wilayah Persekutuan Kuala Lumpur,Malaysia,50100,overseas,,info@pmamalaysia.org,,,
-2025-10-23 18:55:26,2025-10-23 18:55:26,AL FALAH HIGH SCHOOL,,,,,INR,Active,false,false,"Peringadi P.O, New Mahe",,,Kerala,India,673312,consumer,,info@alfalahschool.in,+917025714092,KL,32-Kerala
+Post Kochanoor",,Thrissur,Kerala,India,679562,consumer,,admin@jazafco.com,+971,503677939,KL,32-Kerala
+2025-10-06 18:24:40,2025-10-06 18:32:54,Apex Business Solutions Company,,,,,INR,Active,false,false,"Kattuppara, Perunthalmanna",,Malappuram,Kerala,India,679323,consumer,,aslamkandappath@gmail.com,+91,8891612680,KL,32-Kerala
+2025-10-07 10:37:57,2025-10-07 10:37:57,VETROMECH,,,,,INR,Active,false,false,Melattur,,Malappuram,Kerala,India,,consumer,,finance@vetromech.com,,,KL,32-Kerala
+2025-10-11 00:35:29,2025-10-11 00:35:29,SHAHEEN THAHA,,,,,INR,Active,false,false,"40/7990A, Near Convent Jn, Market Road,",,Ernakulam,Kerala,India,682011,consumer,,shaheenthaha@gmail.com,,,KL,32-Kerala
+2025-10-11 01:09:00,2025-10-11 01:09:00,GLOBION TRADING and CONTRACTING WLL,,,,,INR,Active,false,false,,,Kannur,Kerala,India,,consumer,,shameemsa@gmail.com,,,KL,32-Kerala
+2025-10-11 14:46:01,2025-10-11 14:46:01,BROOK TOTAL WATER MANAGEMENT SOLUTION,,,,,INR,Active,false,false,"XI/14, ALAMKODE PANCHAYATH, VALAYAMKULAM",KOKKUR,Malappuram,Kerala,India,679591,business_registered_composition,32BJXPP5932R1Z4,info@brookindia.com,+91,9995877446,KL,32-Kerala
+2025-10-13 01:58:26,2025-10-13 01:58:26,ZOOMX AUTOHUB,,,,,INR,Active,false,false,"VI/147H-I, MAH Complex, AE Office Junction.",Punnayurkulam Post,Thrissur,Kerala,India,679561,business_none,,zoomxautohub@gmail.com,+91,7736101353,KL,32-Kerala
+2025-10-14 10:26:50,2025-10-14 10:26:50,DICTARIGHT,,,,,INR,Active,false,false,,,Kozhikode,Kerala,India,,consumer,,hasnalhk@gmail.com,+91,9633332878,KL,32-Kerala
+2025-10-14 10:33:56,2025-10-14 10:33:56,,Adv,Aneesh,Srekumar,,INR,Active,false,false,"906, Travancore Twingle, Ayyappankavu",Kochi,,Kerala,India, 682018,consumer,,aneeshsrekumar@gmail.com,+91,9496815692,KL,32-Kerala
+2025-10-14 18:05:30,2025-10-14 18:05:30,La Centinaioo Designs LLC,,,,,INR,Active,false,false,"Al Quoz Ind 4, Dulsco Warehouse E2",,Dubai,,United Arab Emirates,,overseas,,accounts@centinaioo.com,+971,501067585,,
+2025-10-21 07:59:59,2025-10-21 07:59:59,SOUTHZONE HOSPITALS AND RESEARCH CENTRE PRIVATE LIMITED,,,,,INR,Active,false,false,"22/167-1,2,3,4,5, Chandanam Plaza Building, Guruvayoor Road",Kunnamkulam P. O.,Thrissur,Kerala,India,680503,business_gst,32AAOCS0384C1ZK,info@southzonehospitals.com,+91,9847246061,KL,32-Kerala
+2025-10-21 20:05:19,2025-10-21 20:05:19,Tass & Hamjit Qatar,,,,,INR,Active,false,false,,,,,,,consumer,,qatar.bo@tasshamjit.com,+974,31621311,KL,32-Kerala
+2025-10-21 20:09:56,2025-10-21 20:10:35,AL BARUWAZ Contracting and Service,,,,,INR,Active,false,false,Alakode,,Kannur,Kerala,India,670571,consumer,,accts.albaruwaz@gmail.com,+974,77987722,KL,32-Kerala
+2025-10-23 07:56:09,2025-11-28 10:19:23,"Pravasi Malayalee Association, Malaysia",,,,,INR,Active,false,false,"No.7-8-5, Jalan Munshi Abdullah,",,Kuala Lumpur,Wilayah Persekutuan Kuala Lumpur,Malaysia,50100,overseas,,info@pmamalaysia.org,,,,
+2025-10-23 18:55:26,2025-10-23 18:55:26,AL FALAH HIGH SCHOOL,,,,,INR,Active,false,false,"Peringadi P.O, New Mahe",,,Kerala,India,673312,consumer,,info@alfalahschool.in,+91,7025714092,KL,32-Kerala
 2025-10-24 10:31:52,2025-10-24 10:31:52,Tree of Life Consulting LLP,,,,,INR,Active,false,false,"LPOne Beyond Coworking, Level 2
 Venture Arcade","Mavoor Road,Above Croma
-Thondayad",Kozhikode,Kerala,India,673016,business_none,,info@treeoflifeconsult.com,+919037571671,KL,32-Kerala
+Thondayad",Kozhikode,Kerala,India,673016,business_none,,info@treeoflifeconsult.com,+91,9037571671,KL,32-Kerala
 2025-10-27 17:43:47,2025-10-27 17:43:47,THAJWA Dates & nuts,,,,,INR,Active,false,false,"PK Tower, Ground Floor
 Wayanad Road Perumpally,
-Thamarassery",,Kozhikode,Kerala,India,673586,consumer,,info@thajwa.com,+919744131218,KL,32-Kerala
-2025-10-28 19:15:49,2025-10-28 19:15:49,TOTAL TRUST AIR CONDITIONING,,,,,INR,Active,false,false,"71/728, Kalathingal Arcade, Kannur Road",Kozhikode,Kozhikode,Kerala,India,673005,business_gst,32CMLPR5359E1ZT,rashid.ttac@gmail.com,+917736419261,KL,32-Kerala
+Thamarassery",,Kozhikode,Kerala,India,673586,consumer,,info@thajwa.com,+91,9744131218,KL,32-Kerala
+2025-10-28 19:15:49,2025-10-28 19:15:49,TOTAL TRUST AIR CONDITIONING,,,,,INR,Active,false,false,"71/728, Kalathingal Arcade, Kannur Road",Kozhikode,Kozhikode,Kerala,India,673005,business_gst,32CMLPR5359E1ZT,rashid.ttac@gmail.com,+91,7736419261,KL,32-Kerala
 2025-10-29 10:11:23,2025-10-29 10:11:23,Share & Care Charitable Society,,,,,INR,Active,false,false,"Nehru Nagar, 1st Avenue
-Kunnamkulam",,Thrissur,Kerala,India,680503,consumer,,shareandcarekunnamkulam@gmail.com,+919387091234,KL,32-Kerala
-2025-11-02 02:46:34,2025-11-02 02:46:34,Malabar History,,,,,INR,Active,false,false,,,,,,,consumer,,,,KL,32-Kerala
-2025-11-04 13:37:05,2025-11-04 13:37:05,HYPERTECH Mobile Phone Service Training Academy,,,,,INR,Active,false,false,Kunnamkulam,,Thrissur,Kerala,India,680503,consumer,,info@hypertech.in,+919847338724,KL,32-Kerala
-2025-11-04 13:45:11,2025-11-04 13:45:11,SILITECH ELEMENTS,,,,,INR,Active,false,false,"TA , 174/4, AYYANKUNNU INDUSTRIAL AREA, MUNDUR P O",ANJOOR VILLAGE,Thrissur,Kerala,India,680541,business_gst,32BLKPM3422N1ZZ,info@silitech.in,+919447012382,KL,32-Kerala
+Kunnamkulam",,Thrissur,Kerala,India,680503,consumer,,shareandcarekunnamkulam@gmail.com,+91,9387091234,KL,32-Kerala
+2025-11-02 02:46:34,2025-11-02 02:46:34,Malabar History,,,,,INR,Active,false,false,,,,,,,consumer,,,,,KL,32-Kerala
+2025-11-04 13:37:05,2025-11-04 13:37:05,HYPERTECH Mobile Phone Service Training Academy,,,,,INR,Active,false,false,Kunnamkulam,,Thrissur,Kerala,India,680503,consumer,,info@hypertech.in,+91,9847338724,KL,32-Kerala
+2025-11-04 13:45:11,2025-11-04 13:45:11,SILITECH ELEMENTS,,,,,INR,Active,false,false,"TA , 174/4, AYYANKUNNU INDUSTRIAL AREA, MUNDUR P O",ANJOOR VILLAGE,Thrissur,Kerala,India,680541,business_gst,32BLKPM3422N1ZZ,info@silitech.in,+91,9447012382,KL,32-Kerala
 2025-11-05 14:16:41,2025-11-05 14:16:41,BRIGADE RESEARCH PUBLICATIONS,,,,,INR,Active,false,false,"C2031, Wing 4, GM Infinite
-Global Techies Tower Neo Town,",Electronic City Phase1,Bangalore,Karnataka,India,560100,consumer,,tony@brigaderesearch.com,+919790879655,KL,32-Kerala
-2025-11-09 17:48:53,2025-11-09 17:48:53,SREELAKSHMI HANDICRAFTS,,,,,INR,Active,false,false,"5/294 / Shed No.4, Mini Idustrial Estate, Unnamed Road",Muthalamada 1,Palakkad,Kerala,India,678507,business_gst,32AISPC2754P1ZV,ramachachandran@gmail.com,+919447082441,KL,32-Kerala
-2025-11-23 01:43:32,2025-11-29 09:27:57,TESRAN GRAPHICS,,Rashid,,,INR,Active,false,false,,,,,,,consumer,,rashid@tesrangraphics.com,+971581251283,KL,32-Kerala
-2025-11-23 10:05:20,2025-11-23 10:05:20,Exuberant Services and Solutions Private Limited,,,,,INR,Active,false,false,"Door No.A1, Thejus Karthika Apartment, Seaport Airport Road",CSEZ P.O,Ernakulam,Kerala,India,682037,business_gst,32AADCE1950H1Z1,mishal@exbsol.com,+917907875142,KL,32-Kerala
-2025-11-23 10:36:29,2025-11-23 10:39:14,TUTEOME PRIVATE LIMITED,,,,,INR,Active,false,false,"9/390/b, Malayamkulathil House, Maranchery,, Marancheri",,Malappuram,Kerala,India,679581,business_none,,mishal@exbsol.com,+917907875142,KL,32-Kerala
+Global Techies Tower Neo Town,",Electronic City Phase1,Bangalore,Karnataka,India,560100,consumer,,tony@brigaderesearch.com,+91,9790879655,KL,32-Kerala
+2025-11-09 17:48:53,2025-11-09 17:48:53,SREELAKSHMI HANDICRAFTS,,,,,INR,Active,false,false,"5/294 / Shed No.4, Mini Idustrial Estate, Unnamed Road",Muthalamada 1,Palakkad,Kerala,India,678507,business_gst,32AISPC2754P1ZV,ramachachandran@gmail.com,+91,9447082441,KL,32-Kerala
+2025-11-23 01:43:32,2025-11-29 09:27:57,TESRAN GRAPHICS,,Rashid,,,INR,Active,false,false,,,,,,,consumer,,rashid@tesrangraphics.com,+971,581251283,KL,32-Kerala
+2025-11-23 10:05:20,2025-11-23 10:05:20,Exuberant Services and Solutions Private Limited,,,,,INR,Active,false,false,"Door No.A1, Thejus Karthika Apartment, Seaport Airport Road",CSEZ P.O,Ernakulam,Kerala,India,682037,business_gst,32AADCE1950H1Z1,mishal@exbsol.com,+91,7907875142,KL,32-Kerala
+2025-11-23 10:36:29,2025-11-23 10:39:14,TUTEOME PRIVATE LIMITED,,,,,INR,Active,false,false,"9/390/b, Malayamkulathil House, Maranchery,, Marancheri",,Malappuram,Kerala,India,679581,business_none,,mishal@exbsol.com,+91,7907875142,KL,32-Kerala
 2025-11-23 10:52:18,2025-11-23 10:52:18,ELEGANT 3D,,,,,INR,Active,false,false,"First floor, Arfa complex
-Herbert road, Kunnamkulam",,Thrissur,Kerala,India,680503,business_none,,elegant3d@gmail.com,+919447714584,KL,32-Kerala
-2025-11-25 16:43:48,2025-11-26 11:25:08,FOURSIGHT CONSULTANCY LLC,,,,,INR,Active,false,false,"104, Crystal Building,",,Al Karama,Dubai,United Arab Emirates,,overseas,,rajih@foursight.ae,+919567380123,,
-2025-12-12 19:48:34,2025-12-12 19:49:05,ANSAR ALUMNI,,,,,INR,Active,false,false,Perumpilavu,,Thrissur,Kerala,India,680519,consumer,,nishadca@gmail.com,+919995353535,KL,32-Kerala
-2025-12-14 23:27:43,2025-12-14 23:27:43,ESNAF,,Shamsudheen Erakkodan,,,INR,Active,false,false,Kodiyathur,Mukkam,Kozhikode,Kerala,India,673601,consumer,,shamsuera@gmail.com,+919846755296,KL,32-Kerala
+Herbert road, Kunnamkulam",,Thrissur,Kerala,India,680503,business_none,,elegant3d@gmail.com,+91,9447714584,KL,32-Kerala
+2025-11-25 16:43:48,2025-11-26 11:25:08,FOURSIGHT CONSULTANCY LLC,,,,,INR,Active,false,false,"104, Crystal Building,",,Al Karama,Dubai,United Arab Emirates,,overseas,,rajih@foursight.ae,+91,9567380123,,
+2025-12-12 19:48:34,2025-12-12 19:49:05,ANSAR ALUMNI,,,,,INR,Active,false,false,Perumpilavu,,Thrissur,Kerala,India,680519,consumer,,nishadca@gmail.com,+91,9995353535,KL,32-Kerala
+2025-12-14 23:27:43,2025-12-14 23:27:43,ESNAF,,Shamsudheen Erakkodan,,,INR,Active,false,false,Kodiyathur,Mukkam,Kozhikode,Kerala,India,673601,consumer,,shamsuera@gmail.com,+91,9846755296,KL,32-Kerala

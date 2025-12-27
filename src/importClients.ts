@@ -34,6 +34,7 @@ type ClientExcelRow = {
   'GST Identification Number (GSTIN)'?: string;
   'EmailID'?: string;
   'MobilePhone'?: string;
+  'Country Code'?:string;
   'Place Of Contact'?: string;
   'Place of Contact(With State Code)'?: string;
 };
@@ -132,6 +133,7 @@ async function importClientData() {
         c_email: row['EmailID'] ? [row['EmailID']] : [`noemail_${i + 1}@example.com`],
         c_phone: row['Phone'] || row['MobilePhone'] || `no-phone-${i + 1}`,
         c_mobilePhone: row['MobilePhone'] || '',
+        c_countryCode:row['Country Code'] || '',
         c_company: row['Company Name'] || `Unknown Company_${i + 1}`,
         c_address: row['Billing Address'] || 'Unknown Address',
         c_address2: row['Billing Street2'] || '',

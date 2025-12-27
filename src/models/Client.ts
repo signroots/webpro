@@ -10,7 +10,8 @@ export interface IClient extends Document {
   c_name: string;  // Full Name, can be derived from first and last name
   c_email: string[];  // Array of emails
   c_phone: string;
-  c_mobilePhone?: string;  // New Field: Mobile Phone
+  c_mobilePhone?: string;
+  c_countryCode?:string;
   c_company: string;
   c_address: string;
   c_address2?: string;  // New Field: Address 2 (e.g., Billing Street2)
@@ -42,6 +43,7 @@ const ClientSchema: Schema<IClient> = new Schema(
     c_email: { type: [String], required: true, lowercase: true, trim: true },
     c_phone: { type: String, required: true, trim: true },
     c_mobilePhone: { type: String, trim: true },
+    c_countryCode:{type:String,trim:true},
     c_company: { type: String, required: true, trim: true },
     c_address: { type: String, required: true, trim: true },
     c_address2: { type: String, trim: true },

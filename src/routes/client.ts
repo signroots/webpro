@@ -322,4 +322,22 @@ router.get(
     }
   }
 );
+router.get("/client-country-codes", async (req, res) => {
+  try {
+    const codes = await Client.distinct("c_countryCode", {
+      c_countryCode: { $ne: null },
+    });
+
+    res.status(200).json({
+      success: true,
+      data: codes,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch country codes",
+    });
+  }
+});
+
 export default router;

@@ -9,6 +9,7 @@ var ClientSchema = new mongoose_1.Schema({
     c_email: { type: [String], required: true, lowercase: true, trim: true },
     c_phone: { type: String, required: true, trim: true },
     c_mobilePhone: { type: String, trim: true },
+    c_countryCode:{type:String,trim:true},
     c_company: { type: String, required: true, trim: true },
     c_address: { type: String, required: true, trim: true },
     c_address2: { type: String, trim: true },
