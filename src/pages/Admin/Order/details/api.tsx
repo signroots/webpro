@@ -35,12 +35,18 @@ export interface ICustomer {
 
   c_company?: string;
   c_address?: string;
+  c_address2?:string;
   c_city?: string;
   c_state?: string;
 
   c_country?: string;        // ✅ ObjectId ONLY
   c_zipCode?: string;
   c_gst?: string;
+  c_bankAccountPayment?:string;
+  c_salutation?:string;
+  c_placeOfContact?:string;
+  c_placeOfContactWithStateCode?:string;
+  c_portalEnabled?:boolean;
 }
 
 /* ===================== CLIENT (FRONTEND MODEL) ===================== */
@@ -53,6 +59,7 @@ export interface Client {
   c_phoneCc?: string;
 
   c_address?: string;
+  c_address2?:string;
   c_city?: string;
   c_state?: string;
 
@@ -63,6 +70,11 @@ export interface Client {
   c_zipCode?: string;
   c_company?: string;
   c_gst?: string;
+    c_salutation?: string;
+    c_bankAccountPayment?:string;
+    c_placeOfContact?:string;
+    c_placeOfContactWithStateCode?:string;
+    c_portalEnabled?:boolean;
 }
 
 /* ===================== ORDER ===================== */

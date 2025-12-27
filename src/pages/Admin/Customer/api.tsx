@@ -68,6 +68,10 @@ export interface ICustomerResponse {
   generatedPassword?: string;
   error?:string;
 }
+export interface ICountryCodeResponse {
+  success: boolean;
+  data: string[];
+}
 
 export interface ICountry {
   _id: string;
@@ -148,4 +152,18 @@ export const fetchStatesByCountry = async (
     code: s._id!,
     name: s.name,
   }));
+};
+// Fetch country phone codes
+export const fetchCountryCodes = async (): Promise<string[]> => {
+  const res = await axios.get<ICountryCodeResponse>(
+    `${API_BASE_URL}/api/client/client-country-codes`
+  );
+
+  if (!res.data.success) return [];
+
+  // Clean & normalize country codes
+  return res.data.data
+    .filter((c) => c && c.trim() !== "")
+    .map((c) => (c.startsWith("+") ? c : `+${c}`))
+    .sort((a, b) => a.localeCompare(b));
 };

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { ICustomerForm } from "./Customers";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-
+import { fetchCountryCodes } from "./api";
 interface CustomerModalProps {
   mode: "create" | "edit";
   selectedCustomer: any;
@@ -31,13 +31,9 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
 }) => {
   const [phoneError, setPhoneError] = useState<string>("");
   const [showPassword, setShowPassword] = useState(false);
-  const [phoneCode, setPhoneCode] = useState("+91");
-const PHONE_CODES = [
-  { code: "IN", dial: "+91", name: "India" },
-  { code: "US", dial: "+1", name: "USA" },
-  { code: "AE", dial: "+971", name: "UAE" },
-  { code: "UK", dial: "+44", name: "UK" },
-];
+  const [phoneCodes, setPhoneCodes] = useState<string[]>([]);
+const [phoneCode, setPhoneCode] = useState("+91");
+
 
   const handleChange = (field: keyof ICustomerForm, value: any) => {
   // Strip non-digits for phone
@@ -57,40 +53,69 @@ const PHONE_CODES = [
 };
 
 useEffect(() => {
-  if (mode === "edit" && selectedCustomer) {
-    let phone = selectedCustomer.c_phone || "";
+  if (mode !== "edit" || !selectedCustomer) return;
 
-    // Remove any non-digit characters
-    phone = phone.replace(/\D/g, "");
+  let phone = selectedCustomer.c_phone ?? "";
+  phone = phone.replace(/\D/g, "");
 
-    // Detect country code from PHONE_CODES
-    const detected = PHONE_CODES.find(p => phone.startsWith(p.dial.replace("+", "")));
-    if (detected) {
-      setPhoneCode(detected.dial);
-      phone = phone.slice(detected.dial.replace("+", "").length); // remove code from number
-    }
+  // Detect country code
+  const detectedCode = phoneCodes.find(code =>
+    phone.startsWith(code.replace("+", ""))
+  );
 
-    // Keep only last 10 digits
-    phone = phone.slice(-10);
-
-    setModalForm(prev => ({
-      ...prev,
-      ...selectedCustomer,
-      c_phone: phone,
-      c_email: Array.isArray(selectedCustomer.c_email) ? selectedCustomer.c_email : [],
-      c_country: typeof selectedCustomer.c_country === "object" ? selectedCustomer.c_country._id : selectedCustomer.c_country || "",
-      c_state: typeof selectedCustomer.c_state === "object" ? selectedCustomer.c_state._id : selectedCustomer.c_state || "",
-      c_password: "",
-    }));
-
-    if (selectedCustomer.c_country) {
-      const cid = typeof selectedCustomer.c_country === "object" ? selectedCustomer.c_country._id : selectedCustomer.c_country;
-      fetchStatesByCountry(cid).then(setStates);
-    }
+  if (detectedCode) {
+    setPhoneCode(detectedCode);
+    phone = phone.slice(detectedCode.replace("+", "").length);
   }
-}, [mode, selectedCustomer]);
+
+  phone = phone.slice(-10);
+
+  setModalForm(prev => ({
+    ...prev,
+    ...selectedCustomer,
+    c_phone: phone,
+    c_email: Array.isArray(selectedCustomer.c_email)
+      ? selectedCustomer.c_email
+      : [],
+    c_country:
+      typeof selectedCustomer.c_country === "object"
+        ? selectedCustomer.c_country._id
+        : selectedCustomer.c_country || "",
+    c_state:
+      typeof selectedCustomer.c_state === "object"
+        ? selectedCustomer.c_state._id
+        : selectedCustomer.c_state || "",
+    c_password: "",
+  }));
+
+  if (selectedCustomer.c_country) {
+    const cid =
+      typeof selectedCustomer.c_country === "object"
+        ? selectedCustomer.c_country._id
+        : selectedCustomer.c_country;
+
+    fetchStatesByCountry(cid).then(setStates);
+  }
+}, [mode, selectedCustomer, phoneCodes]);
 
 
+
+
+useEffect(() => {
+  fetchCountryCodes()
+    .then((codes) => {
+      setPhoneCodes(codes);
+
+      if (codes.includes("+91")) {
+        setPhoneCode("+91");
+      } else if (codes.length > 0) {
+        setPhoneCode(codes[0]);
+      }
+    })
+    .catch((err) => {
+      console.error("Failed to load country codes", err);
+    });
+}, []);
 
 
   const handleEnterKey = (e: React.KeyboardEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -145,21 +170,30 @@ useEffect(() => {
           <input placeholder="Name" value={modalForm.c_name || ""} onChange={e => handleChange("c_name", e.target.value)} className="w-full p-2 border rounded"/>
           {/* Emails */} <div className="col-span-3"> <div className="flex flex-wrap items-center gap-2 p-2 border rounded bg-gray-50"> {Array.isArray(modalForm.c_email) && modalForm.c_email .map((em: string) => em.trim()) .filter((em: string) => em !== "") .map((em: string) => ( <div key={em} className="flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full"> <span className="mr-2">{em}</span> <button type="button" onClick={() => setModalForm((prev) => ({ ...prev, c_email: (prev.c_email ?? []).filter((e) => e !== em), })) } className="text-blue-600 hover:text-red-600 font-bold" > × </button> </div> ))} <input type="text" placeholder="Add email" className="flex-1 min-w-[120px] p-1 outline-none bg-transparent" onKeyDown={(e) => { if (e.key === "Tab") return; if (e.key === "Enter" || e.key === ",") { e.preventDefault(); const value = (e.currentTarget.value || "").trim(); if (!value) return; const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; if (!emailPattern.test(value)) { alert("Invalid email format!"); return; } setModalForm((prev) => { const allEmails = prev.c_email ?? []; return { ...prev, c_email: allEmails.includes(value) ? allEmails : [...allEmails, value], }; }); e.currentTarget.value = ""; } }} /> </div> </div>
 
-         <div className="flex gap-2 col-span-3 md:col-span-3">
-  <select value={phoneCode} onChange={e => setPhoneCode(e.target.value)} className="w-32 p-2 border rounded">
-    {PHONE_CODES.map(p => (
-      <option key={p.code} value={p.dial}>{p.dial} ({p.name})</option>
+<div className="flex gap-2 col-span-3 md:col-span-3">
+  <select
+    value={phoneCode}
+    onChange={(e) => setPhoneCode(e.target.value)}
+    className="w-28 p-2 border rounded"
+  >
+    {phoneCodes.map((code) => (
+      <option key={code} value={code}>
+        {code}
+      </option>
     ))}
   </select>
 
   <input
     placeholder="Mobile Number"
     value={modalForm.c_phone || ""}
-    onChange={e => handleChange("c_phone", e.target.value)}
+    onChange={(e) => handleChange("c_phone", e.target.value)}
     maxLength={10}
-    className={`flex-1 p-2 border rounded ${phoneError ? "border-red-500" : ""}`}
+    className={`flex-1 p-2 border rounded ${
+      phoneError ? "border-red-500" : ""
+    }`}
   />
 </div>
+
 
           <input placeholder="Company" value={modalForm.c_company || ""} onChange={e => handleChange("c_company", e.target.value)} className="w-full p-2 border rounded"/>
           <input placeholder="Address" value={modalForm.c_address || ""} onChange={e => handleChange("c_address", e.target.value)} className="w-full p-2 border rounded"/>

@@ -19,6 +19,7 @@ import { updateOrder } from "./update/api";
 import { fetchCountries, fetchStatesByCountry } from "../Customer/api";
 import { notify } from "../../../Common/Toastify";
 import { Select } from "antd";
+import { fetchCountryCodes } from "../Customer/api";
 // -------------------- Types --------------------
 interface Customer {
   _id: string;
@@ -153,13 +154,6 @@ newCustomer?: {
 };
 
 }
-const PHONE_CODES = [
-  { code: "IN", dial: "+91", name: "India" },
-  { code: "US", dial: "+1", name: "USA" },
-  { code: "AE", dial: "+971", name: "UAE" },
-  { code: "UK", dial: "+44", name: "UK" },
-];
-
 
 // -------------------- Component --------------------
 const Orders: React.FC = () => {
@@ -175,6 +169,7 @@ const firstFieldRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
    const [client, setClient] = useState<Client[]>([]);
   const navigate = useNavigate();
+    const [phoneCodes, setPhoneCodes] = useState<string[]>([]);
   const [phoneCode, setPhoneCode] = useState("+91");
    const [phoneNumber, setPhoneNumber] = useState("");
   const [formData, setFormData] = useState<Order>({
@@ -257,6 +252,21 @@ const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
     loadOrders();
   }, []);
 
+useEffect(() => {
+  fetchCountryCodes()
+    .then((codes) => {
+      setPhoneCodes(codes);
+
+      if (codes.includes("+91")) {
+        setPhoneCode("+91");
+      } else if (codes.length > 0) {
+        setPhoneCode(codes[0]);
+      }
+    })
+    .catch((err) => {
+      console.error("Failed to load country codes", err);
+    });
+}, []);
 useEffect(() => {
   const loadCountries = async () => {
     const data = await fetchCountries();
@@ -1239,7 +1249,14 @@ const resetFormData = () => {
       >
         ×
       </button>
-      <h2 className="text-xl font-bold mb-4 text-black">Add Customer</h2>
+      <h2 className="text-xl font-bold mb-4 text-black">
+  {customerType === "existing"
+    ? "Add Customer"
+    : customerType === "new"
+    ? "New Customer"
+    : "Customer"} {/* default if none selected */}
+</h2>
+
 
       <form className="space-y-6" onSubmit={handleSubmit}>
         {/* Customer Type */}
@@ -1318,8 +1335,9 @@ const resetFormData = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Salutation */}
             <div>
-              <label className="block text-gray-700 font-medium mb-2">Salutation</label>
+              {/* <label className="block text-gray-700 font-medium mb-2">Salutation</label> */}
               <input
+                placeholder="Salutation"
                 type="text"
                 name="newCustomer.c_salutation"
                 value={formData.newCustomer?.c_salutation || ""}
@@ -1328,34 +1346,14 @@ const resetFormData = () => {
               />
             </div>
 
-           {/* First Name*/}
-            {/* <div>
-              <label className="block text-gray-700 font-medium mb-2">First Name</label>
-              <input
-                type="text"
-                name="newCustomer.c_firstName"
-                value={formData.newCustomer?.c_firstName || ""}
-                onChange={handleInputChange}
-                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            </div> */}
-
-            {/* Last Name */}
-            {/* <div>
-              <label className="block text-gray-700 font-medium mb-2">Last Name</label>
-              <input
-                type="text"
-                name="newCustomer.c_lastName"
-                value={formData.newCustomer?.c_lastName || ""}
-                onChange={handleInputChange}
-                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            </div> */}
+       
+         
 
             {/* Name */}
             <div>
-              <label className="block text-gray-700 font-medium mb-2">Name</label>
+              {/* <label className="block text-gray-700 font-medium mb-2">Name</label> */}
               <input
+              placeholder="Name"
                 type="text"
                 name="newCustomer.c_name"
                 value={formData.newCustomer?.c_name || ""}
@@ -1365,129 +1363,15 @@ const resetFormData = () => {
               />
             </div>
 
-            {/* Phone */}
-            {/* <div>
-              <label className="block text-gray-700 font-medium mb-2">Phone</label>
-              <input
-                type="text"
-                name="newCustomer.c_phone"
-                value={formData.newCustomer?.c_phone || ""}
-                onChange={handleInputChange}
-                maxLength={10}
-                placeholder="10-digit phone number"
-                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                required
-              />
-            </div> */}
-          {/* Phone */}
-<div className="flex gap-2 items-center">
-  {/* Country Code */}
-  <select
-    value={phoneCode}
-    onChange={(e) => setPhoneCode(e.target.value)}
-    className="border px-2 py-1 rounded-lg text-black"
-  >
-    {PHONE_CODES.map((c) => (
-      <option key={c.code} value={c.dial}>
-        {c.dial} ({c.name})
-      </option>
-    ))}
-  </select>
-
-  {/* Phone Number */}
-  <input
-    type="text"
-    name="newCustomer.c_phone"
-    placeholder="Phone Number"
-    value={formData.newCustomer?.c_phone || ""}
-    onChange={(e) => handleInputChange(e)}
-    className="border px-3 py-2 rounded-lg text-black flex-1"
-  />
-</div>
-
-
-
-            {/* Company */}
-            <div>
-              <label className="block text-gray-700 font-medium mb-2">Company</label>
-              <input
-                type="text"
-                name="newCustomer.c_company"
-                value={formData.newCustomer?.c_company || ""}
-                onChange={handleInputChange}
-                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
-
-            {/* Address */}
-            <div className="md:col-span-2">
-              <label className="block text-gray-700 font-medium mb-2">Address</label>
-              <input
-                type="text"
-                name="newCustomer.c_address"
-                value={formData.newCustomer?.c_address || ""}
-                onChange={handleInputChange}
-                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
-
-            {/* Address 2 */}
-            <div className="md:col-span-2">
-              <label className="block text-gray-700 font-medium mb-2">Address 2</label>
-              <input
-                type="text"
-                name="newCustomer.c_address2"
-                value={formData.newCustomer?.c_address2 || ""}
-                onChange={handleInputChange}
-                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
-
-            {/* City */}
-            <div>
-              <label className="block text-gray-700 font-medium mb-2">City</label>
-              <input
-                type="text"
-                name="newCustomer.c_city"
-                value={formData.newCustomer?.c_city || ""}
-                onChange={handleInputChange}
-                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
-
-            {/* ZipCode */}
-            <div>
-              <label className="block text-gray-700 font-medium mb-2">Zip Code</label>
-              <input
-                type="text"
-                name="newCustomer.c_zipCode"
-                value={formData.newCustomer?.c_zipCode || ""}
-                onChange={handleInputChange}
-                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
-
-            {/* GST */}
-            <div>
-              <label className="block text-gray-700 font-medium mb-2">GST</label>
-              <input
-                type="text"
-                name="newCustomer.c_gst"
-                value={formData.newCustomer?.c_gst || ""}
-                onChange={handleInputChange}
-                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
-
          {/* Emails as pills */}
-<div className="md:col-span-3 w-full">
-  <label className="block text-gray-700 font-medium mb-1">Emails</label>
+<div className="col-span-3">
+  {/* <label className="block text-gray-700 font-medium mb-1">Emails</label> */}
   <div className="flex flex-wrap gap-1 p-2 border rounded min-h-[40px] bg-gray-50">
     {/* Map emails as pills */}
     {formData.newCustomer?.c_email?.map((email: string, idx: number) => (
       <div
         key={idx}
-        className="flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full"
+        className="flex flex-wrap items-center gap-2 p-2 border rounded bg-gray-50"
       >
         {email}
 <button
@@ -1545,9 +1429,89 @@ const resetFormData = () => {
   </div>
 </div>
 
-            {/* Country */}
+          {/* Phone */}
+<div className="flex gap-2 col-span-3 md:col-span-3">
+  {/* Country Code */}
+  <select
+    value={phoneCode}
+    onChange={(e) => setPhoneCode(e.target.value)}
+    className="w-28 p-2 border rounded"
+  >
+    {phoneCodes.map((code) => (
+      <option key={code} value={code}>
+        {code}
+      </option>
+    ))}
+  </select>
+
+
+  {/* Phone Number */}
+  <input
+    type="text"
+    name="newCustomer.c_phone"
+    placeholder="Phone Number"
+    value={formData.newCustomer?.c_phone || ""}
+    onChange={(e) => handleInputChange(e)}
+    className="border px-3 py-2 rounded-lg text-black flex-1"
+  />
+</div>
+
+
+
+            {/* Company */}
             <div>
-              <label className="block text-gray-700 font-medium mb-2">Country</label>
+              {/* <label className="block text-gray-700 font-medium mb-2">Company</label> */}
+              <input
+              placeholder="Company"
+                type="text"
+                name="newCustomer.c_company"
+                value={formData.newCustomer?.c_company || ""}
+                onChange={handleInputChange}
+                className="w-full p-2 border rounded"
+              />
+            </div>
+
+            {/* Address */}
+            <div>
+              {/* <label className="block text-gray-700 font-medium mb-2">Address</label> */}
+              <input
+              placeholder="Address"
+                type="text"
+                name="newCustomer.c_address"
+                value={formData.newCustomer?.c_address || ""}
+                onChange={handleInputChange}
+                className="w-full p-2 border rounded"
+              />
+            </div>
+
+            {/* Address 2 */}
+            <div >
+              {/* <label className="block text-gray-700 font-medium mb-2">Address 2</label> */}
+              <input
+              placeholder="Address 2"
+                type="text"
+                name="newCustomer.c_address2"
+                value={formData.newCustomer?.c_address2 || ""}
+                onChange={handleInputChange}
+                className="w-full p-2 border rounded"
+              />
+            </div>
+
+            {/* City */}
+            <div>
+              {/* <label className="block text-gray-700 font-medium mb-2">City</label> */}
+              <input
+              placeholder="City"
+                type="text"
+                name="newCustomer.c_city"
+                value={formData.newCustomer?.c_city || ""}
+                onChange={handleInputChange}
+                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
+{/* Country */}
+            <div>
+              {/* <label className="block text-gray-700 font-medium mb-2">Country</label> */}
               <select
                 name="newCustomer.c_country"
                 value={formData.newCustomer?.c_country || ""}
@@ -1579,7 +1543,7 @@ const resetFormData = () => {
 
             {/* State */}
             <div>
-              <label className="block text-gray-700 font-medium mb-2">State</label>
+              {/* <label className="block text-gray-700 font-medium mb-2">State</label> */}
               <select
                 name="newCustomer.c_state"
                 value={formData.newCustomer?.c_state || ""}
@@ -1594,11 +1558,39 @@ const resetFormData = () => {
                 ))}
               </select>
             </div>
+            {/* ZipCode */}
+            <div>
+              {/* <label className="block text-gray-700 font-medium mb-2">Zip Code</label> */}
+              <input
+              placeholder="Zipcode"
+                type="text"
+                name="newCustomer.c_zipCode"
+                value={formData.newCustomer?.c_zipCode || ""}
+                onChange={handleInputChange}
+                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
+
+            {/* GST */}
+            <div>
+              {/* <label className="block text-gray-700 font-medium mb-2">GST</label> */}
+              <input
+              placeholder="GST"
+                type="text"
+                name="newCustomer.c_gst"
+                value={formData.newCustomer?.c_gst || ""}
+                onChange={handleInputChange}
+                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
+
+            
 
             {/* Bank Account Payment */}
             <div>
-              <label className="block text-gray-700 font-medium mb-2">Bank Account Payment</label>
+              {/* <label className="block text-gray-700 font-medium mb-2">Bank Account Payment</label> */}
               <input
+              placeholder="Bank Account Payment"
                 type="text"
                 name="newCustomer.c_bankAccountPayment"
                 value={formData.newCustomer?.c_bankAccountPayment || ""}
@@ -1609,8 +1601,9 @@ const resetFormData = () => {
 
             {/* Place of Contact */}
             <div>
-              <label className="block text-gray-700 font-medium mb-2">Place of Contact</label>
+              {/* <label className="block text-gray-700 font-medium mb-2">Place of Contact</label> */}
               <input
+              placeholder="Place of Contact"
                 type="text"
                 name="newCustomer.c_placeOfContact"
                 value={formData.newCustomer?.c_placeOfContact || ""}
@@ -1621,8 +1614,9 @@ const resetFormData = () => {
 
             {/* Place of Contact (State Code) */}
             <div>
-              <label className="block text-gray-700 font-medium mb-2">Place of Contact (State Code)</label>
+              {/* <label className="block text-gray-700 font-medium mb-2">Place of Contact (State Code)</label> */}
               <input
+              placeholder="Place of Contact (State Code)"
                 type="text"
                 name="newCustomer.c_placeOfContactWithStateCode"
                 value={formData.newCustomer?.c_placeOfContactWithStateCode || ""}
@@ -1644,15 +1638,23 @@ const resetFormData = () => {
           </div>
         )}
 
-        {/* Submit Button */}
-        <div className="mt-4">
-          <button
-            type="submit"
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-          >
-            Add Customer
-          </button>
-        </div>
+       {/* Submit/Add Customer Button */}
+<div className="mt-4 text-right">
+  <button
+    type="button"
+    className={`px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 ${
+      !customerType ? "opacity-50 cursor-not-allowed" : ""
+    }`}
+    onClick={() => {
+      if (!customerType) return; // prevent action if no type selected
+      setModalType("addCustomer");
+    }}
+    disabled={!customerType} // disable button if no type selected
+  >
+    {customerType === "existing" ? "Save" : "Save"}
+  </button>
+</div>
+
       </form>
     </div>
   </div>
