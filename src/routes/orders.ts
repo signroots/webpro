@@ -995,6 +995,8 @@ router.get(
         ...client.toObject(),
         c_state_name: stateName,
         c_country_name: countryName,
+        c_countryCode: client.c_countryCode || "",
+        
       };
 
       // Fetch orders
