@@ -47,7 +47,7 @@ export interface ICustomer {
     name: string;
     code?: string;
   };
-
+c_countryCode?:string;
   // ---------------- Settings ----------------
   c_status?: string;
   c_bankAccountPayment?: string;

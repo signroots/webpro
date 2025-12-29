@@ -31,8 +31,10 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
 }) => {
   const [phoneError, setPhoneError] = useState<string>("");
   const [showPassword, setShowPassword] = useState(false);
-  const [phoneCodes, setPhoneCodes] = useState<string[]>([]);
-const [phoneCode, setPhoneCode] = useState("+91");
+  const [phoneCode, setPhoneCode] = useState<string>(""); // selected code
+const [phoneCodes, setPhoneCodes] = useState<string[]>([]); // all codes
+
+
 
 
   const handleChange = (field: keyof ICustomerForm, value: any) => {
@@ -51,7 +53,13 @@ const [phoneCode, setPhoneCode] = useState("+91");
     }
   }
 };
-
+useEffect(() => {
+  fetchCountryCodes()
+    .then((codes) => {
+      setPhoneCodes(codes);
+    })
+    .catch(console.error);
+}, []);
 useEffect(() => {
   if (mode !== "edit" || !selectedCustomer) return;
 
@@ -64,9 +72,13 @@ useEffect(() => {
   );
 
   if (detectedCode) {
-    setPhoneCode(detectedCode);
-    phone = phone.slice(detectedCode.replace("+", "").length);
-  }
+  
+  setModalForm(prev => ({
+    ...prev,
+    c_countryCode: detectedCode,
+  }));
+  phone = phone.slice(detectedCode.replace("+", "").length);
+}
 
   phone = phone.slice(-10);
 
@@ -106,16 +118,36 @@ useEffect(() => {
     .then((codes) => {
       setPhoneCodes(codes);
 
+      // 🔹 EDIT MODE → use value from DB
+      if (mode === "edit" && selectedCustomer?.c_countryCode) {
+        setPhoneCode(selectedCustomer.c_countryCode);
+        setModalForm((prev) => ({
+          ...prev,
+          c_countryCode: selectedCustomer.c_countryCode,
+        }));
+        return;
+      }
+
+      // 🔹 CREATE MODE → default to +91
       if (codes.includes("+91")) {
         setPhoneCode("+91");
+        setModalForm((prev) => ({
+          ...prev,
+          c_countryCode: "+91",
+        }));
       } else if (codes.length > 0) {
         setPhoneCode(codes[0]);
+        setModalForm((prev) => ({
+          ...prev,
+          c_countryCode: codes[0],
+        }));
       }
     })
     .catch((err) => {
       console.error("Failed to load country codes", err);
     });
-}, []);
+}, [mode, selectedCustomer]);
+
 
 
   const handleEnterKey = (e: React.KeyboardEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -172,10 +204,19 @@ useEffect(() => {
 
 <div className="flex gap-2 col-span-3 md:col-span-3">
   <select
-    value={phoneCode}
-    onChange={(e) => setPhoneCode(e.target.value)}
-    className="w-28 p-2 border rounded"
-  >
+     value={phoneCode}
+  onChange={(e) => {
+    const code = e.target.value;
+    setPhoneCode(code);
+
+    // 🔑 STORE INTO FORM
+    setModalForm((prev) => ({
+      ...prev,
+      c_countryCode: code,
+    }));
+  }}
+  className="w-28 p-2 border rounded"
+>
     {phoneCodes.map((code) => (
       <option key={code} value={code}>
         {code}

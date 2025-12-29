@@ -145,6 +145,7 @@ newCustomer?: {
   c_city?: string;
   c_state?: string;
   c_country?: string;
+  c_countryCode?:string;
   c_zipCode?: string;
   c_gst?: string;
   c_bankAccountPayment?: string;
@@ -169,9 +170,8 @@ const firstFieldRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
    const [client, setClient] = useState<Client[]>([]);
   const navigate = useNavigate();
-    const [phoneCodes, setPhoneCodes] = useState<string[]>([]);
-  const [phoneCode, setPhoneCode] = useState("+91");
-   const [phoneNumber, setPhoneNumber] = useState("");
+     const [phoneCodes, setPhoneCodes] = useState<string[]>([]);
+  const [phoneCode, setPhoneCode] = useState<string>("");
   const [formData, setFormData] = useState<Order>({
     _id: "",
     domainName: "",
@@ -191,6 +191,7 @@ newCustomer: {
   c_city: "",
   c_state: "",
   c_country: "",
+  c_countryCode:"",
   c_zipCode: "",
   c_gst: "",
   c_bankAccountPayment: "",
@@ -251,22 +252,28 @@ const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
     };
     loadOrders();
   }, []);
-
 useEffect(() => {
   fetchCountryCodes()
     .then((codes) => {
       setPhoneCodes(codes);
 
-      if (codes.includes("+91")) {
-        setPhoneCode("+91");
-      } else if (codes.length > 0) {
-        setPhoneCode(codes[0]);
-      }
+      const defaultCode = codes.includes("+91") ? "+91" : codes[0] || "";
+      setPhoneCode(defaultCode);
+
+      // ✅ Also set it in the formData
+      setFormData((prev) => ({
+        ...prev,
+        newCustomer: {
+          ...(prev.newCustomer || {}),
+          c_countryCode: defaultCode,
+        },
+      }));
     })
     .catch((err) => {
       console.error("Failed to load country codes", err);
     });
 }, []);
+
 useEffect(() => {
   const loadCountries = async () => {
     const data = await fetchCountries();
@@ -429,17 +436,19 @@ useEffect(() => {
 const handleInputChange = (
   e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
 ) => {
-  const { name, value } = e.target;
+  const { name, value, type } = e.target;
+  const checked = (e.target as HTMLInputElement).checked;
 
   if (customerType === "new" && name.startsWith("newCustomer.")) {
-    const key = name.split(".")[1] as keyof NonNullable<Order["newCustomer"]>; // type-safe key
-    setFormData(prev => ({
+    const key = name.split(".")[1] as keyof NonNullable<Order["newCustomer"]>;
+
+    setFormData((prev) => ({
       ...prev,
       newCustomer: {
         ...(prev.newCustomer || {
           resellerCustomerId: "",
           c_name: "",
-           c_email: [],
+          c_email: [],
           c_phone: "",
           c_company: "",
           c_address: "",
@@ -447,14 +456,24 @@ const handleInputChange = (
           c_state: "",
           c_country: "",
           c_zipCode: "",
+          c_countryCode: "", // ensure default exists
         }),
-        [key]: value,
+        [key]: type === "checkbox" ? checked : value,
+      },
+    }));
+  } else if (customerType === "new" && name === "newCustomer.c_countryCode") {
+    // Handle phone code changes explicitly if using a Select
+    setFormData((prev) => ({
+      ...prev,
+      newCustomer: {
+        ...(prev.newCustomer || {}),
+        c_countryCode: value,
       },
     }));
   } else {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     }));
   }
 };
@@ -513,6 +532,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
     // Call your updateOrder API
     await updateOrder(orderId, payload);
+    
 
     // Update orders in the state after successful submission
     setOrders((prev) =>
@@ -1428,47 +1448,54 @@ const resetFormData = () => {
     />
   </div>
 </div>
-
-          {/* Phone */}
+{/* Phone */}
 <div className="flex gap-2 col-span-3 md:col-span-3">
   {/* Country Code */}
-  <select
-    value={phoneCode}
-    onChange={(e) => setPhoneCode(e.target.value)}
-    className="w-28 p-2 border rounded"
-  >
-    {phoneCodes.map((code) => (
-      <option key={code} value={code}>
-        {code}
-      </option>
-    ))}
-  </select>
-
-
-  {/* Phone Number */}
-<input
-  type="text"
-  name="newCustomer.c_phone"
-  placeholder="Phone Number"
-  value={formData.newCustomer?.c_phone || ""}
-  inputMode="numeric"
-  pattern="[0-9]*"
-  maxLength={10}
+<select
+  value={phoneCode}
   onChange={(e) => {
-    const numericValue = e.target.value.replace(/\D/g, "").slice(0, 10);
-
-    setFormData((prev: any) => ({
+    const code = e.target.value; // <-- get the selected value
+    setPhoneCode(code); // update local phoneCode state
+    setFormData((prev) => ({
       ...prev,
       newCustomer: {
-        ...prev.newCustomer,
-        c_phone: numericValue,
+        ...(prev.newCustomer || {}),
+        c_countryCode: code, // update formData
       },
     }));
   }}
-  className="border px-3 py-2 rounded-lg text-black flex-1"
-/>
+  className="w-24 border px-3 py-2 rounded-lg text-black"
+>
+  {phoneCodes.map((code) => (
+    <option key={code} value={code}>
+      {code}
+    </option>
+  ))}
+</select>
 
- 
+
+  {/* Phone Number */}
+  <input
+    type="text"
+    name="newCustomer.c_phone"
+    placeholder="Phone Number"
+    value={formData.newCustomer?.c_phone || ""}
+    inputMode="numeric"
+    pattern="[0-9]*"
+    maxLength={10}
+    onChange={(e) => {
+      // Only allow digits and max 10 characters
+      const numericValue = e.target.value.replace(/\D/g, "").slice(0, 10);
+      setFormData((prev) => ({
+        ...prev,
+        newCustomer: {
+          ...(prev.newCustomer || {}),
+          c_phone: numericValue,
+        },
+      }));
+    }}
+    className="border px-3 py-2 rounded-lg text-black flex-1"
+  />
 </div>
 
 

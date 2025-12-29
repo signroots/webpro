@@ -39,7 +39,8 @@ export interface ICustomer {
   c_city?: string;
   c_state?: string;
 
-  c_country?: string;        // ✅ ObjectId ONLY
+  c_country?: string;
+  c_countryCode?:string;        // ✅ ObjectId ONLY
   c_zipCode?: string;
   c_gst?: string;
   c_bankAccountPayment?:string;
@@ -66,6 +67,7 @@ export interface Client {
   c_country?: string;        // ✅ ObjectId (used for update)
   c_country_name?: string;   // ✅ Display only
   c_state_name?: string;
+  c_countryCode?:string;
 
   c_zipCode?: string;
   c_company?: string;

@@ -29,7 +29,8 @@ const CustomerOrders: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editClient, setEditClient] = useState<EditClient | null>(null);
   const [phoneCodes, setPhoneCodes] = useState<string[]>([]);
-  const [phoneCode, setPhoneCode] = useState("+91");
+const [phoneCode, setPhoneCode] = useState<string>("");
+
   const [phoneError, setPhoneError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -45,7 +46,7 @@ const CustomerOrders: React.FC = () => {
           c_name: data.client.c_name,
           c_email: data.client.c_email || [],
           c_phone: data.client.c_phone,
-          c_phoneCc: data.client.c_phoneCc || "91",
+          // c_phoneCc: data.client.c_phoneCc || "91",
           c_company: data.client.c_company,
           c_address: data.client.c_address,
           c_address2: data.client.c_address2 || "",
@@ -54,6 +55,7 @@ const CustomerOrders: React.FC = () => {
           c_state_name: "",
           c_zipCode: data.client.c_zipCode || "",
           c_country: data.client.c_country || "",
+          c_countryCode: data.client.c_countryCode || "",
           c_country_name:
             countries.find((c) => c._id === data.client.c_country)?.name || "",
           c_gst: data.client.c_gst || "",
@@ -116,23 +118,26 @@ const CustomerOrders: React.FC = () => {
   useEffect(() => {
     loadCustomerOrders();
   }, [customerId, countries]);
+useEffect(() => {
+  fetchCountryCodes()
+    .then((codes) => {
+      setPhoneCodes(codes);
+    })
+    .catch(console.error);
+}, []);
 
-  useEffect(() => {
-    fetchCountryCodes()
-      .then((codes) => {
-        setPhoneCodes(codes);
-        if (codes.includes("+91")) setPhoneCode("+91");
-        else if (codes.length > 0) setPhoneCode(codes[0]);
-      })
-      .catch((err) => console.error("Failed to load country codes", err));
-  }, []);
+ const handleEditClick = () => {
+  if (!client) return;
 
-  const handleEditClick = () => {
-    if (!client) return;
-    setEditClient({ ...client });
-    setPhoneCode(client.c_phoneCc ? `+${client.c_phoneCc}` : "+91");
-    setIsModalOpen(true);
-  };
+  // sync both phoneCode (select) and editClient.c_phoneCc
+  setEditClient({
+    ...client,
+    // c_phoneCc: client.c_phoneCc || "91"   // make sure c_phoneCc is set
+  });
+
+  setPhoneCode(client.c_phoneCc ? `+${client.c_phoneCc}` : "+91"); // select dropdown
+  setIsModalOpen(true);
+};
 
   const handleChange = (field: string, value: any) => {
     setEditClient(prev => prev ? { ...prev, [field]: value } : null);
@@ -159,6 +164,7 @@ const CustomerOrders: React.FC = () => {
         c_state: data.c_state || "",
         c_zipCode: data.c_zipCode || "",
         c_country: data.c_country || "",
+        c_countryCode:data.c_countryCode || "",
         c_gst: data.c_gst || "",
         c_bankAccountPayment: data.c_bankAccountPayment || "",
         c_salutation: data.c_salutation || "",
@@ -193,7 +199,10 @@ const CustomerOrders: React.FC = () => {
         </h2>
         <p><strong>Name:</strong> {client.c_name}</p>
         <p><strong>Email:</strong> {Array.isArray(client.c_email) ? client.c_email.join(", ") : "-"}</p>
-        <p><strong>Phone:</strong> {client.c_phone || "-"}</p>
+        <p>  <strong>Phone:</strong>{" "}
+  {client.c_countryCode && client.c_phone
+    ? `${client.c_countryCode} ${client.c_phone}`
+    : "-"}</p>
         <p><strong>Company:</strong> {client.c_company || "-"}</p>
         <p><strong>Address:</strong> {client.c_address || "-"}</p>
         <p><strong>Address 2:</strong> {client.c_address2 || "-"}</p>
@@ -279,9 +288,34 @@ const CustomerOrders: React.FC = () => {
 
               {/* Phone */}
               <div className="flex gap-2 col-span-3 md:col-span-3">
-                <select value={phoneCode} onChange={e => setPhoneCode(e.target.value)} className="w-28 p-2 border rounded">
-                  {phoneCodes.map(code => <option key={code} value={code}>{code}</option>)}
-                </select>
+              
+<select
+  value={phoneCode}
+  onChange={(e) => {
+    const code = e.target.value;
+
+    setPhoneCode(code);
+
+    setEditClient((prev: EditClient | null) =>
+      prev
+        ? {
+            ...prev,
+            c_countryCode: code,          // "+91"
+            c_phoneCc: code.replace("+", "") // "91"
+          }
+        : prev
+    );
+  }}
+  className="w-28 p-2 border rounded"
+>
+  {phoneCodes.map((code) => (
+    <option key={code} value={code}>
+      {code}
+    </option>
+  ))}
+</select>
+
+
                 <input placeholder="Mobile Number" value={editClient.c_phone || ""} onChange={e => handleChange("c_phone", e.target.value)} maxLength={10} className={`flex-1 p-2 border rounded ${phoneError ? "border-red-500" : ""}`}/>
               </div>
 

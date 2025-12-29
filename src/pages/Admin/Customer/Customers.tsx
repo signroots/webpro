@@ -114,7 +114,7 @@ export interface ICustomerForm {
   c_city?: string;
   c_state?: string;
   c_country?: string;
-  c_countrycode?:string;
+  c_countryCode?:string;
   c_zipCode?: string;
     c_status?: string;
   c_bankAccountPayment?: string;
@@ -148,6 +148,7 @@ const Customers: React.FC = () => {
     c_city: "",
     c_state: "",
     c_country: "",
+    c_countryCode:"",
     c_zipCode: "",
     c_password: "",
     c_gst: "",
@@ -206,6 +207,7 @@ const Customers: React.FC = () => {
       c_city: "",
       c_state: "",
       c_country: "",
+      c_countryCode:"",
       c_zipCode: "",
       c_password: "",
       c_gst: "",
@@ -274,7 +276,7 @@ const handleSubmitCustomer = async (form: ICustomerForm) => {
   c_city: form.c_city,
   c_state: form.c_state,
   c_country: form.c_country,
-  c_countrycode:form.c_countrycode,
+  c_countryCode:form.c_countryCode,
   c_zipCode: form.c_zipCode,
   c_gst: form.c_gst,
   c_status: form.c_status,
