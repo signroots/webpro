@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
+import Select from "react-select";
 import { fetchCountries, fetchStatesByCountry } from "../../Customer/api";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 interface EmailPlan {
@@ -1037,24 +1038,33 @@ return (
 
           {/* Existing Customer */}
           {customerType === "existing" && (
-            <div className="mb-4">
-              <label className="block mb-2 text-black">Select Customer</label>
-              <select
-                name="client"
-                value={formData.client || ""}
-                onChange={handleInputChange}
-                className="w-full border rounded px-3 py-2"
-              >
-                <option value="">-- Select Customer --</option>
-                {clients.map((c: any) => (
-                  <option key={c._id} value={c._id}>
-                    {c.c_name} ({c.c_email})
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
+  <div className="mb-4">
+    <label className="block mb-2 text-black">Select Customer</label>
+    <Select
+      options={clients.map((c: any) => ({
+        value: c._id,
+        label: `${c.c_company} (${c.c_email.join(", ")})`, // support multiple emails
+      }))}
+      value={clients
+        .filter((c: any) => c._id === formData.client)
+        .map((c: any) => ({
+          value: c._id,
+          label: `${c.c_company} (${c.c_email.join(", ")})`,
+        }))}
+     onChange={(selectedOption: any) => {
+  // create a fake event compatible with your existing handler
+  handleInputChange({
+    target: {
+      name: "client",
+      value: selectedOption ? selectedOption.value : "",
+    },
+  } as React.ChangeEvent<HTMLInputElement | HTMLSelectElement>);
+}}
+      isClearable
+      placeholder="-- Select Customer --"
+    />
+  </div>
+)}
          {/* New Customer */}
 {/* New Customer */}
 {customerType === "new" && (
