@@ -1142,7 +1142,8 @@ return (
                 type="date"
                 name="expiryDate"
                 value={formData.expiryDate || ""}
-                readOnly
+                onChange={handleInputChange}
+                // readOnly
                 className="w-full border rounded px-3 py-2 bg-gray-100 cursor-not-allowed"
               />
             </div>
