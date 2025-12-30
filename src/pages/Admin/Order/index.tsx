@@ -202,6 +202,17 @@ newCustomer: {
 
   });
 
+
+const formatDate = (date?: string) => {
+  if (!date) return "N/A";
+  const d = new Date(date);
+  // Show date as UTC to avoid timezone shifts
+  const day = d.getUTCDate().toString().padStart(2, "0");
+  const month = (d.getUTCMonth() + 1).toString().padStart(2, "0");
+  const year = d.getUTCFullYear();
+  return `${day}/${month}/${year}`;
+};
+
   // Filters
   const [provider, setProvider] = useState<string | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
@@ -881,66 +892,35 @@ const resetFormData = () => {
               />
             </div>
           </td>
+          
 <td className="px-6 py-4 font-medium">
   {(() => {
-    const formatDate = (date?: string) => {
-      if (!date) return "N/A";
-      const d = new Date(date);
-      return d.toLocaleDateString("en-GB");
-    };
-
-    // 📌 Get Email Expiry
-    const emailExp =
-      order.emailPlans?.[0]?.expiryDate ||
-      order.emailPlans?.[0]?.expiryDate // fallback if used
-
-    // 📌 Domain Expiry
+    const emailExp = order.emailPlans?.[0]?.expiryDate;
     const domainExp = order.expiryDate;
-
-    // Compare dates only (no time)
-    const sameDate =
-      emailExp &&
-      domainExp &&
-      new Date(emailExp).toDateString() === new Date(domainExp).toDateString();
 
     return (
       <div className="flex flex-col gap-2">
-
-        {/* If both expiry dates are same → single badge */}
-        {sameDate ? (
-          <div className="flex items-center gap-2 px-3 h-8 rounded-md bg-green-100 text-green-800 text-xs font-medium">
+        {emailExp && (
+          <div className="flex items-center gap-2 px-3 h-8 rounded-md bg-blue-100 text-blue-800 text-xs font-medium">
             <span className="w-5 h-5 flex justify-center items-center rounded-full bg-white text-black text-[10px]">
-              EX
+              EE
             </span>
             {formatDate(emailExp)}
           </div>
-        ) : (
-          <>
-            {/* Show Email Expiry */}
-            {emailExp && (
-              <div className="flex items-center gap-2 px-3 h-8 rounded-md bg-blue-100 text-blue-800 text-xs font-medium">
-                <span className="w-5 h-5 flex justify-center items-center rounded-full bg-white text-black text-[10px]">
-                  EE
-                </span>
-                {formatDate(emailExp)}
-              </div>
-            )}
-
-            {/* Show Domain Expiry */}
-            {domainExp && (
-              <div className="flex items-center gap-2 px-3 h-8 rounded-md bg-purple-100 text-purple-800 text-xs font-medium">
-                <span className="w-5 h-5 flex justify-center items-center rounded-full bg-white text-black text-[10px]">
-                  DE
-                </span>
-                {formatDate(domainExp)}
-              </div>
-            )}
-          </>
+        )}
+        {domainExp && (
+          <div className="flex items-center gap-2 px-3 h-8 rounded-md bg-purple-100 text-purple-800 text-xs font-medium">
+            <span className="w-5 h-5 flex justify-center items-center rounded-full bg-white text-black text-[10px]">
+              DE
+            </span>
+            {formatDate(domainExp)}
+          </div>
         )}
       </div>
     );
   })()}
 </td>
+
 
 
 
