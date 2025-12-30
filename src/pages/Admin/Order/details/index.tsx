@@ -2,7 +2,17 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { fetchCustomerOrders, updateCustomer, Order, Client, ICustomer } from "./api";
 import { fetchCountryCodes } from "../../Customer/api";
-
+import { SiCloudflare,SiHostinger } from "react-icons/si";
+import {
+  FaEye,
+  FaEdit,
+  FaEnvelope,
+  FaServer,
+  FaLock,
+  FaLaptopCode,
+  FaGlobe,
+  
+} from "react-icons/fa";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface EditClient extends Partial<Client> {
@@ -56,6 +66,7 @@ const [phoneCode, setPhoneCode] = useState<string>("");
           c_zipCode: data.client.c_zipCode || "",
           c_country: data.client.c_country || "",
           c_countryCode: data.client.c_countryCode || "",
+         c_mobilePhone:data.client.c_mobilePhone || "",
           c_country_name:
             countries.find((c) => c._id === data.client.c_country)?.name || "",
           c_gst: data.client.c_gst || "",
@@ -165,6 +176,7 @@ useEffect(() => {
         c_zipCode: data.c_zipCode || "",
         c_country: data.c_country || "",
         c_countryCode:data.c_countryCode || "",
+        c_mobilePhone:data.c_mobilePhone || "",
         c_gst: data.c_gst || "",
         c_bankAccountPayment: data.c_bankAccountPayment || "",
         c_salutation: data.c_salutation || "",
@@ -199,10 +211,12 @@ useEffect(() => {
         </h2>
         <p><strong>Name:</strong> {client.c_name}</p>
         <p><strong>Email:</strong> {Array.isArray(client.c_email) ? client.c_email.join(", ") : "-"}</p>
-        <p>  <strong>Phone:</strong>{" "}
-  {client.c_countryCode && client.c_phone
-    ? `${client.c_countryCode} ${client.c_phone}`
-    : "-"}</p>
+       <p>
+  <strong>Phone:</strong>{" "}
+  {client.c_mobilePhone
+    ? `${client.c_countryCode ? client.c_countryCode + " " : ""}${client.c_mobilePhone}`
+    : "-"}
+</p>
         <p><strong>Company:</strong> {client.c_company || "-"}</p>
         <p><strong>Address:</strong> {client.c_address || "-"}</p>
         <p><strong>Address 2:</strong> {client.c_address2 || "-"}</p>
@@ -234,7 +248,48 @@ useEffect(() => {
                   <tr key={order._id} className="hover:bg-gray-100 transition-colors">
                     <td className="px-4 py-2 border">{idx + 1}</td>
                     <td className="px-4 py-2 border">{order.domainName}</td>
-                    <td className="px-4 py-2 border">{/* services icons */}</td>
+                    <td className="px-4 py-2 border">
+  <div className="flex items-center gap-3 flex-wrap">
+
+    {/* DOMAIN SOURCE */}
+    {order.domainSource ? (
+      order.domainSource.toLowerCase() === "resellerclub" ? (
+        <img src="/images/resellerclub.png" className="w-6 h-6" title="ResellerClub" />
+      ) : order.domainSource.toLowerCase() === "cloudflare" ? (
+        <img src="/images/cloudflare.png" className="w-7 h-7" title="Cloudflare" />
+      ) : order.domainSource.toLowerCase() === "hostinger" ? (
+        <SiHostinger className="w-6 h-6 text-blue-500" title="Hostinger" />
+      ) : order.domainSource.toLowerCase() === "ae server" ? (
+        <img src="/images/aeserverlogo.png" className="w-7 h-7" title="AE Server" />
+      ) : (
+        <FaGlobe className="w-6 h-6 text-gray-400" title={order.domainSource} />
+      )
+    ) : (
+      <FaGlobe className="w-6 h-6 text-gray-300" title="No Domain Source" />
+    )}
+
+    {/* EMAIL SERVICE */}
+    {order.google_email ? (
+      <img src="/download.png" className="w-5 h-5" title="Google Workspace" />
+    ) : order.microsoft_email ? (
+      <img src="/microsoft.png" className="w-5 h-5" title="Microsoft 365" />
+    ) : (
+      <FaEnvelope className="w-5 h-5 text-gray-300" title="No Email Service" />
+    )}
+    {/* MS OFFICE SERVICE */}
+{order.msoffice_services_flag && (
+  <img
+    src="/MSOffice.png"
+    className="w-5 h-5 cursor-pointer"
+    title="MS Office Services"
+  />
+)}
+
+   
+
+  </div>
+</td>
+
                     <td className="px-4 py-2 border">{order.expiryDate ? new Date(order.expiryDate).toLocaleDateString() : "N/A"}</td>
                     <td className="px-4 py-2 border">{order.status || "-"}</td>
                   </tr>

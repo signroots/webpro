@@ -38,6 +38,7 @@ export interface ICustomer {
   c_address2?:string;
   c_city?: string;
   c_state?: string;
+  c_mobilePhone?:string;
 
   c_country?: string;
   c_countryCode?:string;        // ✅ ObjectId ONLY
@@ -68,6 +69,7 @@ export interface Client {
   c_country_name?: string;   // ✅ Display only
   c_state_name?: string;
   c_countryCode?:string;
+  c_mobilePhone?:string;
 
   c_zipCode?: string;
   c_company?: string;
