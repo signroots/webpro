@@ -995,58 +995,114 @@ router.get("/provider/:name", async (req, res) => {
 
 
 
-router.get(
-  "/customer_order_details/:customerId",
-  async (req, res) => {
-    try {
-      const { customerId } = req.params;
+router.get("/customer_order_details/:customerId", async (req, res) => {
+  try {
+    const { customerId } = req.params;
 
-      if (!mongoose.Types.ObjectId.isValid(customerId)) {
-        return res.status(400).json({ status: "ERROR", message: "Invalid customer ID" });
-      }
-
-      // Fetch client
-      const client = await Client.findById(customerId);
-      if (!client) {
-        return res.status(404).json({ status: "ERROR", message: "Customer not found" });
-      }
-
-      // Helper to get name safely
-      const getName = async <T extends { name: string }>(
-        value: mongoose.Types.ObjectId | T | string | undefined,
-        model: mongoose.Model<T>
-      ): Promise<string | undefined> => {
-        if (!value) return undefined;
-        if (typeof value === "string") return value;
-        if (mongoose.Types.ObjectId.isValid(value as any)) {
-          const doc = await model.findById(value as mongoose.Types.ObjectId);
-          return doc?.name;
-        }
-        return (value as T).name;
-      };
-
-      // Get state and country names safely
-      const stateName = await getName(client.c_state, State);
-      const countryName = await getName(client.c_country, Country);
-
-      const clientWithNames = {
-        ...client.toObject(),
-        c_state_name: stateName,
-        c_country_name: countryName,
-        c_countryCode: client.c_countryCode || "",
-        
-      };
-
-      // Fetch orders
-      const orders = await Order.find({ client: customerId }).sort({ createdAt: -1 });
-
-      res.json({ status: "SUCCESS", client: clientWithNames, orders });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ status: "ERROR", message: "Server error" });
+    if (!mongoose.Types.ObjectId.isValid(customerId)) {
+      return res
+        .status(400)
+        .json({ status: "ERROR", message: "Invalid customer ID" });
     }
+
+    // ================= CLIENT =================
+    const client = await Client.findById(customerId).lean();
+    if (!client) {
+      return res
+        .status(404)
+        .json({ status: "ERROR", message: "Customer not found" });
+    }
+
+    // ================= HELPERS =================
+    const getName = async <T extends { name: string }>(
+      value: mongoose.Types.ObjectId | T | string | undefined,
+      model: mongoose.Model<T>
+    ): Promise<string | undefined> => {
+      if (!value) return undefined;
+      if (typeof value === "string") return value;
+      if (mongoose.Types.ObjectId.isValid(value as any)) {
+        const doc = await model.findById(value);
+        return doc?.name;
+      }
+      return (value as T).name;
+    };
+
+    const stateName = await getName(client.c_state, State);
+    const countryName = await getName(client.c_country, Country);
+
+    const clientWithNames = {
+      ...client,
+      c_state_name: stateName,
+      c_country_name: countryName,
+      c_countryCode: client.c_countryCode || "",
+    };
+
+    // ================= ORDERS =================
+    let orders = await Order.find({ client: customerId })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // ================= ATTACH EMAIL PLANS =================
+    const attachEmailPlans = async (orders: any[]) => {
+      return Promise.all(
+        orders.map(async (order) => {
+          const emailPlans = await OrderPlan.find({
+            orderId: order._id,
+            type: "email",
+          })
+            .populate("planId")
+            .populate("emailTypeId")
+            .lean();
+
+          return {
+            ...order,
+            emailPlans,
+          };
+        })
+      );
+    };
+
+    orders = await attachEmailPlans(orders);
+
+    // ================= UPDATE STATUS =================
+    const today = new Date();
+
+    orders = await Promise.all(
+      orders.map(async (order) => {
+        let newStatus = order.status || "";
+
+        if (order.expiryDate) {
+          newStatus =
+            new Date(order.expiryDate) < today ? "EXPIRED" : "ACTIVE";
+        }
+
+        if (order.status !== newStatus) {
+          await Order.updateOne(
+            { _id: order._id },
+            { status: newStatus }
+          );
+          order.status = newStatus;
+        }
+
+        return order;
+      })
+    );
+
+    // ================= RESPONSE =================
+    res.json({
+      status: "SUCCESS",
+      client: clientWithNames,
+      orders,
+    });
+  } catch (err) {
+    console.error("❌ Customer Order Details Error:", err);
+    res.status(500).json({
+      status: "ERROR",
+      message: "Server error",
+    });
   }
-);
+});
+
 router.get("/orderplans/:orderid", async (req: Request, res: Response): Promise<void> => {
   try {
     const orderplans = await OrderPlan.find({ orderId: req.params.orderid });
