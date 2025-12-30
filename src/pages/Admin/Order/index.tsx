@@ -203,15 +203,7 @@ newCustomer: {
   });
 
 
-const formatDate = (date?: string) => {
-  if (!date) return "N/A";
-  const d = new Date(date);
-  // Show date as UTC to avoid timezone shifts
-  const day = d.getUTCDate().toString().padStart(2, "0");
-  const month = (d.getUTCMonth() + 1).toString().padStart(2, "0");
-  const year = d.getUTCFullYear();
-  return `${day}/${month}/${year}`;
-};
+
 
   // Filters
   const [provider, setProvider] = useState<string | undefined>(undefined);
@@ -895,19 +887,39 @@ const resetFormData = () => {
           
 <td className="px-6 py-4 font-medium">
   {(() => {
-    const emailExp = order.emailPlans?.[0]?.expiryDate;
+    const formatDate = (date?: string) => {
+      if (!date) return "N/A";
+      const d = new Date(date);
+      const day = d.getUTCDate().toString().padStart(2, "0");
+      const month = (d.getUTCMonth() + 1).toString().padStart(2, "0");
+      const year = d.getUTCFullYear();
+      return `${day}/${month}/${year}`;
+    };
+
     const domainExp = order.expiryDate;
+    const emailPlans = order.emailPlans || [];
 
     return (
       <div className="flex flex-col gap-2">
-        {emailExp && (
-          <div className="flex items-center gap-2 px-3 h-8 rounded-md bg-blue-100 text-blue-800 text-xs font-medium">
-            <span className="w-5 h-5 flex justify-center items-center rounded-full bg-white text-black text-[10px]">
-              EE
-            </span>
-            {formatDate(emailExp)}
-          </div>
-        )}
+        {/* Show all Email Expiries */}
+        {emailPlans.map((plan: any, idx: number) => {
+          const planDate = plan.expiryDate || plan.email_expiryDate;
+          if (!planDate) return null;
+
+          return (
+            <div
+              key={idx}
+              className="flex items-center gap-2 px-3 h-8 rounded-md bg-blue-100 text-blue-800 text-xs font-medium"
+            >
+              <span className="w-5 h-5 flex justify-center items-center rounded-full bg-white text-black text-[10px]">
+                EE
+              </span>
+              {formatDate(planDate)}
+            </div>
+          );
+        })}
+
+        {/* Show Domain Expiry */}
         {domainExp && (
           <div className="flex items-center gap-2 px-3 h-8 rounded-md bg-purple-100 text-purple-800 text-xs font-medium">
             <span className="w-5 h-5 flex justify-center items-center rounded-full bg-white text-black text-[10px]">
@@ -920,6 +932,7 @@ const resetFormData = () => {
     );
   })()}
 </td>
+
 
 
 
