@@ -931,30 +931,68 @@ router.get("/provider/:name", async (req, res) => {
   try {
     const provider = req.params.name;
 
-    const orders = await mongoose
+    // 1️⃣ Fetch orders by provider
+    let orders = await mongoose
       .model("Order")
       .find({ provider })
-      .populate("client")     // ⭐ include related client data
-      .populate("customer")   // for backward compatibility
-      .exec();
+      .populate("client")
+      .populate("customer")
+      .lean();
 
+    // 2️⃣ Attach email plans
+    const attachEmailPlans = async (orders: any[]) => {
+      return Promise.all(
+        orders.map(async (order) => {
+          const emailPlans = await mongoose
+            .model("OrderPlan")
+            .find({ orderId: order._id, type: "email" })
+            .populate("planId")
+            .populate("emailTypeId")
+            .lean();
+
+          return {
+            ...order,
+            emailPlans,
+          };
+        })
+      );
+    };
+
+    orders = await attachEmailPlans(orders);
+
+    // 3️⃣ Optional: Update domain statuses like in / route
+    const today = new Date();
+    orders = await Promise.all(
+      orders.map(async (order) => {
+        let newStatus = "";
+        if (order.expiryDate) {
+          newStatus =
+            new Date(order.expiryDate) < today ? "EXPIRED" : "ACTIVE";
+        }
+        if (order.status !== newStatus) {
+          await mongoose.model("Order").updateOne(
+            { _id: order._id },
+            { status: newStatus }
+          );
+          order.status = newStatus;
+        }
+        return order;
+      })
+    );
+
+    // 4️⃣ Return response
     res.status(200).json({
       success: true,
       count: orders.length,
-      data: orders,           // ✔ identical to /api/orders response
+      data: orders,
     });
-
   } catch (err) {
     console.error(err);
-
     const message = err instanceof Error ? err.message : "Unknown error";
-
-    res.status(500).json({
-      success: false,
-      error: message,
-    });
+    res.status(500).json({ success: false, error: message });
   }
 });
+
 
 
 router.get(
