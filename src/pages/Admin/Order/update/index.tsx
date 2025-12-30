@@ -1310,7 +1310,7 @@ return (
   onClick={() => setConfirmRemove({ index: idx, type: "email" })}
   className="text-red-500 mt-2 hover:text-red-700"
 >
-  Removeex
+  Remove
 </button>
 
       </div>
@@ -1430,7 +1430,7 @@ return (
   onClick={() => setConfirmRemove({ index: idx, type: "storage" })}
   className="text-red-500 mt-2 hover:text-red-700"
 >
-  Removess
+  Remove
 </button>
       </div>
     ))}
@@ -1551,7 +1551,7 @@ return (
   onClick={() => setConfirmRemove({ index: idx, type: "storage" })}
   className="text-red-500 mt-2 hover:text-red-700"
 >
-  Removems
+  Remove
 </button>
       </div>
     ))}
