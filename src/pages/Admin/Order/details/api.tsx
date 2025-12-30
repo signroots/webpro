@@ -95,7 +95,14 @@ export interface Order {
   status?: string;
   registrationDate?: string;
   expiryDate?: string;
-
+emailPlans?: {
+    _id: string;
+    orderId: string;
+    registrationDate: string;
+    expiryDate: string;
+    type: "email" | "storage" | "msoffice";
+    status: string;
+  }[];
   customer?: Customer | null;
   client?: Client | null;
 }

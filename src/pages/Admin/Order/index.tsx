@@ -888,7 +888,7 @@ const resetFormData = () => {
 <td className="px-6 py-4 font-medium">
   {(() => {
     const formatDate = (date?: string) => {
-      if (!date) return "N/A";
+      if (!date) return null;
       const d = new Date(date);
       const day = d.getUTCDate().toString().padStart(2, "0");
       const month = (d.getUTCMonth() + 1).toString().padStart(2, "0");
@@ -896,17 +896,32 @@ const resetFormData = () => {
       return `${day}/${month}/${year}`;
     };
 
-    const domainExp = order.expiryDate;
-    const emailPlans = order.emailPlans || [];
+    const domainDate = formatDate(order.expiryDate);
+
+    const emailDates = (order.emailPlans || [])
+      .map(plan => formatDate(plan.expiryDate))
+      .filter((d): d is string => Boolean(d));
+
+    const isSameExpiry =
+      domainDate &&
+      emailDates.length > 0 &&
+      emailDates.every(d => d === domainDate);
 
     return (
       <div className="flex flex-col gap-2">
-        {/* Show all Email Expiries */}
-        {emailPlans.map((plan: any, idx: number) => {
-          const planDate = plan.expiryDate || plan.email_expiryDate;
-          if (!planDate) return null;
+        {/* 🟢 ED – Same Email & Domain Expiry */}
+        {isSameExpiry && domainDate && (
+          <div className="flex items-center gap-2 px-3 h-8 rounded-md bg-green-100 text-green-800 text-xs font-medium">
+            <span className="w-5 h-5 flex justify-center items-center rounded-full bg-white text-black text-[10px]">
+              ED
+            </span>
+            {domainDate}
+          </div>
+        )}
 
-          return (
+        {/* 🔵 EE – Email Expiry */}
+        {!isSameExpiry &&
+          emailDates.map((date, idx) => (
             <div
               key={idx}
               className="flex items-center gap-2 px-3 h-8 rounded-md bg-blue-100 text-blue-800 text-xs font-medium"
@@ -914,25 +929,28 @@ const resetFormData = () => {
               <span className="w-5 h-5 flex justify-center items-center rounded-full bg-white text-black text-[10px]">
                 EE
               </span>
-              {formatDate(planDate)}
+              {date}
             </div>
-          );
-        })}
+          ))}
 
-        {/* Show Domain Expiry */}
-        {domainExp && (
+        {/* 🟣 DE – Domain Expiry */}
+        {!isSameExpiry && domainDate && (
           <div className="flex items-center gap-2 px-3 h-8 rounded-md bg-purple-100 text-purple-800 text-xs font-medium">
             <span className="w-5 h-5 flex justify-center items-center rounded-full bg-white text-black text-[10px]">
               DE
             </span>
-            {formatDate(domainExp)}
+            {domainDate}
           </div>
+        )}
+
+        {/* ⚪ No Data */}
+        {!domainDate && emailDates.length === 0 && (
+          <span className="text-gray-400 text-xs">N/A</span>
         )}
       </div>
     );
   })()}
 </td>
-
 
 
 

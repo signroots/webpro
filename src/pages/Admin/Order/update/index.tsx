@@ -137,7 +137,13 @@ interface OrderForm {
 const UpdateOrder: React.FC = () => {
   const navigate = useNavigate();
   const { orderId } = useParams<{ orderId: string }>();
+// const [confirmIndex, setConfirmIndex] = useState<number | null>(null);
+type RemoveTarget = "email" | "storage" | "msoffice";
 
+const [confirmRemove, setConfirmRemove] = useState<{
+  index: number;
+  type: RemoveTarget;
+} | null>(null);
   const [formData, setFormData] = useState<OrderForm>({
     domainName: "",
     managedBy: "Signroots",
@@ -863,12 +869,13 @@ const handleHostTypeChange = (hostTypeId: string) => {
   }, []);
 
   // ------------------- HANDLE SUBMIT -------------------
-  const handleSubmit = async (e: React.FormEvent) => {
+ const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   setLoading(true);
   setError(null);
 
   try {
+    // create initial payload
     const payload: any = { ...formData, is_customer: customerType === "existing" };
 
     if (customerType === "existing") delete payload.newCustomer;
@@ -876,17 +883,17 @@ const handleHostTypeChange = (hostTypeId: string) => {
 
     if (!payload.domainSource) payload.domainSource = formData.domainSource || "";
 
-    // combine plans
+    // combine all plans
     const combinedPlans: any[] = [];
 
     // EMAIL PLANS
     if (emailChecked && emailPlans.length > 0) {
       emailPlans.forEach((plan) => {
         combinedPlans.push({
-          planId: plan.selected_plan,            
-          emailTypeId: plan.email_service_id,    
-          emailType: plan.email_service,         
-          planName: plan.planName,               
+          planId: plan.selected_plan,
+          emailTypeId: plan.email_service_id,
+          emailType: plan.email_service,
+          planName: plan.planName,
           registrationDate: plan.registrationDate,
           expiryDate: plan.expiryDate,
           noOfUsers: plan.users,
@@ -894,7 +901,7 @@ const handleHostTypeChange = (hostTypeId: string) => {
           google_email: plan.google_email,
           microsoft_email: plan.microsoft_email,
           businessEmail: plan.businessEmail,
-          email_flag: true,
+          email_flag: true, // individual plan flag
         });
       });
     }
@@ -918,13 +925,13 @@ const handleHostTypeChange = (hostTypeId: string) => {
         });
       });
     }
-    
+
     // MS OFFICE PLANS
     if (msofficeChecked && msofficePlans.length > 0) {
       msofficePlans.forEach((plan) => {
         combinedPlans.push({
           planId: plan.selected_plan,
-          emailTypeId: plan.email_service_id, // or rename field if backend expects something else
+          emailTypeId: plan.email_service_id,
           emailType: plan.email_service,
           planName: plan.planName,
           registrationDate: plan.registrationDate,
@@ -935,9 +942,16 @@ const handleHostTypeChange = (hostTypeId: string) => {
         });
       });
     }
+
     // assign combined plans
     payload.plans = combinedPlans;
 
+    // ✅ update top-level flags based on current plans
+    payload.email_flag = combinedPlans.some(p => p.type === "email");
+    payload.storage_services_flag = combinedPlans.some(p => p.type === "storage");
+    payload.msoffice_services_flag = combinedPlans.some(p => p.type === "msoffice");
+
+    // send update request
     const res = await axios.put(`${import.meta.env.VITE_API_BASE_URL}/api/orders/${orderId}`, payload);
 
     if (res.data?.success === true) {
@@ -953,6 +967,39 @@ const handleHostTypeChange = (hostTypeId: string) => {
     setLoading(false);
   }
 };
+
+const confirmRemovePlan = () => {
+  if (!confirmRemove) return;
+
+  const { index, type } = confirmRemove;
+
+  if (type === "email") {
+    setEmailPlans(prev => {
+      const updated = prev.filter((_, i) => i !== index);
+      setEmailChecked(updated.length > 0); // uncheck if no email plans left
+      return updated;
+    });
+  }
+
+  if (type === "storage") {
+    setStoragePlans(prev => {
+      const updated = prev.filter((_, i) => i !== index);
+      setStorageChecked(updated.length > 0); // uncheck if no storage plans left
+      return updated;
+    });
+  }
+
+  if (type === "msoffice") {
+    setMsofficePlans(prev => {
+      const updated = prev.filter((_, i) => i !== index);
+      setMsofficeChecked(updated.length > 0); // uncheck if no MS Office plans left
+      return updated;
+    });
+  }
+
+  setConfirmRemove(null);
+};
+
 
 
   if (loadingOrder) return <p>Loading order data...</p>;
@@ -1258,13 +1305,14 @@ return (
 
         </div>
 
-        <button
-          type="button"
-          onClick={() => removeEmailPlan(idx)}
-          className="text-red-500 mt-2"
-        >
-          Remove
-        </button>
+<button
+  type="button"
+  onClick={() => setConfirmRemove({ index: idx, type: "email" })}
+  className="text-red-500 mt-2 hover:text-red-700"
+>
+  Removeex
+</button>
+
       </div>
     ))}
 
@@ -1377,6 +1425,13 @@ return (
           </div>
 
         </div>
+ <button
+  type="button"
+  onClick={() => setConfirmRemove({ index: idx, type: "storage" })}
+  className="text-red-500 mt-2 hover:text-red-700"
+>
+  Removess
+</button>
       </div>
     ))}
   </div>
@@ -1491,6 +1546,13 @@ return (
             />
           </div>
         </div>
+<button
+  type="button"
+  onClick={() => setConfirmRemove({ index: idx, type: "storage" })}
+  className="text-red-500 mt-2 hover:text-red-700"
+>
+  Removems
+</button>
       </div>
     ))}
 
@@ -1633,7 +1695,40 @@ return (
           </div>
         </form>
       </div>
+{confirmRemove && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+    <div className="bg-white rounded-lg p-6 w-80 shadow-lg">
+      <h3 className="text-lg font-semibold mb-2 text-gray-800">
+        Confirm Removal
+      </h3>
+
+      <p className="text-sm text-gray-600 mb-4">
+        Are you sure you want to remove this plan?
+      </p>
+
+      <div className="flex justify-end gap-3">
+        <button
+          onClick={() => setConfirmRemove(null)}
+          className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={confirmRemovePlan}
+          className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+        >
+          Yes, Remove
+        </button>
+      </div>
     </div>
+  </div>
+)}
+
+
+
+    </div>
+    
   );
 };
 
