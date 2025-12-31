@@ -219,29 +219,32 @@ router.get(
       // ===================== ADMIN =========================
       // =====================================================
       if (userRole === "admin") {
-        const query: any = {};
+          const query: any = {};
 
-        if (filter === "DNS Cloudflare") {
-          query.domainSource = "DNS Cloudflare";
-          query.$or = [
-            { expiryDate: null },
-            { expiryDate: "" },
-            { expiryDate: { $exists: false } },
-          ];
+          if (filter === "DNS Cloudflare") {
+            query.$and = [
+              { domainSource: "DNS Cloudflare" },
+              {
+                $or: [
+                  { expiryDate: null },
+                  { expiryDate: "" },
+                  { expiryDate: { $exists: false } },
+                ],
+              },
+            ];
+          }
+
+          const orders = await Order.find(query)
+            .populate("customer", "name email company")
+            .populate("client", "c_name c_email c_company")
+            .exec();
+
+          res.status(200).json({
+            success: true,
+            data: orders,
+          });
+          return;
         }
-
-        const orders = await Order.find(query)
-          .populate("customer", "name email company")
-          .populate("client", "c_name c_email c_company")
-          .exec();
-
-        res.status(200).json({
-          success: true,
-          data: orders,
-        });
-        return;
-      }
-
       // =====================================================
       // =================== CUSTOMER ========================
       // =====================================================
