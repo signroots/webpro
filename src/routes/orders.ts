@@ -196,78 +196,54 @@ router.get(
     try {
       const loggedInUser = req.user;
 
-      if (!loggedInUser || !loggedInUser._id) {
+      if (!loggedInUser?._id) {
         res.status(401).json({ success: false, error: "Unauthorized" });
         return;
       }
 
       const { filter } = req.query;
 
-      // ---------------- UPDATE STATUS HELPER ----------------
-      const updateOrderStatuses = async (orders: any[]) => {
-        const today = new Date();
-
-        await Promise.all(
-          orders.map(async (order) => {
-            let newStatus = "";
-
-            if (!order.expiryDate && !isNaN(new Date(order.expiryDate).getTime())) {
-              const expiryDate = new Date(order.expiryDate);
-              newStatus = expiryDate < today ? "EXPIRED" : "ACTIVE";
-            }
-
-            if (order.status !== newStatus) {
-              order.status = newStatus;
-              await order.save();
-            }
-          })
-        );
-
-        return orders;
-      };
-
       // ---------------- LOAD USER ----------------
       const user = await User.findById(loggedInUser._id)
         .populate("userType")
         .exec();
 
-      if (!user || !user.userType || typeof user.userType !== "object") {
+      if (!user || typeof user.userType !== "object") {
         res.status(403).json({ success: false, error: "Invalid user role" });
         return;
       }
 
       const userRole = (user.userType as IUserType).name.toLowerCase();
-      console.log("Resolved user role:", userRole);
 
       // =====================================================
       // ===================== ADMIN =========================
       // =====================================================
       if (userRole === "admin") {
-  const query: any = {};
+        const query: any = {};
 
-  if (filter === "DNS Cloudflare") {
-    query.domainSource = "DNS Cloudflare"; // MUST match DB value
-    query.$or = [
-      { expiryDate: null },
-      { expiryDate: "" },
-      { expiryDate: { $exists: false } },
-    ];
-  }
+        if (filter === "Cloudflare") {
+          query.domainSource = "Cloudflare";
+          query.$or = [
+            { expiryDate: null },
+            { expiryDate: "" },
+            { expiryDate: { $exists: false } },
+          ];
+        }
 
-  let orders = await Order.find(query)
-    .populate("customer", "name email company")
-    .populate("client", "c_name c_email c_company")
-    .exec();
+        const orders = await Order.find(query)
+          .populate("customer", "name email company")
+          .populate("client", "c_name c_email c_company")
+          .exec();
 
-  res.status(200).json({
-    success: true,
-    data: orders,
-  });
-  return;
-}
+        res.status(200).json({
+          success: true,
+          data: orders,
+        });
+        return;
+      }
 
       // =====================================================
-      // =================== CUSTOMER (USER) =================
+      // =================== CUSTOMER ========================
       // =====================================================
       if (userRole === "customer") {
         const client = await Client.findOne({ userType: user._id }).exec();
@@ -282,8 +258,8 @@ router.get(
 
         const query: any = { client: client._id };
 
-        if (filter === "DNS Cloudflare") {
-          query.domainSource = "DNS Cloudflare";
+        if (filter === "Cloudflare") {
+          query.domainSource = "Cloudflare";
           query.$or = [
             { expiryDate: null },
             { expiryDate: "" },
@@ -291,18 +267,16 @@ router.get(
           ];
         }
 
-        let orders = await Order.find(query)
+        const orders = await Order.find(query)
           .populate("client", "c_name c_email c_company")
           .exec();
-
-        orders = await updateOrderStatuses(orders);
 
         res.status(200).json({
           success: true,
           customer: {
             _id: client._id,
             name: client.c_name,
-            c_company: client.c_company, // ✅ FIXED
+            c_company: client.c_company,
             email: client.c_email,
           },
           data: orders,
@@ -311,21 +285,15 @@ router.get(
       }
 
       // =====================================================
-      // =================== FALLBACK =========================
-      // =====================================================
-      res.status(403).json({
-        success: false,
-        error: "Access denied",
-      });
+      res.status(403).json({ success: false, error: "Access denied" });
+
     } catch (err) {
       console.error("❌ Error fetching DNS orders:", err);
-      res.status(500).json({
-        success: false,
-        error: "Server error",
-      });
+      res.status(500).json({ success: false, error: "Server error" });
     }
   }
 );
+
 
 router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
