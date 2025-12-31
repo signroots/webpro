@@ -221,8 +221,8 @@ router.get(
       if (userRole === "admin") {
         const query: any = {};
 
-        if (filter === "Cloudflare") {
-          query.domainSource = "Cloudflare";
+        if (filter === "DNS Cloudflare") {
+          query.domainSource = "DNS Cloudflare";
           query.$or = [
             { expiryDate: null },
             { expiryDate: "" },
@@ -258,8 +258,8 @@ router.get(
 
         const query: any = { client: client._id };
 
-        if (filter === "Cloudflare") {
-          query.domainSource = "Cloudflare";
+        if (filter === "DNS Cloudflare") {
+          query.domainSource = "DNS Cloudflare";
           query.$or = [
             { expiryDate: null },
             { expiryDate: "" },
