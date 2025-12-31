@@ -211,7 +211,7 @@ router.get(
           orders.map(async (order) => {
             let newStatus = "";
 
-            if (order.expiryDate && !isNaN(new Date(order.expiryDate).getTime())) {
+            if (!order.expiryDate && !isNaN(new Date(order.expiryDate).getTime())) {
               const expiryDate = new Date(order.expiryDate);
               newStatus = expiryDate < today ? "EXPIRED" : "ACTIVE";
             }
@@ -243,31 +243,28 @@ router.get(
       // ===================== ADMIN =========================
       // =====================================================
       if (userRole === "admin") {
-        const query: any = {};
+  const query: any = {};
 
-        if (filter === "DNS Cloudflare") {
-          query.domainSource = "DNS Cloudflare";
-          query.$or = [
-            { expiryDate: null },
-            { expiryDate: { $exists: false } },
-          ];
-        }
+  if (filter === "DNS Cloudflare") {
+    query.domainSource = "DNS Cloudflare"; // MUST match DB value
+    query.$or = [
+      { expiryDate: null },
+      { expiryDate: "" },
+      { expiryDate: { $exists: false } },
+    ];
+  }
 
-        let orders = await Order.find(query)
-          // Customer model → uses `company`
-          .populate("customer", "name email company")
-          // Client model → uses `c_company`
-          .populate("client", "c_name c_email c_company")
-          .exec();
+  let orders = await Order.find(query)
+    .populate("customer", "name email company")
+    .populate("client", "c_name c_email c_company")
+    .exec();
 
-        orders = await updateOrderStatuses(orders);
-
-        res.status(200).json({
-          success: true,
-          data: orders,
-        });
-        return;
-      }
+  res.status(200).json({
+    success: true,
+    data: orders,
+  });
+  return;
+}
 
       // =====================================================
       // =================== CUSTOMER (USER) =================
