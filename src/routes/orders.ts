@@ -219,32 +219,25 @@ router.get(
       // ===================== ADMIN =========================
       // =====================================================
       if (userRole === "admin") {
-          const query: any = {};
+        const query: any = {};
 
-          if (filter === "DNS Cloudflare") {
-            query.$and = [
-              { domainSource: "DNS Cloudflare" },
-              {
-                $or: [
-                  { expiryDate: null },
-                  { expiryDate: "" },
-                  { expiryDate: { $exists: false } },
-                ],
-              },
-            ];
-          }
-
-          const orders = await Order.find(query)
-            .populate("customer", "name email company")
-            .populate("client", "c_name c_email c_company")
-            .exec();
-
-          res.status(200).json({
-            success: true,
-            data: orders,
-          });
-          return;
+        if (filter === "DNS Cloudflare") {
+          query.domainSource = "DNS Cloudflare";
+          query.expiryDate = null; // 👈 THIS IS ENOUGH
         }
+
+        const orders = await Order.find(query)
+          .populate("customer", "name email company")
+          .populate("client", "c_name c_email c_company")
+          .exec();
+
+        res.status(200).json({
+          success: true,
+          data: orders,
+        });
+        return;
+      }
+
       // =====================================================
       // =================== CUSTOMER ========================
       // =====================================================
@@ -263,11 +256,7 @@ router.get(
 
         if (filter === "DNS Cloudflare") {
           query.domainSource = "DNS Cloudflare";
-          query.$or = [
-            { expiryDate: null },
-            { expiryDate: "" },
-            { expiryDate: { $exists: false } },
-          ];
+          query.expiryDate = null; // 👈 SAME LOGIC
         }
 
         const orders = await Order.find(query)
@@ -287,16 +276,13 @@ router.get(
         return;
       }
 
-      // =====================================================
       res.status(403).json({ success: false, error: "Access denied" });
-
     } catch (err) {
       console.error("❌ Error fetching DNS orders:", err);
       res.status(500).json({ success: false, error: "Server error" });
     }
   }
 );
-
 
 router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
