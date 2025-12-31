@@ -551,7 +551,12 @@ const handleSubmit = async (e: React.FormEvent) => {
         className="w-6 h-6"
         title="ResellerClub"
       />
-    ) : order.domainSource.toLowerCase() === "cloudflare" ? (
+    ) : order.domainSource.toLowerCase() === "cloudflare"? (
+      <SiCloudflare
+        className="w-6 h-6 text-orange-500"
+        title="Cloudflare"
+      />
+    ): order.domainSource.toLowerCase() === "cloudflare" || "DNS Cloudflare" ? (
       <SiCloudflare
         className="w-6 h-6 text-orange-500"
         title="Cloudflare"

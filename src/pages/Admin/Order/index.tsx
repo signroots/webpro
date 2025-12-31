@@ -772,6 +772,12 @@ const resetFormData = () => {
                   <img src="/images/resellerclub.png" className="w-6 h-6" title="ResellerClub" />
                 ) : order.domainSource.toLowerCase() === "cloudflare" ? (
                   <img src="/images/cloudflare.png" className="w-7 h-7" title="Cloudflare" />
+                ): order.domainSource.toLowerCase() === "dns cloudflare" ? (
+                  <img
+                    src="/cloudflare-dns.png"
+                    className="w-6 h-6"
+                    title="DNS Cloudflare"
+                  />
                 ) : order.domainSource.toLowerCase() === "hostinger" ? (
                   <SiHostinger className="w-6 h-6 text-blue-500" title="Hostinger" />
                 ) : order.domainSource.toLowerCase() === "ae server" ? (
