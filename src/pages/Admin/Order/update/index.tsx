@@ -1177,6 +1177,7 @@ return (
                   <option value="SQUARESPACE">SQUARESPACE</option>
                   <option value="SAHARA">SAHARA</option>
                   <option value="Cloudflare">CLOUDFLARE</option>
+                  <option value="DNS Cloudflare">DNS CLOUDFLARE</option>
                   <option value="AE Server">AE SERVER</option>
                 </select>
               </div>
