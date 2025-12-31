@@ -204,48 +204,62 @@ router.get(
 
       if (!CLOUDFLARE_TOKEN || !CLOUDFLARE_ACCOUNT_ID) {
         res.status(400).json({
-          error: "Missing CLOUDFLARE_TOKEN or CLOUDFLARE_ACCOUNT_ID in env",
+          error: "Missing CLOUDFLARE_TOKEN or CLOUDFLARE_ACCOUNT_ID",
         });
         return;
       }
 
       /* ======================================================
-         STEP 1: FETCH REGISTRAR DOMAINS (PAID / REGISTERED)
+         STEP 1: FETCH REGISTRAR DOMAINS (OPTIONAL)
       ====================================================== */
 
-      let registrarPage = 0;
-      const registrarPerPage = 50;
       const registrarDomainMap: Record<string, any> = {};
-      let registrarFetched = 0;
-      let registrarTotal = 0;
+      let registrarAvailable = true;
 
-      do {
-        const registrarResponse = await axios.get(
-          `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/registrar/domains`,
-          {
-            headers: {
-              "X-Auth-Email": CLOUDFLARE_EMAIL_ID,
-              "X-Auth-Key": CLOUDFLARE_GLOBAL_KEY,
-              "Content-Type": "application/json",
-            },
-            params: {
-              page: registrarPage,
-              per_page: registrarPerPage,
-            },
-          }
+      try {
+        let registrarPage = 0;
+        const registrarPerPage = 50;
+        let registrarFetched = 0;
+        let registrarTotal = 0;
+
+        do {
+          const registrarResponse = await axios.get(
+            `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/registrar/domains`,
+            {
+              headers: {
+                "X-Auth-Email": CLOUDFLARE_EMAIL_ID,
+                "X-Auth-Key": CLOUDFLARE_GLOBAL_KEY,
+                "Content-Type": "application/json",
+              },
+              params: {
+                page: registrarPage,
+                per_page: registrarPerPage,
+              },
+            }
+          );
+
+          const { result, result_info } = registrarResponse.data;
+
+          registrarTotal = result_info.total_count || registrarTotal;
+          registrarFetched += result.length;
+
+          result.forEach((domain: any) => {
+            registrarDomainMap[domain.name] = domain;
+          });
+
+          registrarPage++;
+        } while (registrarFetched < registrarTotal);
+
+        console.log(
+          `✅ Registrar domains fetched: ${Object.keys(registrarDomainMap).length}`
         );
-
-        const { result, result_info } = registrarResponse.data;
-
-        registrarTotal = result_info.total_count || registrarTotal;
-        registrarFetched += result.length;
-
-        result.forEach((domain: any) => {
-          registrarDomainMap[domain.name] = domain;
-        });
-
-        registrarPage++;
-      } while (registrarFetched < registrarTotal);
+      } catch (err: any) {
+        registrarAvailable = false;
+        console.warn(
+          "⚠️ Registrar API not accessible — importing DNS-only domains",
+          err.response?.data || err.message
+        );
+      }
 
       /* ======================================================
          STEP 2: DEFAULT CUSTOMER
@@ -258,7 +272,7 @@ router.get(
       );
 
       /* ======================================================
-         STEP 3: FETCH ALL ZONES (DNS + REGISTERED)
+         STEP 3: FETCH ZONES (MAIN SOURCE)
       ====================================================== */
 
       let page = 1;
@@ -287,8 +301,7 @@ router.get(
           allDomains.push(zone);
 
           const registrarInfo = registrarDomainMap[zone.name];
-
-          const isRegistrarDomain = !!registrarInfo;
+          const isRegistrarDomain = registrarAvailable && !!registrarInfo;
 
           const expiryDate = registrarInfo?.expires_at
             ? new Date(registrarInfo.expires_at)
@@ -310,7 +323,7 @@ router.get(
                   lockStatus: zone.paused ? "Locked" : "Unlocked",
                   customer: defaultCustomer._id,
 
-                  // 🔥 IMPORTANT FIX
+                  // ✅ FINAL DOMAIN SOURCE LOGIC
                   domainSource: isRegistrarDomain
                     ? "Cloudflare"
                     : "DNS Cloudflare",
@@ -332,9 +345,12 @@ router.get(
       } while (page <= totalPages);
 
       res.status(200).json({
-        message: "✅ All Cloudflare domains imported successfully",
+        message: "✅ Cloudflare import completed",
         totalZones: allDomains.length,
-        registrarDomains: Object.keys(registrarDomainMap).length,
+        registrarDomains: registrarAvailable
+          ? Object.keys(registrarDomainMap).length
+          : 0,
+        registrarAvailable,
       });
 
     } catch (error: any) {
