@@ -223,7 +223,11 @@ router.get(
 
         if (filter === "DNS Cloudflare") {
           query.domainSource = "DNS Cloudflare";
-          query.expiryDate = null; // 👈 THIS IS ENOUGH
+          query.$or = [
+            { expiryDate: null },
+            { expiryDate: { $exists: false } },
+            { expiryDate: "" },
+          ];
         }
 
         const orders = await Order.find(query)
@@ -256,7 +260,11 @@ router.get(
 
         if (filter === "DNS Cloudflare") {
           query.domainSource = "DNS Cloudflare";
-          query.expiryDate = null; // 👈 SAME LOGIC
+          query.$or = [
+            { expiryDate: null },
+            { expiryDate: { $exists: false } },
+            { expiryDate: "" },
+          ];
         }
 
         const orders = await Order.find(query)
