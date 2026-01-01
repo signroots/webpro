@@ -1,11 +1,11 @@
-// import axios from "axios";
-// import Order from "../models/Order";
-// import Customer from "../models/Customer";
+import axios from "axios";
+import Order from "../models/Order";
+import Customer from "../models/Customer";
 
-// /**
-//  * Sync all Cloudflare domains (registrar + zones) into MongoDB.
-//  */
-// export async function syncCloudflareDomains(): Promise<void> {
+/**
+ * Sync all Cloudflare domains (registrar + zones) into MongoDB.
+ */
+export async function syncCloudflareDomains(): Promise<void> {
 //   const { CLOUDFLARE_TOKEN, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_EMAIL, CLOUDFLARE_API_KEY } = process.env;
 
 //   if (!CLOUDFLARE_TOKEN || !CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_EMAIL || !CLOUDFLARE_API_KEY) {
@@ -152,4 +152,4 @@
 
 //   console.log(`🧹 Marked ${removed.modifiedCount} domains as removed and reset flags`);
 //   console.log("✅ Cloudflare sync completed successfully");
-// }
+}
