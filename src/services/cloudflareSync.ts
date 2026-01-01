@@ -92,39 +92,35 @@ export async function syncCloudflareDomains(): Promise<void> {
     if (!zones.length) break;
 
     for (const zone of zones) {
-      zoneDomainNames.push(zone.name);
+  zoneDomainNames.push(zone.name);
 
-      // Check if registrar info exists
-      const registrarInfo = apiDomainNames.includes(zone.name)
-        ? await Order.findOne({ domainName: zone.name })
-        : null;
-      const expiryDate = registrarInfo?.expiryDate || null;
+  // Fetch existing Order if exists
+  const existingOrder = await Order.findOne({ domainName: zone.name });
 
-      await Order.findOneAndUpdate(
-        { domainName: zone.name },
-        {
-          domainName: zone.name,
-          customer: customer._id,
-          status: zone.status || "active",
-          registrationDate: new Date(zone.created_on),
-          expiryDate,
-          cloudflareRegistered: !!registrarInfo,
-          domainSource: "cloudflare",
-          managedBy: "Signroots",
-          nameServers: zone.name_servers || [],
-          is_dns: zone.original_dnshost || false,
-          lockStatus: zone.paused ? "Locked" : "Unlocked",
-          isActive: true,
-          lastSyncedAt: new Date(),
-          // ==================== SET FLAGS FOR ACTIVE DOMAINS ====================
-          domain_flag: true,
-          dns_flag: true,
-        },
-        { upsert: true }
-      );
+  await Order.findOneAndUpdate(
+    { domainName: zone.name },
+    {
+      domainName: zone.name,
+      customer: customer._id,
+      status: zone.status || "active",
+      registrationDate: existingOrder?.registrationDate || new Date(zone.created_on),
+      expiryDate: existingOrder?.expiryDate || null, // Keep existing expiry date
+      cloudflareRegistered: existingOrder?.cloudflareRegistered || false,
+      domainSource: "cloudflare",
+      managedBy: "Signroots",
+      nameServers: zone.name_servers || [],
+      is_dns: zone.original_dnshost || false,
+      lockStatus: zone.paused ? "Locked" : "Unlocked",
+      isActive: true,
+      lastSyncedAt: new Date(),
+      domain_flag: true,
+      dns_flag: true,
+    },
+    { upsert: true }
+  );
 
-      console.log(`🌐 Synced zone: ${zone.name}, status: ${zone.status}`);
-    }
+  console.log(`🌐 Synced zone: ${zone.name}, status: ${zone.status}`);
+}
 
     if (zones.length < 50) break;
     zonePage++;
