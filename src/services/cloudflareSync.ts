@@ -43,22 +43,25 @@ export async function syncCloudflareDomains(): Promise<void> {
 
       apiDomainNames.push(domain.name);
 
-      await Order.findOneAndUpdate(
-        { domainName: domain.name },
-        {
-          domainName: domain.name,
-          customer: customer._id,
-          status: domain.last_known_status || "active",
-          registrationDate,
-          expiryDate,
-          cloudflareRegistered: true,
-          domainSource: "cloudflare",
-          managedBy: "Signroots",
-          isActive: true,
-          lastSyncedAt: new Date(),
-        },
-        { upsert: true }
-      );
+     await Order.findOneAndUpdate(
+  { domainName: domain.name },
+  {
+    domainName: domain.name,
+    customer: customer._id,
+    status: domain.last_known_status || "active",
+    registrationDate,
+    expiryDate,
+    cloudflareRegistered: true,
+    domainSource: "cloudflare",
+    managedBy: "Signroots",
+    isActive: true,
+    lastSyncedAt: new Date(),
+    // ==================== SET FLAGS FOR ACTIVE DOMAINS ====================
+    domain_flag: true,
+    dns_flag: true,
+  },
+  { upsert: true }
+);
 
       console.log(`✅ Synced domain: ${domain.name}, expires at: ${expiryDate}`);
     }
