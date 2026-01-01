@@ -26,58 +26,59 @@ export async function syncCloudflareDomains(): Promise<void> {
   );
 
   // -------------------- FETCH REGISTRAR DOMAINS --------------------
-  let registrarPage = 1;
-  const apiDomainNames: string[] = []; // track domains from API
+ let registrarPage = 0; // start from page 0
+const apiDomainNames: string[] = []; // track domains from API
 
-  while (true) {
-    const res = await axios.get(
-      `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/registrar/domains`,
+while (true) {
+  const res = await axios.get(
+    `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/registrar/domains`,
+    {
+      headers: {
+        "X-Auth-Email": CLOUDFLARE_EMAIL,
+        "X-Auth-Key": CLOUDFLARE_API_KEY,
+        "Content-Type": "application/json",
+      },
+      params: { page: registrarPage, per_page: 50 },
+    }
+  );
+
+  const domains = res.data.result || [];
+  const totalPages = res.data.result_info?.total_pages || 1;
+
+  if (!domains.length) break;
+
+  for (const domain of domains) {
+    const expiryDate = domain.expires_at ? new Date(domain.expires_at) : null;
+    const registrationDate = domain.registered_at ? new Date(domain.registered_at) : null;
+
+    apiDomainNames.push(domain.name);
+
+    await Order.findOneAndUpdate(
+      { domainName: domain.name },
       {
-        headers: {
-          "X-Auth-Email": CLOUDFLARE_EMAIL,
-          "X-Auth-Key": CLOUDFLARE_API_KEY,
-          "Content-Type": "application/json",
-        },
-        params: { page: registrarPage, per_page: 50 },
-      }
+        domainName: domain.name,
+        customer: customer._id,
+        status: domain.last_known_status || "active",
+        registrationDate,
+        expiryDate,
+        cloudflareRegistered: true,
+        domainSource: "cloudflare",
+        managedBy: "Signroots",
+        isActive: true,
+        lastSyncedAt: new Date(),
+        domain_flag: true,
+        dns_flag: true,
+      },
+      { upsert: true }
     );
 
-    const domains = res.data.result || [];
-    if (!domains.length) break;
-
-    for (const domain of domains) {
-      const expiryDate = domain.expires_at ? new Date(domain.expires_at) : null;
-      const registrationDate = domain.registered_at ? new Date(domain.registered_at) : null;
-
-      apiDomainNames.push(domain.name);
-
-      await Order.findOneAndUpdate(
-        { domainName: domain.name },
-        {
-          domainName: domain.name,
-          customer: customer._id,
-          status: domain.last_known_status || "active",
-          registrationDate,
-          expiryDate,
-          cloudflareRegistered: true,
-          domainSource: "cloudflare",
-          managedBy: "Signroots",
-          isActive: true,
-          lastSyncedAt: new Date(),
-          // ==================== SET FLAGS FOR ACTIVE DOMAINS ====================
-          domain_flag: true,
-          dns_flag: true,
-        },
-        { upsert: true }
-      );
-
-      console.log(`✅ Synced registrar domain: ${domain.name}, expires at: ${expiryDate}`);
-    }
-
-    if (domains.length < 50) break;
-    registrarPage++;
+    console.log(`✅ Synced registrar domain: ${domain.name}, expires at: ${expiryDate}`);
   }
 
+  registrarPage++;
+
+  if (registrarPage >= totalPages) break; // stop when all pages are fetched
+}
   // -------------------- FETCH ALL CLOUD ZONES --------------------
   let zonePage = 1;
   const zoneDomainNames: string[] = [];
