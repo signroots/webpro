@@ -2,9 +2,6 @@ import axios from "axios";
 import Order from "../models/Order";
 import Customer from "../models/Customer";
 
-/**
- * Sync domains from Cloudflare (registrar + zones) into local DB.
- */
 export async function syncCloudflareDomains(): Promise<void> {
   const { CLOUDFLARE_TOKEN, CLOUDFLARE_ACCOUNT_ID } = process.env;
 
@@ -14,7 +11,7 @@ export async function syncCloudflareDomains(): Promise<void> {
 
   console.log("🔄 Starting Cloudflare sync...");
 
-  /* -------------------- DEFAULT CUSTOMER -------------------- */
+  // -------------------- DEFAULT CUSTOMER --------------------
   const customer = await Customer.findOneAndUpdate(
     { email: "cloudflare@signroots.com" },
     {
@@ -27,115 +24,95 @@ export async function syncCloudflareDomains(): Promise<void> {
     { upsert: true, new: true }
   );
 
-  /* -------------------- FETCH REGISTRAR DOMAINS -------------------- */
+  // -------------------- FETCH REGISTRAR DOMAINS --------------------
   const registrarMap: Record<string, any> = {};
   let page = 1;
 
   while (true) {
-    try {
-      const res = await axios.get(
-        `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/registrar/domains`,
-        {
-          headers: { Authorization: `Bearer ${CLOUDFLARE_TOKEN}` },
-          params: { page, per_page: 30 },
-        }
-      );
+    const res = await axios.get(
+      `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/registrar/domains`,
+      {
+        headers: { Authorization: `Bearer ${CLOUDFLARE_TOKEN}` },
+        params: { page, per_page: 30 },
+      }
+    );
 
-      const domains = res.data.result || [];
-      const count = res.data.result_info?.count || domains.length;
+    const domains = res.data.result || [];
+    if (!domains.length) break;
 
-      if (!domains.length) break;
+    domains.forEach((d: any) => {
+      registrarMap[d.name] = d; // store entire domain info for easy lookup
+    });
 
-      domains.forEach((d: any) => {
-        registrarMap[d.name] = d;
-      });
+    console.log(`📄 Registrar page ${page} fetched (${domains.length} domains)`);
 
-      console.log(`📄 Registrar page ${page} fetched (${count} domains)`);
-
-      if (count < 30) break;
-      page++;
-    } catch (err) {
-      console.error(`❌ Failed to fetch registrar domains on page ${page}`, err);
-      break;
-    }
+    if (domains.length < 30) break;
+    page++;
   }
 
   console.log(`📦 Total registrar domains fetched: ${Object.keys(registrarMap).length}`);
 
-  /* -------------------- FETCH ZONES -------------------- */
+  // -------------------- FETCH ZONES --------------------
   let zonePage = 1;
   let totalPages = 1;
   const apiDomainNames: string[] = [];
 
   do {
-    try {
-      const res = await axios.get("https://api.cloudflare.com/client/v4/zones", {
-        headers: { Authorization: `Bearer ${CLOUDFLARE_TOKEN}` },
-        params: { page: zonePage, per_page: 50 },
-      });
+    const res = await axios.get("https://api.cloudflare.com/client/v4/zones", {
+      headers: { Authorization: `Bearer ${CLOUDFLARE_TOKEN}` },
+      params: { page: zonePage, per_page: 50 },
+    });
 
-      const zones = res.data.result || [];
-      totalPages = res.data.result_info?.total_pages || 1;
+    const zones = res.data.result || [];
+    totalPages = res.data.result_info?.total_pages || 1;
 
-      for (const z of zones) {
-        try {
-          const registrar = registrarMap[z.name];
-          apiDomainNames.push(z.name);
+    for (const zone of zones) {
+      try {
+        apiDomainNames.push(zone.name);
 
-          const expiryDate = registrar?.expires_at ? new Date(registrar.expires_at) : null;
-          const registrationDate = z.created_on ? new Date(z.created_on) : null;
+        // Check if registrar info exists for this domain
+        const registrar = registrarMap[zone.name];
 
-          await Order.findOneAndUpdate(
-            { domainName: z.name },
-            {
-              domainName: z.name,
-              customer: customer._id,
-              status: z.status,
-              registrationDate,
-              expiryDate,
-              cloudflareRegistered: !!registrar,
-              domainSource: "cloudflare",
-              managedBy: "Signroots",
-              isActive: true,
-              lastSyncedAt: new Date(),
-            },
-            { upsert: true }
-          );
+        const expiryDate = registrar?.expires_at ? new Date(registrar.expires_at) : null;
+        const registrationDate = registrar?.registered_at
+          ? new Date(registrar.registered_at)
+          : zone.created_on
+          ? new Date(zone.created_on)
+          : null;
 
-          console.log(`✅ Synced domain: ${z.name}`);
-        } catch (err) {
-          console.error(`❌ Failed to sync domain ${z.name}`, err);
-        }
+        await Order.findOneAndUpdate(
+          { domainName: zone.name },
+          {
+            domainName: zone.name,
+            customer: customer._id,
+            status: registrar?.last_known_status || zone.status || "active",
+            registrationDate,
+            expiryDate, // ✅ store expiry date from registrar
+            cloudflareRegistered: !!registrar,
+            domainSource: "cloudflare",
+            managedBy: "Signroots",
+            isActive: true,
+            lastSyncedAt: new Date(),
+          },
+          { upsert: true }
+        );
+
+        console.log(`✅ Synced domain: ${zone.name}, expires at: ${expiryDate}`);
+      } catch (err) {
+        console.error(`❌ Failed to sync domain ${zone.name}`, err);
       }
-
-      console.log(`🌐 Zone page ${zonePage} synced (${zones.length} zones)`);
-      zonePage++;
-    } catch (err) {
-      console.error(`❌ Failed to fetch zones on page ${zonePage}`, err);
-      break;
     }
+
+    console.log(`🌐 Zone page ${zonePage} synced (${zones.length} zones)`);
+    zonePage++;
   } while (zonePage <= totalPages);
 
-  /* -------------------- MARK REMOVED DOMAINS -------------------- */
-  try {
-    const removed = await Order.updateMany(
-      {
-        domainSource: "cloudflare",
-        domainName: { $nin: apiDomainNames },
-      },
-      {
-        $set: {
-          status: "Removed / Not in Cloudflare",
-          isActive: false,
-          lastSyncedAt: new Date(),
-        },
-      }
-    );
+  // -------------------- MARK REMOVED DOMAINS --------------------
+  const removed = await Order.updateMany(
+    { domainSource: "cloudflare", domainName: { $nin: apiDomainNames } },
+    { $set: { status: "Removed / Not in Cloudflare", isActive: false, lastSyncedAt: new Date() } }
+  );
 
-    console.log(`🧹 Marked ${removed.modifiedCount} domains as removed`);
-  } catch (err) {
-    console.error("❌ Failed to mark removed domains", err);
-  }
-
+  console.log(`🧹 Marked ${removed.modifiedCount} domains as removed`);
   console.log("✅ Cloudflare sync completed successfully");
 }
