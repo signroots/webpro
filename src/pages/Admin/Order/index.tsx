@@ -774,7 +774,7 @@ const resetFormData = () => {
                   <img src="/images/cloudflare.png" className="w-7 h-7" title="Cloudflare" />
                 ): order.domainSource.toLowerCase() === "dns cloudflare" ? (
                   <img
-                    src="/cloudflare-dns.png"
+                    src="/dns_logo.png"
                     className="w-6 h-6"
                     title="DNS Cloudflare"
                   />
