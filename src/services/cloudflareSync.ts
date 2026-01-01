@@ -26,14 +26,14 @@ export async function syncCloudflareDomains(): Promise<void> {
 
   // -------------------- FETCH REGISTRAR DOMAINS --------------------
   const registrarMap: Record<string, any> = {};
-  let page = 1;
+  let registrarPage = 1;
 
   while (true) {
     const res = await axios.get(
       `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/registrar/domains`,
       {
         headers: { Authorization: `Bearer ${CLOUDFLARE_TOKEN}` },
-        params: { page, per_page: 30 },
+        params: { page: registrarPage, per_page: 30 },
       }
     );
 
@@ -41,13 +41,13 @@ export async function syncCloudflareDomains(): Promise<void> {
     if (!domains.length) break;
 
     domains.forEach((d: any) => {
-      registrarMap[d.name] = d; // store entire domain info for easy lookup
+      registrarMap[d.name] = d; // map domain name => registrar info (contains expires_at)
     });
 
-    console.log(`📄 Registrar page ${page} fetched (${domains.length} domains)`);
+    console.log(`📄 Registrar page ${registrarPage} fetched (${domains.length} domains)`);
 
     if (domains.length < 30) break;
-    page++;
+    registrarPage++;
   }
 
   console.log(`📦 Total registrar domains fetched: ${Object.keys(registrarMap).length}`);
@@ -70,15 +70,9 @@ export async function syncCloudflareDomains(): Promise<void> {
       try {
         apiDomainNames.push(zone.name);
 
-        // Check if registrar info exists for this domain
+        // ✅ Check if domain exists in registrarMap to get expiry date
         const registrar = registrarMap[zone.name];
-
         const expiryDate = registrar?.expires_at ? new Date(registrar.expires_at) : null;
-        const registrationDate = registrar?.registered_at
-          ? new Date(registrar.registered_at)
-          : zone.created_on
-          ? new Date(zone.created_on)
-          : null;
 
         await Order.findOneAndUpdate(
           { domainName: zone.name },
@@ -86,8 +80,12 @@ export async function syncCloudflareDomains(): Promise<void> {
             domainName: zone.name,
             customer: customer._id,
             status: registrar?.last_known_status || zone.status || "active",
-            registrationDate,
-            expiryDate, // ✅ store expiry date from registrar
+            registrationDate: registrar?.registered_at
+              ? new Date(registrar.registered_at)
+              : zone.created_on
+              ? new Date(zone.created_on)
+              : null,
+            expiryDate, // store expiry date from registrar API
             cloudflareRegistered: !!registrar,
             domainSource: "cloudflare",
             managedBy: "Signroots",
