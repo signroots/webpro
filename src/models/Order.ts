@@ -40,7 +40,7 @@ export interface IOrder extends Document {
   host_flag?: boolean;
   storage_services_flag?:boolean;
   msoffice_services_flag?:boolean;
-
+  dns_flag?:boolean;
   subscription?: string;
   email_status?: string;
   username?: string;
@@ -108,7 +108,7 @@ const orderSchema = new mongoose.Schema<IOrder>(
     host_flag: { type: Boolean, default: false },
     storage_services_flag:{type:Boolean,default:false},
     msoffice_services_flag:{type:Boolean,default:false},
-
+    dns_flag:{type:Boolean,default:false},
     // ========================
     // References to Other Models
     // ========================

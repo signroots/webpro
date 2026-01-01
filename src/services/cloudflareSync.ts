@@ -9,9 +9,6 @@ export async function syncCloudflareDomains(): Promise<void> {
     throw new Error("Cloudflare credentials missing in .env");
   }
 
-  console.log("🔄 Starting Cloudflare sync...");
-
-  // -------------------- DEFAULT CUSTOMER --------------------
   const customer = await Customer.findOneAndUpdate(
     { email: "cloudflare@signroots.com" },
     {
@@ -25,8 +22,8 @@ export async function syncCloudflareDomains(): Promise<void> {
   );
 
   // -------------------- FETCH REGISTRAR DOMAINS --------------------
-  const registrarMap: Record<string, any> = {};
   let registrarPage = 1;
+  const apiDomainNames: string[] = []; // keep track of domains from API
 
   while (true) {
     const res = await axios.get(
@@ -40,77 +37,57 @@ export async function syncCloudflareDomains(): Promise<void> {
     const domains = res.data.result || [];
     if (!domains.length) break;
 
-    domains.forEach((d: any) => {
-      registrarMap[d.name] = d; // map domain name => registrar info (contains expires_at)
-    });
+    for (const domain of domains) {
+      const expiryDate = domain.expires_at ? new Date(domain.expires_at) : null;
+      const registrationDate = domain.registered_at ? new Date(domain.registered_at) : null;
 
-    console.log(`📄 Registrar page ${registrarPage} fetched (${domains.length} domains)`);
+      apiDomainNames.push(domain.name);
+
+      await Order.findOneAndUpdate(
+        { domainName: domain.name },
+        {
+          domainName: domain.name,
+          customer: customer._id,
+          status: domain.last_known_status || "active",
+          registrationDate,
+          expiryDate,
+          cloudflareRegistered: true,
+          domainSource: "cloudflare",
+          managedBy: "Signroots",
+          isActive: true,
+          lastSyncedAt: new Date(),
+        },
+        { upsert: true }
+      );
+
+      console.log(`✅ Synced domain: ${domain.name}, expires at: ${expiryDate}`);
+    }
 
     if (domains.length < 30) break;
     registrarPage++;
   }
 
-  console.log(`📦 Total registrar domains fetched: ${Object.keys(registrarMap).length}`);
-
-  // -------------------- FETCH ZONES --------------------
-  let zonePage = 1;
-  let totalPages = 1;
-  const apiDomainNames: string[] = [];
-
-  do {
-    const res = await axios.get("https://api.cloudflare.com/client/v4/zones", {
-      headers: { Authorization: `Bearer ${CLOUDFLARE_TOKEN}` },
-      params: { page: zonePage, per_page: 50 },
-    });
-
-    const zones = res.data.result || [];
-    totalPages = res.data.result_info?.total_pages || 1;
-
-    for (const zone of zones) {
-      try {
-        apiDomainNames.push(zone.name);
-
-        // ✅ Check if domain exists in registrarMap to get expiry date
-        const registrar = registrarMap[zone.name];
-        const expiryDate = registrar?.expires_at ? new Date(registrar.expires_at) : null;
-
-        await Order.findOneAndUpdate(
-          { domainName: zone.name },
-          {
-            domainName: zone.name,
-            customer: customer._id,
-            status: registrar?.last_known_status || zone.status || "active",
-            registrationDate: registrar?.registered_at
-              ? new Date(registrar.registered_at)
-              : zone.created_on
-              ? new Date(zone.created_on)
-              : null,
-            expiryDate, // store expiry date from registrar API
-            cloudflareRegistered: !!registrar,
-            domainSource: "cloudflare",
-            managedBy: "Signroots",
-            isActive: true,
-            lastSyncedAt: new Date(),
-          },
-          { upsert: true }
-        );
-
-        console.log(`✅ Synced domain: ${zone.name}, expires at: ${expiryDate}`);
-      } catch (err) {
-        console.error(`❌ Failed to sync domain ${zone.name}`, err);
-      }
-    }
-
-    console.log(`🌐 Zone page ${zonePage} synced (${zones.length} zones)`);
-    zonePage++;
-  } while (zonePage <= totalPages);
-
   // -------------------- MARK REMOVED DOMAINS --------------------
   const removed = await Order.updateMany(
     { domainSource: "cloudflare", domainName: { $nin: apiDomainNames } },
-    { $set: { status: "Removed / Not in Cloudflare", isActive: false, lastSyncedAt: new Date() } }
+    {
+      $set: {
+        status: "Removed / Not in Cloudflare",
+        isActive: false,
+        lastSyncedAt: new Date(),
+        // ======================== reset flags for removed domains ========================
+        email_flag: false,
+        website_flag: false,
+        domain_flag: false,
+        ssl_flag: false,
+        host_flag: false,
+        storage_services_flag: false,
+        msoffice_services_flag: false,
+        dns_flag: false,
+      },
+    }
   );
 
-  console.log(`🧹 Marked ${removed.modifiedCount} domains as removed`);
+  console.log(`🧹 Marked ${removed.modifiedCount} domains as removed and reset flags`);
   console.log("✅ Cloudflare sync completed successfully");
 }
