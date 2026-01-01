@@ -5,11 +5,12 @@ import Customer from "../models/Customer";
 export async function syncCloudflareDomains() {
   console.log("🔄 Starting Cloudflare sync...");
 
-  const CLOUDFLARE_TOKEN = process.env.CLOUDFLARE_TOKEN!;
-  const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID!;
+  const TOKEN = process.env.CLOUDFLARE_TOKEN!;
+  const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID!;
 
-  if (!CLOUDFLARE_TOKEN || !CLOUDFLARE_ACCOUNT_ID) {
-    throw new Error("❌ Cloudflare credentials missing in .env");
+  if (!TOKEN || !ACCOUNT_ID) {
+    console.log("❌ Cloudflare env missing");
+    return;
   }
 
   // Default customer
@@ -21,32 +22,36 @@ export async function syncCloudflareDomains() {
 
   /* -------------------- REGISTRAR DOMAINS -------------------- */
   const registrarMap: Record<string, any> = {};
-  let page = 1;                 // ✅ Cloudflare starts from 1
+  let page = 0;
   let fetched = 0;
   let total = 0;
 
   do {
     const r = await axios.get(
-      `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/registrar/domains`,
+      `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/registrar/domains`,
       {
         headers: {
-          Authorization: `Bearer ${CLOUDFLARE_TOKEN}`, // ✅ correct auth
+          Authorization: `Bearer ${TOKEN}`, // ✅ SAME AS POSTMAN
         },
-        params: { page, per_page: 50 },
+        params: {
+          page,
+          per_page: 50,
+        },
       }
     );
 
     const result = r.data.result || [];
-    total = r.data.result_info?.total_count || 0;
+    total = r.data.result_info.total_count;
     fetched += result.length;
 
     result.forEach((d: any) => {
       registrarMap[d.name] = d;
     });
 
-    console.log(`📄 Registrar page ${page} fetched (${result.length})`);
     page++;
   } while (fetched < total);
+
+  console.log(`📦 Registrar domains fetched: ${Object.keys(registrarMap).length}`);
 
   /* -------------------- ZONES -------------------- */
   let zonePage = 1;
@@ -57,16 +62,15 @@ export async function syncCloudflareDomains() {
       "https://api.cloudflare.com/client/v4/zones",
       {
         headers: {
-          Authorization: `Bearer ${CLOUDFLARE_TOKEN}`,
+          Authorization: `Bearer ${TOKEN}`,
         },
         params: { page: zonePage, per_page: 50 },
       }
     );
 
-    const zones = z.data.result || [];
-    totalPages = z.data.result_info?.total_pages || 1;
+    totalPages = z.data.result_info.total_pages;
 
-    const ops = zones.map((zone: any) => {
+    const ops = z.data.result.map((zone: any) => {
       const registrar = registrarMap[zone.name];
 
       return {
@@ -80,7 +84,7 @@ export async function syncCloudflareDomains() {
               expiryDate: registrar?.expires_at
                 ? new Date(registrar.expires_at)
                 : null,
-              cloudflareRegistered: !!registrar,
+              cloudflareRegistered: true,
               managedBy: "Signroots",
               customer: customer._id,
               domainSource: "Cloudflare",
@@ -93,11 +97,7 @@ export async function syncCloudflareDomains() {
       };
     });
 
-    if (ops.length) {
-      await Order.bulkWrite(ops);
-      console.log(`✅ Synced ${ops.length} Cloudflare domains`);
-    }
-
+    if (ops.length) await Order.bulkWrite(ops);
     zonePage++;
   } while (zonePage <= totalPages);
 
