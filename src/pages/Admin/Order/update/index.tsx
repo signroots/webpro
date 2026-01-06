@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import Select from "react-select";
-import { fetchCountries, fetchStatesByCountry } from "../../Customer/api";
+import { fetchCountries, fetchStatesByCountry,fetchCountryCodes} from "../../Customer/api";
+import { BiLabel } from "react-icons/bi";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 interface EmailPlan {
   email_service: string;
@@ -104,15 +105,24 @@ interface OrderForm {
   client?: string;
   plans?: any[];
   newCustomer: {
+    c_salutation?:string;
     c_name?: string;
-    c_email?: string;
+    c_email?: string[];
+    c_country_code?:string;
     c_phone?: string;
     c_company?: string;
     c_address?: string;
+    c_address2?:string;
     c_city?: string;
     c_state?: string;
     c_country?: string;
     c_zipCode?: string;
+    c_bankAccountPayment?: string;
+    c_portalEnabled?: boolean;
+    c_gst?: string;
+    c_placeOfContact?: string;
+    c_placeOfContactWithStateCode?: string;
+
   };
   storage: string;
   // hoststorageId: string | null;
@@ -128,6 +138,7 @@ interface OrderForm {
   users?: number;
   hostType?: any;
   hostSubType?: any;
+  dns_flag?:boolean;
   //  hosttypeid?: string | null;
   // subHostTypeId?: string | null;
   hosttypeid: HostType | null;
@@ -138,6 +149,9 @@ interface OrderForm {
 const UpdateOrder: React.FC = () => {
   const navigate = useNavigate();
   const { orderId } = useParams<{ orderId: string }>();
+  const inputClass =
+  "w-full h-11 border border-gray-300 rounded-md px-3 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500";
+
 // const [confirmIndex, setConfirmIndex] = useState<number | null>(null);
 type RemoveTarget = "email" | "storage" | "msoffice";
 
@@ -148,16 +162,24 @@ const [confirmRemove, setConfirmRemove] = useState<{
   const [formData, setFormData] = useState<OrderForm>({
     domainName: "",
     managedBy: "Signroots",
+    dns_flag: false,
     newCustomer: {
+      c_salutation: "",
       c_name: "",
-      c_email: "",
+      c_email: [],
+      c_country_code: "",
       c_phone: "",
       c_company: "",
       c_address: "",
+      c_address2:"",
       c_city: "",
       c_state: "",
       c_country: "",
       c_zipCode: "",
+      c_portalEnabled: false,
+      c_gst: "",
+      c_placeOfContact: "",
+      c_placeOfContactWithStateCode: "",
     },
     storage: "",
     
@@ -179,6 +201,8 @@ const [confirmRemove, setConfirmRemove] = useState<{
   const [clients, setClients] = useState<any[]>([]);
   const [countries, setCountries] = useState<{ code: string; name: string }[]>([]);
   const [states, setStates] = useState<{ code: string; name: string }[]>([]);
+  const [phoneCodes, setPhoneCodes] = useState<string[]>([]);
+const [phoneCode, setPhoneCode] = useState<string>("");
   const [emailPlans, setEmailPlans] = useState<EmailPlan[]>([
   {
     email_service: "",
@@ -292,7 +316,25 @@ const addMsofficePlan = () => {
   const removeEmailPlan = (index: number) => {
     setEmailPlans((prev) => prev.filter((_, i) => i !== index));
   };
+useEffect(() => {
+  fetchCountryCodes()
+    .then((codes) => {
+      setPhoneCodes(codes);
 
+      // default to +91 (India)
+      if (codes.includes("+91")) {
+        setPhoneCode("+91");
+        setFormData((prev) => ({
+          ...prev,
+          newCustomer: {
+            ...prev.newCustomer,
+            c_country_code: "+91",
+          },
+        }));
+      }
+    })
+    .catch(console.error);
+}, []);
 const handleEmailPlanChange = async (
   index: number,
   key: keyof EmailPlan,
@@ -492,6 +534,14 @@ useEffect(() => {
   console.log("DEBUG emailPlans", emailPlans);
 }, [emailPlans]);
 
+useEffect(() => {
+  const countryCode = formData.newCustomer.c_country;
+  if (!countryCode) return;
+
+  fetchStatesByCountry(countryCode)
+    .then((data) => setStates(data))
+    .catch(console.error);
+}, [formData.newCustomer.c_country]);
 
 
   const handleCountryChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -571,6 +621,7 @@ setEmailPlans(
       microsoft_email: typeObj?.name === "Microsoft 365",
       businessEmail: typeObj?.name === "Business Email",
       email_flag: true,
+      
     };
   })
 );
@@ -609,12 +660,38 @@ setMsofficePlans(
       setFormData((prev) => ({
         ...prev,
         domainName: order.domainName || "",
+        dns_flag:order.dns_flag,
         managedBy: order.managedBy || "Signroots",
         registrationDate: order.registrationDate?.slice(0, 10) || "",
         expiryDate: order.expiryDate?.slice(0, 10) || "",
         status: order.status || "Active",
         client: order.client?._id || "",
-        newCustomer: order.client || prev.newCustomer,
+        newCustomer: {
+  ...prev.newCustomer,
+
+  c_salutation: order.client?.c_salutation || "",
+  c_name: order.client?.c_name || "",
+  c_email: order.client?.c_email || [],
+  c_country_code: order.client?.c_countryCode || "+91",
+  c_phone: order.client?.c_phone || "",
+  c_company: order.client?.c_company || "",
+  c_address: order.client?.c_address || "",
+  c_address2: order.client?.c_address2 || "",
+  c_city: order.client?.c_city || "",
+
+  // ⭐ IMPORTANT PART
+  c_country: order.client?.c_country?._id || "",
+  c_state: order.client?.c_state?.name || "",
+
+  c_zipCode: order.client?.c_zipCode || "",
+  c_bankAccountPayment: order.client?.c_bankAccountPayment || "",
+  c_portalEnabled: order.client?.c_portalEnabled || false,
+  c_gst: order.client?.c_gst || "",
+  c_placeOfContact: order.client?.c_placeOfContact || "",
+  c_placeOfContactWithStateCode:
+    order.client?.c_placeOfContactWithStateCode || "",
+},
+
         hosting: !!order.hosting,
         website_flag: !!order.website_flag,
         ssl_flag: !!order.ssl_flag,
@@ -903,6 +980,7 @@ const handleHostTypeChange = (hostTypeId: string) => {
           microsoft_email: plan.microsoft_email,
           businessEmail: plan.businessEmail,
           email_flag: true, // individual plan flag
+          
         });
       });
     }
@@ -951,13 +1029,16 @@ const handleHostTypeChange = (hostTypeId: string) => {
     payload.email_flag = combinedPlans.some(p => p.type === "email");
     payload.storage_services_flag = combinedPlans.some(p => p.type === "storage");
     payload.msoffice_services_flag = combinedPlans.some(p => p.type === "msoffice");
+    payload.dns_flag = formData.domainSource === "Cloudflare"
+  ? !!formData.dns_flag
+  : false;
 
     // send update request
     const res = await axios.put(`${import.meta.env.VITE_API_BASE_URL}/api/orders/${orderId}`, payload);
 
     if (res.data?.success === true) {
       alert("✅ Order updated successfully!");
-      navigate("/admin/orders");
+      // navigate("/admin/orders");
     } else {
       alert("❌ Failed to update order");
     }
@@ -1069,66 +1150,227 @@ return (
 {/* New Customer */}
 {customerType === "new" && (
   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-    {[
-      { key: "c_name", label: "Name" },
-      { key: "c_email", label: "Email" },
-      { key: "c_phone", label: "Phone" },
-      { key: "c_company", label: "Company" },
-      { key: "c_address", label: "Address" },
-      { key: "c_city", label: "City" },
-      // { key: "c_zipCode", label: "ZIP Code" },
-    ].map(({ key, label }) => (
-      <div key={key}>
-        <label className="block text-gray-700 font-medium mb-2">
-          {label}
-        </label>
+
+    {/* Salutation */}
+    <input
+      placeholder="Salutation"
+      name="newCustomer.c_salutation"
+      value={formData.newCustomer.c_salutation || ""}
+      onChange={handleInputChange}
+      className={inputClass}
+    />
+
+    {/* Name */}
+    <input
+      placeholder="Name"
+      name="newCustomer.c_name"
+      value={formData.newCustomer.c_name || ""}
+      onChange={handleInputChange}
+      className={inputClass}
+    />
+
+    {/* Email (FULL ROW) */}
+    <div className="md:col-span-3">
+      <div className="flex flex-wrap items-center gap-2 p-2 h-11 border border-gray-300 rounded-md bg-gray-50 focus-within:ring-2 focus-within:ring-blue-500">
+        {(formData.newCustomer.c_email ?? [])
+          .map((em) => em.trim())
+          .filter(Boolean)
+          .map((em) => (
+            <div
+              key={em}
+              className="flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
+            >
+              <span className="mr-2">{em}</span>
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    newCustomer: {
+                      ...prev.newCustomer,
+                      c_email: prev.newCustomer.c_email?.filter(
+                        (e) => e !== em
+                      ),
+                    },
+                  }))
+                }
+                className="font-bold"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+
         <input
           type="text"
-          name={`newCustomer.${key}`}
-          value={(formData.newCustomer as any)?.[key] || ""}
-          onChange={handleInputChange}
-          className="w-full border rounded px-3 py-2"
-          placeholder={`Enter ${label.toLowerCase()}`}
+          placeholder="Add email"
+          className="flex-1 min-w-[120px] bg-transparent outline-none text-sm"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === ",") {
+              e.preventDefault();
+              const value = e.currentTarget.value.trim();
+              if (!value) return;
+              const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+              if (!ok) return alert("Invalid email");
+              setFormData((prev) => ({
+                ...prev,
+                newCustomer: {
+                  ...prev.newCustomer,
+                  c_email: [
+                    ...(prev.newCustomer.c_email ?? []),
+                    value,
+                  ],
+                },
+              }));
+              e.currentTarget.value = "";
+            }
+          }}
         />
       </div>
-    ))}
-              {/* Country */}
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">Country</label>
-                <select
-                  name="newCustomer.c_country"
-                  value={formData.newCustomer.c_country || ""}
-                  onChange={handleCountryChange}
-                  className="w-full border rounded px-3 py-2"
-                >
-                  <option value="">-- Select Country --</option>
-                  {countries.map((c: any) => (
-                    <option key={c.code} value={c.code}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+    </div>
 
-              {/* State */}
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">State</label>
-                <select
-                  name="newCustomer.c_state"
-                  value={formData.newCustomer.c_state || ""}
-                  onChange={handleInputChange}
-                  className="w-full border rounded px-3 py-2"
-                >
-                  <option value="">-- Select State --</option>
-                  {states.map((s: any) => (
-                    <option key={s.code} value={s.name}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          )}
+    {/* Phone */}
+    <div className="md:col-span-3 flex gap-2">
+      <select
+        value={phoneCode}
+        onChange={(e) => {
+          setPhoneCode(e.target.value);
+          setFormData((prev) => ({
+            ...prev,
+            newCustomer: {
+              ...prev.newCustomer,
+              c_country_code: e.target.value,
+            },
+          }));
+        }}
+        className="h-11 w-24 border border-gray-300 rounded-md px-2 text-sm focus:ring-2 focus:ring-blue-500"
+      >
+        {phoneCodes.map((c) => (
+          <option key={c} value={c}>{c}</option>
+        ))}
+      </select>
+
+      <input
+        placeholder="Phone Number"
+        name="newCustomer.c_phone"
+        value={formData.newCustomer.c_phone || ""}
+        onChange={handleInputChange}
+        maxLength={10}
+        className={`${inputClass} flex-1`}
+      />
+    </div>
+
+    {/* Company */}
+    <input
+      placeholder="Company"
+      name="newCustomer.c_company"
+      value={formData.newCustomer.c_company || ""}
+      onChange={handleInputChange}
+      className={inputClass}
+    />
+
+    {/* Address */}
+    <input
+      placeholder="Address"
+      name="newCustomer.c_address"
+      value={formData.newCustomer.c_address || ""}
+      onChange={handleInputChange}
+      className={inputClass}
+    />
+
+    {/* Address 2 */}
+    <input
+      placeholder="Address 2"
+      name="newCustomer.c_address2"
+      value={formData.newCustomer.c_address2 || ""}
+      onChange={handleInputChange}
+      className={inputClass}
+    />
+
+    {/* City */}
+    <input
+      placeholder="City"
+      name="newCustomer.c_city"
+      value={formData.newCustomer.c_city || ""}
+      onChange={handleInputChange}
+      className={inputClass}
+    />
+
+    {/* Country */}
+    <select
+      name="newCustomer.c_country"
+      value={formData.newCustomer.c_country}
+      onChange={handleCountryChange}
+      className={inputClass}
+    >
+      <option value="">-- Select Country --</option>
+      {countries.map((c) => (
+        <option key={c.code} value={c.code}>{c.name}</option>
+      ))}
+    </select>
+
+    {/* State */}
+    <select
+  name="newCustomer.c_state"
+  value={formData.newCustomer.c_state || ""}
+  onChange={handleInputChange}
+  className={inputClass}
+>
+  <option value="">-- Select State --</option>
+  {states.map((s) => (
+    <option key={s.code} value={s.name}>
+      {s.name}
+    </option>
+  ))}
+</select>
+
+
+    {/* Zip */}
+    <input
+      placeholder="Zipcode"
+      name="newCustomer.c_zipCode"
+      value={formData.newCustomer.c_zipCode || ""}
+      onChange={handleInputChange}
+      className={inputClass}
+    />
+
+    {/* GST */}
+    <input
+      placeholder="GST"
+      name="newCustomer.c_gst"
+      value={formData.newCustomer.c_gst || ""}
+      onChange={handleInputChange}
+      className={inputClass}
+    />
+
+    {/* Bank */}
+    <input
+      placeholder="Bank Account Payment"
+      name="newCustomer.c_bankAccountPayment"
+      value={formData.newCustomer.c_bankAccountPayment || ""}
+      onChange={handleInputChange}
+      className={inputClass}
+    />
+
+    {/* Place of Contact */}
+    <input
+      placeholder="Place of Contact"
+      name="newCustomer.c_placeOfContact"
+      value={formData.newCustomer.c_placeOfContact || ""}
+      onChange={handleInputChange}
+      className={inputClass}
+    />
+
+    {/* Place of Contact State */}
+    <input
+      placeholder="Place of Contact (State Code)"
+      name="newCustomer.c_placeOfContactWithStateCode"
+      value={formData.newCustomer.c_placeOfContactWithStateCode || ""}
+      onChange={handleInputChange}
+      className={inputClass}
+    />
+  </div>
+)}
 
           {/* Domain Details */}
           <h2 className="text-xl font-semibold underline text-indigo-600 mb-3">
@@ -1182,6 +1424,25 @@ return (
                 </select>
               </div>
             )}
+{formData.domainSource === "Cloudflare" && (
+  <div className="mt-4 flex items-center gap-2">
+    <input
+      type="checkbox"
+      name="dns_flag"
+      checked={formData.dns_flag}
+      onChange={(e) =>
+        setFormData({
+          ...formData,
+          dns_flag: e.target.checked,
+        })
+      }
+      className="w-4 h-4"
+    />
+    <label className="text-gray-700 font-medium">
+      DNS Flag
+    </label>
+  </div>
+)}
 
             <div>
               <label className="block text-gray-700 font-medium mb-2">Registration Date</label>

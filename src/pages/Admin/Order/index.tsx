@@ -991,12 +991,12 @@ const resetFormData = () => {
           {/* ACTIONS */}
           <td className="px-8 py-4 flex gap-3 text-gray-500">
             <button
-              className="hover:text-blue-600"
-              title="View"
-              onClick={() => handleView(order)}
-            >
-              <FaEye />
-            </button>
+            className="hover:text-blue-600"
+            title="View"
+            onClick={() => navigate(`/admin/orders/order-details/${order._id}`)}
+          >
+            <FaEye />
+          </button>
 
             <Link
               to={`/admin/orders/update/${order._id}`}

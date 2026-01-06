@@ -141,8 +141,9 @@ const Customers: React.FC = () => {
 
   const [modalForm, setModalForm] = useState<ICustomerForm>({
     c_name: "",
-    c_email: [""],
+    c_email: [],
     c_phone: "",
+    c_mobilePhone:"",
     c_company: "",
     c_address: "",
     c_city: "",
@@ -202,6 +203,7 @@ const Customers: React.FC = () => {
       c_name: "",
       c_email: [""],
       c_phone: "",
+      c_mobilePhone:"",
       c_company: "",
       c_address: "",
       c_city: "",
@@ -232,11 +234,12 @@ const Customers: React.FC = () => {
 
   setModalForm({
     c_name: customer.c_name || "",
-    c_email: Array.isArray(customer.c_email)
-      ? customer.c_email
-      : customer.c_email
-      ? customer.c_email.split(",")
-      : [""],
+    // c_email: Array.isArray(customer.c_email)
+    //   ? customer.c_email
+    //   : customer.c_email
+    //   ? customer.c_email.split(",")
+    //   : [""],
+    c_email: Array.isArray(customer.c_email) ? customer.c_email : [""],
     c_phone: customer.c_phone || "",
     c_company: customer.c_company || "",
     c_address: customer.c_address || "",
@@ -268,7 +271,7 @@ const handleSubmitCustomer = async (form: ICustomerForm) => {
   try {
     const payload = {
   c_name: form.c_name,
-  c_email: cleanedEmails.join(","),
+  c_email: cleanedEmails, 
   c_phone: form.c_phone,
   c_company: form.c_company,
   c_address: form.c_address,
@@ -287,7 +290,7 @@ const handleSubmitCustomer = async (form: ICustomerForm) => {
   c_lastName: form.c_lastName,
   c_placeOfContact: form.c_placeOfContact,
   c_placeOfContactWithStateCode: form.c_placeOfContactWithStateCode,
-  c_mobilePhone: form.c_mobilePhone,
+  c_mobilePhone: form.c_phone,
   password: form.c_password || undefined,
 };
 

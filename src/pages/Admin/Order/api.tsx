@@ -53,6 +53,12 @@ export const fetchDNSOrders = async () => {
   });
   return response?.data?.data || [];
 };
+export const fetchRenewListOrders = async () => {
+  return axios.get(
+    `${import.meta.env.VITE_API_BASE_URL}/api/orders/orders-by-month`
+  );
+};
+
 
 // ✅ Fetch orders by provider (Google Workspace or Microsoft 365)
 export const fetchOrdersByProvider = async (provider: string): Promise<Order[]> => {
@@ -89,8 +95,9 @@ export const fetchCustomerOrder = async (id: string) => {
   return data;
 };
 export const fetchOrderById = async (id: string): Promise<Order> => {
-  const response = await axios.get(`${API_BASE_URL}/${id}`);
-  return response.data;   // ❌ This returns { success, data }
+  const response = await axios.get(`${API_BASE_URL}/api/orders/${id}`);
+  // ✅ unwrap the data from { success, data }
+  return response.data.data; 
 };
 // ✅ Update order (PUT)
 export const updateOrder = async (id: string, data: Partial<Order>): Promise<Order> => {

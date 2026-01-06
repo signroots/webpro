@@ -9,6 +9,7 @@ import {
   Settings,
   Layers,
   Globe,
+  List,
 } from "lucide-react";
 
 interface MenuItem {
@@ -18,9 +19,18 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
-  { name: "Order", icon: <ShoppingCart size={20} /> },
-  { name: "DNS Order", icon: <Globe size={20} /> }, // ✅ Added DNS Order menu
+  {
+    name: "Order",
+    icon: <ShoppingCart size={20} />,
+    children: [
+      { name: "Order List", icon: <List size={16} /> },
+      { name: "DNS Orders", icon: <Globe size={16} /> },
+      // { name: "Renew List", icon: <BarChart size={16} /> },
+    ],
+  },
+{ name: "Renew List", icon: <BarChart size={16} />},
   { name: "Customers", icon: <Users size={20} /> },
+
   {
     name: "Settings",
     icon: <Settings size={20} />,
@@ -34,8 +44,8 @@ const menuItems: MenuItem[] = [
 
 // ✅ Role-based menu visibility
 const roleMenus: Record<string, string[]> = {
-  Customer: ["Order", "DNS Order"],
-  Admin: ["Order", "DNS Order", "Customers", "Settings"],
+  Customer: ["Order"],
+  Admin: ["Order", "Renew List","Customers", "Settings"],
 };
 
 const Slider: React.FC = () => {
@@ -46,15 +56,17 @@ const Slider: React.FC = () => {
   const user = userJson ? JSON.parse(userJson) : null;
   const userRole = user?.role || "";
 
-  // ✅ Define route paths
+  // ✅ Route mapping
   const getPathFor = (name: string): string => {
-    if (name === "Order")
-      return userRole === "Admin" ? "/admin/orders" : "/customer/orders";
-    if (name === "DNS Order") return "/admin/dns-order";
+    if (name === "Order List") return "/admin/orders";
+    if (name === "DNS Orders") return "/admin/dns-order";
+    if (name === "Renew List") return "/admin/renew-list";
+
     if (name === "Customers") return "/admin/customers";
     if (name === "Status") return "/admin/status";
     if (name === "User Types") return "/admin/user-types";
     if (name === "Data Management") return "/admin/data-management";
+
     return "#";
   };
 
@@ -76,23 +88,23 @@ const Slider: React.FC = () => {
       {/* Collapse Button */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="flex items-center justify-center p-4 border-b border-gray-800 hover:bg-gray-800 transition-colors duration-200"
+        className="flex items-center justify-center p-4 border-b border-gray-800 hover:bg-gray-800"
       >
         {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
       </button>
 
-      {/* Menu Items */}
+      {/* Menu */}
       <nav className="flex-1 mt-4">
         {filteredMenuItems.map((item) =>
           item.children ? (
             <div key={item.name}>
               <button
                 onClick={() => toggleSubMenu(item.name)}
-                className={`w-full flex items-center p-4 my-2 rounded-lg transition-all duration-200 hover:bg-gray-800 ${
+                className={`w-full flex items-center p-4 my-2 rounded-lg hover:bg-gray-800 ${
                   openMenu === item.name ? "bg-gray-800" : ""
                 }`}
               >
-                <div className="flex items-center justify-center w-8 h-8 bg-gray-700 rounded-full mr-3">
+                <div className="w-8 h-8 flex items-center justify-center bg-gray-700 rounded-full mr-3">
                   {item.icon}
                 </div>
                 {!collapsed && (
@@ -109,12 +121,12 @@ const Slider: React.FC = () => {
                       key={child.name}
                       to={getPathFor(child.name)}
                       className={({ isActive }) =>
-                        `flex items-center p-2 my-1 rounded-lg text-sm transition-all duration-200 hover:bg-gray-800 ${
+                        `flex items-center p-2 my-1 rounded-lg text-sm hover:bg-gray-800 ${
                           isActive ? "bg-gray-700 font-semibold" : ""
                         }`
                       }
                     >
-                      <div className="flex items-center justify-center w-6 h-6 bg-gray-700 rounded-full mr-2">
+                      <div className="w-6 h-6 flex items-center justify-center bg-gray-700 rounded-full mr-2">
                         {child.icon}
                       </div>
                       {child.name}
@@ -128,12 +140,12 @@ const Slider: React.FC = () => {
               key={item.name}
               to={getPathFor(item.name)}
               className={({ isActive }) =>
-                `flex items-center p-4 my-2 rounded-lg transition-all duration-200 hover:bg-gray-800 ${
+                `flex items-center p-4 my-2 rounded-lg hover:bg-gray-800 ${
                   isActive ? "bg-gray-700 font-semibold" : ""
                 }`
               }
             >
-              <div className="flex items-center justify-center w-8 h-8 bg-gray-700 rounded-full mr-3">
+              <div className="w-8 h-8 flex items-center justify-center bg-gray-700 rounded-full mr-3">
                 {item.icon}
               </div>
               {!collapsed && <span className="text-sm">{item.name}</span>}
@@ -142,7 +154,6 @@ const Slider: React.FC = () => {
         )}
       </nav>
 
-      {/* Footer */}
       {!collapsed && (
         <div className="p-4 border-t border-gray-800 text-sm text-gray-400">
           © 2025 MyApp
