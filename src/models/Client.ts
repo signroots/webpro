@@ -69,4 +69,4 @@ const ClientSchema: Schema<IClient> = new Schema(
 // Optional index for faster lookup
 ClientSchema.index({ c_email: 1, c_phone: 1 });
 
-export default mongoose.model<IClient>("Clients", ClientSchema);
+export default mongoose.model<IClient>("Client", ClientSchema);
