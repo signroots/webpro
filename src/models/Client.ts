@@ -12,10 +12,10 @@ export interface IClient extends Document {
   c_phone: string;
   c_mobilePhone?: string;
   c_countryCode?:string;
-  c_company: string;
-  c_address: string;
+  c_company?: string;
+  c_address?: string;
   c_address2?: string;  // New Field: Address 2 (e.g., Billing Street2)
-  c_city: string;
+  c_city?: string;
   c_state: mongoose.Types.ObjectId |IState;
   c_country: mongoose.Types.ObjectId |ICountry;
   c_zipCode: string;
@@ -44,10 +44,10 @@ const ClientSchema: Schema<IClient> = new Schema(
     c_phone: { type: String, required: true, trim: true },
     c_mobilePhone: { type: String, trim: true },
     c_countryCode:{type:String,trim:true},
-    c_company: { type: String, required: true, trim: true },
-    c_address: { type: String, required: true, trim: true },
+    c_company: { type: String, default: "", trim: true, },
+    c_address: { type: String, default: "",trim: true,},
+    c_city: { type: String, required: false, default: "", trim: true },
     c_address2: { type: String, trim: true },
-    c_city: { type: String, required: true, trim: true },
     c_state: { type: mongoose.Schema.Types.ObjectId, ref: 'State' }, // Reference to State collection
     c_country: { type: mongoose.Schema.Types.ObjectId, ref: 'Country' }, // Reference to Country collection
     c_zipCode: { type: String, trim: true },
@@ -69,4 +69,4 @@ const ClientSchema: Schema<IClient> = new Schema(
 // Optional index for faster lookup
 ClientSchema.index({ c_email: 1, c_phone: 1 });
 
-export default mongoose.model<IClient>("Client", ClientSchema);
+export default mongoose.model<IClient>("Clients", ClientSchema);

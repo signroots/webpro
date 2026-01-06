@@ -21,7 +21,7 @@ router.get("/types", async (_req, res) => {
      res.status(500).json({ error: "Failed to fetch user types" });
   }
 });
-
+console.log("✅ User routes file loaded");
 // GET user type by ID
 router.get("/types/:id", async (req, res) => {
   try {
@@ -35,16 +35,15 @@ router.get("/types/:id", async (req, res) => {
 });
 
 // CREATE user type
-router.post("/types", async (req: Request, res: Response) => {
-  try {
-    const { name, is_active } = req.body;
-    const newUserType = await UserType.create({ name, is_active });
-    res.status(201).json(newUserType); // no return
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to create user type" });
-  }
+router.post("/types", async (req, res) => {
+  console.log("BODY RECEIVED:", req.body);
+
+  const { name, is_active } = req.body;
+  const newUserType = await UserType.create({ name, is_active });
+
+  res.status(201).json(newUserType);
 });
+
 
 
 

@@ -7,145 +7,139 @@ import Customer from '../models/Customer';
 dotenv.config();
 const router = express.Router();
 
-//  Import domains from ResellerClub (Paginated)
-router.get('/import/mainresellerclub', async (_req, res) => {
+/* ======================================================
+   BACKGROUND IMPORT FUNCTION (LONG TASK)
+====================================================== */
+async function importMainResellerClubDomains() {
   try {
-    const { MAIN_RESELLER_USER_ID, MAIN_RESELLER_API_KEY } = process.env;
+    const { MAIN_RESELLER_USER_ID, MAIN_RESELLER_API_KEY, RESELLER_USER_ID } = process.env;
+
+    if (!MAIN_RESELLER_USER_ID || !MAIN_RESELLER_API_KEY) {
+      throw new Error('ResellerClub credentials missing');
+    }
+
     const perPage = 100;
     let page = 1;
     let allDomains: any[] = [];
 
-    console.log("RESELLER_USER_ID:", MAIN_RESELLER_USER_ID);
-    console.log("RESELLER_API_KEY:", MAIN_RESELLER_API_KEY);
+    console.log('🚀 ResellerClub import started');
 
-    // Fetch paginated domain list
+    /* ---------------- FETCH DOMAINS (PAGINATION) ---------------- */
     while (true) {
-      const response = await axios.get('https://httpapi.com/api/domains/search.json', {
-        params: {
-          'auth-userid': MAIN_RESELLER_USER_ID,
-          'api-key': MAIN_RESELLER_API_KEY,
-          'no-of-records': perPage,
-          'page-no': page,
-        },
-      headers: {
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
-  'Accept': 'application/json, text/javascript, */*; q=0.01',
-  'Accept-Language': 'en-US,en;q=0.9',
-  'Referer': 'https://httpapi.com/',
-  'Origin': 'https://httpapi.com',
-}
+      console.log(`📄 Fetching page ${page}`);
 
-      });
+      const response = await axios.get(
+        'https://httpapi.com/api/domains/search.json',
+        {
+          params: {
+            'auth-userid': MAIN_RESELLER_USER_ID,
+            'api-key': MAIN_RESELLER_API_KEY,
+            'no-of-records': perPage,
+            'page-no': page,
+          },
+        }
+      );
 
       const rawData = response.data;
-      const keys = Object.keys(rawData).filter((key) => /^\d+$/.test(key));
+      const keys = Object.keys(rawData).filter(k => /^\d+$/.test(k));
+
       if (keys.length === 0) break;
 
-      for (const key of keys) {
-        allDomains.push(rawData[key]);
-      }
-
+      keys.forEach(k => allDomains.push(rawData[k]));
       console.log(`✅ Page ${page} fetched ${keys.length} domains`);
+
       page++;
     }
 
-    const savedDomains = [];
+    console.log(`📦 Total domains fetched: ${allDomains.length}`);
 
-    // ✅ Step 1: Get existing domains
+    /* ---------------- CHECK EXISTING DOMAINS ---------------- */
     const apiDomainNames = allDomains.map(d => d['entity.description']);
     const existingDomains = await Order.find({
-      domainName: { $in: apiDomainNames }
+      domainName: { $in: apiDomainNames },
     }).select('domainName');
 
     const existingDomainNames = new Set(existingDomains.map(d => d.domainName));
-    const duplicateDomains = Array.from(existingDomainNames);
+    console.log(`🔁 Found ${existingDomainNames.size} duplicate domains`);
 
-    console.log(`🔁 Found ${duplicateDomains.length} duplicate domains already in DB:`);
-    duplicateDomains.forEach(name => console.log(`- ${name}`));
-
-    // ✅ Step 2: Import non-duplicate domains
+    /* ---------------- IMPORT DOMAINS ---------------- */
     for (const d of allDomains) {
       const domainName = d['entity.description'];
 
-      // ⏩ Skip duplicates
       if (existingDomainNames.has(domainName)) {
         console.log(`⏩ Skipping existing domain: ${domainName}`);
         continue;
       }
 
-      const resellerCustomerId = d['entity.customerid'];
+      console.log(`➕ Importing domain: ${domainName}`);
 
-      const customerRes = await axios.get('https://httpapi.com/api/customers/details-by-id.json', {
-        params: {
-          'auth-userid': MAIN_RESELLER_USER_ID,
-          'api-key': MAIN_RESELLER_API_KEY,
-          'customer-id': resellerCustomerId,
-        },
-        headers: {
-          'User-Agent': 'Mozilla/5.0',
-          'Accept': 'application/json',
-        },
-      });
+      /* ---------- CUSTOMER DETAILS ---------- */
+      const customerRes = await axios.get(
+        'https://httpapi.com/api/customers/details-by-id.json',
+        {
+          params: {
+            'auth-userid': MAIN_RESELLER_USER_ID,
+            'api-key': MAIN_RESELLER_API_KEY,
+            'customer-id': d['entity.customerid'],
+          },
+        }
+      );
 
       const customerData = customerRes.data;
 
       const resellerType =
-        customerData.resellerid === process.env.MAIN_RESELLER_USER_ID
+        customerData.resellerid === MAIN_RESELLER_USER_ID
           ? 'MainReseller'
-          : customerData.resellerid === process.env.RESELLER_USER_ID
+          : customerData.resellerid === RESELLER_USER_ID
           ? 'SubReseller'
           : 'Unknown';
 
-      // Fetch sub-reseller info
+      /* ---------- RESELLER INFO ---------- */
       let resellerInfo = { name: 'N/A', email: 'N/A' };
       try {
-        const resellerInfoRes = await axios.get('https://httpapi.com/api/resellers/details.json', {
-          params: {
-            'auth-userid': MAIN_RESELLER_USER_ID,
-            'api-key': MAIN_RESELLER_API_KEY,
-            'reseller-id': customerData.resellerid,
-          },
-          headers: {
-            'User-Agent': 'Mozilla/5.0',
-            'Accept': 'application/json',
-          },
-        });
-
+        const resellerInfoRes = await axios.get(
+          'https://httpapi.com/api/resellers/details.json',
+          {
+            params: {
+              'auth-userid': MAIN_RESELLER_USER_ID,
+              'api-key': MAIN_RESELLER_API_KEY,
+              'reseller-id': customerData.resellerid,
+            },
+          }
+        );
         resellerInfo = resellerInfoRes.data;
-      } catch (resellerErr) {
-        console.warn('⚠️ Could not fetch reseller info for ID:', customerData.resellerid);
+      } catch {
+        console.warn(`⚠️ Reseller info not found for ${customerData.resellerid}`);
       }
 
-      // Prepare domain data
-let expiryDate: Date | null = null;
+      /* ---------- EXPIRY DATE ---------- */
+      let expiryDate: Date | null = null;
 
-if (d['orders.endtime']) {
-  expiryDate = new Date(Number(d['orders.endtime']) * 1000);
-} else {
-  // Fallback: fetch domain details
-  try {
-    const detailsRes = await axios.get('https://httpapi.com/api/domains/details.json', {
-      params: {
-        'auth-userid': MAIN_RESELLER_USER_ID,
-        'api-key': MAIN_RESELLER_API_KEY,
-        'order-id': d['orders.orderid'], // 👈 use order-id instead of domain name
-        'options': 'All',
-      },
-      headers: {
-        'User-Agent': 'Mozilla/5.0',
-        'Accept': 'application/json',
-      },
-    });
+      if (d['orders.endtime']) {
+        expiryDate = new Date(Number(d['orders.endtime']) * 1000);
+      } else {
+        try {
+          const detailsRes = await axios.get(
+            'https://httpapi.com/api/domains/details.json',
+            {
+              params: {
+                'auth-userid': MAIN_RESELLER_USER_ID,
+                'api-key': MAIN_RESELLER_API_KEY,
+                'order-id': d['orders.orderid'],
+                options: 'All',
+              },
+            }
+          );
 
-    if (detailsRes.data.endtime) {
-      expiryDate = new Date(Number(detailsRes.data.endtime) * 1000);
-    }
-  } catch (err) {
-    console.warn(`⚠️ Could not fetch expiry date for domain ${d['entity.description']}`);
-  }
-}
+          if (detailsRes.data.endtime) {
+            expiryDate = new Date(Number(detailsRes.data.endtime) * 1000);
+          }
+        } catch {
+          console.warn(`⚠️ Expiry date missing for ${domainName}`);
+        }
+      }
 
-      // Upsert customer
+      /* ---------- UPSERT CUSTOMER ---------- */
       const customer = await Customer.findOneAndUpdate(
         { resellerCustomerId: customerData.customerid },
         {
@@ -156,58 +150,57 @@ if (d['orders.endtime']) {
           city: customerData.city,
           country: customerData.country,
           phone: customerData.mobileno,
-          state:customerData.state,
+          state: customerData.state,
           resellerCustomerId: customerData.customerid,
         },
         { new: true, upsert: true }
       );
 
-      // Prepare domain data
-      const domainData = {
-        domainName,
-        customer: customer._id,
-        status: d['entity.currentstatus'],
-        managedBy: 'Signroots',
-        registrationDate: new Date(Number(d['orders.creationtime']) * 1000),
-        expiryDate,
-        originalRegistrar: d['entitytype.entitytypekey'] || 'Unknown',
-        lockStatus: d['orders.transferlock'] === 'true' ? 'Locked' : 'Unlocked',
-        domainSource: "resellerclub",
-        nameServers: [],
-        dnsDetails: [],
-        reseller_outside_inside: resellerType,
-        reseller_id: customerData.resellerid,
-        resellerCustomerId: customerData.customerid,
-        subResellerName: resellerInfo.name || 'N/A',
-        subResellerEmail: resellerInfo.email || 'N/A',
-      };
-
-      // Save domain
-      const saved = await Order.findOneAndUpdate(
-        { domainName: domainData.domainName },
-        domainData,
-        { upsert: true, new: true }
+      /* ---------- DOMAIN SAVE ---------- */
+      await Order.findOneAndUpdate(
+        { domainName },
+        {
+          domainName,
+          customer: customer._id,
+          status: d['entity.currentstatus'],
+          managedBy: 'Signroots',
+          registrationDate: new Date(Number(d['orders.creationtime']) * 1000),
+          expiryDate,
+          originalRegistrar: d['entitytype.entitytypekey'] || 'Unknown',
+          lockStatus: d['orders.transferlock'] === 'true' ? 'Locked' : 'Unlocked',
+          domainSource: 'resellerclub',
+          nameServers: [],
+          dnsDetails: [],
+          reseller_outside_inside: resellerType,
+          reseller_id: customerData.resellerid,
+          resellerCustomerId: customerData.customerid,
+          subResellerName: resellerInfo.name,
+          subResellerEmail: resellerInfo.email,
+        },
+        { upsert: true }
       );
-
-      savedDomains.push(saved);
     }
 
-    res.status(200).json({
-      message: 'ResellerClub domains imported successfully',
-      count: savedDomains.length,
-      duplicates: duplicateDomains.length,
-      data: savedDomains,
-    });
-
+    console.log('✅ ResellerClub import completed');
   } catch (error: any) {
-    console.error(' ResellerClub Import Error:', {
-      message: error.message,
-      response: error.response?.data,
-      stack: error.stack,
-    });
-
-    res.status(500).json({ error: 'Failed to import ResellerClub domains' });
+    console.error('❌ ResellerClub import failed:', error.message);
   }
+}
+
+/* ======================================================
+   API ROUTE (NON-BLOCKING)
+====================================================== */
+router.get('/import/mainresellerclub', async (_req, res) => {
+  console.log('🔥 Import API triggered');
+
+  setImmediate(() => {
+    importMainResellerClubDomains();
+  });
+
+  res.status(202).json({
+    success: true,
+    message: 'ResellerClub import started in background',
+  });
 });
 
 export default router;

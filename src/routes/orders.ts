@@ -27,6 +27,56 @@ interface IOrderPlanResponse {
   noOfUsers: number;
 }
 
+router.get("/orders-by-month", async (_req: Request, res: Response) => {
+  try {
+    const now = new Date();
+
+    // Current month
+    const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+    const endOfCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+    // Previous month
+    const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0);
+    const endOfPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+
+    // Next month
+    const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1, 0, 0, 0);
+    const endOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 2, 0, 23, 59, 59);
+
+    const orders = await Order.find({
+      expiryDate: {
+        $gte: startOfPrevMonth,
+        $lte: endOfNextMonth,
+      },
+    })
+      .populate({
+        path: "customer",
+        select: "name email mobile", // adjust fields as per Customer schema
+      })
+      .populate({
+        path: "client",
+        select: "companyName", // adjust as per Client schema
+      })
+      .sort({ expiryDate: 1 });
+
+    res.status(200).json({
+      success: true,
+      counts: {
+        total: orders.length,
+        previousMonthRange: { startOfPrevMonth, endOfPrevMonth },
+        currentMonthRange: { startOfCurrentMonth, endOfCurrentMonth },
+        nextMonthRange: { startOfNextMonth, endOfNextMonth },
+      },
+      data: orders,
+    });
+  } catch (error) {
+    console.error("Error fetching orders by month:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+});
 
 
 router.get('/existing_customers', async (_req: Request, res: Response): Promise<void> => {
@@ -39,6 +89,7 @@ router.get('/existing_customers', async (_req: Request, res: Response): Promise<
     res.status(500).json({ success: false, error: 'Failed to fetch customized customer' });
   }
 });
+
 // GET all orders
 // router.get("/", async (_req: Request, res: Response): Promise<void> => {
 //   try {
@@ -219,28 +270,26 @@ router.get(
       // ===================== ADMIN =========================
       // =====================================================
       if (userRole === "admin") {
-        const query: any = {};
+  const query: any = {
+    domainSource: "DNS Cloudflare",
+    $or: [
+      { expiryDate: null },
+      { expiryDate: { $exists: false } },
+      { expiryDate: "" },
+    ],
+  };
 
-        if (filter === "DNS Cloudflare") {
-          query.domainSource = "DNS Cloudflare";
-          query.$or = [
-            { expiryDate: null },
-            { expiryDate: { $exists: false } },
-            { expiryDate: "" },
-          ];
-        }
+  const orders = await Order.find(query)
+    .populate("customer", "name email company")
+    .populate("client", "c_name c_email c_company")
+    .exec();
 
-        const orders = await Order.find(query)
-          .populate("customer", "name email company")
-          .populate("client", "c_name c_email c_company")
-          .exec();
-
-        res.status(200).json({
-          success: true,
-          data: orders,
-        });
-        return;
-      }
+  res.status(200).json({
+    success: true,
+    data: orders,
+  });
+  return;
+}
 
       // =====================================================
       // =================== CUSTOMER ========================
@@ -438,107 +487,111 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
 });
 
 
-
 // GET single order by ID
 
-router.get("/:id", async (req: Request<{ id: string }>, res: Response): Promise<void> => {
-  try {
-    const { id } = req.params;
+router.get(
+  "/:id",
+  async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
 
-    // Validate ObjectId
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      res.status(400).json({ success: false, message: "Invalid order ID" });
-      return;
+      // Validate ObjectId
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        res.status(400).json({ success: false, message: "Invalid order ID" });
+        return;
+      }
+
+      // Fetch order
+      const order = await Order.findById(id)
+        .populate("customer")
+        .populate({
+          path: "client",
+          populate: [
+            { path: "c_country", model: "Country", select: "name code" },
+            { path: "c_state", model: "State", select: "name stateCode" }
+          ]
+        })
+        .populate("hosttypeid")
+        .populate("subHostTypeId")
+        .populate("hoststorageId")
+        .exec();
+      if (!order) {
+        res.status(404).json({ success: false, message: "Order not found" });
+        return;
+      }
+
+      // Fetch related plans
+      const orderPlansRaw = await OrderPlan.find({ orderId: order._id })
+        .populate({ path: "planId", model: "PlanEmail" })
+        .populate({ path: "emailTypeId", model: "TypeEmail" })
+        .lean();
+
+      const orderPlans: IOrderPlanResponse[] = orderPlansRaw.map((p: any) => ({
+        _id: p._id.toString(),
+        orderId: p.orderId.toString(),
+        planName: p.planId?.plan || "",
+        planId: p.planId?._id?.toString() || "",
+        emailType: p.emailTypeId?.name || "",
+        serviceType: p.type,
+        type: p.type,
+        registrationDate: p.registrationDate,
+        expiryDate: p.expiryDate,
+        noOfUsers: p.noOfUsers,
+      }));
+
+      // Merge client + customer details
+      const clientData = order.client
+        ? {
+            c_name: (order.client as any).c_name,
+            c_email: (order.client as any).c_email,
+            c_phone: (order.client as any).c_phone,
+            c_company: (order.client as any).c_company,
+            c_address: (order.client as any).c_address,
+            c_city: (order.client as any).c_city,
+            c_state: (order.client as any).c_state,
+            c_country: (order.client as any).c_country,
+            c_zipCode: (order.client as any).c_zipCode,
+          }
+        : {};
+
+      const customerData = order.customer
+        ? {
+            name: (order.customer as any).name,
+            email: (order.customer as any).email,
+            phone: (order.customer as any).phone,
+            company: (order.customer as any).company,
+            address: (order.customer as any).address,
+            city: (order.customer as any).city,
+            state: (order.customer as any).state,
+            country: (order.customer as any).country,
+            zipCode: (order.customer as any).zipCode,
+          }
+        : {};
+
+      // const mergedCustomerDetails = { ...clientData, ...customerData };
+
+      // ✅ IMPORTANT: convert once and reuse
+      const orderObj = order.toObject();
+
+      // Final response
+      res.status(200).json({
+        success: true,
+        data: {
+          ...orderObj,
+          dns_flag: orderObj.dns_flag ?? false, // ✅ FIXED
+          // customerDetails: mergedCustomerDetails,
+          plans: orderPlans,
+        },
+      });
+    } catch (err) {
+      console.error("❌ Error fetching order:", err);
+      res.status(500).json({
+        success: false,
+        error: (err as Error).message,
+      });
     }
-
-    // Fetch order and populate only relevant fields (without hoststorageId)
-    const order = await Order.findById(id)
-      .populate("customer")
-      .populate("client")
-      .populate("hosttypeid")      // populate host type
-      .populate("subHostTypeId")   // populate host sub-type
-      .populate("hoststorageId")
-      .exec();
-
-    if (!order) {
-      res.status(404).json({ success: false, message: "Order not found" });
-      return;
-    }
-
-    // Fetch related email plans
-   const orderPlansRaw = await OrderPlan.find({ orderId: order._id })
-  .populate({
-    path: "planId",
-    model: "PlanEmail",
-  })
-  .populate({
-    path: "emailTypeId",
-    model: "TypeEmail",
-  })
-  .lean();
-
-
- const orderPlans: IOrderPlanResponse[] = orderPlansRaw.map((p: any) => ({
-  _id: p._id.toString(),
-  orderId: p.orderId.toString(),
-  planName: p.planId?.plan || "",
-  planId: p.planId?._id?.toString() || "",
-  emailType: p.emailTypeId?.name || "",  // ✅ now shows "Microsoft 365"
-  serviceType: p.type,
-  type: p.type,
-  registrationDate: p.registrationDate,
-  expiryDate: p.expiryDate,
-  noOfUsers: p.noOfUsers,
-}));
-
-
-
-    // Merge client and customer details
-    const clientData = order.client
-      ? {
-          c_name: (order.client as any).c_name,
-          c_email: (order.client as any).c_email,
-          c_phone: (order.client as any).c_phone,
-          c_company: (order.client as any).c_company,
-          c_address: (order.client as any).c_address,
-          c_city: (order.client as any).c_city,
-          c_state: (order.client as any).c_state,
-          c_country: (order.client as any).c_country,
-          c_zipCode: (order.client as any).c_zipCode,
-        }
-      : {};
-
-    const customerData = order.customer
-      ? {
-          name: (order.customer as any).name,
-          email: (order.customer as any).email,
-          phone: (order.customer as any).phone,
-          company: (order.customer as any).company,
-          address: (order.customer as any).address,
-          city: (order.customer as any).city,
-          state: (order.customer as any).state,
-          country: (order.customer as any).country,
-          zipCode: (order.customer as any).zipCode,
-        }
-      : {};
-
-    const mergedCustomerDetails = { ...clientData, ...customerData };
-
-    // Return full response without hoststorageId
-    res.status(200).json({
-      success: true,
-      data: {
-        ...order.toObject(),
-        customerDetails: mergedCustomerDetails,
-        plans: orderPlans,
-      },
-    });
-  } catch (err) {
-    console.error("❌ Error fetching order:", err);
-    res.status(500).json({ success: false, error: (err as Error).message });
   }
-});
-
+);
 
 // POST create order
 // router.post(
@@ -784,6 +837,10 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
       ...rest,
       client: clientId,
       hoststorageId: rest.hoststorageId?._id || rest.hoststorageId,
+      dns_flag:
+    rest.domainSource === "Cloudflare"
+      ? Boolean(rest.dns_flag)
+      : false,
     };
 
     // -------------------------
