@@ -269,9 +269,10 @@ router.get(
       // =====================================================
       // ===================== ADMIN =========================
       // =====================================================
-      if (userRole === "admin") {
+    if (userRole === "admin") {
   const query: any = {
-    domainSource: "DNS Cloudflare",
+    domainSource: "Cloudflare", // Only Cloudflare domains
+    domain_flag: true,           // Only domains with domain_flag true
     $or: [
       { expiryDate: null },
       { expiryDate: { $exists: false } },
@@ -307,14 +308,18 @@ router.get(
 
         const query: any = { client: client._id };
 
-        if (filter === "DNS Cloudflare") {
-          query.domainSource = "DNS Cloudflare";
-          query.$or = [
+        if (filter === "Cloudflare") {
+        // Correct way to add multiple fields
+        Object.assign(query, {
+          domainSource: "Cloudflare",
+          domain_flag: true,
+          $or: [
             { expiryDate: null },
             { expiryDate: { $exists: false } },
             { expiryDate: "" },
-          ];
-        }
+          ],
+        });
+      }
 
         const orders = await Order.find(query)
           .populate("client", "c_name c_email c_company")
@@ -340,82 +345,92 @@ router.get(
     }
   }
 );
-
 router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const loggedInUser = req.user;
 
     if (!loggedInUser?._id) {
-      console.log("No user authenticated");
-      res.status(401).json({ success: false, error: "Unauthorized" });
-      return;
+      return res.status(401).json({ success: false, error: "Unauthorized" });
     }
 
-    console.log("Logged In User:", loggedInUser);
+    /* ================= Helper Functions ================= */
 
-    // ================= Helper Functions =================
-
-    // Filter Cloudflare orders based on your rules
+    // ✅ Cloudflare filter (unchanged logic)
     const filterCloudflareOrders = (orders: any[]) => {
       return orders.filter(order => {
         if (order.domainSource === "Cloudflare") {
-          // Keep orders if expiryDate exists OR google_email/microsoft_email is true
           if (order.expiryDate) return true;
-          if (order.google_email === true || order.microsoft_email === true) return true;
-          return false; // remove otherwise
+          if (order.google_email === true || order.microsoft_email === true)
+            return true;
+          return false;
         }
-        return true; // keep non-Cloudflare orders
+        return true;
       });
     };
 
-    // Attach email plans to orders
+    // ✅ Attach email plans (OPTIMIZED – single query)
     const attachEmailPlans = async (orders: any[]) => {
-      return Promise.all(
-        orders.map(async (order) => {
-          const emailPlans = await OrderPlan.find({
-            orderId: order._id,
-            type: "email",
-          })
-            .populate("planId")
-            .populate("emailTypeId")
-            .lean();
+      if (!orders.length) return orders;
 
-          return {
-            ...order,
-            emailPlans,
-          };
-        })
-      );
+      const orderIds = orders.map(o => o._id);
+
+      const emailPlans = await OrderPlan.find({
+        orderId: { $in: orderIds },
+        type: "email",
+      })
+        .populate("planId")
+        .populate("emailTypeId")
+        .lean();
+
+      const emailPlanMap = new Map<string, any[]>();
+
+      for (const plan of emailPlans) {
+        const key = plan.orderId.toString();
+        if (!emailPlanMap.has(key)) emailPlanMap.set(key, []);
+        emailPlanMap.get(key)!.push(plan);
+      }
+
+      return orders.map(order => ({
+        ...order,
+        emailPlans: emailPlanMap.get(order._id.toString()) || [],
+      }));
     };
 
-    // Update status for orders
+    // ✅ Update order status (OPTIMIZED – bulk write)
     const updateOrderStatuses = async (orders: any[]) => {
       const today = new Date();
+      const bulkOps: any[] = [];
 
-      return Promise.all(
-        orders.map(async (order) => {
-          let newStatus = "";
+      for (const order of orders) {
+        if (!order.expiryDate) continue;
 
-          if (order.expiryDate) {
-            newStatus = new Date(order.expiryDate) < today ? "EXPIRED" : "ACTIVE";
-          }
+        const newStatus =
+          new Date(order.expiryDate) < today ? "EXPIRED" : "ACTIVE";
 
-          if (order.status !== newStatus) {
-            await Order.updateOne({ _id: order._id }, { status: newStatus });
-            order.status = newStatus;
-          }
+        if (order.status !== newStatus) {
+          bulkOps.push({
+            updateOne: {
+              filter: { _id: order._id },
+              update: { status: newStatus },
+            },
+          });
+          order.status = newStatus;
+        }
+      }
 
-          return order;
-        })
-      );
+      if (bulkOps.length > 0) {
+        await Order.bulkWrite(bulkOps);
+      }
+
+      return orders;
     };
 
-    // ================= ADMIN =================
+    /* ================= ADMIN ================= */
+
     const user = await User.findById(loggedInUser._id).populate("userType");
 
-    if (user && user.userType) {
+    if (user?.userType) {
       const role = (user.userType as IUserType).name.toLowerCase();
-      console.log("User Role:", role);
 
       if (role === "admin") {
         let orders = await Order.find()
@@ -431,21 +446,21 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
 
         orders = await updateOrderStatuses(orders);
         orders = await attachEmailPlans(orders);
-        orders = filterCloudflareOrders(orders); // apply the new Cloudflare filter
+        orders = filterCloudflareOrders(orders);
 
-        console.log("Filtered Orders for Admin:", orders);
-
-        res.status(200).json({ success: true, data: orders });
-        return;
+        return res.status(200).json({
+          success: true,
+          data: orders,
+        });
       }
     }
 
-    // ================= CLIENT =================
+    /* ================= CLIENT ================= */
+
     const client = await Client.findById(loggedInUser._id).populate("userType");
 
-    if (client && client.userType) {
+    if (client?.userType) {
       const role = (client.userType as IUserType).name.toLowerCase();
-      console.log("Client Role:", role);
 
       if (role === "customer") {
         let orders = await Order.find({ client: client._id })
@@ -461,11 +476,9 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
 
         orders = await updateOrderStatuses(orders);
         orders = await attachEmailPlans(orders);
-        orders = filterCloudflareOrders(orders); // apply the new Cloudflare filter
+        orders = filterCloudflareOrders(orders);
 
-        console.log("Filtered Orders for Client:", orders);
-
-        res.status(200).json({
+        return res.status(200).json({
           success: true,
           client: {
             _id: client._id,
@@ -475,16 +488,16 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
           },
           data: orders,
         });
-        return;
       }
     }
 
-    res.status(403).json({ success: false, error: "Access denied" });
+    return res.status(403).json({ success: false, error: "Access denied" });
   } catch (err) {
     console.error("❌ Error:", err);
-    res.status(500).json({ success: false, error: "Server error" });
+    return res.status(500).json({ success: false, error: "Server error" });
   }
 });
+
 
 
 // GET single order by ID
@@ -837,10 +850,7 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
       ...rest,
       client: clientId,
       hoststorageId: rest.hoststorageId?._id || rest.hoststorageId,
-      dns_flag:
-    rest.domainSource === "Cloudflare"
-      ? Boolean(rest.dns_flag)
-      : false,
+  
     };
 
     // -------------------------

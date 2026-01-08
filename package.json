@@ -23,7 +23,7 @@
     "express": "^5.1.0",
     "express-async-handler": "^1.2.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.18.2",
+    "mongoose": "^8.21.0",
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
     "uuid": "^8.3.2",

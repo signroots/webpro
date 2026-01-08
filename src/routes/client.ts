@@ -201,12 +201,12 @@ router.put("/:id", async (req: Request, res: Response): Promise<any> => {
         c_email: { $elemMatch: { $regex: new RegExp(`^${primaryEmail}$`, "i") } },
       });
 
-      if (existingCustomer) {
-        return res.status(400).json({
-          success: false,
-          error: "Primary email already exists for another customer.",
-        });
-      }
+      // if (existingCustomer) {
+      //   return res.status(400).json({
+      //     success: false,
+      //     error: "Primary email already exists for another customer.",
+      //   });
+      // }
 
       updateData.c_email = emails;
     }
@@ -235,6 +235,9 @@ router.put("/:id", async (req: Request, res: Response): Promise<any> => {
         updateData.encryptedPassword = iv.toString("hex") + ":" + encrypted;
       }
     }
+      if (req.body.c_country_code !== undefined) {
+            updateData.c_countryCode = req.body.c_country_code;
+          }
 
     /* =======================
        ALL OTHER FIELDS
