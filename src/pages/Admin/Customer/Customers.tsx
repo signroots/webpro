@@ -138,6 +138,7 @@ const Customers: React.FC = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
   const [selectedCustomer, setSelectedCustomer] = useState<ICustomer | null>(null);
+  const [highlightCustomerId, setHighlightCustomerId] = useState<string | null>(null);
 
   const [modalForm, setModalForm] = useState<ICustomerForm>({
     c_name: "",
@@ -318,16 +319,23 @@ const handleSubmitCustomer = async (form: ICustomerForm) => {
         // ✅ Show backend error
         notify(response?.error || "Something went wrong!", "error");
       }
-    } else if (modalMode === "edit" && selectedCustomer?._id) {
-      response = await updateCustomer(selectedCustomer._id, payload);
+    }  else if (modalMode === "edit" && selectedCustomer?._id) {
+  response = await updateCustomer(selectedCustomer._id, payload);
 
-      if (response?.success) {
-        notify("Customer updated successfully!", "success");
-      } else {
-        // ✅ Show backend error (e.g. "Customer email is required")
-        notify(response?.error || "Failed to update customer!", "error");
-      }
-    }
+  if (response?.success) {
+    notify("Customer updated successfully!", "success");
+
+    // ✅ SET HIGHLIGHT ID
+    setHighlightCustomerId(selectedCustomer._id);
+
+    // ✅ AUTO REMOVE HIGHLIGHT AFTER 3 SECONDS
+    setTimeout(() => {
+      setHighlightCustomerId(null);
+    }, 3000);
+  } else {
+    notify(response?.error || "Failed to update customer!", "error");
+  }
+}
 
     setIsModalOpen(false);
     refreshCustomers();
@@ -343,6 +351,12 @@ const handleSubmitCustomer = async (form: ICustomerForm) => {
     }
   }
 };
+useEffect(() => {
+  if (highlightCustomerId) {
+    const t = setTimeout(() => setHighlightCustomerId(null), 2500);
+    return () => clearTimeout(t);
+  }
+}, [highlightCustomerId]);
 
 
   return (
@@ -367,6 +381,7 @@ const handleSubmitCustomer = async (form: ICustomerForm) => {
           onPageChange={setCurrentPage}
           onView={handleView}
           onEdit={handleEdit}
+          highlightCustomerId={highlightCustomerId}
         />
       )}
 
@@ -383,6 +398,7 @@ const handleSubmitCustomer = async (form: ICustomerForm) => {
           fetchStatesByCountry={fetchStatesByCountry}
           closeModal={() => setIsModalOpen(false)}
           handleSaveCustomer={handleSubmitCustomer}
+          
         />
       )}
 

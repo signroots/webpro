@@ -16,6 +16,7 @@ interface CustomerModalProps {
   fetchStatesByCountry: (countryId: string) => Promise<{ code: string; name: string }[]>;
   closeModal: () => void;
   handleSaveCustomer: (form: ICustomerForm) => void;
+  
 }
 
 const CustomerModal: React.FC<CustomerModalProps> = ({
@@ -43,7 +44,7 @@ const handleChange = (field: keyof ICustomerForm, value: any) => {
 
   // Phone validation
   if (field === "c_phone") {
-    const phonePattern = /^[0-9]{10}$/;
+    const phonePattern = /^[0-9]{8}$/;
     if (!phonePattern.test(value)) {
       setPhoneError("Mobile number must be exactly 10 digits");
       setErrors((prev) => ({ ...prev, c_phone: "Valid 10-digit phone number required" }));
@@ -113,10 +114,11 @@ if (allEmails.length === 0) {
   }
 }
 
-  // Phone validation
-  if (!modalForm.c_phone || modalForm.c_phone.length !== 10) {
-    newErrors.c_phone = "Valid 10-digit phone number required";
-  }
+
+// Phone validation (8 to 12 digits)
+if (!modalForm.c_phone || !/^\d{8,12}$/.test(modalForm.c_phone.trim())) {
+  newErrors.c_phone = "Phone number must be between 8 and 12 digits";
+}
 
   // Country validation
   if (!modalForm.c_country || modalForm.c_country === "") {

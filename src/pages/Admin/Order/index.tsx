@@ -9,6 +9,7 @@ import {
   FaGlobe,
   
 } from "react-icons/fa";
+import { useLocation } from "react-router-dom";
 import { SiCloudflare,SiHostinger } from "react-icons/si";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { fetchOrders,fetchOrdersByProvider ,fetchCustomerOrder} from "./api";
@@ -20,6 +21,9 @@ import { fetchCountries, fetchStatesByCountry } from "../Customer/api";
 import { notify } from "../../../Common/Toastify";
 import { Select } from "antd";
 import { fetchCountryCodes } from "../Customer/api";
+import { toast } from "react-toastify";
+
+
 // -------------------- Types --------------------
 interface Customer {
   _id: string;
@@ -66,6 +70,7 @@ interface Order {
   lockStatus?: string;
   status?: string;
   users?: number;
+  domain_flag?:boolean;
   managedBy?: string;
   registrationDate?: string;
   expiryDate?: string;
@@ -172,6 +177,17 @@ const firstFieldRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
      const [phoneCodes, setPhoneCodes] = useState<string[]>([]);
   const [phoneCode, setPhoneCode] = useState<string>("");
+  //  const location = useLocation();
+  //  const updatedOrderId = location.state?.updatedOrderId;
+  const [highlightedOrderId, setHighlightedOrderId] = useState<string | null>(null);
+  const isUpdatingRef = useRef(false);
+  const location = useLocation();
+const restorePageRef = useRef(true);
+
+const updatedOrderId = location.state?.updatedOrderId ?? null;
+const fromPage = location.state?.fromPage ?? 1;
+const highlightOrderId = location.state?.highlightOrderId;
+  const targetPageRef = useRef<number | null>(null);
   const [formData, setFormData] = useState<Order>({
     _id: "",
     domainName: "",
@@ -222,7 +238,7 @@ const [isHovering, setIsHovering] = useState(false);
 const [hasFetchedMsoffice, setHasFetchedMsoffice] = useState(false);
 const [msofficeCache, setMsofficeCache] = useState<Record<string, any[]>>({});
 const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-
+const isRestoringRef = useRef(false);
 
 
 
@@ -240,6 +256,39 @@ const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   </div>
 );
 
+const handlePageChange = (page: number) => {
+  restorePageRef.current = false;
+  setCurrentPage(page);
+};
+useEffect(() => {
+  if (location.state?.fromPage) {
+    isRestoringRef.current = true;
+    setCurrentPage(location.state.fromPage);
+    setHighlightedOrderId(location.state.highlightOrderId);
+  }
+}, []);
+useEffect(() => {
+  fetchOrders();
+
+  if (!isRestoringRef.current) {
+    setCurrentPage(1); // ✅ only for fresh loads / filters
+  } else {
+    isRestoringRef.current = false; // reset after restore
+  }
+}, [ provider]);
+
+  useEffect(() => {
+    if (location.state?.highlightedOrderId) {
+      setHighlightedOrderId(location.state.highlightedOrderId);
+
+      // Scroll to the updated order
+      setTimeout(() => {
+        const row = document.getElementById(`order-row-${location.state.highlightedOrderId}`);
+        row?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 100);
+    }
+  }, [location.state]);
+  
   // -------------------- Load Orders --------------------
   useEffect(() => {
     const loadOrders = async () => {
@@ -310,31 +359,95 @@ useEffect(() => {
   }, [customerType]);
 
   // -------------------- Apply Filters --------------------
-  useEffect(() => {
-    const applyFilters = async () => {
-      let filtered: Order[] = allOrders;
+useEffect(() => {
+  const applyFilters = async () => {
+    let filtered: Order[] = allOrders;
 
-      if (provider) {
-        try {
-          const providerOrders = await fetchOrdersByProvider(provider);
-          filtered = providerOrders;
-        } catch (err) {
-          console.error("Failed to fetch provider orders", err);
-        }
+    if (provider) {
+      try {
+        filtered = await fetchOrdersByProvider(provider);
+      } catch (e) {
+        console.error(e);
       }
+    }
 
-      if (statusFilter) {
-        filtered = filtered.filter(
-          (o) => o.status?.toLowerCase() === statusFilter.toLowerCase()
-        );
-      }
+    if (statusFilter) {
+      filtered = filtered.filter(
+        (o) => o.status?.toLowerCase() === statusFilter.toLowerCase()
+      );
+    }
 
-      setOrders(filtered);
-      setCurrentPage(1);
-    };
+    setOrders(filtered);
 
-    applyFilters();
-  }, [provider, statusFilter, allOrders,customerType]);
+    // ✅ FIXED PAGINATION LOGIC
+    if (restorePageRef.current && fromPage) {
+      setCurrentPage(fromPage);
+      restorePageRef.current = false;
+    } else {
+      
+    }
+  };
+
+  applyFilters();
+}, [provider, statusFilter, allOrders]);
+useEffect(() => {
+  if (location.state?.fromPage && restorePageRef.current) {
+    setCurrentPage(location.state.fromPage);
+    restorePageRef.current = false;
+  }
+
+  if (location.state?.updatedOrderId) {
+    setHighlightedOrderId(location.state.updatedOrderId);
+
+    setTimeout(() => {
+      setHighlightedOrderId(null);
+    }, 3000);
+  }
+}, []);
+
+useEffect(() => {
+  if (!updatedOrderId || !fromPage) return;
+
+  setCurrentPage(fromPage);
+  setHighlightedOrderId(updatedOrderId);
+
+  setTimeout(() => {
+    document
+      .getElementById(`order-row-${updatedOrderId}`)
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, 300);
+
+  setTimeout(() => setHighlightedOrderId(null), 4000);
+}, [updatedOrderId, fromPage]);
+useEffect(() => {
+  if (!updatedOrderId || allOrders.length === 0) return;
+
+  console.log("✅ Updated Order ID:", updatedOrderId);
+  console.log("✅ From Page:", fromPage);
+
+  // 1️⃣ Restore same page
+  if (fromPage) {
+    setCurrentPage(fromPage);
+  }
+
+  // 2️⃣ Highlight row
+  setHighlightedOrderId(updatedOrderId);
+
+  // 3️⃣ Scroll to row
+  setTimeout(() => {
+    const row = document.getElementById(`order-row-${updatedOrderId}`);
+    row?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, 300);
+
+  // 4️⃣ Remove highlight after 4s
+  const timer = setTimeout(() => {
+    setHighlightedOrderId(null);
+  }, 4000);
+
+  return () => clearTimeout(timer);
+}, [updatedOrderId, fromPage, allOrders]);
+
+
 const handleTabKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
   if (e.key !== "Tab") return;
   if (!modalRef.current) return;
@@ -359,24 +472,6 @@ const handleTabKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
   }
 };
 
-  // -------------------- Handlers --------------------
-const handleView = async (order: Order) => {
-  // 👇 open modal immediately
-  setModalType("view");
-  setSelectedOrder(null); // clear previous data
-  // setLoading(true);
-
-  try {
-    const latestOrder = await fetchCustomerOrder(order._id);
-    setSelectedOrder(latestOrder.data);
-    console.log("Fetched order:", latestOrder.data);
-  } catch (err) {
-    console.error("Failed to fetch order details:", err);
-    alert("Failed to fetch order details. Please try again.");
-  } finally {
-    setLoading(false);
-  }
-};
 
 useEffect(() => {
   const setDefaultCountryAndState = async () => {
@@ -426,11 +521,14 @@ useEffect(() => {
   setDefaultCountryAndState();
 }, [customerType, countries]);
 
-
-  const handleEdit = (order: Order) => {
-    setSelectedOrder(order);
-    setModalType("edit");
-  };
+const handleEdit = (orderId: string) => {
+  navigate(`/admin/orders/edit/${orderId}`, {
+    state: {
+      fromPage: currentPage,          // ✅ SAVE PAGE
+      highlightOrderId: orderId,       // ✅ SAVE ID
+    },
+  });
+};
 
   const closeModal = () => {
     setSelectedOrder(null);
@@ -489,11 +587,35 @@ const filteredOrders = useMemo(
     ),
   [orders, searchTerm]
 );
+// useEffect(() => {
+//   if (highlightedOrderId) {
+//     const timer = setTimeout(() => setHighlightedOrderId(null), 5000);
+//     return () => clearTimeout(timer);
+//   }
+// }, [highlightedOrderId]);
+useEffect(() => {
+  if (!highlightedOrderId) return;
 
+  const timer = setTimeout(() => {
+    setHighlightedOrderId(null);
+    targetPageRef.current = null; // ✅ reset
+  }, 5000);
+
+  return () => clearTimeout(timer);
+}, [highlightedOrderId]);
+
+useEffect(() => {
+  console.log("🔍 filteredOrders length:", filteredOrders.length);
+  console.log(
+    "🔍 filteredOrders IDs:",
+    filteredOrders.map(o => o._id)
+  );
+}, [filteredOrders]);
+console.log("🛠 Updating orderIdSSS:", orderId);
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
-  // setLoading(true);
   setError(null);
+  setLoading(true);
 
   try {
     const payload: any = {
@@ -504,14 +626,18 @@ const handleSubmit = async (e: React.FormEvent) => {
     if (customerType === "existing" && formData.client) {
       payload.client = formData.client;
       delete payload.newCustomer;
-      payload.is_customer = true;
       payload.domainName = selectedOrder?.domainName;
-    } else if (customerType === "new" && formData.newCustomer?.c_name && formData.newCustomer?.c_email) {
-      payload.newCustomer = formData.newCustomer;
+      payload.is_customer = true;
+    } else if (
+      customerType === "new" &&
+      formData.newCustomer?.c_name &&
+      formData.newCustomer?.c_email
+    ) {
       if (formData.newCustomer.c_email.length === 0) {
         alert("At least one email is required.");
         return;
       }
+      payload.newCustomer = formData.newCustomer;
       delete payload.client;
       payload.domainName = selectedOrder?.domainName;
       payload.is_customer = false;
@@ -521,46 +647,62 @@ const handleSubmit = async (e: React.FormEvent) => {
       delete payload.is_customer;
     }
 
-    // Remove unnecessary _id property
     delete payload._id;
-
-    const orderId = selectedOrder?._id;
-    if (!orderId) {
-      setError("Order ID is missing");
-      setLoading(false);
-      return;
-    }
-
-    console.log("Payload for updateOrder:", payload);
-
-    // Call your updateOrder API
-    await updateOrder(orderId, payload);
     
+    const orderId = selectedOrder?._id;
+    if (!orderId) throw new Error("Order ID is missing");
 
-    // Update orders in the state after successful submission
+    // ✅ API call
+    await updateOrder(orderId, payload);
+   
+
+    console.log("🧠 allOrders BEFORE update:", allOrders.map(o => o._id));
+
+setAllOrders(prev => {
+  const updated = prev.map(o =>
+    o._id === orderId ? { ...o, ...payload } : o
+  );
+  console.log("🧠 allOrders AFTER update:", updated.map(o => o._id));
+  return updated;
+});
+
     setOrders((prev) =>
       prev.map((o) => (o._id === orderId ? { ...o, ...payload } : o))
     );
 
-    // Success notification
-    notify("Order Updated Successfully...", "success");
-
-    // Close modal after submission
     closeModal();
-
-    // Reset the form data only after submission
     resetFormData();
+    notify("Order Updated Successfully...", "success");
+navigate("/admin/orders", {
+  state: {
+    fromPage,
+    highlightOrderId,
+  },
+});
 
-    // Redirect to orders page
-    navigate("/admin/orders");
+
 
   } catch (err) {
     console.error(err);
     setError((err as Error).message || "Failed to update order");
   } finally {
-    setLoading(false); // Hide loading indicator
+    setLoading(false);
   }
 };
+useEffect(() => {
+  if (location.state?.fromPage) {
+    setCurrentPage(location.state.fromPage);
+  }
+
+  if (location.state?.highlightOrderId) {
+    setHighlightedOrderId(location.state.highlightOrderId);
+  }
+}, []);
+
+console.log("updatedOrderId:", updatedOrderId);
+console.log("fromPage:", fromPage);
+console.log("currentPage:", currentPage);
+
 
 const resetFormData = () => {
   setFormData({
@@ -592,11 +734,23 @@ const resetFormData = () => {
 
 
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
-  const paginatedOrders = useMemo(() => {
-    if (provider) return filteredOrders;
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredOrders.slice(start, start + itemsPerPage);
-  }, [filteredOrders, currentPage, itemsPerPage, provider]);
+const paginatedOrders = useMemo(() => {
+  const start = (currentPage - 1) * itemsPerPage;
+  return filteredOrders.slice(start, start + itemsPerPage);
+}, [filteredOrders, currentPage, itemsPerPage]);
+useEffect(() => {
+  console.log("✅ Rendering page:", currentPage);
+  console.log(
+    "✅ Paginated IDs:",
+    paginatedOrders.map(o => o._id)
+  );
+}, [paginatedOrders, currentPage]);
+
+console.log({
+  updatedOrderId,
+  fromPage,
+  currentPage,
+});
 
   if (loading)
     return <p className="text-center text-gray-500 mt-6">Loading orders...</p>;
@@ -722,13 +876,21 @@ const resetFormData = () => {
 
     {/* ================= BODY ================== */}
     <tbody className="divide-y divide-gray-100 text-gray-900">
-      {paginatedOrders.map((order, idx) => (
-        <tr key={order._id} className="hover:bg-gray-50">
+     {paginatedOrders.map((order, idx) => (
+    <tr
+      key={order._id}                     // ✅ ADD THIS
+      id={`order-row-${order._id}`}
+      className={`transition-all duration-500 ${
+        highlightedOrderId === order._id
+          ? "bg-blue-50 border-l-4 border-blue-500"
+      : "hover:bg-gray-50"
+      }`}
+    >
 
-          {/* SL NO */}
-          <td className="px-6 py-4">
-            {(currentPage - 1) * itemsPerPage + idx + 1}
-          </td>
+      {/* SL NO */}
+      <td className="px-6 py-4">
+        {(currentPage - 1) * itemsPerPage + idx + 1}
+      </td>
 
           {/* DOMAIN + LOCK */}
           <td className="px-6 py-4 flex items-center gap-2">
@@ -770,15 +932,11 @@ const resetFormData = () => {
               {order.domainSource ? (
                 order.domainSource.toLowerCase() === "resellerclub" ? (
                   <img src="/images/resellerclub.png" className="w-6 h-6" title="ResellerClub" />
-                ) : order.domainSource.toLowerCase() === "cloudflare" ? (
+                ) : order.domainSource.toLowerCase() === "cloudflare" && order.domain_flag === true ? (
+                  <img src="/dns_logo.png" className="w-6 h-6" title="DNS Cloudflare" />
+               ): order.domainSource.toLowerCase() === "cloudflare" ? (
                   <img src="/images/cloudflare.png" className="w-7 h-7" title="Cloudflare" />
-                ): order.domainSource.toLowerCase() === "dns cloudflare" ? (
-                  <img
-                    src="/dns_logo.png"
-                    className="w-6 h-6"
-                    title="DNS Cloudflare"
-                  />
-                ) : order.domainSource.toLowerCase() === "hostinger" ? (
+                ): order.domainSource.toLowerCase() === "hostinger" ? (
                   <SiHostinger className="w-6 h-6 text-blue-500" title="Hostinger" />
                 ) : order.domainSource.toLowerCase() === "ae server" ? (
                   <img src="/images/aeserverlogo.png" className="w-7 h-7" title="AE Server" />
@@ -993,18 +1151,29 @@ const resetFormData = () => {
             <button
             className="hover:text-blue-600"
             title="View"
-            onClick={() => navigate(`/admin/orders/order-details/${order._id}`)}
+            onClick={() =>
+  navigate(`/admin/orders/order-details/${order._id}`, {
+    state: {
+      fromPage: currentPage,
+    },
+  })
+}
           >
             <FaEye />
           </button>
 
             <Link
-              to={`/admin/orders/update/${order._id}`}
-              className="hover:text-yellow-600"
-              title="Edit"
-            >
-              <FaEdit />
-            </Link>
+  to={`/admin/orders/update/${order._id}`}
+  state={{
+    fromPage: currentPage,
+    highlightOrderId: order._id,
+  }}
+  className="hover:text-yellow-600"
+  title="Edit"
+>
+  <FaEdit />
+</Link>
+
           </td>
 
         </tr>
@@ -1013,29 +1182,30 @@ const resetFormData = () => {
   </table>
 </div>
 
+{/* Pagination */}
+{!provider && (
+  <div className="mt-4 flex justify-center gap-4 text-black">
+    <button
+      disabled={currentPage === 1}
+      onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+      className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+    >
+      Prev
+    </button>
 
-      {/* Pagination */}
-      {!provider && (
-        <div className="mt-4 flex justify-center gap-4 text-black">
-          <button
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
-          >
-            Prev
-          </button>
-          <span className="py-2">
-            Page {currentPage} of {totalPages}
-          </span>
-          <button
-            disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
-      )}
+    <span className="py-2">
+      Page {currentPage} of {totalPages}
+    </span>
+
+    <button
+      disabled={currentPage === totalPages}
+      onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+      className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+    >
+      Next
+    </button>
+  </div>
+)}
 
       {/* -------------------- Modal -------------------- */}
   {modalType && selectedOrder && (

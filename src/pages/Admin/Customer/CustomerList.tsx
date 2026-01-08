@@ -9,6 +9,7 @@ interface Props {
   onPageChange: (page: number) => void;
   onView: (customer: ICustomer) => void;
   onEdit: (customer: ICustomer) => void;
+  highlightCustomerId: string | null;
 }
 
 const CustomerList: React.FC<Props> = ({
@@ -18,6 +19,7 @@ const CustomerList: React.FC<Props> = ({
   onPageChange,
   onView,
   onEdit,
+  highlightCustomerId,
 }) => {
   // const startIndex = (currentPage - 1) * itemsPerPage;
   // const paginated = customers.slice(startIndex, startIndex + itemsPerPage);
@@ -222,7 +224,16 @@ const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
             const remainingEmails = emailArray.slice(1);
 
             return (
-              <tr key={c._id} className="hover:bg-gray-50">
+             <tr
+  key={c._id}
+  className={`transition-all duration-500 ${
+    highlightCustomerId === c._id
+      ? "bg-blue-50 border-l-4 border-blue-500"
+      : "hover:bg-gray-50"
+  }`}
+>
+
+
   {/* SL No */}
   <td className="border p-2 text-center">{slNo}</td>
 

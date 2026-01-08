@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import Select from "react-select";
+import { notify } from "../../../../Common/Toastify";
 import { fetchCountries, fetchStatesByCountry,fetchCountryCodes} from "../../Customer/api";
 import { BiLabel } from "react-icons/bi";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -110,6 +111,7 @@ interface OrderForm {
     c_email?: string[];
     c_country_code?:string;
     c_phone?: string;
+    c_mobilePhone?: string;
     c_company?: string;
     c_address?: string;
     c_address2?:string;
@@ -138,7 +140,8 @@ interface OrderForm {
   users?: number;
   hostType?: any;
   hostSubType?: any;
-  dns_flag?:boolean;
+  
+  domain_flag?:boolean;
   //  hosttypeid?: string | null;
   // subHostTypeId?: string | null;
   hosttypeid: HostType | null;
@@ -154,6 +157,8 @@ const UpdateOrder: React.FC = () => {
 
 // const [confirmIndex, setConfirmIndex] = useState<number | null>(null);
 type RemoveTarget = "email" | "storage" | "msoffice";
+const [highlightedOrderId, setHighlightedOrderId] = useState<string | null | undefined>(null);
+
 
 const [confirmRemove, setConfirmRemove] = useState<{
   index: number;
@@ -162,13 +167,15 @@ const [confirmRemove, setConfirmRemove] = useState<{
   const [formData, setFormData] = useState<OrderForm>({
     domainName: "",
     managedBy: "Signroots",
-    dns_flag: false,
+    
+domain_flag: false,
     newCustomer: {
       c_salutation: "",
       c_name: "",
       c_email: [],
       c_country_code: "",
       c_phone: "",
+      c_mobilePhone:"",
       c_company: "",
       c_address: "",
       c_address2:"",
@@ -249,6 +256,12 @@ const fetchPlansByEmailType = async (typeId: string, index: number) => {
     console.error("Failed to fetch plans", err);
   }
 };
+useEffect(() => {
+  if (highlightedOrderId) {
+    const timer = setTimeout(() => setHighlightedOrderId(null), 5000);
+    return () => clearTimeout(timer);
+  }
+}, [highlightedOrderId]);
 
 const addEmailPlan = () => {
   setEmailPlans((prev) => [
@@ -321,20 +334,34 @@ useEffect(() => {
     .then((codes) => {
       setPhoneCodes(codes);
 
-      // default to +91 (India)
-      if (codes.includes("+91")) {
-        setPhoneCode("+91");
-        setFormData((prev) => ({
-          ...prev,
-          newCustomer: {
-            ...prev.newCustomer,
-            c_country_code: "+91",
-          },
-        }));
-      }
+      setPhoneCode((prev) => {
+        // if API value exists, keep it
+        if (formData.newCustomer.c_country_code) {
+          return formData.newCustomer.c_country_code;
+        }
+
+        // else fallback to +91
+        if (codes.includes("+91")) {
+          setFormData((prevForm) => ({
+            ...prevForm,
+            newCustomer: {
+              ...prevForm.newCustomer,
+              c_country_code: "+91",
+            },
+          }));
+          return "+91";
+        }
+
+        return prev;
+      });
     })
     .catch(console.error);
 }, []);
+useEffect(() => {
+  if (formData.newCustomer.c_country_code) {
+    setPhoneCode(formData.newCustomer.c_country_code);
+  }
+}, [formData.newCustomer.c_country_code]);
 const handleEmailPlanChange = async (
   index: number,
   key: keyof EmailPlan,
@@ -497,15 +524,58 @@ const handleStoragePlanChange = async (
 
 
   // ------------------- INPUT & CHECKBOX HANDLERS -------------------
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    if (customerType === "new" && name.startsWith("newCustomer.")) {
-      const key = name.split(".")[1];
-      setFormData((prev) => ({ ...prev, newCustomer: { ...(prev.newCustomer || {}), [key]: value } }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
-  };
+const handleInputChange = (
+  e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+) => {
+  const { name, value } = e.target;
+
+  // NEW CUSTOMER HANDLING (unchanged)
+  if (customerType === "new" && name.startsWith("newCustomer.")) {
+    const key = name.split(".")[1];
+    setFormData((prev) => ({
+      ...prev,
+      newCustomer: {
+        ...(prev.newCustomer || {}),
+        [key]: value,
+      },
+    }));
+  } 
+  // DOMAIN SOURCE LOGIC
+  else if (name === "domainSource") {
+    setFormData((prev) => ({
+      ...prev,
+      domainSource: value,
+      
+domain_flag: value === "Cloudflare",
+    }));
+  } 
+  // DEFAULT
+  else {
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  }
+};
+useEffect(() => {
+  if (formData.managedBy === "Customer") {
+    setFormData((prev) => ({
+      ...prev,
+      domainSource: "Cloudflare",
+      
+domain_flag: true,
+    }));
+  }
+
+  if (formData.managedBy === "Signroots") {
+    setFormData((prev) => ({
+      ...prev,
+      domainSource: "",
+      
+domain_flag: false,
+    }));
+  }
+}, [formData.managedBy]);
 
 const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   const { name, checked } = e.target;
@@ -531,18 +601,37 @@ const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   }
 };
 useEffect(() => {
-  console.log("DEBUG emailPlans", emailPlans);
-}, [emailPlans]);
-
-useEffect(() => {
   const countryCode = formData.newCustomer.c_country;
   if (!countryCode) return;
 
   fetchStatesByCountry(countryCode)
-    .then((data) => setStates(data))
+    .then((data) => {
+      setStates(data);
+
+      // ✅ IMPORTANT: re-select state after states are loaded
+      const existingState = formData.newCustomer.c_state;
+
+      if (existingState) {
+        const match = data.find(
+          (s: any) =>
+            s.name === existingState ||
+            s._id === existingState ||
+            s.code === existingState
+        );
+
+        if (match) {
+          setFormData(prev => ({
+            ...prev,
+            newCustomer: {
+              ...prev.newCustomer,
+              c_state: match.name, // or match.code / match._id
+            },
+          }));
+        }
+      }
+    })
     .catch(console.error);
 }, [formData.newCustomer.c_country]);
-
 
   const handleCountryChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const countryCode = e.target.value;
@@ -577,6 +666,8 @@ useEffect(() => {
     fetchEmailTypes();
     fetchHostTypes();
   }, []);
+
+
 
   // ------------------- FETCH ORDER DATA -------------------
 // useEffect to fetch order and initialize formData
@@ -660,7 +751,7 @@ setMsofficePlans(
       setFormData((prev) => ({
         ...prev,
         domainName: order.domainName || "",
-        dns_flag:order.dns_flag,
+        domain_flag:order.domain_flag,
         managedBy: order.managedBy || "Signroots",
         registrationDate: order.registrationDate?.slice(0, 10) || "",
         expiryDate: order.expiryDate?.slice(0, 10) || "",
@@ -674,6 +765,7 @@ setMsofficePlans(
   c_email: order.client?.c_email || [],
   c_country_code: order.client?.c_countryCode || "+91",
   c_phone: order.client?.c_phone || "",
+  c_mobilePhone:order.client?.c_phone ||" ",
   c_company: order.client?.c_company || "",
   c_address: order.client?.c_address || "",
   c_address2: order.client?.c_address2 || "",
@@ -681,7 +773,7 @@ setMsofficePlans(
 
   // ⭐ IMPORTANT PART
   c_country: order.client?.c_country?._id || "",
-  c_state: order.client?.c_state?.name || "",
+  c_state: order.client?.c_state?._id || "",
 
   c_zipCode: order.client?.c_zipCode || "",
   c_bankAccountPayment: order.client?.c_bankAccountPayment || "",
@@ -1029,16 +1121,20 @@ const handleHostTypeChange = (hostTypeId: string) => {
     payload.email_flag = combinedPlans.some(p => p.type === "email");
     payload.storage_services_flag = combinedPlans.some(p => p.type === "storage");
     payload.msoffice_services_flag = combinedPlans.some(p => p.type === "msoffice");
-    payload.dns_flag = formData.domainSource === "Cloudflare"
-  ? !!formData.dns_flag
+    payload.domain_flag = formData.domainSource === "Cloudflare"
+  ? !!formData.domain_flag
   : false;
 
     // send update request
     const res = await axios.put(`${import.meta.env.VITE_API_BASE_URL}/api/orders/${orderId}`, payload);
 
     if (res.data?.success === true) {
-      alert("✅ Order updated successfully!");
-      // navigate("/admin/orders");
+      // alert("✅ Order updated successfully!");
+      navigate("/admin/orders", {
+  state: { updatedOrderId: orderId }
+});
+notify("Order Updated Successfully...", "success");
+
     } else {
       alert("❌ Failed to update order");
     }
@@ -1252,8 +1348,8 @@ return (
 
       <input
         placeholder="Phone Number"
-        name="newCustomer.c_phone"
-        value={formData.newCustomer.c_phone || ""}
+        name="newCustomer.c_mobilePhone"
+        value={formData.newCustomer.c_mobilePhone || ""}
         onChange={handleInputChange}
         maxLength={10}
         className={`${inputClass} flex-1`}
@@ -1310,7 +1406,7 @@ return (
     </select>
 
     {/* State */}
-    <select
+   <select
   name="newCustomer.c_state"
   value={formData.newCustomer.c_state || ""}
   onChange={handleInputChange}
@@ -1318,11 +1414,12 @@ return (
 >
   <option value="">-- Select State --</option>
   {states.map((s) => (
-    <option key={s.code} value={s.name}>
+    <option key={s.code} value={s.code}>
       {s.name}
     </option>
   ))}
 </select>
+
 
 
     {/* Zip */}
@@ -1404,27 +1501,61 @@ return (
             </div>
 
             {/* Registrar / Domain Source */}
-            {formData.managedBy === "Signroots" && (
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">Registrar</label>
-                <select
-                  name="domainSource"
-                  value={formData.domainSource || ""}
-                  onChange={handleInputChange}
-                  className="w-full border rounded px-3 py-2"
-                >
-                  <option value="">-- Select Registrar --</option>
-                  <option value="resellerclub">RESELLER CLUB</option>
-                  <option value="HOSTINGER">HOSTINGER</option>
-                  <option value="SQUARESPACE">SQUARESPACE</option>
-                  <option value="SAHARA">SAHARA</option>
-                  <option value="Cloudflare">CLOUDFLARE</option>
-                  <option value="DNS Cloudflare">DNS CLOUDFLARE</option>
-                  <option value="AE Server">AE SERVER</option>
-                </select>
-              </div>
-            )}
-{formData.domainSource === "Cloudflare" && (
+{(formData.managedBy === "Signroots" ||
+  formData.managedBy === "Customer") && (
+  <div>
+    <label className="block text-gray-700 font-medium mb-2">
+      Registrar
+    </label>
+    <select
+      name="domainSource"
+      value={formData.domainSource || ""}
+      onChange={handleInputChange}
+      className="w-full border rounded px-3 py-2"
+    >
+      <option value="">-- Select Registrar --</option>
+
+      {formData.managedBy === "Signroots" && (
+        <>
+          <option value="resellerclub">RESELLER CLUB</option>
+          <option value="HOSTINGER">HOSTINGER</option>
+          <option value="SQUARESPACE">SQUARESPACE</option>
+          <option value="SAHARA">SAHARA</option>
+          <option value="Cloudflare">CLOUDFLARE</option>
+          {/* <option value="DNS Cloudflare">DNS CLOUDFLARE</option> */}
+          <option value="AE Server">AE SERVER</option>
+        </>
+      )}
+
+      {formData.managedBy === "Customer" && (
+        <option value="Cloudflare">CLOUDFLARE</option>
+      )}
+    </select>
+     {["Cloudflare"].includes(formData.domainSource ?? "") && (
+  <div className="mt-4 flex items-center gap-2">
+    <input
+      type="checkbox"
+      name="dns_flag"
+      checked={formData.domain_flag}
+      disabled={formData.managedBy === "Customer"}
+      onChange={(e) =>
+        setFormData((prev) => ({
+          ...prev,
+          
+      domain_flag: e.target.checked,
+        }))
+      }
+      className="w-4 h-4"
+    />
+    <label className="text-gray-700 font-medium">
+      DNS Flag
+    </label>
+  </div>
+)}
+
+  </div>
+)}
+{/* {formData.domainSource === "Cloudflare" && (
   <div className="mt-4 flex items-center gap-2">
     <input
       type="checkbox"
@@ -1442,7 +1573,7 @@ return (
       DNS Flag
     </label>
   </div>
-)}
+)} */}
 
             <div>
               <label className="block text-gray-700 font-medium mb-2">Registration Date</label>

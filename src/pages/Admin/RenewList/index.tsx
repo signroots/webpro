@@ -80,12 +80,12 @@ useEffect(() => {
     <div className="min-h-screen w-full bg-gray-100 p-6">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold text-black">Orders</h1>
-        <Link
+        {/* <Link
           to="/admin/orders/new"
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           + New Order
-        </Link>
+        </Link> */}
       </div>
 
       <div className="bg-white shadow rounded-lg overflow-x-auto">
