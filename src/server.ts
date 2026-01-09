@@ -20,6 +20,7 @@ import typeEmail from "./routes/typeEmail"
 import planRoutes from "./routes/planroute";
 import hostTypeRoutes from "./routes/hostroute";
 import hostSubTypeRoutes from "./routes/hostSubTyperoute"
+import dashboard from "./routes/dashboard"
 import storageRoutes from "./routes/storageroute"
 import path from "path";
 // Import cron starter
@@ -66,7 +67,8 @@ app.use("/api/typeemail", typeEmail);
 app.use("/api/plans", planRoutes);
 app.use("/api/hosttypes", hostTypeRoutes);
 app.use("/api/hostsubtype", hostSubTypeRoutes);
-app.use("/api/storage",storageRoutes)
+app.use("/api/storage",storageRoutes);
+app.use("/api/dashboard",dashboard);
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 
