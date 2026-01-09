@@ -24,11 +24,38 @@ export interface Order {
   c_email: string;
    
   };
+  
 }
 interface TypeEmail {
   _id: string;
   name: string;
   isActive: boolean;
+}
+export interface ApiPerson {
+  _id?: string;
+  c_name?: string;
+  c_email?: string[] | string;
+  c_phone?: string;
+  c_company?: string;
+  c_address?: string;
+  c_city?: string;
+  c_state?: { name?: string };
+  c_country?: { name?: string };
+}
+
+export interface OrderApiResponse {
+  _id: string;
+  domainName: string;
+  status?: string;
+  managedBy?: string;
+  registrationDate?: string;
+  expiryDate?: string;
+  domainSource?: string;
+
+  customer?: ApiPerson | null;
+  client?: ApiPerson | null;
+
+  [key: string]: any; // allow other backend fields
 }
 
 const token = localStorage.getItem("token");
@@ -94,11 +121,13 @@ export const fetchCustomerOrder = async (id: string) => {
   const data = await res.json();
   return data;
 };
-export const fetchOrderById = async (id: string): Promise<Order> => {
+export const fetchOrderById = async (
+  id: string
+): Promise<OrderApiResponse> => {
   const response = await axios.get(`${API_BASE_URL}/api/orders/${id}`);
-  // ✅ unwrap the data from { success, data }
-  return response.data.data; 
+  return response.data.data;
 };
+
 // ✅ Update order (PUT)
 export const updateOrder = async (id: string, data: Partial<Order>): Promise<Order> => {
   const token = localStorage.getItem("token"); // always fresh token

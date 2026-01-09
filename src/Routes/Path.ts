@@ -44,7 +44,7 @@ const Paths: PathsType = {
 
   Admin: {
     login: '/admin/login',
-    dashboard: '/admin/dashboard',
+    dashboard: '/admin/dashboard_management',
     domains: '/admin/domains',
     customers: {
       index: '/admin/customers',

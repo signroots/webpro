@@ -177,15 +177,23 @@ const firstFieldRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
      const [phoneCodes, setPhoneCodes] = useState<string[]>([]);
   const [phoneCode, setPhoneCode] = useState<string>("");
-  //  const location = useLocation();
-  //  const updatedOrderId = location.state?.updatedOrderId;
-  const [highlightedOrderId, setHighlightedOrderId] = useState<string | null>(null);
+  
+ 
+   const [highlightedOrderId, setHighlightedOrderId] =
+    useState<string | null>(null);
   const isUpdatingRef = useRef(false);
   const location = useLocation();
 const restorePageRef = useRef(true);
 
-const updatedOrderId = location.state?.updatedOrderId ?? null;
-const fromPage = location.state?.fromPage ?? 1;
+const updatedOrderId: string | null =
+    typeof location.state?.updatedOrderId === "string"
+      ? location.state.updatedOrderId
+      : null;
+
+  const fromPage: number | null =
+    typeof location.state?.fromPage === "number"
+      ? location.state.fromPage
+      : null;
 const highlightOrderId = location.state?.highlightOrderId;
   const targetPageRef = useRef<number | null>(null);
   const [formData, setFormData] = useState<Order>({
@@ -260,34 +268,10 @@ const handlePageChange = (page: number) => {
   restorePageRef.current = false;
   setCurrentPage(page);
 };
-useEffect(() => {
-  if (location.state?.fromPage) {
-    isRestoringRef.current = true;
-    setCurrentPage(location.state.fromPage);
-    setHighlightedOrderId(location.state.highlightOrderId);
-  }
-}, []);
-useEffect(() => {
-  fetchOrders();
 
-  if (!isRestoringRef.current) {
-    setCurrentPage(1); // ✅ only for fresh loads / filters
-  } else {
-    isRestoringRef.current = false; // reset after restore
-  }
-}, [ provider]);
 
-  useEffect(() => {
-    if (location.state?.highlightedOrderId) {
-      setHighlightedOrderId(location.state.highlightedOrderId);
 
-      // Scroll to the updated order
-      setTimeout(() => {
-        const row = document.getElementById(`order-row-${location.state.highlightedOrderId}`);
-        row?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 100);
-    }
-  }, [location.state]);
+ 
   
   // -------------------- Load Orders --------------------
   useEffect(() => {
@@ -341,13 +325,7 @@ useEffect(() => {
     }, 100);
   }
 }, [modalType]);
-useEffect(() => {
-  if (modalType === "addCustomer") {
-    setTimeout(() => {
-      modalRef.current?.focus();
-    }, 0);
-  }
-}, [modalType]);
+
   // Fetch existing customers when "existing" is selected
   useEffect(() => {
     if (customerType === "existing") {
@@ -357,96 +335,12 @@ useEffect(() => {
         .catch((err) => console.error(err));
     }
   }, [customerType]);
-
-  // -------------------- Apply Filters --------------------
 useEffect(() => {
-  const applyFilters = async () => {
-    let filtered: Order[] = allOrders;
-
-    if (provider) {
-      try {
-        filtered = await fetchOrdersByProvider(provider);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    if (statusFilter) {
-      filtered = filtered.filter(
-        (o) => o.status?.toLowerCase() === statusFilter.toLowerCase()
-      );
-    }
-
-    setOrders(filtered);
-
-    // ✅ FIXED PAGINATION LOGIC
-    if (restorePageRef.current && fromPage) {
-      setCurrentPage(fromPage);
-      restorePageRef.current = false;
-    } else {
-      
-    }
-  };
-
-  applyFilters();
-}, [provider, statusFilter, allOrders]);
-useEffect(() => {
-  if (location.state?.fromPage && restorePageRef.current) {
+  if (typeof location.state?.fromPage === "number") {
+    isRestoringRef.current = true;
     setCurrentPage(location.state.fromPage);
-    restorePageRef.current = false;
   }
-
-  if (location.state?.updatedOrderId) {
-    setHighlightedOrderId(location.state.updatedOrderId);
-
-    setTimeout(() => {
-      setHighlightedOrderId(null);
-    }, 3000);
-  }
-}, []);
-
-useEffect(() => {
-  if (!updatedOrderId || !fromPage) return;
-
-  setCurrentPage(fromPage);
-  setHighlightedOrderId(updatedOrderId);
-
-  setTimeout(() => {
-    document
-      .getElementById(`order-row-${updatedOrderId}`)
-      ?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, 300);
-
-  setTimeout(() => setHighlightedOrderId(null), 4000);
-}, [updatedOrderId, fromPage]);
-useEffect(() => {
-  if (!updatedOrderId || allOrders.length === 0) return;
-
-  console.log("✅ Updated Order ID:", updatedOrderId);
-  console.log("✅ From Page:", fromPage);
-
-  // 1️⃣ Restore same page
-  if (fromPage) {
-    setCurrentPage(fromPage);
-  }
-
-  // 2️⃣ Highlight row
-  setHighlightedOrderId(updatedOrderId);
-
-  // 3️⃣ Scroll to row
-  setTimeout(() => {
-    const row = document.getElementById(`order-row-${updatedOrderId}`);
-    row?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, 300);
-
-  // 4️⃣ Remove highlight after 4s
-  const timer = setTimeout(() => {
-    setHighlightedOrderId(null);
-  }, 4000);
-
-  return () => clearTimeout(timer);
-}, [updatedOrderId, fromPage, allOrders]);
-
+}, [location.state]);
 
 const handleTabKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
   if (e.key !== "Tab") return;
@@ -522,13 +416,14 @@ useEffect(() => {
 }, [customerType, countries]);
 
 const handleEdit = (orderId: string) => {
-  navigate(`/admin/orders/edit/${orderId}`, {
+  navigate(`/admin/orders/update/${orderId}`, {
     state: {
-      fromPage: currentPage,          // ✅ SAVE PAGE
-      highlightOrderId: orderId,       // ✅ SAVE ID
+      fromPage: currentPage,
+      highlightOrderId: orderId,
     },
   });
 };
+
 
   const closeModal = () => {
     setSelectedOrder(null);
@@ -580,19 +475,14 @@ const handleInputChange = (
 };
 
   // -------------------- Search & Pagination --------------------
-const filteredOrders = useMemo(
-  () =>
-    orders.filter((o) =>
-      (o.domainName ?? "").toLowerCase().includes(searchTerm.toLowerCase())
-    ),
-  [orders, searchTerm]
-);
-// useEffect(() => {
-//   if (highlightedOrderId) {
-//     const timer = setTimeout(() => setHighlightedOrderId(null), 5000);
-//     return () => clearTimeout(timer);
-//   }
-// }, [highlightedOrderId]);
+ const filteredOrders = useMemo(() => {
+    return orders.filter((o) =>
+      (o.domainName ?? "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
+    );
+  }, [orders, searchTerm]);
+
 useEffect(() => {
   if (!highlightedOrderId) return;
 
@@ -604,13 +494,6 @@ useEffect(() => {
   return () => clearTimeout(timer);
 }, [highlightedOrderId]);
 
-useEffect(() => {
-  console.log("🔍 filteredOrders length:", filteredOrders.length);
-  console.log(
-    "🔍 filteredOrders IDs:",
-    filteredOrders.map(o => o._id)
-  );
-}, [filteredOrders]);
 console.log("🛠 Updating orderIdSSS:", orderId);
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
@@ -675,10 +558,11 @@ setAllOrders(prev => {
     notify("Order Updated Successfully...", "success");
 navigate("/admin/orders", {
   state: {
-    fromPage,
-    highlightOrderId,
+    fromPage: currentPage,
+    updatedOrderId: orderId,
   },
 });
+
 
 
 
@@ -689,15 +573,6 @@ navigate("/admin/orders", {
     setLoading(false);
   }
 };
-useEffect(() => {
-  if (location.state?.fromPage) {
-    setCurrentPage(location.state.fromPage);
-  }
-
-  if (location.state?.highlightOrderId) {
-    setHighlightedOrderId(location.state.highlightOrderId);
-  }
-}, []);
 
 console.log("updatedOrderId:", updatedOrderId);
 console.log("fromPage:", fromPage);
@@ -738,19 +613,33 @@ const paginatedOrders = useMemo(() => {
   const start = (currentPage - 1) * itemsPerPage;
   return filteredOrders.slice(start, start + itemsPerPage);
 }, [filteredOrders, currentPage, itemsPerPage]);
-useEffect(() => {
-  console.log("✅ Rendering page:", currentPage);
-  console.log(
-    "✅ Paginated IDs:",
-    paginatedOrders.map(o => o._id)
-  );
-}, [paginatedOrders, currentPage]);
 
-console.log({
-  updatedOrderId,
-  fromPage,
-  currentPage,
-});
+useEffect(() => {
+  if (!updatedOrderId) return;
+
+  // wait until correct page is set
+  if (isRestoringRef.current) {
+    isRestoringRef.current = false;
+    return;
+  }
+
+  setHighlightedOrderId(updatedOrderId);
+
+  const timer = setTimeout(() => {
+    document
+      .getElementById(`order-row-${updatedOrderId}`)
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, 300);
+
+  const clear = setTimeout(() => {
+    setHighlightedOrderId(null);
+  }, 4000);
+
+  return () => {
+    clearTimeout(timer);
+    clearTimeout(clear);
+  };
+}, [updatedOrderId, currentPage]);
 
   if (loading)
     return <p className="text-center text-gray-500 mt-6">Loading orders...</p>;
@@ -1161,18 +1050,14 @@ console.log({
           >
             <FaEye />
           </button>
-
-            <Link
-  to={`/admin/orders/update/${order._id}`}
-  state={{
-    fromPage: currentPage,
-    highlightOrderId: order._id,
-  }}
+<button
+  onClick={() => handleEdit(order._id)}
   className="hover:text-yellow-600"
   title="Edit"
 >
   <FaEdit />
-</Link>
+</button>
+
 
           </td>
 

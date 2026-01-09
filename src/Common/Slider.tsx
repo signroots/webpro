@@ -9,7 +9,6 @@ import {
   Settings,
   Layers,
   Globe,
-  List,
 } from "lucide-react";
 
 interface MenuItem {
@@ -19,18 +18,11 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
-  {
-    name: "Order",
-    icon: <ShoppingCart size={20} />,
-    children: [
-      { name: "Order List", icon: <List size={16} /> },
-      { name: "DNS Orders", icon: <Globe size={16} /> },
-      // { name: "Renew List", icon: <BarChart size={16} /> },
-    ],
-  },
-{ name: "Renew List", icon: <BarChart size={16} />},
+  { name: "Dashboard", icon: <BarChart size={20} /> },
+  { name: "Orders", icon: <ShoppingCart size={20} /> },
+  { name: "Renew List", icon: <BarChart size={16} /> },
+  { name: "DNS Orders", icon: <Globe size={20} /> },
   { name: "Customers", icon: <Users size={20} /> },
-
   {
     name: "Settings",
     icon: <Settings size={20} />,
@@ -44,8 +36,8 @@ const menuItems: MenuItem[] = [
 
 // ✅ Role-based menu visibility
 const roleMenus: Record<string, string[]> = {
-  Customer: ["Order"],
-  Admin: ["Order", "Renew List","Customers", "Settings"],
+  Customer: ["Dashboard", "Orders", "DNS Orders"],
+  Admin: ["Dashboard", "Orders", "Renew List", "DNS Orders", "Customers", "Settings"],
 };
 
 const Slider: React.FC = () => {
@@ -56,21 +48,29 @@ const Slider: React.FC = () => {
   const user = userJson ? JSON.parse(userJson) : null;
   const userRole = user?.role || "";
 
-  // ✅ Route mapping
   const getPathFor = (name: string): string => {
-    if (name === "Order List") return "/admin/orders";
-    if (name === "DNS Orders") return "/admin/dns-order";
-    if (name === "Renew List") return "/admin/renew-list";
-
-    if (name === "Customers") return "/admin/customers";
-    if (name === "Status") return "/admin/status";
-    if (name === "User Types") return "/admin/user-types";
-    if (name === "Data Management") return "/admin/data-management";
-
-    return "#";
+    switch (name) {
+      case "Dashboard":
+        return "/admin/dashboard_management";
+      case "Orders":
+        return "/admin/orders";
+      case "DNS Orders":
+        return "/admin/dns-order";
+      case "Renew List":
+        return "/admin/renew-list";
+      case "Customers":
+        return "/admin/customers";
+      case "Status":
+        return "/admin/status";
+      case "User Types":
+        return "/admin/user-types";
+      case "Data Management":
+        return "/admin/data-management";
+      default:
+        return "#";
+    }
   };
 
-  // ✅ Filter menus by role
   const filteredMenuItems = menuItems.filter((item) =>
     roleMenus[userRole]?.includes(item.name)
   );
@@ -107,13 +107,10 @@ const Slider: React.FC = () => {
                 <div className="w-8 h-8 flex items-center justify-center bg-gray-700 rounded-full mr-3">
                   {item.icon}
                 </div>
-                {!collapsed && (
-                  <span className="text-sm flex-1 text-left">{item.name}</span>
-                )}
+                {!collapsed && <span className="text-sm flex-1 text-left">{item.name}</span>}
                 {!collapsed && <span>{openMenu === item.name ? "−" : "+"}</span>}
               </button>
 
-              {/* Submenu */}
               {openMenu === item.name && !collapsed && (
                 <div className="ml-10">
                   {item.children.map((child) => (

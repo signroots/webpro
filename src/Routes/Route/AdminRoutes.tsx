@@ -15,6 +15,7 @@ import UserTypes from "../../pages/Admin/UserTypes";
 import DnsOrder from "../../pages/Admin/DnsOrder";
 import RenewList from "../../pages/Admin/RenewList";
 import OrderDetails from "../../pages/Admin/Order/OrderDetails"
+import Dashboard from "../../pages/Admin/Dashboard";
 export default function AdminRoutes() {
   return (
     <Routes>
@@ -29,7 +30,7 @@ export default function AdminRoutes() {
         <Route path="status" element={<StatusManager />} />
         <Route path="data-management" element={<DataManagement />} />
         <Route path="orders/order-details/:orderId" element={<OrderDetails />} />
-
+        <Route path="dashboard_management" element={<Dashboard />} />
         <Route path="orders" element={<Order />} />
         <Route path="orders/new" element={<NewOrder />} />
         <Route
