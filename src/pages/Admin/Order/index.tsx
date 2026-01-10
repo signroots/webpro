@@ -748,20 +748,22 @@ useEffect(() => {
 
       {/* Orders Table */}
      <div className="bg-white shadow rounded-lg overflow-auto">
-  <table className="min-w-full divide-y divide-gray-200 text-sm">
+  <table className="min-w-full divide-y divide-gray-200 text-sm table-fixed">
+
     
     {/* ================= HEADER ================== */}
-    <thead className="bg-gray-100 text-gray-600 uppercase text-xs tracking-wider">
-      <tr>
-        {["SL No", "Domain Name", "Customer", "Services", "Expiry Date", "Status", "Actions"].map(
-          (col) => (
-            <th key={col} className="px-6 py-3 text-left font-medium">
-              {col}
-            </th>
-          )
-        )}
-      </tr>
-    </thead>
+       <thead className="bg-gray-100 text-gray-600 uppercase text-xs tracking-wider">
+    <tr>
+      {["SL No", "Domain Name", "Customer", "Services", "Expiry Date", "Status", "Actions"].map(
+        (col) => (
+          <th key={col} className="px-1 py-2 text-left font-medium">
+            {col}
+          </th>
+        )
+      )}
+    </tr>
+  </thead>
+
 
     {/* ================= BODY ================== */}
     <tbody className="divide-y divide-gray-100 text-gray-900">
@@ -782,7 +784,7 @@ useEffect(() => {
       </td>
 
           {/* DOMAIN + LOCK */}
-          <td className="px-6 py-4 flex items-center gap-2">
+          <td className="px-2 py-4 flex items-center gap-2 max-w-[200px] truncate">
             {order.lockStatus === "Locked" ? (
               <FaLock className="text-red-500 text-lg" />
             ) : (
@@ -791,30 +793,38 @@ useEffect(() => {
             <span className="font-medium">{order.domainName}</span>
           </td>
 
-          {/* CUSTOMER */}
-          <td className="px-6 py-4">
-            {order.client ? (
-              <Link
-                to={`/customer/${order.client._id}/orders`}
-                className="text-blue-600 hover:underline font-medium"
-              >
-                {order.client.c_company?.trim() || "N/A"}
-              </Link>
-            ) : (
-              <button
-                className="text-red-600 hover:underline font-medium"
-                onClick={() => {
-                  setSelectedOrder(order);
-                  setModalType("addCustomer");
-                }}
-              >
-                Add Customer
-              </button>
-            )}
-          </td>
+      {/* CUSTOMER */}
+<td className="px-2 py-4 max-w-[200px] truncate">
+  {order.client ? (
+    <Link
+      to={`/customer/${order.client._id}/orders`}
+      className="text-blue-600 hover:underline font-medium"
+      title={order.client.c_company} // Full name on hover tooltip
+    >
+      {(() => {
+        const words = order.client.c_company?.trim().split(/\s+/) || [];
+        if (words.length <= 3) {
+          return order.client.c_company;
+        }
+        // Join first 3 words + "..."
+        return words.slice(0, 3).join(" ") + " ...";
+      })()}
+    </Link>
+  ) : (
+    <button
+      className="text-red-600 hover:underline font-medium"
+      onClick={() => {
+        setSelectedOrder(order);
+        setModalType("addCustomer");
+      }}
+    >
+      Add Customer
+    </button>
+  )}
+</td>
 
           {/* SERVICES */}
-          <td className="px-6 py-4">
+          <td className="px-1 py-2">
             <div className="flex items-center gap-3">
 
               {/* Domain Source */}
@@ -938,7 +948,7 @@ useEffect(() => {
             </div>
           </td>
           
-<td className="px-6 py-4 font-medium">
+<td className="px-1 py-2 font-medium">
   {(() => {
     const formatDate = (date?: string) => {
       if (!date) return null;
@@ -964,7 +974,7 @@ useEffect(() => {
       <div className="flex flex-col gap-2">
         {/* 🟢 ED – Same Email & Domain Expiry */}
         {isSameExpiry && domainDate && (
-          <div className="flex items-center gap-2 px-3 h-8 rounded-md bg-green-100 text-green-800 text-xs font-medium">
+          <div className="flex items-center gap-2 px-1 h-8 rounded-md bg-green-100 text-green-800 text-xs font-medium">
             <span className="w-5 h-5 flex justify-center items-center rounded-full bg-white text-black text-[10px]">
               ED
             </span>
@@ -1009,34 +1019,45 @@ useEffect(() => {
 
 
           {/* STATUS */}
-          <td className="px-6 py-4 space-y-2">
-
   {/* Domain */}
-  <div
-    className={`flex items-center gap-2 px-3 h-8 rounded-md text-xs font-medium
-      ${order.status?.toLowerCase() === "active"
-        ? "bg-green-100 text-green-800"
-        : "bg-red-100 text-red-800"}`}
-  >
-    <span className="w-5 h-5 flex justify-center items-center rounded-full bg-white text-black text-[10px]">D</span>
-    {order.status || "N/A"}
-  </div>
+<td className="px-2 py-4">
+  <div className="inline-flex items-center gap-2 px-2 h-7 rounded-md text-xs font-medium bg-gray-100 whitespace-nowrap">
+    
+    {/* Domain */}
+    <span
+      className={`inline-flex items-center gap-1
+        ${order.status?.toLowerCase() === "active"
+          ? "text-green-800"
+          : "text-red-800"}`}
+    >
+      <span className="w-4 h-4 flex justify-center items-center rounded-full bg-white text-black text-[9px]">
+        D
+      </span>
+      {order.status || "N/A"}
+    </span>
 
-  {/* Email */}
-  <div
-    className={`flex items-center gap-2 px-3 h-8 rounded-md text-xs font-medium
-      ${order.email_status?.toLowerCase() === "active"
-        ? "bg-green-100 text-green-800"
-        : "bg-red-100 text-red-800"}`}
-  >
-    <span className="w-5 h-5 flex justify-center items-center rounded-full bg-white text-black text-[10px]">E</span>
-    {order.email_status || "N/A"}
+    <span className="text-gray-400 text-xs">|</span>
+
+    {/* Email */}
+    <span
+      className={`inline-flex items-center gap-1
+        ${order.email_status?.toLowerCase() === "active"
+          ? "text-green-800"
+          : "text-red-800"}`}
+    >
+      <span className="w-4 h-4 flex justify-center items-center rounded-full bg-white text-black text-[9px]">
+        E
+      </span>
+      {order.email_status || "N/A"}
+    </span>
+
   </div>
 </td>
 
 
+
           {/* ACTIONS */}
-          <td className="px-8 py-4 flex gap-3 text-gray-500">
+          <td className="px-2 py-4 flex gap-3 text-gray-500">
             <button
             className="hover:text-blue-600"
             title="View"
