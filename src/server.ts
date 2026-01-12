@@ -28,6 +28,7 @@ import { startDomainSyncCron } from "./utils/cronjob";
 import "./cron/resellerClub.cron";
 import "./cron/cloudflareCron";
 import "./cron/SubresellerclubCron";
+import hostinger from "./routes/hostinger";
 
 dotenv.config();
 const app = express();
@@ -52,6 +53,7 @@ app.get("/", (_req: Request, res: Response) => {
 
 // Routes
 app.use("/api/cloudflare", cloudflareRoutes);
+app.use("/api/hostinger",hostinger);
 app.use("/api/customers", customerRoutes);
 app.use("/api/mainreseller", MainResellerRoutes);
 app.use("/api/reseller", ResellerRoute);
