@@ -1518,7 +1518,7 @@ return (
       {formData.managedBy === "Signroots" && (
         <>
           <option value="resellerclub">RESELLER CLUB</option>
-          <option value="HOSTINGER">HOSTINGER</option>
+          <option value="Hostinger">HOSTINGER</option>
           <option value="SQUARESPACE">SQUARESPACE</option>
           <option value="SAHARA">SAHARA</option>
           <option value="Cloudflare">CLOUDFLARE</option>

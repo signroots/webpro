@@ -474,14 +474,6 @@ const handleInputChange = (
   }
 };
 
-  // -------------------- Search & Pagination --------------------
- const filteredOrders = useMemo(() => {
-    return orders.filter((o) =>
-      (o.domainName ?? "")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase())
-    );
-  }, [orders, searchTerm]);
 
 useEffect(() => {
   if (!highlightedOrderId) return;
@@ -605,14 +597,46 @@ const resetFormData = () => {
 //   setSelectedOrder(null);
 //   setModalType(null); // Close the modal
 // };
+  // -------------------- Apply Filters --------------------
+  useEffect(() => {
+    const applyFilters = async () => {
+      let filtered: Order[] = allOrders;
 
+      if (provider) {
+        try {
+          const providerOrders = await fetchOrdersByProvider(provider);
+          filtered = providerOrders;
+        } catch (err) {
+          console.error("Failed to fetch provider orders", err);
+        }
+      }
 
+      // if (statusFilter) {
+      //   filtered = filtered.filter(
+      //     (o) => o.status?.toLowerCase() === statusFilter.toLowerCase()
+      //   );
+      // }
 
+      setOrders(filtered);
+      setCurrentPage(1);
+    };
+
+    applyFilters();
+  }, [provider, statusFilter, allOrders,customerType]);
+const filteredOrders = useMemo(
+  () =>
+    orders.filter((o) =>
+      (o.domainName ?? "").toLowerCase().includes(searchTerm.toLowerCase())
+    ),
+  [orders, searchTerm]
+);
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
-const paginatedOrders = useMemo(() => {
-  const start = (currentPage - 1) * itemsPerPage;
-  return filteredOrders.slice(start, start + itemsPerPage);
-}, [filteredOrders, currentPage, itemsPerPage]);
+  const paginatedOrders = useMemo(() => {
+    if (provider) return filteredOrders;
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredOrders.slice(start, start + itemsPerPage);
+  }, [filteredOrders, currentPage, itemsPerPage, provider]);
+
 
 useEffect(() => {
   if (!updatedOrderId) return;
@@ -734,7 +758,7 @@ useEffect(() => {
 
 
   {/* ⚙️ Status Filter */}
-  <select
+  {/* <select
     value={statusFilter || ""}
     onChange={(e) => setStatusFilter(e.target.value || undefined)}
     className="border px-3 py-2 rounded-lg text-black bg-white"
@@ -743,7 +767,7 @@ useEffect(() => {
     <option value="Active">Active</option>
     <option value="Inactive">Inactive</option>
     <option value="Expired">Expired</option>
-  </select>
+  </select> */}
 </div>
 
       {/* Orders Table */}
