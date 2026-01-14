@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { createOrder, fetchPlanEmailsByType } from "../api";
 import {getExistingCustomers,getEmailTypes,getHostTypes,getPlansByEmailType,getHostSubTypes, getStoragesByHostType} from "./api"
-import { fetchStatesByCountry, fetchCountries } from "../../Customer/api";
-import { useEnterNavigation } from "../../../../hooks/useEnterNavigation";
+import { fetchStatesByCountry, fetchCountries,fetchCountryCodes} from "../../Customer/api";
+// import { useEnterNavigation } from "../../../../hooks/useEnterNavigation";
 import { notify } from "../../../../Common/Toastify";
 
 interface Client {
@@ -51,6 +51,7 @@ interface NewOrderForm {
   website_flag?: boolean;
   ssl_flag?: boolean;
   host_flag?: boolean;
+  domain_flag?:boolean;
   lockStatus?: string;
   domainSource?: string;
   workspace_plan?: string;
@@ -71,13 +72,19 @@ interface NewOrderForm {
   c_email: string[];
   c_country: string;
   c_state: string;
+  c_salutation:string;
+  c_address2:string;
+  c_placeOfContactWithStateCode:string;
+  c_placeOfContact:string;
+  c_bankAccountPayment:string;
+  c_country_code:string;
 };
 
 }
 
 const NewOrder: React.FC = () => {
   const formRef = React.useRef<HTMLFormElement>(null);
-  useEnterNavigation(formRef);
+  // useEnterNavigation(formRef);
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState<NewOrderForm>({
@@ -99,6 +106,7 @@ const NewOrder: React.FC = () => {
     ssl_flag: false,
     host_flag: false,
     domainSource: "",
+    domain_flag:false,
     newCustomer: {
       c_name: "",
       c_company: "",
@@ -110,6 +118,12 @@ const NewOrder: React.FC = () => {
       c_email: [],
       c_country: "",
       c_state: "",
+      c_salutation:"",
+      c_address2:"",
+      c_placeOfContactWithStateCode:"",
+      c_placeOfContact:"",
+      c_bankAccountPayment:"",
+      c_country_code:""
     }
   });
 
@@ -129,8 +143,11 @@ const NewOrder: React.FC = () => {
   const [hostTypes, setHostTypes] = useState<{ _id: string; type: string }[]>([]);
   const [hostSubTypes, setHostSubTypes] = useState<{ _id: string; name: string }[]>([]);
   const [storages, setStorages] = useState<{ _id: string; storage: string }[]>([]);
-
+ const [phoneCodes, setPhoneCodes] = useState<string[]>([]);
+const [phoneCode, setPhoneCode] = useState<string>("");
 const [hostChecked, setHostChecked] = useState(false);
+const inputClass =
+  "w-full h-11 border border-gray-300 rounded-md px-3 text-sm focus:ring-2 focus:ring-blue-500";
 
 
   // Fetch existing customers
@@ -158,8 +175,58 @@ useEffect(() => {
 
   fetchCustomers();
 }, [customerType]);
+useEffect(() => {
+  if (formData.managedBy === "Customer") {
+    setFormData((prev) => ({
+      ...prev,
+      domainSource: "Cloudflare",
+      
+domain_flag: true,
+    }));
+  }
 
+  if (formData.managedBy === "Signroots") {
+    setFormData((prev) => ({
+      ...prev,
+      domainSource: "",
+      
+domain_flag: false,
+    }));
+  }
+}, [formData.managedBy]);
+useEffect(() => {
+  fetchCountryCodes()
+    .then((codes) => {
+      setPhoneCodes(codes);
 
+      setPhoneCode((prev) => {
+        // if API value exists, keep it
+        if (formData.newCustomer.c_country_code) {
+          return formData.newCustomer.c_country_code;
+        }
+
+        // else fallback to +91
+        if (codes.includes("+91")) {
+          setFormData((prevForm) => ({
+            ...prevForm,
+            newCustomer: {
+              ...prevForm.newCustomer,
+              c_country_code: "+91",
+            },
+          }));
+          return "+91";
+        }
+
+        return prev;
+      });
+    })
+    .catch(console.error);
+}, []);
+useEffect(() => {
+  if (formData.newCustomer.c_country_code) {
+    setPhoneCode(formData.newCustomer.c_country_code);
+  }
+}, [formData.newCustomer.c_country_code]);
 useEffect(() => {
   const fetchEmailTypes = async () => {
     if (emailChecked) {
@@ -534,151 +601,254 @@ if (payload.microsoft_email) payload.google_email = false;
           )}
 
    {/* ✅ New Customer Fields */}
-    {customerType === "new" && (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Other fields */}
-        {[
-          { key: "c_name", label: "Name" },
-          { key: "c_company", label: "Company" },
-          { key: "c_address", label: "Address" },
-          { key: "c_city", label: "City" },
-          { key: "c_gst", label: "GST" },
-          { key: "c_zipCode", label: "Zip Code" },
-        ].map(({ key, label }) => {
-          const typedKey = key as keyof NewOrderForm["newCustomer"];
-          return (
-            <div key={key}>
-              <label className="block text-gray-700 font-medium mb-2">{label}</label>
-              <input
-                type="text"
-                name={`newCustomer.${key}`}
-                value={formData.newCustomer?.[typedKey] || ""}
-                onChange={handleInputChange}
-                className="w-full border rounded px-3 py-2"
-              />
-            </div>
-          );
-        })}
+ {customerType === "new" && (
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-        {/* Phone */}
-        <div>
-  <label className="block text-gray-700 font-medium mb-2">Phone</label>
-  <input
-    type="text"
-    name="newCustomer.c_phone"
-    value={formData.newCustomer?.c_phone || ""}
-    onChange={(e) => {
-      const val = e.target.value.replace(/\D/g, "");
-      if (val.length <= 10) {
-        setFormData((prev) => ({
-          ...prev,
-          newCustomer: {
-            ...prev.newCustomer!, // ✅ ensures required fields stay
-            c_phone: val,         // ✅ update only this field
-          },
-        }));
-      }
-    }}
-    placeholder="Enter 10-digit phone number"
-    className="w-full border rounded px-3 py-2"
-  />
-</div>
+    {/* Salutation */}
+    <input
+      placeholder="Salutation"
+      name="newCustomer.c_salutation"
+      value={formData.newCustomer?.c_salutation || ""}
+      onChange={handleInputChange}
+      className={inputClass}
+    />
 
+    {/* Name */}
+    <input
+      placeholder="Name"
+      name="newCustomer.c_name"
+      value={formData.newCustomer?.c_name || ""}
+      onChange={handleInputChange}
+      className={inputClass}
+    />
 
-        {/* Email */}
-        <div className="col-span-2">
-          <label className="block text-gray-700 font-medium mb-2">Email</label>
-          <div className="flex flex-wrap gap-2 border rounded p-2 min-h-[44px] items-center">
-            {(formData.newCustomer.c_email || []).map((email, idx) => (
-              <div
-                key={idx}
-                className="flex items-center bg-blue-100 text-blue-800 rounded-full px-3 py-1 text-sm"
-              >
-                {email}
-                <button
-                  type="button"
-                  onClick={() =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      newCustomer: {
-                        ...prev.newCustomer,
-                        c_email: prev.newCustomer.c_email.filter((e) => e !== email),
-                      },
-                    }))
-                  }
-                  className="ml-2 text-blue-500 hover:text-blue-700"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-            <input
-              type="text"
-              value={emailInput}
-              onChange={(e) => setEmailInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === ",") {
-                  e.preventDefault();
-                  const newEmail = emailInput.trim();
-                  if (
-                    newEmail &&
-                    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail) &&
-                    !formData.newCustomer.c_email.includes(newEmail)
-                  ) {
-                    setFormData((prev) => ({
-                      ...prev,
-                      newCustomer: {
-                        ...prev.newCustomer,
-                        c_email: [...prev.newCustomer.c_email, newEmail],
-                      },
-                    }));
-                    setEmailInput("");
-                  }
-                }
-              }}
-              placeholder="Type email and press enter"
-              className="flex-grow border-none focus:ring-0 outline-none min-w-[150px]"
-            />
-          </div>
-        </div>
+    {/* EMPTY (keeps row balanced) */}
+    <div />
+{/* ================= EMAIL – FULL ROW ================= */}
+<div className="md:col-span-3">
+  {/* <label className="block text-gray-700 font-medium mb-2">
+    Email Address
+  </label> */}
 
-     {/* Country */}
-<div className="w-full">
-  <label className="block text-sm font-medium mb-1">Country</label>
-  <select
-    name="newCustomer.c_country"
-    value={formData.newCustomer.c_country || ""}
-    onChange={handleInputChange}
-    className="w-full border rounded px-3 py-2"
-  >
-    <option value="">-- Select Country --</option>
-    {countries.map((country) => (
-      <option key={country.code} value={country.code}>
-        {country.name}
-      </option>
-    ))}
-  </select>
-</div>
+  <div className="flex flex-wrap items-center gap-2 p-2 min-h-[44px] border border-gray-300 rounded-md bg-white focus-within:ring-2 focus-within:ring-blue-500">
 
-       {/* State */}
-<div className="w-full">
-  <label className="block text-sm font-medium mb-1">State</label>
-  <select
-    name="newCustomer.c_state"
-    value={formData.newCustomer.c_state || ""}
-    onChange={handleInputChange}
-    className="w-full border rounded px-3 py-2"
-  >
-    <option value="">-- Select State --</option>
-    {states.map((state) => (
-      <option key={state.code} value={state.name}>
-        {state.name}
-      </option>
-    ))}
-  </select>
-</div>
+    {/* Render added emails */}
+    {(formData.newCustomer.c_email ?? []).map((email) => (
+      <div
+        key={email}
+        className="flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
+      >
+        {email}
+        <button
+          type="button"
+          className="ml-2 font-bold hover:text-red-600"
+          onClick={() =>
+            setFormData((prev) => ({
+              ...prev,
+              newCustomer: {
+                ...prev.newCustomer,
+                c_email: prev.newCustomer.c_email.filter(
+                  (e) => e !== email
+                ),
+              },
+            }))
+          }
+        >
+          ×
+        </button>
       </div>
+    ))}
+
+    {/* Input */}
+    <input
+      type="text"
+      placeholder="Add email and press Enter"
+      className="flex-1 min-w-[150px] outline-none text-sm"
+      value={emailInput}
+      onChange={(e) => setEmailInput(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === ",") {
+          e.preventDefault();
+
+          const value = emailInput.trim().toLowerCase();
+          if (!value) return;
+
+          // ✅ Validate email format
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(value)) return;
+
+          // ✅ Prevent duplicates
+          if (formData.newCustomer.c_email.includes(value)) {
+            setEmailInput("");
+            return;
+          }
+
+          // ✅ Optional limit (max 3 emails)
+          if (formData.newCustomer.c_email.length >= 3) return;
+
+          setFormData((prev) => ({
+            ...prev,
+            newCustomer: {
+              ...prev.newCustomer,
+              c_email: [...prev.newCustomer.c_email, value],
+            },
+          }));
+
+          setEmailInput("");
+        }
+      }}
+    />
+  </div>
+</div>
+
+
+    {/* Phone – FULL ROW */}
+    <div className="md:col-span-3 flex gap-2">
+      <select
+        value={phoneCode}
+        onChange={(e) => {
+          setPhoneCode(e.target.value);
+          setFormData((prev) => ({
+            ...prev,
+            newCustomer: {
+              ...prev.newCustomer,
+              c_country_code: e.target.value,
+            },
+          }));
+        }}
+        className="h-11 w-24 border border-gray-300 rounded-md px-2 text-sm"
+      >
+        {phoneCodes.map((c) => (
+          <option key={c} value={c}>{c}</option>
+        ))}
+      </select>
+
+      <input
+        placeholder="Phone Number"
+        name="newCustomer.c_phone"
+        value={formData.newCustomer?.c_phone || ""}
+        onChange={(e) => {
+          const v = e.target.value.replace(/\D/g, "");
+          if (v.length <= 10) {
+            setFormData((p) => ({
+              ...p,
+              newCustomer: { ...p.newCustomer!, c_phone: v },
+            }));
+          }
+        }}
+        className={`${inputClass} flex-1`}
+      />
+    </div>
+
+    {/* Company */}
+    <input
+      placeholder="Company"
+      name="newCustomer.c_company"
+      value={formData.newCustomer?.c_company || ""}
+      onChange={handleInputChange}
+      className={inputClass}
+    />
+
+    {/* Address */}
+    <input
+      placeholder="Address"
+      name="newCustomer.c_address"
+      value={formData.newCustomer?.c_address || ""}
+      onChange={handleInputChange}
+      className={inputClass}
+    />
+
+    {/* Address 2 */}
+    <input
+      placeholder="Address 2"
+      name="newCustomer.c_address2"
+      value={formData.newCustomer?.c_address2 || ""}
+      onChange={handleInputChange}
+      className={inputClass}
+    />
+
+    {/* City */}
+    <input
+      placeholder="City"
+      name="newCustomer.c_city"
+      value={formData.newCustomer?.c_city || ""}
+      onChange={handleInputChange}
+      className={inputClass}
+    />
+
+    {/* Country */}
+    <select
+      name="newCustomer.c_country"
+      value={formData.newCustomer?.c_country || ""}
+      onChange={handleInputChange}
+      className={inputClass}
+    >
+      <option value="">-- Select Country --</option>
+      {countries.map((c) => (
+        <option key={c.code} value={c.code}>{c.name}</option>
+      ))}
+    </select>
+
+    {/* State */}
+    <select
+      name="newCustomer.c_state"
+      value={formData.newCustomer?.c_state || ""}
+      onChange={handleInputChange}
+      className={inputClass}
+    >
+      <option value="">-- Select State --</option>
+      {states.map((s) => (
+        <option key={s.code} value={s.code}>{s.name}</option>
+      ))}
+    </select>
+
+    {/* Zip */}
+    <input
+      placeholder="Zipcode"
+      name="newCustomer.c_zipCode"
+      value={formData.newCustomer?.c_zipCode || ""}
+      onChange={handleInputChange}
+      className={inputClass}
+    />
+
+    {/* GST */}
+    <input
+      placeholder="GST"
+      name="newCustomer.c_gst"
+      value={formData.newCustomer?.c_gst || ""}
+      onChange={handleInputChange}
+      className={inputClass}
+    />
+
+    {/* Bank */}
+    <input
+      placeholder="Bank Account Payment"
+      name="newCustomer.c_bankAccountPayment"
+      value={formData.newCustomer?.c_bankAccountPayment || ""}
+      onChange={handleInputChange}
+      className={inputClass}
+    />
+
+    {/* Place of Contact */}
+    <input
+      placeholder="Place of Contact"
+      name="newCustomer.c_placeOfContact"
+      value={formData.newCustomer?.c_placeOfContact || ""}
+      onChange={handleInputChange}
+      className={inputClass}
+    />
+
+    {/* Place of Contact State */}
+    <input
+      placeholder="Place of Contact (State Code)"
+      name="newCustomer.c_placeOfContactWithStateCode"
+      value={formData.newCustomer?.c_placeOfContactWithStateCode || ""}
+      onChange={handleInputChange}
+      className={inputClass}
+    />
+  </div>
 )}
+
 
           {/* Domain Details */}
           <h2 className="text-xl font-semibold underline text-indigo-600 mb-3">Domain Details</h2>
@@ -687,29 +857,77 @@ if (payload.microsoft_email) payload.google_email = false;
               <label className="block text-gray-700 font-medium mb-2">Domain Name</label>
               <input type="text" name="domainName" value={formData.domainName} onChange={handleInputChange} className="w-full border rounded px-3 py-2" required />
             </div>
-            <div>
+         {/* Registrar / Domain Source */}
+             <div>
               <label className="block text-gray-700 font-medium mb-2">Managed By</label>
-              <select name="managedBy" value={formData.managedBy} onChange={handleInputChange} className="w-full border rounded px-3 py-2">
+              <select
+                name="managedBy"
+                value={formData.managedBy}
+                onChange={handleInputChange}
+                className="w-full border rounded px-3 py-2"
+              >
                 <option value="">-- Select Managed By --</option>
                 <option value="Signroots">Signroots</option>
                 <option value="Customer">Customer</option>
               </select>
             </div>
+{(formData.managedBy === "Signroots" ||
+  formData.managedBy === "Customer") && (
+  <div>
+    <label className="block text-gray-700 font-medium mb-2">
+      Registrar
+    </label>
+    <select
+      name="domainSource"
+      value={formData.domainSource || ""}
+      onChange={handleInputChange}
+      className="w-full border rounded px-3 py-2"
+    >
+      <option value="">-- Select Registrar --</option>
 
-            {formData.managedBy === "Signroots" && (
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">Registrar By</label>
-                <select name="domainSource" value={formData.domainSource} onChange={handleInputChange} className="w-full border rounded px-3 py-2">
-                  <option value="Reseller">RESELLER CLUB</option>
-                  <option value="HOSTINGER">HOSTINGER</option>
-                  <option value="SQUARESPACE">SQUARESPACE</option>
-                  <option value="SAHARA">SAHARA</option>
-                  <option value="Cloudflare">CLOUDFLARE</option>
-                  <option value="AE Server">AE SERVER</option>
-                </select>
-              </div>
-            )}
+      {formData.managedBy === "Signroots" && (
+        <>
+          <option value="resellerclub">RESELLER CLUB</option>
+          <option value="Hostinger">HOSTINGER</option>
+          <option value="SQUARESPACE">SQUARESPACE</option>
+          <option value="SAHARA">SAHARA</option>
+          <option value="Cloudflare">CLOUDFLARE</option>
+          {/* <option value="DNS Cloudflare">DNS CLOUDFLARE</option> */}
+          <option value="AE Server">AE SERVER</option>
+        </>
+      )}
 
+       {formData.managedBy === "Customer" && (
+        <>
+          <option value="Cloudflare">CLOUDFLARE</option>
+          <option value="Hostinger">HOSTINGER</option>
+        </>
+      )}
+    </select>
+     {["Cloudflare",].includes(formData.domainSource ?? "") && (
+  <div className="mt-4 flex items-center gap-2">
+    <input
+      type="checkbox"
+      name="dns_flag"
+      checked={formData.domain_flag}
+      disabled={formData.managedBy === "Customer"}
+      onChange={(e) =>
+        setFormData((prev) => ({
+          ...prev,
+          
+      domain_flag: e.target.checked,
+        }))
+      }
+      className="w-4 h-4"
+    />
+    <label className="text-gray-700 font-medium">
+      DNS Flag
+    </label>
+  </div>
+)}
+
+  </div>
+)}
             <div>
               <label className="block text-gray-700 font-medium mb-2">Registration Date</label>
               <input type="date" name="registrationDate" value={formData.registrationDate || ""} onChange={(e) => {

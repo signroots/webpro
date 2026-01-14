@@ -1050,7 +1050,12 @@ const handleHostTypeChange = (hostTypeId: string) => {
 
     if (customerType === "existing") delete payload.newCustomer;
     else delete payload.client;
-
+    if (payload.newCustomer) {
+      if (payload.newCustomer.c_mobilePhone && !payload.newCustomer.c_phone) {
+        payload.newCustomer.c_phone = payload.newCustomer.c_mobilePhone;
+      }
+  // delete payload.newCustomer.c_mobilePhone;
+}
     if (!payload.domainSource) payload.domainSource = formData.domainSource || "";
 
     // combine all plans
@@ -1178,6 +1183,14 @@ const confirmRemovePlan = () => {
   setConfirmRemove(null);
 };
 
+useEffect(() => {
+  if (formData.domainSource === "Hostinger") {
+    setFormData((prev) => ({
+      ...prev,
+      domain_flag: true,
+    }));
+  }
+}, [formData.domainSource]);
 
 
   if (loadingOrder) return <p>Loading order data...</p>;
@@ -1527,11 +1540,14 @@ return (
         </>
       )}
 
-      {formData.managedBy === "Customer" && (
-        <option value="Cloudflare">CLOUDFLARE</option>
+       {formData.managedBy === "Customer" && (
+        <>
+          <option value="Cloudflare">CLOUDFLARE</option>
+          <option value="Hostinger">HOSTINGER</option>
+        </>
       )}
     </select>
-     {["Cloudflare"].includes(formData.domainSource ?? "") && (
+     {["Cloudflare",].includes(formData.domainSource ?? "") && (
   <div className="mt-4 flex items-center gap-2">
     <input
       type="checkbox"
