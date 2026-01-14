@@ -704,10 +704,10 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
       }
 
       // Ensure 'c_email' is provided and is a valid string
-      if (!data.newCustomer.c_email || typeof data.newCustomer.c_email !== "string" || data.newCustomer.c_email.trim() === "") {
-        res.status(400).json({ success: false, message: "New customer email is required and must be a valid string" });
-        return;
-      }
+      // if (!data.newCustomer.c_email || typeof data.newCustomer.c_email !== "string" || data.newCustomer.c_email.trim() === "") {
+      //   res.status(400).json({ success: false, message: "New customer email is required and must be a valid string" });
+      //   return;
+      // }
 
       // Check if the email already exists
       const existingCustomer = await Client.findOne({
