@@ -111,14 +111,14 @@ const OrderDetails: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-useEffect(() => {
-  if (!orderId) return;
+  useEffect(() => {
+    if (!orderId) return;
 
-  fetchOrderById(orderId)
-    .then((data) => {
-      const mapPerson = (source: any) =>
-        source
-          ? {
+    fetchOrderById(orderId)
+      .then((data) => {
+        const mapPerson = (source: any) =>
+          source
+            ? {
               name: source.c_name,
               email: source.c_email,
               phone: source.c_phone,
@@ -128,19 +128,19 @@ useEffect(() => {
               state: source.c_state?.name,
               country: source.c_country?.name,
             }
-          : undefined;
+            : undefined;
 
-      const mappedOrder: Order = {
-        ...data,
-        customer: mapPerson(data.customer),
-        client: mapPerson(data.client),
-      };
+        const mappedOrder: Order = {
+          ...data,
+          customer: mapPerson(data.customer),
+          client: mapPerson(data.client),
+        };
 
-      setOrder(mappedOrder);
-    })
-    .catch(() => setError("Failed to load order details"))
-    .finally(() => setLoading(false));
-}, [orderId]);
+        setOrder(mappedOrder);
+      })
+      .catch(() => setError("Failed to load order details"))
+      .finally(() => setLoading(false));
+  }, [orderId]);
 
 
   if (loading) return <p className="p-6">Loading order details…</p>;
@@ -150,12 +150,12 @@ useEffect(() => {
   const formatDate = (date?: string) =>
     date
       ? new Date(date)
-          .toLocaleDateString("en-GB", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          })
-          .replaceAll(" ", "-")
+        .toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        })
+        .replaceAll(" ", "-")
       : "-";
 
   return (
@@ -177,69 +177,69 @@ useEffect(() => {
         </div>
 
         {/* Domain Information */}
-    <Section title="Domain Information">
-  <Info label="Domain Name" value={order.domainName} />
-  <Info label="Status" value={order.status} />
-  <Info label="Managed By" value={order.managedBy} />
+        <Section title="Domain Information">
+          <Info label="Domain Name" value={order.domainName} />
+          <Info label="Status" value={order.status} />
+          <Info label="Managed By" value={order.managedBy} />
 
-  {/* Registrar + Domain Flag (READ ONLY) */}
-  <div>
-    <p className="text-sm text-gray-500">Registrar</p>
-    <div className="flex items-center gap-4 font-medium text-gray-800">
-      <span>{order.domainSource || "-"}</span>
+          {/* Registrar + Domain Flag (READ ONLY) */}
+          <div>
+            <p className="text-sm text-gray-500">Registrar</p>
+            <div className="flex items-center gap-4 font-medium text-gray-800">
+              <span>{order.domainSource || "-"}</span>
 
-      {order.domainSource === "Cloudflare" && (
-        <div className="flex items-center gap-2 text-gray-600">
-          <input
-            type="checkbox"
-            checked={!!order.domain_flag}
-            disabled
-            className="cursor-not-allowed"
-          />
-          <span className="text-sm">Domain Flag</span>
-        </div>
-      )}
-    </div>
-  </div>
+              {order.domainSource === "Cloudflare" && (
+                <div className="flex items-center gap-2 text-gray-600">
+                  <input
+                    type="checkbox"
+                    checked={!!order.domain_flag}
+                    disabled
+                    className="cursor-not-allowed"
+                  />
+                  <span className="text-sm">Domain Flag</span>
+                </div>
+              )}
+            </div>
+          </div>
 
-  <Info label="Registration Date" value={formatDate(order.registrationDate)} />
-  <Info label="Expiry Date" value={formatDate(order.expiryDate)} />
-  <Info label="Lock Status" value={order.lockStatus} />
-  <Info label="Username" value={order.username} />
-  <Info label="Business Email" value={order.businessEmail ? "Yes" : "No"} />
-  {/* <Info label="Cloudflare Registered" value={order.cloudflareRegistered ? "Yes" : "No"} /> */}
-  <Info label="Google Email" value={order.google_email ? "Yes" : "No"} />
-  <Info label="Microsoft Email" value={order.microsoft_email ? "Yes" : "No"} />
-  <Info label="Email Status" value={order.email_status} />
-  <Info label="Name Servers" value={order.nameServers} />
-  <Info label="Storage Services" value={order.storage_services_flag ? "Yes" : "No"} />
-</Section>
+          <Info label="Registration Date" value={formatDate(order.registrationDate)} />
+          <Info label="Expiry Date" value={formatDate(order.expiryDate)} />
+          <Info label="Lock Status" value={order.lockStatus} />
+          <Info label="Username" value={order.username} />
+          <Info label="Business Email" value={order.businessEmail ? "Yes" : "No"} />
+          {/* <Info label="Cloudflare Registered" value={order.cloudflareRegistered ? "Yes" : "No"} /> */}
+          <Info label="Google Email" value={order.google_email ? "Yes" : "No"} />
+          <Info label="Microsoft Email" value={order.microsoft_email ? "Yes" : "No"} />
+          <Info label="Email Status" value={order.email_status} />
+          <Info label="Name Servers" value={order.nameServers} />
+          <Info label="Storage Services" value={order.storage_services_flag ? "Yes" : "No"} />
+        </Section>
 
-       
-{order.customer && (
-  <Section title="Customer Details">
-    <Info label="Name" value={order.customer.name} />
-    <Info label="Company" value={order.customer.company} />
-    <Info label="Email" value={order.customer.email} />
-    <Info label="Phone" value={order.customer.phone} />
-    <Info label="Address" value={order.customer.address} />
-    <Info label="City" value={order.customer.city} />
-    <Info label="State" value={order.customer.state} />
-    <Info label="Country" value={order.customer.country} />
-  </Section>
-)}
-{order.client && (
-  <Section title="Client Details">
-    <Info label="Name" value={order.client.name} />
-    <Info label="Company" value={order.client.company} />
-    <Info label="Email" value={order.client.email} />
-    <Info label="Phone" value={order.client.phone} />
-    <Info label="Address" value={order.client.address} />
-    <Info label="City" value={order.client.city} />
-    <Info label="State" value={order.client.state} />
-    <Info label="Country" value={order.client.country} />
-  </Section>
-)}
+
+        {order.customer && (
+          <Section title="Customer Details">
+            <Info label="Name" value={order.customer.name} />
+            <Info label="Company" value={order.customer.company} />
+            <Info label="Email" value={order.customer.email} />
+            <Info label="Phone" value={order.customer.phone} />
+            <Info label="Address" value={order.customer.address} />
+            <Info label="City" value={order.customer.city} />
+            <Info label="State" value={order.customer.state} />
+            <Info label="Country" value={order.customer.country} />
+          </Section>
+        )}
+        {order.client && (
+          <Section title="Client Details">
+            <Info label="Name" value={order.client.name} />
+            <Info label="Company" value={order.client.company} />
+            <Info label="Email" value={order.client.email} />
+            <Info label="Phone" value={order.client.phone} />
+            <Info label="Address" value={order.client.address} />
+            <Info label="City" value={order.client.city} />
+            <Info label="State" value={order.client.state} />
+            <Info label="Country" value={order.client.country} />
+          </Section>
+        )}
 
 
         {/* Plans */}

@@ -74,14 +74,14 @@ const StatusManager: React.FC = () => {
             </Checkbox>
           </Form.Item>
           <Form.Item>
-  <Button 
-    type="primary" 
-    htmlType="submit" 
-    style={{ backgroundColor: "black", borderColor: "black" }}
-  >
-    {editingId ? "Update" : "Add"}
-  </Button>
-</Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              style={{ backgroundColor: "black", borderColor: "black" }}
+            >
+              {editingId ? "Update" : "Add"}
+            </Button>
+          </Form.Item>
         </Form>
       </Card>
 

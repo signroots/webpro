@@ -35,7 +35,7 @@ const Header: React.FC = () => {
         </div>
 
         {/* Center navigation links */}
-        <nav className="flex items-center space-x-6 text-gray-700 font-medium">
+        {/* <nav className="flex items-center space-x-6 text-gray-700 font-medium">
           <Link to="/domain-list" className="hover:text-green-600 transition-colors">
             Domains
           </Link>
@@ -45,7 +45,7 @@ const Header: React.FC = () => {
           <Link to="/contact" className="hover:text-green-600 transition-colors">
             Contact
           </Link>
-        </nav>
+        </nav> */}
 
         {/* Profile Menu aligned to the right */}
         <div className="absolute top-3 right-6">

@@ -35,7 +35,7 @@ const AppRouters: React.FC = () => {
       <Route
         path="/customer/*"
         element={
-         <RequireAuth allowedRoles={['Customer', 'Admin']}>
+          <RequireAuth allowedRoles={['Customer', 'Admin']}>
             <CustomerRoutes />
           </RequireAuth>
         }

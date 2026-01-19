@@ -45,26 +45,26 @@ const RenewList = () => {
   const navigate = useNavigate();
 
   // -------------------- Load Orders --------------------
-useEffect(() => {
-  const loadOrders = async () => {
-    try {
-      const response = await fetchRenewListOrders();
+  useEffect(() => {
+    const loadOrders = async () => {
+      try {
+        const response = await fetchRenewListOrders();
 
-      // ✅ CORRECT
-      const ordersArray = response.data.data;
+        // ✅ CORRECT
+        const ordersArray = response.data.data;
 
-      console.log("Orders:", ordersArray);
-      setOrders(ordersArray);
-    } catch (error) {
-      console.error("Failed to fetch orders", error);
-      setOrders([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+        console.log("Orders:", ordersArray);
+        setOrders(ordersArray);
+      } catch (error) {
+        console.error("Failed to fetch orders", error);
+        setOrders([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  loadOrders();
-}, []);
+    loadOrders();
+  }, []);
 
 
   // -------------------- Pagination --------------------
@@ -107,17 +107,17 @@ useEffect(() => {
                   {order.lockStatus === "Locked" ? <FaLock className="text-red-500" /> : <FaLock className="text-green-500" />}
                   {order.domainName}
                 </td>
-             <td className="px-6 py-4">
-  {typeof order.customer === "string" ? (
-    <span className="text-gray-500">
-      Customer ID: {order.customer}
-    </span>
-  ) : order.customer?.name ? (
-    <span>{order.customer.name}</span>
-  ) : (
-    <span className="text-gray-400">N/A</span>
-  )}
-</td>
+                <td className="px-6 py-4">
+                  {typeof order.customer === "string" ? (
+                    <span className="text-gray-500">
+                      Customer ID: {order.customer}
+                    </span>
+                  ) : order.customer?.name ? (
+                    <span>{order.customer.name}</span>
+                  ) : (
+                    <span className="text-gray-400">N/A</span>
+                  )}
+                </td>
                 <td className="px-6 py-4 flex items-center gap-2">
                   {order.domainSource?.toLowerCase() === "resellerclub" ? (
                     <img src="/resellerclub-logo-2x.png" className="w-6 h-6" title="ResellerClub" />
@@ -139,11 +139,11 @@ useEffect(() => {
                   <FaLaptopCode className="w-5 h-5 text-pink-400" title="Website" />
                 </td>
                 <td className="px-6 py-4">{order.expiryDate
-      ? new Date(order.expiryDate)
-          .toLocaleDateString("en-GB")
-          .replace(/\//g, "-")
-      : "N/A"}</td>
-             {/* <td className="px-6 py-4">
+                  ? new Date(order.expiryDate)
+                    .toLocaleDateString("en-GB")
+                    .replace(/\//g, "-")
+                  : "N/A"}</td>
+                {/* <td className="px-6 py-4">
   <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
     {order.expiryDate
       ? new Date(order.expiryDate)
@@ -157,32 +157,32 @@ useEffect(() => {
                     {(order.google_email || order.microsoft_email) ? "Active" : "Inactive"}
                   </span>
                 </td> */}
-              <td className="px-10 py-4 flex gap-3 text-gray-400">
-  <button
-    className="text-blue-400 hover:text-blue-600"
-    title="View"
-    onClick={() => {/* handleView */}}
-  >
-    <FaEye />
-  </button>
+                <td className="px-10 py-4 flex gap-3 text-gray-400">
+                  <button
+                    className="text-blue-400 hover:text-blue-600"
+                    title="View"
+                    onClick={() => {/* handleView */ }}
+                  >
+                    <FaEye />
+                  </button>
 
-  <Link
-    to={`/admin/orders/update/${order._id}`}
-    className="text-yellow-400 hover:text-yellow-600"
-    title="Edit"
-  >
-    <FaEdit />
-  </Link>
+                  <Link
+                    to={`/admin/orders/update/${order._id}`}
+                    className="text-yellow-400 hover:text-yellow-600"
+                    title="Edit"
+                  >
+                    <FaEdit />
+                  </Link>
 
-  {/* Renew Button */}
-  <Link
-    to={`/admin/orders/renew/${order._id}`}
-    className="text-green-500 hover:text-green-700"
-    title="Renew Domain"
-  >
-    <FaSyncAlt />
-  </Link>
-</td>
+                  {/* Renew Button */}
+                  <Link
+                    to={`/admin/orders/renew/${order._id}`}
+                    className="text-green-500 hover:text-green-700"
+                    title="Renew Domain"
+                  >
+                    <FaSyncAlt />
+                  </Link>
+                </td>
 
               </tr>
             ))}
