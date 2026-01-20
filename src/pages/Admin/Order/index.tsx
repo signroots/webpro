@@ -683,14 +683,26 @@ const Orders: React.FC = () => {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-4 mb-4 items-center">
-        {/* 🔍 Search Field */}
-        <input
-          type="text"
-          placeholder="Search domain..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="border px-3 py-2 rounded-lg text-black"
-        />
+       <div className="relative">
+  <input
+    type="text"
+    placeholder="Search domain..."
+    value={searchTerm}
+    onChange={(e) => setSearchTerm(e.target.value)}
+    className="border px-3 py-2 pr-10 rounded-lg text-black w-64"
+  />
+
+  {/* Clear Button */}
+  {searchTerm && (
+    <button
+      onClick={() => setSearchTerm("")}
+      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black"
+      title="Clear search"
+    >
+      ✕
+    </button>
+  )}
+</div>
 
         {/* 🌐 Provider Dropdown */}
         {/* Provider Dropdown */}
@@ -769,7 +781,30 @@ const Orders: React.FC = () => {
     <option value="Expired">Expired</option>
   </select> */}
       </div>
+{/* PAGINATION — TOP */}
+{!provider && (
+  <div className="mb-3 flex justify-end gap-4 text-black">
+    <button
+      disabled={currentPage === 1}
+      onClick={() => handlePageChange(currentPage - 1)}
+      className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+    >
+      Prev
+    </button>
 
+    <span className="py-2">
+      Page {currentPage} of {totalPages}
+    </span>
+
+    <button
+      disabled={currentPage === totalPages}
+      onClick={() => handlePageChange(currentPage + 1)}
+      className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+    >
+      Next
+    </button>
+  </div>
+)}
       {/* Orders Table */}
       <div className="bg-white shadow rounded-lg overflow-auto">
         <table className="min-w-full divide-y divide-gray-200 text-sm table-fixed">
@@ -969,111 +1004,112 @@ const Orders: React.FC = () => {
                   </div>
                 </td>
 
-                <td className="px-1 py-2 font-medium">
-                  {(() => {
-                    const formatDate = (date?: string) => {
-                      if (!date) return null;
-                      const d = new Date(date);
-                      const day = d.getUTCDate().toString().padStart(2, "0");
-                      const month = (d.getUTCMonth() + 1).toString().padStart(2, "0");
-                      const year = d.getUTCFullYear();
-                      return `${day}/${month}/${year}`;
-                    };
+               <td className="px-1 py-2 font-medium">
+  {(() => {
+    const formatDate = (date?: string) => {
+      if (!date) return null;
+      const d = new Date(date);
+      const day = d.getUTCDate().toString().padStart(2, "0");
+      const month = (d.getUTCMonth() + 1).toString().padStart(2, "0");
+      const year = d.getUTCFullYear();
+      return `${day}/${month}/${year}`;
+    };
 
-                    const domainDate = formatDate(order.expiryDate);
+    const domainDate = formatDate(order.expiryDate);
 
-                    const emailDates = (order.emailPlans || [])
-                      .map(plan => formatDate(plan.expiryDate))
-                      .filter((d): d is string => Boolean(d));
+    const emailDates = (order.emailPlans || [])
+      .map(plan => formatDate(plan.expiryDate))
+      .filter((d): d is string => Boolean(d));
 
-                    const isSameExpiry =
-                      domainDate &&
-                      emailDates.length > 0 &&
-                      emailDates.every(d => d === domainDate);
+    const isSameExpiry =
+      domainDate &&
+      emailDates.length > 0 &&
+      emailDates.every(d => d === domainDate);
 
-                    return (
-                      <div className="flex flex-col gap-2">
-                        {/* 🟢 ED – Same Email & Domain Expiry */}
-                        {isSameExpiry && domainDate && (
-                          <div className="flex items-center gap-2 px-1 h-8 rounded-md bg-green-100 text-green-800 text-xs font-medium">
-                            <span className="w-5 h-5 flex justify-center items-center rounded-full bg-white text-black text-[10px]">
-                              ED
-                            </span>
-                            {domainDate}
-                          </div>
-                        )}
+    const badgeBase =
+      "inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium w-fit";
 
-                        {/* 🔵 EE – Email Expiry */}
-                        {!isSameExpiry &&
-                          emailDates.map((date, idx) => (
-                            <div
-                              key={idx}
-                              className="flex items-center gap-2 px-3 h-8 rounded-md bg-blue-100 text-blue-800 text-xs font-medium"
-                            >
-                              <span className="w-5 h-5 flex justify-center items-center rounded-full bg-white text-black text-[10px]">
-                                EE
-                              </span>
-                              {date}
-                            </div>
-                          ))}
+    const iconBase =
+      "w-4 h-4 flex justify-center items-center rounded-full bg-white text-black text-[9px]";
 
-                        {/* 🟣 DE – Domain Expiry */}
-                        {!isSameExpiry && domainDate && (
-                          <div className="flex items-center gap-2 px-3 h-8 rounded-md bg-purple-100 text-purple-800 text-xs font-medium">
-                            <span className="w-5 h-5 flex justify-center items-center rounded-full bg-white text-black text-[10px]">
-                              DE
-                            </span>
-                            {domainDate}
-                          </div>
-                        )}
+    return (
+      <div className="flex flex-col gap-1">
+        {/* 🟢 ED – Same Email & Domain Expiry */}
+        {isSameExpiry && domainDate && (
+          <div className={`${badgeBase} bg-green-100 text-green-800`}>
+            <span className={iconBase}>ED</span>
+            {domainDate}
+          </div>
+        )}
 
-                        {/* ⚪ No Data */}
-                        {!domainDate && emailDates.length === 0 && (
-                          <span className="text-gray-400 text-xs">N/A</span>
-                        )}
-                      </div>
-                    );
-                  })()}
-                </td>
+        {/* 🔵 EE – Email Expiry */}
+        {!isSameExpiry &&
+          emailDates.map((date, idx) => (
+            <div
+              key={idx}
+              className={`${badgeBase} bg-blue-100 text-blue-800`}
+            >
+              <span className={iconBase}>EE</span>
+              {date}
+            </div>
+          ))}
 
+        {/* 🟣 DE – Domain Expiry */}
+        {!isSameExpiry && domainDate && (
+          <div className={`${badgeBase} bg-purple-100 text-purple-800`}>
+            <span className={iconBase}>DE</span>
+            {domainDate}
+          </div>
+        )}
 
+        {/* ⚪ No Data */}
+        {!domainDate && emailDates.length === 0 && (
+          <span className="text-gray-400 text-xs">N/A</span>
+        )}
+      </div>
+    );
+  })()}
+</td>
 
 
-                {/* STATUS */}
-                {/* Domain */}
-                <td className="px-2 py-4">
-                  <div className="inline-flex items-center gap-2 px-2 h-7 rounded-md text-xs font-medium bg-gray-100 whitespace-nowrap">
 
-                    {/* Domain */}
-                    <span
-                      className={`inline-flex items-center gap-1
-        ${order.status?.toLowerCase() === "active"
-                          ? "text-green-800"
-                          : "text-red-800"}`}
-                    >
-                      <span className="w-4 h-4 flex justify-center items-center rounded-full bg-white text-black text-[9px]">
-                        D
-                      </span>
-                      {order.status || "N/A"}
-                    </span>
+<td className="px-2 py-4">
+  <div className="inline-flex items-center gap-2 whitespace-nowrap">
 
-                    <span className="text-gray-400 text-xs">|</span>
+    {/* Domain Status */}
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium
+        ${
+          order.status?.toLowerCase() === "expired"
+            ? "bg-red-600 text-white"
+            : "bg-gray-100 text-green-700"
+        }`}
+    >
+      <span className="w-4 h-4 flex justify-center items-center rounded-full bg-white text-black text-[9px]">
+        D
+      </span>
+      {order.status || "N/A"}
+    </span>
 
-                    {/* Email */}
-                    <span
-                      className={`inline-flex items-center gap-1
-        ${order.email_status?.toLowerCase() === "active"
-                          ? "text-green-800"
-                          : "text-red-800"}`}
-                    >
-                      <span className="w-4 h-4 flex justify-center items-center rounded-full bg-white text-black text-[9px]">
-                        E
-                      </span>
-                      {order.email_status || "N/A"}
-                    </span>
+    <span className="text-gray-400 text-xs">|</span>
 
-                  </div>
-                </td>
+    {/* Email Status */}
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium
+        ${
+          order.email_status?.toLowerCase() === "expired"
+            ? "bg-red-600 text-white"
+            : "bg-gray-100 text-green-700"
+        }`}
+    >
+      <span className="w-4 h-4 flex justify-center items-center rounded-full bg-white text-black text-[9px]">
+        E
+      </span>
+      {order.email_status || "N/A"}
+    </span>
+
+  </div>
+</td>
 
 
 
