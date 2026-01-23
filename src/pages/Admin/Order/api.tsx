@@ -59,16 +59,39 @@ export interface OrderApiResponse {
 }
 
 const token = localStorage.getItem("token");
-export const fetchOrders = async (): Promise<Order[]> => {
-  const token = localStorage.getItem("token");  // always fresh token
+// orders/api.ts (or ./api.ts – wherever fetchOrders is defined)
+
+export const fetchOrders = async (
+  search: string = "",
+  page: number = 1,
+  limit: number = 50
+): Promise<{
+  data: Order[];
+  totalPages: number;
+  total: number;
+}> => {
+  const token = localStorage.getItem("token");
 
   const response = await axios.get(`${FULL_API_URL}/orders`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    params: {
+      search,
+      page,
+      limit,
+    },
   });
-  return response.data.data;
+
+  // 👇👇👇 THIS IS WHERE YOU ADD IT
+  return {
+    data: response.data.data,
+    totalPages: response.data.pagination.totalPages,
+    total: response.data.pagination.total,
+  };
 };
+
+
 // ✅ Fetch DNS Orders (Cloudflare filter)
 // api.tsx
 export const fetchDNSOrders = async () => {

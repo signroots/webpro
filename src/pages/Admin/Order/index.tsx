@@ -177,14 +177,14 @@ const Orders: React.FC = () => {
   const navigate = useNavigate();
   const [phoneCodes, setPhoneCodes] = useState<string[]>([]);
   const [phoneCode, setPhoneCode] = useState<string>("");
-
-
+const [totalPages, setTotalPages] = useState(1);
+const [totalOrders, setTotalOrders] = useState(0);
   const [highlightedOrderId, setHighlightedOrderId] =
     useState<string | null>(null);
   const isUpdatingRef = useRef(false);
   const location = useLocation();
   const restorePageRef = useRef(true);
-
+const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
   const updatedOrderId: string | null =
     typeof location.state?.updatedOrderId === "string"
       ? location.state.updatedOrderId
@@ -273,21 +273,40 @@ const Orders: React.FC = () => {
 
 
 
-  // -------------------- Load Orders --------------------
-  useEffect(() => {
-    const loadOrders = async () => {
-      try {
-        const orders = await fetchOrders();
-        setOrders(orders);
-        setAllOrders(orders);
-      } catch (err) {
-        console.error("Failed to fetch orders", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadOrders();
-  }, []);
+useEffect(() => {
+  const loadOrders = async () => {
+    try {
+      setLoading(true);
+      const response = await fetchOrders(
+        debouncedSearch,
+        currentPage,
+        itemsPerPage
+      );
+
+      setOrders(response.data || []);
+      setTotalPages(response.totalPages || 1);
+      setTotalOrders(response.total || 0);
+    } catch (err) {
+      console.error("Failed to fetch orders", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadOrders();
+}, [debouncedSearch, currentPage, itemsPerPage]);
+
+useEffect(() => {
+  const handler = setTimeout(() => {
+    setDebouncedSearch(searchTerm);
+    setCurrentPage(1); // reset to page 1 on new search
+  }, 500); // 👈 delay in ms (300–600 is ideal)
+
+  return () => {
+    clearTimeout(handler);
+  };
+}, [searchTerm]);
+
   useEffect(() => {
     fetchCountryCodes()
       .then((codes) => {
@@ -599,6 +618,9 @@ const Orders: React.FC = () => {
   // };
   // -------------------- Apply Filters --------------------
   useEffect(() => {
+  setCurrentPage(1);
+}, [searchTerm])
+  useEffect(() => {
     const applyFilters = async () => {
       let filtered: Order[] = allOrders;
 
@@ -623,19 +645,31 @@ const Orders: React.FC = () => {
 
     applyFilters();
   }, [provider, statusFilter, allOrders, customerType]);
-  const filteredOrders = useMemo(
-    () =>
-      orders.filter((o) =>
-        (o.domainName ?? "").toLowerCase().includes(searchTerm.toLowerCase())
-      ),
-    [orders, searchTerm]
-  );
-  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
-  const paginatedOrders = useMemo(() => {
-    if (provider) return filteredOrders;
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredOrders.slice(start, start + itemsPerPage);
-  }, [filteredOrders, currentPage, itemsPerPage, provider]);
+
+  // const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  const paginatedOrders = orders;
+const getStatusClass = (status?: string) => {
+  const value = status?.trim().toLowerCase();
+
+  // N/A or empty → YELLOW
+  if (!value) {
+    return "bg-blue-100 text-blue-800";
+  }
+
+  // EXPIRED → RED
+  if (value === "expired") {
+    return "bg-red-600 text-white";
+  }
+
+  // ACTIVE → GREEN
+  if (value === "active") {
+    return "bg-gray-100 text-green-700";
+  }
+
+  // fallback
+  return "bg-gray-200 text-gray-800";
+};
+
 
 
   useEffect(() => {
@@ -665,9 +699,14 @@ const Orders: React.FC = () => {
     };
   }, [updatedOrderId, currentPage]);
 
-  if (loading)
-    return <p className="text-center text-gray-500 mt-6">Loading orders...</p>;
-
+{loading && (
+  <div className="py-6 text-center text-gray-500">
+    Loading orders...
+  </div>
+)}
+{loading && debouncedSearch && (
+  <span className="text-sm text-gray-400">Searching…</span>
+)}
   // -------------------- JSX --------------------
   return (
     <div className="min-h-screen w-full bg-gray-100 p-6">
@@ -856,12 +895,12 @@ const Orders: React.FC = () => {
                   {order.client ? (
                     <Link
                       to={`/customer/${order.client._id}/orders`}
-                      className="text-blue-600 hover:underline font-medium"
+                      className="text-blue-600 hover:underline"
                       title={order.client.c_company} // Full name on hover tooltip
                     >
                       {(() => {
                         const words = order.client.c_company?.trim().split(/\s+/) || [];
-                        if (words.length <= 3) {
+                        if (words.length <= 4) {
                           return order.client.c_company;
                         }
                         // Join first 3 words + "..."
@@ -989,18 +1028,30 @@ const Orders: React.FC = () => {
 
 
                     {/* Hosting */}
-                    <FaServer
+                    {/* <FaServer
                       className={`w-5 h-5 ${order.hosting ? "text-purple-500" : "text-gray-400 opacity-40"
                         }`}
                       title="Hosting"
-                    />
+                    /> */}
+                    {order.hosting && (
+                      <FaServer
+                        className="w-5 h-5 text-purple-500"
+                        title="Hosting"
+                      />
+                    )}
 
                     {/* Website */}
-                    <FaLaptopCode
+                    {/* <FaLaptopCode
                       className={`w-5 h-5 ${order.website_flag ? "text-purple-500" : "text-gray-400 opacity-40"
                         }`}
                       title="Website"
-                    />
+                    /> */}
+                    {order.website_flag && (
+                      <FaLaptopCode
+                        className="w-5 h-5 text-purple-500"
+                        title="Website"
+                      />
+                    )}
                   </div>
                 </td>
 
@@ -1079,11 +1130,7 @@ const Orders: React.FC = () => {
     {/* Domain Status */}
     <span
       className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium
-        ${
-          order.status?.toLowerCase() === "expired"
-            ? "bg-red-600 text-white"
-            : "bg-gray-100 text-green-700"
-        }`}
+        ${getStatusClass(order.status)}`}
     >
       <span className="w-4 h-4 flex justify-center items-center rounded-full bg-white text-black text-[9px]">
         D
@@ -1096,11 +1143,7 @@ const Orders: React.FC = () => {
     {/* Email Status */}
     <span
       className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium
-        ${
-          order.email_status?.toLowerCase() === "expired"
-            ? "bg-red-600 text-white"
-            : "bg-gray-100 text-green-700"
-        }`}
+        ${getStatusClass(order.email_status)}`}
     >
       <span className="w-4 h-4 flex justify-center items-center rounded-full bg-white text-black text-[9px]">
         E
@@ -1110,6 +1153,7 @@ const Orders: React.FC = () => {
 
   </div>
 </td>
+
 
 
 
