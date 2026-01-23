@@ -353,27 +353,19 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ success: false, error: "Unauthorized" });
     }
 
+    /* ================= QUERY PARAMS ================= */
+    const search = (req.query.search as string)?.trim() || "";
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50; // default 50
+    const skip = (page - 1) * limit;
+
     /* ================= Helper Functions ================= */
 
-    // ✅ Cloudflare filter (unchanged logic)
-    const filterCloudflareOrders = (orders: any[]) => {
-      return orders.filter(order => {
-        if (order.domainSource === "Cloudflare") {
-          if (order.expiryDate) return true;
-          if (order.google_email === true || order.microsoft_email === true)
-            return true;
-          return false;
-        }
-        return true;
-      });
-    };
-
-    // ✅ Attach email plans (OPTIMIZED – single query)
+    // ✅ Attach email plans
     const attachEmailPlans = async (orders: any[]) => {
       if (!orders.length) return orders;
 
       const orderIds = orders.map(o => o._id);
-
       const emailPlans = await OrderPlan.find({
         orderId: { $in: orderIds },
         type: "email",
@@ -383,7 +375,6 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
         .lean();
 
       const emailPlanMap = new Map<string, any[]>();
-
       for (const plan of emailPlans) {
         const key = plan.orderId.toString();
         if (!emailPlanMap.has(key)) emailPlanMap.set(key, []);
@@ -396,7 +387,7 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
       }));
     };
 
-    // ✅ Update order status (OPTIMIZED – bulk write)
+    // ✅ Update order statuses
     const updateOrderStatuses = async (orders: any[]) => {
       const today = new Date();
       const bulkOps: any[] = [];
@@ -425,45 +416,90 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
       return orders;
     };
 
+    /* ================= SEARCH FILTER ================= */
+    const searchFilter = search
+      ? {
+          $or: [
+            { domainName: { $regex: search, $options: "i" } },
+            { managedBy: { $regex: search, $options: "i" } },
+          ],
+        }
+      : {};
+
+    /* ================= Cloudflare filter ================= */
+    const cloudflareFilter = {
+      $or: [
+        { domainSource: { $ne: "Cloudflare" } }, // non-cloudflare
+        {
+          $and: [
+            { domainSource: "Cloudflare" },
+            {
+              $or: [
+                { expiryDate: { $exists: true } },
+                { google_email: true },
+                { microsoft_email: true },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const finalFilter = { ...searchFilter, ...cloudflareFilter };
+
     /* ================= ADMIN ================= */
-
     const user = await User.findById(loggedInUser._id).populate("userType");
-
     if (user?.userType) {
       const role = (user.userType as IUserType).name.toLowerCase();
-
       if (role === "admin") {
-        let orders = await Order.find()
+        const total = await Order.countDocuments(finalFilter);
+
+        let orders = await Order.find(finalFilter)
           .populate({
             path: "client",
             select: "_id c_name c_email c_company",
+            match: search
+              ? { c_company: { $regex: search, $options: "i" } }
+              : {},
           })
           .populate({
             path: "customer",
             select: "_id name email company",
           })
+          .skip(skip)
+          .limit(limit)
           .lean();
 
         orders = await updateOrderStatuses(orders);
         orders = await attachEmailPlans(orders);
-        orders = filterCloudflareOrders(orders);
 
         return res.status(200).json({
           success: true,
           data: orders,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+          },
         });
       }
     }
 
-    /* ================= CLIENT ================= */
-
+    /* ================= CUSTOMER ================= */
     const client = await Client.findById(loggedInUser._id).populate("userType");
-
     if (client?.userType) {
       const role = (client.userType as IUserType).name.toLowerCase();
-
       if (role === "customer") {
-        let orders = await Order.find({ client: client._id })
+        const clientFilter = { client: client._id, ...searchFilter };
+        const finalClientFilter = {
+          ...clientFilter,
+          ...cloudflareFilter,
+        };
+
+        const total = await Order.countDocuments(finalClientFilter);
+
+        let orders = await Order.find(finalClientFilter)
           .populate({
             path: "client",
             select: "_id c_name c_email c_company",
@@ -472,11 +508,12 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
             path: "customer",
             select: "_id name email company",
           })
+          .skip(skip)
+          .limit(limit)
           .lean();
 
         orders = await updateOrderStatuses(orders);
         orders = await attachEmailPlans(orders);
-        orders = filterCloudflareOrders(orders);
 
         return res.status(200).json({
           success: true,
@@ -487,6 +524,12 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
             c_company: client.c_company,
           },
           data: orders,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+          },
         });
       }
     }
@@ -497,7 +540,6 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
     return res.status(500).json({ success: false, error: "Server error" });
   }
 });
-
 
 
 // GET single order by ID
