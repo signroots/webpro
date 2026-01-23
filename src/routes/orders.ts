@@ -356,12 +356,14 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
     /* ================= QUERY PARAMS ================= */
     const search = (req.query.search as string)?.trim() || "";
     const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 50; // default 50
+    const limit = parseInt(req.query.limit as string) || 50;
     const skip = (page - 1) * limit;
 
-    /* ================= Helper Functions ================= */
+    /* ================= SEARCH REGEX ================= */
+    const searchRegex = search ? new RegExp(search, "i") : null;
+    const startsWithRegex = search ? new RegExp(`^${search}`, "i") : null;
 
-    // ✅ Attach email plans
+    /* ================= Helper Functions ================= */
     const attachEmailPlans = async (orders: any[]) => {
       if (!orders.length) return orders;
 
@@ -374,26 +376,25 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
         .populate("emailTypeId")
         .lean();
 
-      const emailPlanMap = new Map<string, any[]>();
-      for (const plan of emailPlans) {
-        const key = plan.orderId.toString();
-        if (!emailPlanMap.has(key)) emailPlanMap.set(key, []);
-        emailPlanMap.get(key)!.push(plan);
-      }
+      const map = new Map<string, any[]>();
+      emailPlans.forEach(p => {
+        const key = p.orderId.toString();
+        if (!map.has(key)) map.set(key, []);
+        map.get(key)!.push(p);
+      });
 
-      return orders.map(order => ({
-        ...order,
-        emailPlans: emailPlanMap.get(order._id.toString()) || [],
+      return orders.map(o => ({
+        ...o,
+        emailPlans: map.get(o._id.toString()) || [],
       }));
     };
 
-    // ✅ Update order statuses
     const updateOrderStatuses = async (orders: any[]) => {
       const today = new Date();
       const bulkOps: any[] = [];
 
-      for (const order of orders) {
-        if (!order.expiryDate) continue;
+      orders.forEach(order => {
+        if (!order.expiryDate) return;
 
         const newStatus =
           new Date(order.expiryDate) < today ? "EXPIRED" : "ACTIVE";
@@ -407,17 +408,14 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
           });
           order.status = newStatus;
         }
-      }
+      });
 
-      if (bulkOps.length > 0) {
-        await Order.bulkWrite(bulkOps);
-      }
-
+      if (bulkOps.length) await Order.bulkWrite(bulkOps);
       return orders;
     };
 
-    /* ================= SEARCH FILTER ================= */
-    const searchFilter = search
+    /* ================= BASE FILTER ================= */
+    const baseSearchFilter = search
       ? {
           $or: [
             { domainName: { $regex: search, $options: "i" } },
@@ -426,10 +424,9 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
         }
       : {};
 
-    /* ================= Cloudflare filter ================= */
     const cloudflareFilter = {
       $or: [
-        { domainSource: { $ne: "Cloudflare" } }, // non-cloudflare
+        { domainSource: { $ne: "Cloudflare" } },
         {
           $and: [
             { domainSource: "Cloudflare" },
@@ -445,93 +442,99 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
       ],
     };
 
-    const finalFilter = { ...searchFilter, ...cloudflareFilter };
+    const finalFilter = { ...baseSearchFilter, ...cloudflareFilter };
 
     /* ================= ADMIN ================= */
     const user = await User.findById(loggedInUser._id).populate("userType");
-    if (user?.userType) {
-      const role = (user.userType as IUserType).name.toLowerCase();
-      if (role === "admin") {
-        const total = await Order.countDocuments(finalFilter);
 
-        let orders = await Order.find(finalFilter)
-          .populate({
-            path: "client",
-            select: "_id c_name c_email c_company",
-            match: search
-              ? { c_company: { $regex: search, $options: "i" } }
-              : {},
-          })
-          .populate({
-            path: "customer",
-            select: "_id name email company",
-          })
-          .skip(skip)
-          .limit(limit)
-          .lean();
+    if (user?.userType && (user.userType as IUserType).name.toLowerCase() === "admin") {
+      const total = await Order.countDocuments(finalFilter);
 
-        orders = await updateOrderStatuses(orders);
-        orders = await attachEmailPlans(orders);
+      let orders = await Order.aggregate([
+        { $match: finalFilter },
 
-        return res.status(200).json({
-          success: true,
-          data: orders,
-          pagination: {
-            page,
-            limit,
-            total,
-            totalPages: Math.ceil(total / limit),
-          },
-        });
-      }
+        ...(search
+          ? [
+              {
+                $addFields: {
+                  relevance: {
+                    $cond: [
+                      { $regexMatch: { input: "$domainName", regex: startsWithRegex } },
+                      2,
+                      {
+                        $cond: [
+                          { $regexMatch: { input: "$domainName", regex: searchRegex } },
+                          1,
+                          0,
+                        ],
+                      },
+                    ],
+                  },
+                },
+              },
+              // Fix TypeScript: enforce literal type -1
+              { $sort: { relevance: -1 as const } },
+            ]
+          : []),
+
+        { $skip: skip },
+        { $limit: limit },
+      ]);
+
+      // Populate client and customer references
+      orders = await Order.populate(orders, [
+        { path: "client", select: "_id c_name c_email c_company" },
+        { path: "customer", select: "_id name email company" },
+      ]);
+
+      orders = await updateOrderStatuses(orders);
+      orders = await attachEmailPlans(orders);
+
+      return res.status(200).json({
+        success: true,
+        data: orders,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      });
     }
 
     /* ================= CUSTOMER ================= */
     const client = await Client.findById(loggedInUser._id).populate("userType");
-    if (client?.userType) {
-      const role = (client.userType as IUserType).name.toLowerCase();
-      if (role === "customer") {
-        const clientFilter = { client: client._id, ...searchFilter };
-        const finalClientFilter = {
-          ...clientFilter,
-          ...cloudflareFilter,
-        };
 
-        const total = await Order.countDocuments(finalClientFilter);
+    if (client?.userType && (client.userType as IUserType).name.toLowerCase() === "customer") {
+      const clientFilter = { client: client._id, ...finalFilter };
+      const total = await Order.countDocuments(clientFilter);
 
-        let orders = await Order.find(finalClientFilter)
-          .populate({
-            path: "client",
-            select: "_id c_name c_email c_company",
-          })
-          .populate({
-            path: "customer",
-            select: "_id name email company",
-          })
-          .skip(skip)
-          .limit(limit)
-          .lean();
+      let orders = await Order.find(clientFilter)
+        .skip(skip)
+        .limit(limit)
+        .populate("client", "_id c_name c_email c_company")
+        .populate("customer", "_id name email company")
+        .lean();
 
-        orders = await updateOrderStatuses(orders);
-        orders = await attachEmailPlans(orders);
+      orders = await updateOrderStatuses(orders);
+      orders = await attachEmailPlans(orders);
 
-        return res.status(200).json({
-          success: true,
-          client: {
-            _id: client._id,
-            c_name: client.c_name,
-            c_email: client.c_email,
-            c_company: client.c_company,
-          },
-          data: orders,
-          pagination: {
-            page,
-            limit,
-            total,
-            totalPages: Math.ceil(total / limit),
-          },
-        });
-      }
+      return res.status(200).json({
+        success: true,
+        client: {
+          _id: client._id,
+          c_name: client.c_name,
+          c_email: client.c_email,
+          c_company: client.c_company,
+        },
+        data: orders,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      });
     }
 
     return res.status(403).json({ success: false, error: "Access denied" });
