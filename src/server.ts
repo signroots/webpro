@@ -25,7 +25,7 @@ import storageRoutes from "./routes/storageroute"
 import path from "path";
 // Import cron starter
 import { startDomainSyncCron } from "./utils/cronjob";
-import "./cron/resellerClub.cron";
+// import "./cron/resellerClub.cron";
 import "./cron/cloudflareCron";
 import "./cron/SubresellerclubCron";
 import hostinger from "./routes/hostinger";
@@ -79,5 +79,5 @@ startDomainSyncCron();
 
 // Start server
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Server running on  http://192.168.220.40:${PORT}`);
+  console.log(`🚀 Server running on  http://192.168.220.35:${PORT}`);
 });

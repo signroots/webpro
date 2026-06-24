@@ -1,7 +1,40 @@
 import cron from "node-cron";
-import { syncCloudflareDomains } from "../services/cloudflareSync";
+import { syncCloudflareDomains }
+  from "../services/cloudflareSync";
 
-cron.schedule("*/5 * * * *", async () => {
-  // console.log("⏱ Clouflare auto sync running...");
-  // await syncCloudflareDomains();
+let isRunning = false;
+
+cron.schedule("* * * * *", async () => {
+
+  if (isRunning) {
+    console.log(
+      "⚠️ Previous Cloudflare sync still running"
+    );
+    return;
+  }
+
+  isRunning = true;
+
+  console.log("⏰ Running Cloudflare auto sync");
+
+  try {
+
+    await syncCloudflareDomains();
+
+    console.log(
+      "✅ Cloudflare auto sync completed"
+    );
+
+  } catch (err) {
+
+    console.error(
+      "❌ Cloudflare sync failed",
+      err
+    );
+
+  } finally {
+
+    isRunning = false;
+
+  }
 });

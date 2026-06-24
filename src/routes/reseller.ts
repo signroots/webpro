@@ -33,8 +33,7 @@ router.get("/import/resellerclub", async (_req: Request, res: Response) => {
   try {
     const {
       RESELLER_USER_ID,
-      RESELLER_API_KEY,
-      MAIN_RESELLER_USER_ID,
+      RESELLER_API_KEY
     } = process.env;
 
     if (!RESELLER_USER_ID || !RESELLER_API_KEY) {

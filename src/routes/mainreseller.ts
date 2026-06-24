@@ -10,7 +10,7 @@ const router = express.Router();
 /* ======================================================
    BACKGROUND IMPORT FUNCTION (LONG TASK)
 ====================================================== */
-async function importMainResellerClubDomains() {
+export async function importMainResellerClubDomains(){
   try {
     const { MAIN_RESELLER_USER_ID, MAIN_RESELLER_API_KEY, RESELLER_USER_ID } = process.env;
 
@@ -55,21 +55,21 @@ async function importMainResellerClubDomains() {
 
     /* ---------------- CHECK EXISTING DOMAINS ---------------- */
     const apiDomainNames = allDomains.map(d => d['entity.description']);
-    const existingDomains = await Order.find({
-      domainName: { $in: apiDomainNames },
-    }).select('domainName');
+    // const existingDomains = await Order.find({
+    //   domainName: { $in: apiDomainNames },
+    // }).select('domainName');
 
-    const existingDomainNames = new Set(existingDomains.map(d => d.domainName));
-    console.log(`🔁 Found ${existingDomainNames.size} duplicate domains`);
+    // const existingDomainNames = new Set(existingDomains.map(d => d.domainName));
+    // console.log(`🔁 Found ${existingDomainNames.size} duplicate domains`);
 
     /* ---------------- IMPORT DOMAINS ---------------- */
     for (const d of allDomains) {
       const domainName = d['entity.description'];
 
-      if (existingDomainNames.has(domainName)) {
-        console.log(`⏩ Skipping existing domain: ${domainName}`);
-        continue;
-      }
+      // if (existingDomainNames.has(domainName)) {
+      //   console.log(`⏩ Skipping existing domain: ${domainName}`);
+      //   continue;
+      // }
 
       console.log(`➕ Importing domain: ${domainName}`);
 
@@ -182,9 +182,24 @@ async function importMainResellerClubDomains() {
     }
 
     console.log('✅ ResellerClub import completed');
-  } catch (error: any) {
-    console.error('❌ ResellerClub import failed:', error.message);
-  }
+  }  catch (error: any) {
+
+  console.log("========== RESELLER ERROR ==========");
+
+  console.log("STATUS:");
+  console.log(error.response?.status);
+
+  console.log("HEADERS:");
+  console.log(error.response?.headers);
+
+  console.log("DATA:");
+  console.log(error.response?.data);
+
+  console.log("MESSAGE:");
+  console.log(error.message);
+
+  console.log("====================================");
+}
 }
 
 /* ======================================================

@@ -1,7 +1,25 @@
 import cron from "node-cron";
-import { syncResellerClubDomains } from "../services/resellerClubSync.service";
+import { importMainResellerClubDomains } from "../routes/mainreseller";
 
-cron.schedule("*/5 * * * *", async () => {
-  // console.log("⏱ Running ResellerClub auto-sync...");
-  // await syncResellerClubDomains();
+let isRunning = false;
+
+cron.schedule("* * * * *", async () => {
+
+  if (isRunning) {
+    console.log("⚠️ Previous sync still running");
+    return;
+  }
+
+  isRunning = true;
+
+  console.log("⏰ Running ResellerClub 1 minute sync");
+
+  try {
+    await importMainResellerClubDomains();
+    console.log("✅ Sync completed");
+  } catch (err) {
+    console.error("❌ Sync failed", err);
+  } finally {
+    isRunning = false;
+  }
 });
