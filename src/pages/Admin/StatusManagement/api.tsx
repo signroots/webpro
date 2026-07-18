@@ -6,6 +6,10 @@ export interface Status {
   _id: string;
   name: string;
   is_active: boolean;
+  typeEmail: {
+    _id: string;
+    name: string;
+  };
 }
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
@@ -53,7 +57,11 @@ export const fetchStatusById = async (id: string): Promise<Status> => {
 };
 
 // ✅ Create status
-export const createStatus = async (data: { name: string; is_active: boolean }): Promise<Status> => {
+export const createStatus = async (data: {
+  name: string;
+  is_active: boolean;
+  typeEmail: string;
+}): Promise<Status> => {
   try {
     const res = await api.post("/", data);
     return (res.data.data || res.data) as Status;
@@ -62,9 +70,15 @@ export const createStatus = async (data: { name: string; is_active: boolean }): 
     throw error;
   }
 };
-
 // ✅ Update status
-export const updateStatus = async (id: string, data: { name: string; is_active: boolean }): Promise<Status> => {
+export const updateStatus = async (
+  id: string,
+  data: {
+    name: string;
+    is_active: boolean;
+    typeEmail: string;
+  }
+): Promise<Status> => {
   try {
     const res = await api.put(`/${id}`, data);
     return (res.data.data || res.data) as Status;
@@ -73,7 +87,6 @@ export const updateStatus = async (id: string, data: { name: string; is_active: 
     throw error;
   }
 };
-
 // ✅ Delete status
 export const deleteStatus = async (id: string): Promise<void> => {
   try {

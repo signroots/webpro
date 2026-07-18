@@ -93,6 +93,8 @@ export interface Order {
 
   lockStatus?: string;
   status?: string;
+    hosting?: boolean;       // ✅ add this
+  website_flag?: boolean;  // ✅ already using this also add if missing
   registrationDate?: string;
   expiryDate?: string;
 emailPlans?: {

@@ -882,13 +882,18 @@ const getStatusClass = (status?: string) => {
 
                 {/* DOMAIN + LOCK */}
                 <td className="px-2 py-4 flex items-center gap-2 max-w-[200px] truncate">
-                  {order.lockStatus === "Locked" ? (
-                    <FaLock className="text-red-500 text-lg" />
-                  ) : (
-                    <FaLock className="text-green-500 text-lg" />
-                  )}
-                  <span className="font-medium">{order.domainName}</span>
+                  <span className="flex items-center justify-center w-5 h-5 shrink-0">
+                    {order.lockStatus === "Locked" ? (
+                      <FaLock className="text-red-500 w-4 h-4" />
+                    ) : (
+                      <FaLock className="text-green-500 w-4 h-4" />
+                    )}
+                  </span>
+                  <span className="font-medium truncate">
+                    {order.domainName}
+                  </span>
                 </td>
+
 
                 {/* CUSTOMER */}
                 <td className="px-2 py-4 max-w-[200px] truncate">
