@@ -5,8 +5,8 @@ export interface IOrderPlan extends Document {
   planId: mongoose.Types.ObjectId;
   emailTypeId: mongoose.Types.ObjectId;
 
-  registrationDate: Date;
-  expiryDate: Date;
+  registrationDate: Date | null;
+  expiryDate: Date | null;
 
   noOfUsers: number;
   type: "email" | "storage" | "msoffice";
@@ -25,8 +25,16 @@ const OrderPlanSchema = new Schema(
     planId: { type: Schema.Types.ObjectId, ref: "PlanEmail", required: true },
     emailTypeId: { type: Schema.Types.ObjectId, ref: "TypeEmail", required: true },
 
-    registrationDate: { type: Date, required: true },
-    expiryDate: { type: Date, required: true },
+    registrationDate: {
+  type: Date,
+  required: false,
+  default: null,
+},
+    expiryDate: {
+    type: Date,
+    required: false,
+    default: null,
+  },
 
     noOfUsers: { type: Number, default: 1 },
 
@@ -44,4 +52,6 @@ const OrderPlanSchema = new Schema(
   { timestamps: true }
 );
 
-export const OrderPlan = mongoose.model<IOrderPlan>("OrderPlan", OrderPlanSchema);
+export const OrderPlan =
+  mongoose.models.OrderPlan ||
+  mongoose.model<IOrderPlan>("OrderPlan", OrderPlanSchema);

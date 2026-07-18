@@ -6,7 +6,13 @@ export const createStatus: RequestHandler = async (req, res) => {
   try {
     const status = new Status(req.body);
     await status.save();
-    res.status(201).json(status);
+
+    const populatedStatus = await Status.findById(status._id).populate(
+      "typeEmail",
+      "name"
+    );
+
+    res.status(201).json(populatedStatus);
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }
@@ -15,7 +21,10 @@ export const createStatus: RequestHandler = async (req, res) => {
 // Read all
 export const getStatuses: RequestHandler = async (_req, res) => {
   try {
-    const statuses = await Status.find().sort({ createdAt: -1 });
+    const statuses = await Status.find()
+      .populate("typeEmail", "name")
+      .sort({ createdAt: -1 });
+
     res.json(statuses);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -25,11 +34,16 @@ export const getStatuses: RequestHandler = async (_req, res) => {
 // Read one
 export const getStatusById: RequestHandler = async (req, res) => {
   try {
-    const status = await Status.findById(req.params.id);
+    const status = await Status.findById(req.params.id).populate(
+      "typeEmail",
+      "name"
+    );
+
     if (!status) {
-      res.status(404).json({ error: "Not found" });
+      res.status(404).json({ error: "Status not found" });
       return;
     }
+
     res.json(status);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -41,11 +55,14 @@ export const updateStatus: RequestHandler = async (req, res) => {
   try {
     const status = await Status.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
-    });
+      runValidators: true,
+    }).populate("typeEmail", "name");
+
     if (!status) {
-      res.status(404).json({ error: "Not found" });
+      res.status(404).json({ error: "Status not found" });
       return;
     }
+
     res.json(status);
   } catch (err: any) {
     res.status(400).json({ error: err.message });
@@ -56,10 +73,12 @@ export const updateStatus: RequestHandler = async (req, res) => {
 export const deleteStatus: RequestHandler = async (req, res) => {
   try {
     const status = await Status.findByIdAndDelete(req.params.id);
+
     if (!status) {
-      res.status(404).json({ error: "Not found" });
+      res.status(404).json({ error: "Status not found" });
       return;
     }
+
     res.json({ message: "Deleted successfully" });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

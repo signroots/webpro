@@ -21,6 +21,7 @@ interface UpdateCustomerBody {
   password?:string;
   resellerCustomerId?: string;
 }
+
 const router = express.Router();
 router.get('/', async (_req, res) => {
     try {

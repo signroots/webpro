@@ -1,8 +1,9 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document, Types } from "mongoose";
 
 export interface IStatus extends Document {
   name: string;
   is_active: boolean;
+  typeEmail: Types.ObjectId;
 }
 
 const StatusSchema: Schema = new Schema(
@@ -15,6 +16,11 @@ const StatusSchema: Schema = new Schema(
     is_active: {
       type: Boolean,
       default: true,
+    },
+    typeEmail: {
+      type: Schema.Types.ObjectId,
+      ref: "TypeEmail",
+      required: true,
     },
   },
   { timestamps: true }

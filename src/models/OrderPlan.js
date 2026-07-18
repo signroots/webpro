@@ -6,8 +6,8 @@ var OrderPlanSchema = new mongoose_1.Schema({
     orderId: { type: mongoose_1.Schema.Types.ObjectId, ref: "Order", required: true },
     planId: { type: mongoose_1.Schema.Types.ObjectId, ref: "PlanEmail", required: true },
     emailTypeId: { type: mongoose_1.Schema.Types.ObjectId, ref: "TypeEmail", required: true },
-    registrationDate: { type: Date, required: true },
-    expiryDate: { type: Date, required: true },
+    registrationDate: { type: Date, required: false },
+    expiryDate: { type: Date, required: false },
     noOfUsers: { type: Number, default: 1 },
     type: {
         type: String,

@@ -1,0 +1,862 @@
+openapi: 3.0.0
+
+info:
+  title: Hosting Management API
+  version: 1.0.0
+  description: Complete API Documentation
+
+servers:
+  - url: http://localhost:5000
+
+
+tags:
+  - name: Customers
+  - name: Clients
+  # - name: Cloudflare
+  # - name: Users
+  - name: Orders
+  # - name: Domains
+  # - name: Emails
+  # - name: Settings
+  # - name: Plans
+
+
+paths:
+
+# ================= ORDERS =================
+
+
+  /api/orders:
+
+    get:
+
+      summary: Get all orders
+
+      tags:
+        - Orders
+
+
+      parameters:
+
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+          example: ""
+
+
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+          example: 1
+
+
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+          example: 50
+
+
+
+      responses:
+
+
+        "200":
+
+          description: Orders list
+
+
+          content:
+
+            application/json:
+
+              schema:
+
+
+                type: object
+
+
+                properties:
+
+
+                  success:
+
+                    type: boolean
+
+                    example: true
+
+
+
+                  data:
+
+                    type: array
+
+
+                    items:
+
+
+                      type: object
+
+
+                      properties:
+
+
+                        _id:
+
+                          type: string
+
+                          example: "6a5868da4a72a2ca184fa3a3"
+
+
+
+                        domainName:
+
+                          type: string
+
+                          example: "ablegroupqatar.com"
+
+
+
+                        status:
+
+                          type: string
+
+                          example: "ACTIVE"
+
+
+
+                        managedBy:
+
+                          type: string
+
+                          example: "Signroots"
+
+
+
+                        registrationDate:
+
+                          type: string
+
+                          format: date-time
+
+                          example: "2026-04-19T16:40:21.364Z"
+
+
+
+                        expiryDate:
+
+                          type: string
+
+                          format: date-time
+
+                          example: "2027-04-19T16:40:21.364Z"
+
+
+
+                        subscription:
+
+                          type: string
+
+                          example: "Business Starter"
+
+
+
+                        email_status:
+
+                          type: string
+
+                          example: "ACTIVE"
+
+
+
+                        email_flag:
+
+                          type: boolean
+
+                          example: true
+
+
+
+                        google_email:
+
+                          type: boolean
+
+                          example: true
+
+
+
+                        microsoft_email:
+
+                          type: boolean
+
+                          example: false
+
+
+
+                        hosting:
+
+                          type: boolean
+
+                          example: false
+
+
+
+                        website_flag:
+
+                          type: boolean
+
+                          example: false
+
+
+
+                        domain_flag:
+
+                          type: boolean
+
+                          example: false
+
+
+
+                        ssl_flag:
+
+                          type: boolean
+
+                          example: false
+
+
+
+                        host_flag:
+
+                          type: boolean
+
+                          example: false
+
+
+
+                        provider:
+
+                          type: string
+
+                          example: "Google Workspace"
+
+
+
+                        username:
+
+                          type: string
+
+                          example: ""
+
+
+
+                        password:
+
+                          type: string
+
+                          example: ""
+
+
+
+                        users:
+
+                          type: integer
+
+                          example: 23
+
+
+
+                        customer:
+
+                          type: object
+
+
+                          properties:
+
+
+                            _id:
+
+                              type: string
+
+                              example: "6a32432c904ecdc10180fad0"
+
+
+                            name:
+
+                              type: string
+
+                              example: "Cloudflare Client"
+
+
+                            email:
+
+                              type: string
+
+                              example: "cloudflare@signroots.com"
+
+
+
+
+                        emailPlans:
+
+                          type: array
+
+
+                          items:
+
+
+                            type: object
+
+
+                            properties:
+
+
+                              _id:
+
+                                type: string
+
+                                example: "6a5a05194a72a2ca18525c36"
+
+
+
+                              orderId:
+
+                                type: string
+
+                                example: "6a5868da4a72a2ca184fa3a3"
+
+
+
+                              planId:
+
+                                type: object
+
+
+                                properties:
+
+
+                                  _id:
+
+                                    type: string
+
+                                    example: "6a54befb1e9ab96fe142b5c5"
+
+
+
+                                  plan:
+
+                                    type: string
+
+                                    example: "Business Starter"
+
+
+
+                                  isActive:
+
+                                    type: boolean
+
+                                    example: true
+
+
+
+
+                              emailTypeId:
+
+                                type: object
+
+
+                                properties:
+
+
+                                  _id:
+
+                                    type: string
+
+                                    example: "6a54bef61e9ab96fe142b5bf"
+
+
+
+                                  name:
+
+                                    type: string
+
+                                    example: "Google Workspace"
+
+
+
+                                  image:
+
+                                    type: string
+
+                                    example: "/uploads/typeemails/1783938806008.png"
+
+
+
+                              registrationDate:
+
+                                type: string
+
+                                format: date-time
+
+                                example: "2020-08-09T00:00:00.000Z"
+
+
+
+                              expiryDate:
+
+                                type: string
+
+                                format: date-time
+
+                                example: "2027-04-05T00:00:00.000Z"
+
+
+
+                              noOfUsers:
+
+                                type: integer
+
+                                example: 23
+
+
+
+                              type:
+
+                                type: string
+
+                                example: "email"
+
+
+
+                              adminEmail:
+
+                                type: string
+
+                                example: "reseller@"
+
+
+
+                              status:
+
+                                type: string
+
+                                example: "ACTIVE"
+
+
+
+        "500":
+
+          description: Server error
+# ================= CUSTOMERS =================
+
+
+  /api/customers:
+
+    get:
+
+      summary: Get all customers
+
+      tags:
+        - Customers
+
+
+      responses:
+
+        "200":
+
+          description: Customer list
+
+          content:
+
+            application/json:
+
+              schema:
+
+                type: array
+
+                items:
+
+                  type: object
+
+                  properties:
+
+                    _id:
+                      type: string
+                      example: "6a326a8c904ecdc101810f29"
+
+
+                    resellerCustomerId:
+                      type: string
+                      example: "23234558"
+
+
+                    name:
+                      type: string
+                      example: "Webmaster"
+
+
+                    email:
+                      type: string
+                      example: "luxoniclight@gmail.com"
+
+
+                    phone:
+                      type: string
+                      example: "74052073"
+
+
+                    company:
+                      type: string
+                      example: "Luxonic Light"
+
+
+                    address:
+                      type: string
+                      example: "Barwa village"
+
+
+                    city:
+                      type: string
+                      example: "Doha"
+
+
+                    country:
+                      type: string
+                      example: "QA"
+
+
+                    is_customer:
+                      type: boolean
+                      example: false
+
+
+
+    # post:
+
+    #   summary: Create customer
+
+    #   tags:
+    #     - Customers
+
+
+    #   requestBody:
+
+    #     required: true
+
+    #     content:
+
+    #       application/json:
+
+    #         schema:
+
+    #           type: object
+
+    #           properties:
+
+    #             name:
+    #               type: string
+    #               example: "John"
+
+
+    #             email:
+    #               type: string
+    #               example: "john@gmail.com"
+
+
+    #             phone:
+    #               type: string
+    #               example: "9876543210"
+
+
+    #             company:
+    #               type: string
+    #               example: "ABC"
+
+
+    #             address:
+    #               type: string
+    #               example: "Kochi"
+
+
+    #   responses:
+
+    #     "201":
+    #       description: Customer created
+
+
+
+
+# ================= CLIENT =================
+
+
+  /api/client:
+
+
+    get:
+
+      summary: Get all clients
+
+      tags:
+
+        - Clients
+
+
+      responses:
+
+        "200":
+
+          description: Client list
+
+
+          content:
+
+            application/json:
+
+              schema:
+
+                type: array
+
+                items:
+
+                  type: object
+
+
+                  properties:
+
+
+                    _id:
+
+                      type: string
+
+                      example: "6a59e227c76bf36534a02d2b"
+
+
+
+                    c_name:
+
+                      type: string
+
+                      example: "Hari"
+
+
+
+                    c_email:
+
+                      type: array
+
+                      items:
+
+                        type: string
+
+                      example:
+
+                        - "hari@gmail.com"
+
+
+
+                    c_phone:
+
+                      type: string
+
+                      example: "9539263176"
+
+
+
+                    c_mobilePhone:
+
+                      type: string
+
+                      example: "9539263176"
+
+
+
+                    c_company:
+
+                      type: string
+
+                      example: "signroots"
+
+
+
+                    c_address:
+
+                      type: string
+
+                      example: "kottayil"
+
+
+
+                    c_city:
+
+                      type: string
+
+                      example: "ckm"
+
+
+
+                    c_zipCode:
+
+                      type: string
+
+                      example: "679575"
+
+
+
+                    c_gst:
+
+                      type: string
+
+                      example: ""
+
+
+
+                    is_active:
+
+                      type: boolean
+
+                      example: true
+
+
+
+    post:
+
+
+      summary: Create new client
+
+
+      tags:
+
+        - Clients
+
+
+      requestBody:
+
+        required: true
+
+
+        content:
+
+          application/json:
+
+
+            schema:
+
+
+              type: object
+
+
+              properties:
+
+
+                c_name:
+
+                  type: string
+
+                  example: "Hari"
+
+
+
+                c_email:
+
+                  type: array
+
+                  items:
+
+                    type: string
+
+                  example:
+
+                    - "hari@gmail.com"
+
+
+
+                c_phone:
+
+                  type: string
+
+                  example: "9539263176"
+
+
+
+                c_mobilePhone:
+
+                  type: string
+
+                  example: "9539263176"
+
+
+
+                c_company:
+
+                  type: string
+
+                  example: "signroots"
+
+
+
+                c_address:
+
+                  type: string
+
+                  example: "kottayil"
+
+
+
+                c_city:
+
+                  type: string
+
+                  example: "ckm"
+
+
+
+                c_state:
+
+                  type: string
+
+                  example: "6a33c0c22763c3cf0235ddd2"
+
+
+
+                c_country:
+
+                  type: string
+
+                  example: "6a3271527a0a465389890837"
+
+
+
+                c_zipCode:
+
+                  type: string
+
+                  example: "679575"
+
+
+
+                c_gst:
+
+                  type: string
+
+                  example: ""
+
+
+      responses:
+
+        "201":
+
+          description: Client created successfully
+
+
+        "400":
+
+          description: Bad request
+
+
+        "500":
+
+          description: Server error
