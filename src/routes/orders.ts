@@ -489,6 +489,7 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
 
       orders = await updateOrderStatuses(orders);
       orders = await attachEmailPlans(orders);
+      
 
       return res.status(200).json({
         success: true,
@@ -807,34 +808,88 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
     const savedOrder = await newOrder.save();
 
     // ===== Save Multiple Email Plans =====
-    if (data.emailPlans && Array.isArray(data.emailPlans)) {
-      const plansToSave = await Promise.all(
-        data.emailPlans.map(async (p: any) => {
-          if (!p.email_service || !p.selected_plan) {
-            throw new Error("Email type or selected plan is missing for a plan entry");
-          }
+    // ===== Save Multiple Order Plans =====
+if (data.plans && Array.isArray(data.plans)) {
 
-          // Fetch the actual PlanEmail and TypeEmail documents
-          const planDoc = await PlanEmail.findById(p.selected_plan);
-          const emailTypeDoc = await TypeEmail.findById(p.email_service);
+  const plansToSave = await Promise.all(
+    data.plans.map(async (p: any) => {
 
-          if (!planDoc || !emailTypeDoc) {
-            throw new Error("Invalid planId or emailTypeId");
-          }
+      if (!p.planId || !p.emailTypeId || !p.type) {
+        throw new Error("PlanId, EmailTypeId or type is missing");
+      }
 
-          return {
-            orderId: savedOrder._id,
-            planId: planDoc._id,
-            emailTypeId: emailTypeDoc._id,
-            registrationDate: p.registrationDate ? new Date(p.registrationDate) : new Date(),
-            expiryDate: p.expiryDate ? new Date(p.expiryDate) : new Date(),
-            noOfUsers: p.users || 1,
-          };
-        })
+
+      const planDoc = await PlanEmail.findById(p.planId);
+
+      const emailTypeDoc = await TypeEmail.findById(
+        p.emailTypeId
       );
 
-      await OrderPlan.insertMany(plansToSave);
-    }
+
+      if (!planDoc || !emailTypeDoc) {
+        throw new Error("Invalid planId or emailTypeId");
+      }
+
+
+      return {
+
+        orderId: savedOrder._id,
+
+        planId: planDoc._id,
+
+        emailTypeId: emailTypeDoc._id,
+
+        type: p.type,
+
+
+        registrationDate:
+          p.registrationDate
+            ? new Date(p.registrationDate)
+            : new Date(),
+
+
+        expiryDate:
+          p.expiryDate
+            ? new Date(p.expiryDate)
+            : new Date(),
+
+
+        noOfUsers:
+          Number(p.noOfUsers || 1),
+
+
+        google_email:
+          p.google_email || false,
+
+
+        microsoft_email:
+          p.microsoft_email || false,
+
+
+        businessEmail:
+          p.businessEmail || false,
+
+
+        email_flag:
+          p.email_flag || false,
+
+
+        msoffice_services_flag:
+          p.msoffice_services_flag || false,
+
+
+        storage_services_flag:
+          p.storage_services_flag || false,
+
+      };
+
+    })
+  );
+
+
+  await OrderPlan.insertMany(plansToSave);
+
+}
 
     res.status(201).json({ success: true, data: savedOrder });
   } catch (err: any) {
