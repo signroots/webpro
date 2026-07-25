@@ -54,6 +54,7 @@ const swaggerDocument = YAML.load(
 const allowedOrigins = [
   "http://localhost:5174",
   "http://localhost:5173/",
+  "https://signroots.app",
   "http://192.168.220.39:5173",
 ];
 
