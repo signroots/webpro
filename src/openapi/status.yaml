@@ -1,0 +1,186 @@
+paths:
+
+  /status:
+
+    post:
+
+      tags:
+        - Status
+
+      summary: Create a new status
+
+      requestBody:
+
+        required: true
+
+        content:
+
+          application/json:
+
+            schema:
+
+              type: object
+
+              required:
+                - status
+                - typeEmail
+
+              properties:
+
+                status:
+                  type: string
+                  example: Pending
+
+                description:
+                  type: string
+                  example: Waiting for customer confirmation
+
+                typeEmail:
+                  type: string
+                  example: 689b12d5e3f0f9b2a1234567
+
+      responses:
+
+        "201":
+
+          description: Status created successfully
+
+        "400":
+
+          description: Validation error
+
+
+
+    get:
+
+      tags:
+        - Status
+
+      summary: Get all statuses
+
+      responses:
+
+        "200":
+
+          description: Status list fetched successfully
+
+
+
+  /status/{id}:
+
+    get:
+
+      tags:
+        - Status
+
+      summary: Get status by ID
+
+      parameters:
+
+        - name: id
+
+          in: path
+
+          required: true
+
+          schema:
+
+            type: string
+
+      responses:
+
+        "200":
+
+          description: Status details
+
+        "404":
+
+          description: Status not found
+
+
+
+    put:
+
+      tags:
+        - Status
+
+      summary: Update status
+
+      parameters:
+
+        - name: id
+
+          in: path
+
+          required: true
+
+          schema:
+
+            type: string
+
+      requestBody:
+
+        required: true
+
+        content:
+
+          application/json:
+
+            schema:
+
+              type: object
+
+              properties:
+
+                status:
+                  type: string
+                  example: Completed
+
+                description:
+                  type: string
+                  example: Order completed successfully
+
+                typeEmail:
+                  type: string
+                  example: 689b12d5e3f0f9b2a1234567
+
+      responses:
+
+        "200":
+
+          description: Status updated successfully
+
+        "404":
+
+          description: Status not found
+
+
+
+    delete:
+
+      tags:
+        - Status
+
+      summary: Delete status
+
+      parameters:
+
+        - name: id
+
+          in: path
+
+          required: true
+
+          schema:
+
+            type: string
+
+      responses:
+
+        "200":
+
+          description: Status deleted successfully
+
+        "404":
+
+          description: Status not found

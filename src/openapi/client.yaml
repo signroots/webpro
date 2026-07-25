@@ -1,0 +1,198 @@
+paths:
+  /client:
+    get:
+      tags:
+        - Client
+      summary: Get all customers
+      responses:
+        "200":
+          description: Customer list fetched successfully
+        "500":
+          description: Failed to fetch customers
+
+    post:
+      tags:
+        - Client
+      summary: Create a new customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - c_name
+                - c_phone
+                - c_email
+              properties:
+                c_name:
+                  type: string
+                  example: John Doe
+                c_email:
+                  type: array
+                  items:
+                    type: string
+                  example:
+                    - john@example.com
+                    - support@example.com
+                c_phone:
+                  type: string
+                  example: "9876543210"
+                c_mobilePhone:
+                  type: string
+                  example: "9876543211"
+                c_company:
+                  type: string
+                  example: ABC Technologies
+                c_address:
+                  type: string
+                  example: MG Road
+                c_address2:
+                  type: string
+                  example: Near Metro Station
+                c_city:
+                  type: string
+                  example: Kochi
+                c_state:
+                  type: string
+                  example: 689b12d5e3f0f9b2a1234567
+                c_country:
+                  type: string
+                  example: 689b12d5e3f0f9b2a7654321
+                c_countryCode:
+                  type: string
+                  example: "+91"
+                c_zipCode:
+                  type: string
+                  example: "682001"
+                c_gst:
+                  type: string
+                  example: 32ABCDE1234F1Z5
+                password:
+                  type: string
+                  example: Password@123
+                resellerCustomerId:
+                  type: string
+                  example: 1b7ef4dc-11d0-4b91-aac9-7dc6d7c2c111
+                userType:
+                  type: string
+                  example: 6900a4ef87b9fe9ff304e91e
+      responses:
+        "201":
+          description: Customer created successfully
+        "400":
+          description: Validation error
+        "500":
+          description: Server error
+
+  /client/client-country-codes:
+    get:
+      tags:
+        - Client
+      summary: Get distinct country codes used by clients
+      responses:
+        "200":
+          description: Country codes fetched successfully
+        "500":
+          description: Failed to fetch country codes
+
+  /client/{id}:
+    put:
+      tags:
+        - Client
+      summary: Update customer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                c_name:
+                  type: string
+                  example: John Doe
+                c_email:
+                  type: array
+                  items:
+                    type: string
+                  example:
+                    - john@example.com
+                    - admin@example.com
+                c_phone:
+                  type: string
+                  example: "9876543210"
+                c_mobilePhone:
+                  type: string
+                  example: "9876543211"
+                c_company:
+                  type: string
+                  example: ABC Technologies
+                c_address:
+                  type: string
+                  example: MG Road
+                c_address2:
+                  type: string
+                  example: Near Metro Station
+                c_city:
+                  type: string
+                  example: Kochi
+                c_state:
+                  type: string
+                  example: 689b12d5e3f0f9b2a1234567
+                c_country:
+                  type: string
+                  example: 689b12d5e3f0f9b2a7654321
+                c_country_code:
+                  type: string
+                  example: "+91"
+                c_zipCode:
+                  type: string
+                  example: "682001"
+                c_gst:
+                  type: string
+                  example: 32ABCDE1234F1Z5
+                password:
+                  type: string
+                  example: NewPassword@123
+                resellerCustomerId:
+                  type: string
+                  example: 1b7ef4dc-11d0-4b91-aac9-7dc6d7c2c111
+                userType:
+                  type: string
+                  example: 6900a4ef87b9fe9ff304e91e
+      responses:
+        "200":
+          description: Customer updated successfully
+        "400":
+          description: Invalid customer ID or validation error
+        "404":
+          description: Customer not found
+        "500":
+          description: Server error
+
+  /client/{id}/orders:
+    get:
+      tags:
+        - Client
+      summary: Get all orders for a specific client
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Client orders fetched successfully
+        "400":
+          description: Invalid client ID
+        "404":
+          description: Client not found
+        "500":
+          description: Failed to fetch client orders

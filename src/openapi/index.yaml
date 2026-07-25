@@ -1,0 +1,82 @@
+openapi: 3.0.0
+
+info:
+  title: Signroots WebPro API
+  version: 1.0.0
+  description: Signroots WebPro API Documentation
+
+# പ്രൊഡക്ഷനും ലോക്കൽ ഡെവലപ്മെന്റും ഇവിടെ സ്പെസിഫൈ ചെയ്യുക
+servers:
+  - url: https://signroots.app/api
+    description: Production Server
+  - url: http://localhost:5000/api
+    description: Local Server
+
+paths:
+  /users/login:
+    $ref: "./auth.yaml#/paths/~1users~1login"
+
+  /users/register:
+    $ref: "./auth.yaml#/paths/~1users~1register"
+
+  /users/types:
+    $ref: "./auth.yaml#/paths/~1users~1types"
+
+  /users/types/{id}:
+    $ref: "./auth.yaml#/paths/~1users~1types~1{id}"
+
+  /users/customer/login:
+    $ref: "./auth.yaml#/paths/~1users~1customer~1login"
+
+  /users/refresh:
+    $ref: "./auth.yaml#/paths/~1users~1refresh"
+
+  /typeemail:
+    $ref: "./typeEmail.yaml#/paths/~1typeemail"
+
+  /typeemail/{id}:
+    $ref: "./typeEmail.yaml#/paths/~1typeemail~1{id}"
+
+  /typeemail/{id}/toggle:
+    $ref: "./typeEmail.yaml#/paths/~1typeemail~1{id}~1toggle"
+
+  /storage:
+    $ref: "./storage.yaml#/paths/~1storage"
+
+  /storage/{id}:
+    $ref: "./storage.yaml#/paths/~1storage~1{id}"
+
+  /storage/{id}/toggle:
+    $ref: "./storage.yaml#/paths/~1storage~1{id}~1toggle"
+
+  /storage/storagelist/{hostTypeId}:
+    $ref: "./storage.yaml#/paths/~1storage~1storagelist~1{hostTypeId}"
+
+  /status:
+    $ref: "./status.yaml#/paths/~1status"
+
+  /status/{id}:
+    $ref: "./status.yaml#/paths/~1status~1{id}"
+
+  # Client Routes
+  /client:
+    $ref: "./client.yaml#/paths/~1client"
+
+  /client/client-country-codes:
+    $ref: "./client.yaml#/paths/~1client~1client-country-codes"
+
+  /client/{id}:
+    $ref: "./client.yaml#/paths/~1client~1{id}"
+
+  /client/{id}/orders:
+    $ref: "./client.yaml#/paths/~1client~1{id}~1orders"
+
+  /reseller_customer/{id}:
+    $ref: "./customer.yaml#/paths/~1reseller_customer~1{id}"
+
+  # Order Routes
+  /orders:
+    $ref: "./orders.yaml#/paths/~1order"
+
+  /orders/{id}:
+    $ref: "./orders.yaml#/paths/~1order~1{id}"

@@ -1,0 +1,75 @@
+paths:
+  /reseller_customer/{id}:
+    post:
+      tags:
+        - Customer
+      summary: Update reseller customer and sync with ResellerClub
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Mongo Customer ID
+          schema:
+            type: string
+            example: "689b12d5e3f0f9b2a1234567"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "John Doe"
+                email:
+                  type: string
+                  example: "john@example.com"
+                phone:
+                  type: string
+                  example: "9876543210"
+                phoneCc:
+                  type: string
+                  example: "91"
+                company:
+                  type: string
+                  example: "ABC Technologies"
+                address:
+                  type: string
+                  example: "MG Road"
+                city:
+                  type: string
+                  example: "Kochi"
+                state:
+                  type: string
+                  example: "Kerala"
+                country:
+                  type: string
+                  example: "IN"
+                zipCode:
+                  type: string
+                  example: "682001"
+      responses:
+        "200":
+          description: Customer updated successfully in Local DB and ResellerClub
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "✅ Customer updated successfully"
+                  local:
+                    type: object
+                  reseller:
+                    type: object
+                  updatedFields:
+                    type: array
+                    items:
+                      type: string
+                    example: ["name", "phone", "city"]
+        "400":
+          description: Failed to update customer or ResellerClub API error
+        "404":
+          description: Customer not found

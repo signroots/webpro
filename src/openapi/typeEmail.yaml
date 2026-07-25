@@ -1,0 +1,294 @@
+paths:
+
+  /typeemail:
+
+    post:
+
+      tags:
+        - Type Email
+
+      summary: Create new Type Email
+
+      description: Create type email with image upload
+
+
+      requestBody:
+
+        required: true
+
+        content:
+
+          multipart/form-data:
+
+            schema:
+
+              type: object
+
+              required:
+
+                - name
+
+                - image
+
+
+              properties:
+
+                name:
+
+                  type: string
+
+                  example: Google Workspace
+
+
+                image:
+
+                  type: string
+
+                  format: binary
+
+
+
+      responses:
+
+
+        "201":
+
+          description: Type Email created successfully
+
+          content:
+
+            application/json:
+
+              example:
+
+                success: true
+
+                message: Type Email created successfully
+
+                data:
+
+                  _id: 65abc123
+
+                  name: Google Workspace
+
+                  image: /uploads/typeemails/1784221633592.PNG
+
+                  isActive: true
+
+
+
+        "400":
+
+          description: Name or image missing
+
+
+
+        "500":
+
+          description: Server error
+
+
+
+
+
+    get:
+
+      tags:
+
+        - Type Email
+
+      summary: Get all Type Emails
+
+
+      responses:
+
+
+        "200":
+
+          description: Type Emails fetched successfully
+
+          content:
+
+            application/json:
+
+              example:
+
+                success: true
+
+                data:
+
+                  - _id: 65abc123
+
+                    name: Google Workspace
+
+                    image: /uploads/typeemails/image.png
+
+                    isActive: true
+
+
+
+
+
+  /typeemail/{id}:
+
+
+    get:
+
+      tags:
+
+        - Type Email
+
+      summary: Get Type Email by ID
+
+
+      parameters:
+
+        - name: id
+
+          in: path
+
+          required: true
+
+          schema:
+
+            type: string
+
+
+      responses:
+
+
+        "200":
+
+          description: Type Email details
+
+
+        "404":
+
+          description: Type Email not found
+
+
+
+
+
+    delete:
+
+      tags:
+
+        - Type Email
+
+      summary: Delete Type Email
+
+
+      parameters:
+
+        - name: id
+
+          in: path
+
+          required: true
+
+          schema:
+
+            type: string
+
+
+      responses:
+
+
+        "200":
+
+          description: Type Email deleted successfully
+
+          content:
+
+            application/json:
+
+              example:
+
+                success: true
+
+                message: TypeEmail deleted successfully
+
+
+
+        "404":
+
+          description: Type Email not found
+
+
+
+
+
+  /typeemail/{id}/toggle:
+
+
+    put:
+
+      tags:
+
+        - Type Email
+
+      summary: Update Type Email and toggle status
+
+
+      parameters:
+
+        - name: id
+
+          in: path
+
+          required: true
+
+          schema:
+
+            type: string
+
+
+      requestBody:
+
+        required: true
+
+        content:
+
+          multipart/form-data:
+
+            schema:
+
+              type: object
+
+
+              properties:
+
+                name:
+
+                  type: string
+
+                  example: Microsoft 365
+
+
+                image:
+
+                  type: string
+
+                  format: binary
+
+
+
+      responses:
+
+
+        "200":
+
+          description: Type Email updated successfully
+
+
+
+        "404":
+
+          description: Type Email not found
+
+
+
+
+
+    

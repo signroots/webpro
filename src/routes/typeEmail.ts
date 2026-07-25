@@ -168,29 +168,29 @@ router.delete(
 // Toggle isActive
 // PATCH /api/typeemail/:id/toggle
 // =====================
-router.patch(
-  "/:id/toggle",
-  async (req: Request<{ id: string }>, res: Response): Promise<void> => {
-    try {
-      const { id } = req.params;
-      const typeEmail = await TypeEmail.findById(id);
+// router.patch(
+//   "/:id/toggle",
+//   async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+//     try {
+//       const { id } = req.params;
+//       const typeEmail = await TypeEmail.findById(id);
 
-      if (!typeEmail) {
-        res
-          .status(404)
-          .json({ success: false, message: "TypeEmail not found" });
-        return;
-      }
+//       if (!typeEmail) {
+//         res
+//           .status(404)
+//           .json({ success: false, message: "TypeEmail not found" });
+//         return;
+//       }
 
-      // Toggle the isActive field
-      typeEmail.isActive = !typeEmail.isActive;
-      await typeEmail.save();
+//       // Toggle the isActive field
+//       typeEmail.isActive = !typeEmail.isActive;
+//       await typeEmail.save();
 
-      res.json({ success: true, data: typeEmail });
-    } catch (err: any) {
-      res.status(500).json({ success: false, error: err.message });
-    }
-  }
-);
+//       res.json({ success: true, data: typeEmail });
+//     } catch (err: any) {
+//       res.status(500).json({ success: false, error: err.message });
+//     }
+//   }
+// );
 
 export default router;

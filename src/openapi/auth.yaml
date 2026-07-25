@@ -1,0 +1,510 @@
+paths:
+
+  /users/login:
+
+    post:
+
+      tags:
+        - Authentication
+
+      summary: Admin user login
+
+      description: Login using email and password
+
+
+      requestBody:
+
+        required: true
+
+        content:
+
+          application/json:
+
+            schema:
+
+              type: object
+
+              required:
+                - email
+                - password
+
+              properties:
+
+                email:
+
+                  type: string
+
+                  example: signroots@gmail.com
+
+
+                password:
+
+                  type: string
+
+                  example: password123
+
+
+
+      responses:
+
+
+        "200":
+
+          description: Login successful
+
+          content:
+
+            application/json:
+
+              schema:
+
+                type: object
+
+                properties:
+
+                  success:
+
+                    type: boolean
+
+                    example: true
+
+
+                  accessToken:
+
+                    type: string
+
+
+                  refreshToken:
+
+                    type: string
+
+
+                  user:
+
+                    type: object
+
+                    properties:
+
+                      id:
+
+                        type: string
+
+                      email:
+
+                        type: string
+
+                      name:
+
+                        type: string
+
+                      role:
+
+                        type: string
+
+
+
+        "404":
+
+          description: User not found
+
+
+        "400":
+
+          description: Invalid credentials
+
+
+
+  /users/register:
+
+    post:
+
+      tags:
+
+        - Authentication
+
+
+      summary: Register new user
+
+
+      requestBody:
+
+        required: true
+
+
+        content:
+
+          application/json:
+
+            schema:
+
+              type: object
+
+              properties:
+
+
+                email:
+
+                  type: string
+
+                  example: test@gmail.com
+
+
+                password:
+
+                  type: string
+
+                  example: password123
+
+
+                name:
+
+                  type: string
+
+                  example: Test User
+
+
+                userType:
+
+                  type: string
+
+                  example: 64fxxxxxx
+
+
+      responses:
+
+
+        "201":
+
+          description: User registered successfully
+
+
+
+  /users/types:
+
+    get:
+
+      tags:
+
+        - User Types
+
+
+      summary: Get all user types
+
+
+      responses:
+
+        "200":
+
+          description: User types fetched successfully
+    post:
+
+      tags:
+        - User Types
+
+      summary: Create new user type
+
+
+      requestBody:
+
+        required: true
+
+        content:
+
+          application/json:
+
+            schema:
+
+              type: object
+
+              required:
+                - name
+
+              properties:
+
+                name:
+
+                  type: string
+
+                  example: Admin
+
+
+                is_active:
+
+                  type: boolean
+
+                  example: true
+
+
+
+      responses:
+
+
+        "201":
+
+          description: User type created successfully
+
+          content:
+
+            application/json:
+
+              schema:
+
+                type: object
+
+                properties:
+
+                  _id:
+
+                    type: string
+
+
+                  name:
+
+                    type: string
+
+
+                  is_active:
+
+                    type: boolean
+
+
+
+        "500":
+
+          description: Failed to create user type
+
+
+  /users/types/{id}:
+
+    get:
+
+      tags:
+
+        - User Types
+
+
+      summary: Get user type by id
+
+
+      parameters:
+
+        - name: id
+
+          in: path
+
+          required: true
+
+          schema:
+
+            type: string
+
+
+      responses:
+
+        "200":
+
+          description: User type details
+    put:
+
+      tags:
+
+        - User Types
+
+      summary: Update user type
+
+
+      parameters:
+
+        - name: id
+
+          in: path
+
+          required: true
+
+          schema:
+
+            type: string
+
+
+      requestBody:
+
+        required: true
+
+        content:
+
+          application/json:
+
+            schema:
+
+              type: object
+
+              properties:
+
+                name:
+
+                  type: string
+
+                  example: Admin
+
+
+                is_active:
+
+                  type: boolean
+
+                  example: true
+
+
+
+      responses:
+
+
+        "200":
+
+          description: User type updated successfully
+
+
+        "404":
+
+          description: User type not found
+
+
+
+    delete:
+
+      tags:
+
+        - User Types
+
+      summary: Delete user type
+
+
+      parameters:
+
+        - name: id
+
+          in: path
+
+          required: true
+
+          schema:
+
+            type: string
+
+
+      responses:
+
+
+        "200":
+
+          description: User type deleted successfully
+
+
+          content:
+
+            application/json:
+
+              example:
+
+                message: User type deleted successfully
+
+
+
+        "404":
+
+          description: User type not found
+
+
+  /users/customer/login:
+
+
+    post:
+
+      tags:
+
+        - Customer Authentication
+
+
+      summary: Customer login
+
+
+      requestBody:
+
+        required: true
+
+
+        content:
+
+          application/json:
+
+            schema:
+
+              type: object
+
+              properties:
+
+
+                email:
+
+                  type: string
+
+                  example: customer@gmail.com
+
+
+                password:
+
+                  type: string
+
+                  example: password123
+
+
+
+      responses:
+
+
+        "200":
+
+          description: Customer login success
+
+
+
+  /users/refresh:
+
+
+    post:
+
+      tags:
+
+        - Authentication
+
+
+      summary: Refresh access token
+
+
+      requestBody:
+
+        required: true
+
+
+        content:
+
+          application/json:
+
+            schema:
+
+              type: object
+
+              properties:
+
+
+                refreshToken:
+
+                  type: string
+
+
+
+      responses:
+
+
+        "200":
+
+          description: New access token generated

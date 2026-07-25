@@ -7,10 +7,9 @@ import cors from "cors";
 import path from "path";
 
 import swaggerUi from "swagger-ui-express";
-import YAML from "yamljs";
-
+import SwaggerParser from "@apidevtools/swagger-parser";
 // Routes
-import categoryRoutes from "./routes/category";
+// import categoryRoutes from "./routes/category";
 import customerRoutes from "./routes/customer";
 import cloudflareRoutes from "./routes/cloudflare";
 import MainResellerRoutes from "./routes/mainreseller";
@@ -45,10 +44,7 @@ const app = express();
 const PORT = process.env.PORT ? Number(process.env.PORT) : 5000;
 
 
-// Swagger YAML Load
-const swaggerDocument = YAML.load(
-  path.join(__dirname, "./openapi.yaml")
-);
+
 
 // Middleware
 const allowedOrigins = [
@@ -73,12 +69,6 @@ app.use(
 app.use(express.json());
 
 
-// Swagger Documentation
-app.use(
-  "/api-docs",
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerDocument)
-);
 
 
 // MongoDB connection
@@ -118,7 +108,7 @@ app.use("/api/orders", ordersRouter);
 
 app.use("/api/settings", settingsRouter);
 
-app.use("/api/categories", categoryRoutes);
+// app.use("/api/categories", categoryRoutes);
 
 app.use("/api/client", clientRoutes);
 
@@ -146,7 +136,22 @@ app.use(
 
 // Start cron
 startDomainSyncCron();
+// Swagger Documentation
+async function setupSwagger() {
 
+  const swaggerDocument = await SwaggerParser.bundle(
+    path.join(__dirname, "./openapi/index.yaml")
+  );
+
+  app.use(
+    "/api-docs",
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerDocument)
+  );
+
+}
+
+setupSwagger();
 
 // Start server
 app.listen(PORT, "0.0.0.0", () => {

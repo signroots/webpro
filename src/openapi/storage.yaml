@@ -1,0 +1,244 @@
+paths:
+
+  /storage:
+
+    post:
+
+      tags:
+        - Storage
+
+      summary: Create Storage
+
+      description: Create a new storage record
+
+      requestBody:
+
+        required: true
+
+        content:
+
+          application/json:
+
+            schema:
+
+              type: object
+
+              required:
+                - storage
+                - hostType
+                - hostSubType
+
+              properties:
+
+                storage:
+                  type: string
+                  example: 50 GB
+
+                hostType:
+                  type: string
+                  example: 687fd15f4c25dd8d0b6e1234
+
+                hostSubType:
+                  type: string
+                  example: 687fd15f4c25dd8d0b6e5678
+
+      responses:
+
+        "200":
+          description: Storage created successfully
+
+        "400":
+          description: All fields are required
+
+        "500":
+          description: Server error
+
+
+    get:
+
+      tags:
+        - Storage
+
+      summary: Get all storages
+
+      description: Returns all storage records
+
+      responses:
+
+        "200":
+          description: Storage list fetched successfully
+
+        "500":
+          description: Server error
+
+
+
+  /storage/{id}:
+
+    get:
+
+      tags:
+        - Storage
+
+      summary: Get storage by ID
+
+      parameters:
+
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+
+      responses:
+
+        "200":
+          description: Storage fetched successfully
+
+        "404":
+          description: Storage not found
+
+        "500":
+          description: Server error
+
+
+    put:
+
+      tags:
+        - Storage
+
+      summary: Update storage
+
+      requestBody:
+
+        required: true
+
+        content:
+
+          application/json:
+
+            schema:
+
+              type: object
+
+              properties:
+
+                storage:
+                  type: string
+                  example: 100 GB
+
+                hostType:
+                  type: string
+                  example: 687fd15f4c25dd8d0b6e1234
+
+                hostSubType:
+                  type: string
+                  example: 687fd15f4c25dd8d0b6e5678
+
+      parameters:
+
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+
+      responses:
+
+        "200":
+          description: Storage updated successfully
+
+        "404":
+          description: Storage not found
+
+        "500":
+          description: Server error
+
+
+    delete:
+
+      tags:
+        - Storage
+
+      summary: Delete storage
+
+      parameters:
+
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+
+      responses:
+
+        "200":
+          description: Storage deleted successfully
+
+        "404":
+          description: Storage not found
+
+        "500":
+          description: Server error
+
+
+
+  /storage/{id}/toggle:
+
+    patch:
+
+      tags:
+        - Storage
+
+      summary: Toggle storage active status
+
+      description: Enable or disable a storage record
+
+      parameters:
+
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+
+      responses:
+
+        "200":
+          description: Storage status updated successfully
+
+        "404":
+          description: Storage not found
+
+        "500":
+          description: Server error
+
+
+
+  /storage/storagelist/{hostTypeId}:
+
+    get:
+
+      tags:
+        - Storage
+
+      summary: Get active storages by Host Type
+
+      parameters:
+
+        - name: hostTypeId
+          in: path
+          required: true
+          schema:
+            type: string
+
+      responses:
+
+        "200":
+          description: Active storage list fetched successfully
+
+        "400":
+          description: hostTypeId required
+
+        "500":
+          description: Server error
