@@ -202,375 +202,79 @@ export async function syncCloudflareDomains() {
 
 
 
-    // =====================================
-    // FETCH ALL CLOUDFLARE ZONES
-    // =====================================
-
-
-    let page = 1;
-
-    let totalPages = 1;
-
-
-    const activeZoneNames:string[] = [];
-
-
-
-    do {
-
-
-      const response =
-        await axios.get(
-
-          "https://api.cloudflare.com/client/v4/zones",
-
-          {
-
-            headers: {
-
-              Authorization:
-                `Bearer ${CLOUDFLARE_TOKEN}`,
-
-              "Content-Type":
-                "application/json"
-
-            },
-
-            params: {
-
-              page,
-
-              per_page:50
-
-            }
-
-          }
-
-        );
-
-
-
-      const {
-        result,
-        result_info
-      } =
-      response.data;
-
-
-
-      totalPages =
-        result_info.total_pages || 1;
-
-
-
-      console.log(
-        `🌐 Zones Page ${page}/${totalPages}`
-      );
-
-
-
-      result.forEach(
-        (zone:any)=>{
-
-          activeZoneNames.push(
-            zone.name
-          );
-
-        }
-      );
-
-
-
-      const bulkOps:any[] = [];
-
-
-
-      for(
-        const zone of result
-      ){
-
-
-        const registrarInfo =
-          registrarDomainMap[
-            zone.name
-          ];
-
-
-
-        const existingOrder =
-          await Order.findOne({
-
-            domainName:
-              zone.name
-
-          });
-
-
-
-        const expiryDate =
-          registrarInfo?.expires_at
-          ? new Date(
-              registrarInfo.expires_at
-            )
-          :
-          existingOrder?.expiryDate
-          ?
-          new Date(
-            existingOrder.expiryDate
-          )
-          :
-          null;
-
-
-
-        // =====================================
-        // NOT IN REGISTRAR
-        // KEEP EMAIL/HOSTING DOMAINS
-        // =====================================
-
-
-        if(!registrarInfo){
-
-
-          console.log(
-            `⚠️ ${zone.name} not in registrar`
-          );
-
-
-          continue;
-
-        }
-
-
-
-        // =====================================
-        // EXPIRED >65 DAYS
-        // =====================================
-
-
-        if(expiryDate){
-
-
-          const diffDays =
-            (
-              Date.now()
-              -
-              expiryDate.getTime()
-            )
-            /
-            (
-              1000 *
-              60 *
-              60 *
-              24
-            );
-
-
-
-          if(diffDays > 65){
-
-
-            console.log(
-              `🗑 Removing ${zone.name} expired ${Math.floor(diffDays)} days`
-            );
-
-
-            await Order.deleteOne({
-
-              domainName:
-                zone.name
-
-            });
-
-
-            continue;
-
-          }
-
-        }
-                // =====================================
-        // PRESERVE EMAIL DATA
-        // =====================================
-
-
-        const provider =
-          existingOrder?.provider || "";
-
-
-        const providerLower =
-          provider.toLowerCase();
-
-
-
-        bulkOps.push({
-
-          updateOne: {
-
-            filter: {
-
-              domainName:
-                zone.name
-
-            },
-
-
-            update: {
-
-              $set: {
-
-
-                domainName:
-                  zone.name,
-
-
-                status:
-                  zone.status,
-
-
-                nameServers:
-                  zone.name_servers,
-
-
-                registrationDate:
-                  new Date(
-                    zone.created_on
-                  ),
-
-
-                originalRegistrar:
-                  zone.original_registrar,
-
-
-                expiryDate,
-
-
-                managedBy:
-                  "Signroots",
-
-
-                customer:
-                  defaultCustomer._id,
-
-
-                domainSource:
-                  "Cloudflare",
-
-
-                cloudflareRegistered:
-                  true,
-
-
-                provider,
-
-
-                google_email:
-                  existingOrder?.google_email === true
-                  ||
-                  providerLower.includes(
-                    "google workspace"
-                  ),
-
-
-                microsoft_email:
-                  existingOrder?.microsoft_email === true
-                  ||
-                  providerLower.includes(
-                    "microsoft 365"
-                  ),
-
-
-                email_flag:
-                  existingOrder?.email_flag || false,
-
-
-                email_customer:
-                  existingOrder?.email_customer || "",
-
-
-                email_expiryDate:
-                  existingOrder?.email_expiryDate || null,
-
-
-                username:
-                  existingOrder?.username || "",
-
-
-                password:
-                  existingOrder?.password || "",
-
-
-                subscription:
-                  existingOrder?.subscription || "",
-
-
-                users:
-                  existingOrder?.users || 0,
-
-
-              }
-
-            },
-
-
-            upsert:true
-
-          }
-
-        });
-
-
+   // =====================================
+// FETCH ALL CLOUDFLARE ZONES FOR CLEANUP
+// =====================================
+
+let cleanupPage = 1;
+let cleanupTotalPages = 1;
+
+const activeZoneNames:string[] = [];
+
+
+do {
+
+  const zonesResponse = await axios.get(
+    "https://api.cloudflare.com/client/v4/zones",
+    {
+      headers:{
+        Authorization:`Bearer ${CLOUDFLARE_TOKEN}`,
+        "Content-Type":"application/json"
+      },
+      params:{
+        page: cleanupPage,
+        per_page:100
       }
-
-
-
-      if(bulkOps.length){
-
-
-        await Order.bulkWrite(
-          bulkOps
-        );
-
-
-      }
-
-
-
-      page++;
-
-
-
     }
-    while(
-      page <= totalPages
-    );
+  );
+
+
+  const zones =
+    zonesResponse.data.result;
+
+
+  const info =
+    zonesResponse.data.result_info;
+
+
+  cleanupTotalPages =
+    info.total_pages || 1;
+
+
+  zones.forEach((zone:any)=>{
+    activeZoneNames.push(zone.name);
+  });
+
+
+  cleanupPage++;
+
+
+} while(cleanupPage <= cleanupTotalPages);
 
 
 
-    // =====================================
-    // REMOVE DOMAINS NOT IN CLOUDFLARE
-    // =====================================
-
-
-    const removed =
-      await Order.deleteMany({
-
-        domainSource:
-          "Cloudflare",
-
-
-        domainName:{
-          $nin:
-            activeZoneNames
-        }
-
-      });
+console.log(
+ `🌐 Total active Cloudflare zones: ${activeZoneNames.length}`
+);
 
 
 
-    console.log(
-      `🗑 Removed missing Cloudflare zones: ${removed.deletedCount}`
-    );
+const removed =
+ await Order.deleteMany({
 
+   domainSource:"Cloudflare",
+
+   domainName:{
+     $nin:activeZoneNames
+   }
+
+ });
+
+
+
+console.log(
+ `🗑 Removed missing Cloudflare zones: ${removed.deletedCount}`
+);
 
 
     // =====================================
