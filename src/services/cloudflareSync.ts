@@ -6,7 +6,9 @@ import Customer from "../models/Customer";
 
 dotenv.config();
 
+
 let cloudflareSyncRunning = false;
+
 
 
 export async function syncCloudflareDomains() {
@@ -24,6 +26,7 @@ export async function syncCloudflareDomains() {
 
 
   cloudflareSyncRunning = true;
+
 
 
   try {
@@ -46,10 +49,10 @@ export async function syncCloudflareDomains() {
 
 
 
-    if (
+    if(
       !CLOUDFLARE_TOKEN ||
       !CLOUDFLARE_ACCOUNT_ID
-    ) {
+    ){
 
       throw new Error(
         "Missing Cloudflare credentials"
@@ -66,19 +69,17 @@ export async function syncCloudflareDomains() {
 
 
     // =====================================
-    // FETCH REGISTRAR DOMAINS
+    // FETCH ALL REGISTRAR DOMAINS
     // =====================================
 
-
-    let registrarPage = 1;
 
     const registrarDomainMap:
       Record<string,any> = {};
 
 
-    let registrarTotal = 0;
+    let registrarPage = 1;
 
-    let registrarFetched = 0;
+    let registrarTotalPages = 1;
 
 
 
@@ -92,7 +93,7 @@ export async function syncCloudflareDomains() {
 
           {
 
-            headers: {
+            headers:{
 
               "X-Auth-Email":
                 CLOUDFLARE_EMAIL_ID,
@@ -105,11 +106,12 @@ export async function syncCloudflareDomains() {
 
             },
 
-            params: {
 
-              page: registrarPage,
+            params:{
 
-              per_page:50
+              page:registrarPage,
+
+              per_page:100
 
             }
 
@@ -119,25 +121,17 @@ export async function syncCloudflareDomains() {
 
 
 
-      const {
-        result,
-        result_info
-      } =
-      registrarResponse.data;
+      if(!registrarResponse.data.success){
+
+        throw new Error(
+          "Cloudflare registrar API failed"
+        );
+
+      }
 
 
 
-      registrarTotal =
-        result_info.total_count || 0;
-
-
-
-      registrarFetched +=
-        result.length;
-
-
-
-      result.forEach(
+      registrarResponse.data.result.forEach(
         (domain:any)=>{
 
           registrarDomainMap[
@@ -148,13 +142,19 @@ export async function syncCloudflareDomains() {
       );
 
 
+
+      registrarTotalPages =
+        registrarResponse.data.result_info.total_pages || 1;
+
+
+
       registrarPage++;
 
 
 
     }
     while(
-      registrarFetched < registrarTotal
+      registrarPage <= registrarTotalPages
     );
 
 
@@ -168,7 +168,7 @@ export async function syncCloudflareDomains() {
 
 
     // =====================================
-    // CUSTOMER
+    // FETCH CUSTOMER
     // =====================================
 
 
@@ -199,135 +199,542 @@ export async function syncCloudflareDomains() {
         }
 
       );
-
-
-
-   // =====================================
-// FETCH ALL CLOUDFLARE ZONES FOR CLEANUP
-// =====================================
-
-let cleanupPage = 1;
-let cleanupTotalPages = 1;
-
-const activeZoneNames:string[] = [];
-
-
-do {
-
-  const zonesResponse = await axios.get(
-    "https://api.cloudflare.com/client/v4/zones",
-    {
-      headers:{
-        Authorization:`Bearer ${CLOUDFLARE_TOKEN}`,
-        "Content-Type":"application/json"
-      },
-      params:{
-        page: cleanupPage,
-        per_page:100
-      }
-    }
-  );
-
-
-  const zones =
-    zonesResponse.data.result;
-
-
-  const info =
-    zonesResponse.data.result_info;
-
-
-  cleanupTotalPages =
-    info.total_pages || 1;
-
-
-  zones.forEach((zone:any)=>{
-    activeZoneNames.push(zone.name);
-  });
-
-
-  cleanupPage++;
-
-
-} while(cleanupPage <= cleanupTotalPages);
-
-
-
-console.log(
- `🌐 Total active Cloudflare zones: ${activeZoneNames.length}`
-);
-
-
-
-const removed =
- await Order.deleteMany({
-
-   domainSource:"Cloudflare",
-
-   domainName:{
-     $nin:activeZoneNames
-   }
-
- });
-
-
-
-console.log(
- `🗑 Removed missing Cloudflare zones: ${removed.deletedCount}`
-);
-
-
-    // =====================================
-    // REMOVE EXPIRED DOMAINS
+          // =====================================
+    // FETCH ALL CLOUDFLARE ZONES
     // =====================================
 
 
-    const expiredCleanup =
-      await Order.deleteMany({
-
-        domainSource:
-          "Cloudflare",
+    const activeZoneNames:string[] = [];
 
 
-        email_flag:false,
+    let zonePage = 1;
+
+    let zoneTotalPages = 1;
 
 
-        hosting:false,
+
+    do {
 
 
-        expiryDate:{
+      const zoneResponse =
+        await axios.get(
 
-          $lt:
+          "https://api.cloudflare.com/client/v4/zones",
 
-            new Date(
+          {
 
-              Date.now()
-              -
-              (
-                65 *
-                24 *
-                60 *
-                60 *
-                1000
-              )
+            headers:{
 
-            )
+              Authorization:
+                `Bearer ${CLOUDFLARE_TOKEN}`,
 
-        }
+              "Content-Type":
+                "application/json"
+
+            },
+
+
+            params:{
+
+              page:zonePage,
+
+              per_page:100
+
+            }
+
+          }
+
+        );
+
+
+
+      const zones =
+        zoneResponse.data.result;
+
+
+
+      zones.forEach((zone:any)=>{
+
+        activeZoneNames.push(
+          zone.name
+        );
 
       });
 
 
 
-    console.log(
-      `🗑 Expired cleanup removed: ${expiredCleanup.deletedCount}`
+      zoneTotalPages =
+        zoneResponse.data.result_info.total_pages || 1;
+
+
+
+      console.log(
+        `🌐 Zones Page ${zonePage}/${zoneTotalPages}`
+      );
+
+
+
+      zonePage++;
+
+
+
+    }
+    while(
+      zonePage <= zoneTotalPages
     );
 
 
 
     console.log(
-      "✅ Cloudflare Sync Completed"
+      `✅ Total Cloudflare Zones: ${activeZoneNames.length}`
     );
+
+
+
+
+    // =====================================
+    // SYNC CLOUDLFARE ZONES
+    // =====================================
+
+
+    let syncPage = 1;
+
+    let syncTotalPages = 1;
+
+
+
+    do {
+
+
+      const response =
+        await axios.get(
+
+          "https://api.cloudflare.com/client/v4/zones",
+
+          {
+
+            headers:{
+
+              Authorization:
+                `Bearer ${CLOUDFLARE_TOKEN}`,
+
+              "Content-Type":
+                "application/json"
+
+            },
+
+
+            params:{
+
+              page:syncPage,
+
+              per_page:100
+
+            }
+
+          }
+
+        );
+
+
+
+      const zones =
+        response.data.result;
+
+
+
+      syncTotalPages =
+        response.data.result_info.total_pages || 1;
+
+
+
+      console.log(
+        `🔄 Sync Zones Page ${syncPage}/${syncTotalPages}`
+      );
+
+
+
+      const bulkOps:any[] = [];
+
+
+
+      for(
+        const zone of zones
+      ){
+
+
+
+        const registrarInfo =
+          registrarDomainMap[
+            zone.name
+          ];
+
+
+
+        const existingOrder =
+          await Order.findOne({
+
+            domainName:
+              zone.name
+
+          });
+
+
+
+        // =====================================
+        // DELETE IF NOT IN REGISTRAR
+        // ONLY WHEN NO ZONE PURPOSE
+        // =====================================
+
+
+        if(!registrarInfo){
+
+
+          console.log(
+            `⚠️ ${zone.name} not found in registrar`
+          );
+
+
+          continue;
+
+
+        }
+
+
+
+        const expiryDate =
+          registrarInfo.expires_at
+            ?
+          new Date(
+            registrarInfo.expires_at
+          )
+            :
+          existingOrder?.expiryDate
+            ?
+          new Date(
+            existingOrder.expiryDate
+          )
+            :
+          null;
+
+
+
+        // =====================================
+        // EXPIRED MORE THAN 65 DAYS
+        // =====================================
+
+
+        if(expiryDate){
+
+
+          const diffDays =
+            (
+              Date.now()
+              -
+              expiryDate.getTime()
+
+            )
+            /
+            (
+              1000 *
+              60 *
+              60 *
+              24
+            );
+
+
+
+          if(diffDays > 65){
+
+
+            console.log(
+              `🗑 Removing expired ${zone.name}`
+            );
+
+
+            await Order.deleteOne({
+
+              domainName:
+                zone.name
+
+            });
+
+
+            continue;
+
+          }
+
+
+        }
+
+
+
+        const provider =
+          existingOrder?.provider || "";
+
+
+
+        const providerLower =
+          provider.toLowerCase();
+
+
+
+
+        bulkOps.push({
+
+          updateOne:{
+
+
+            filter:{
+
+              domainName:
+                zone.name
+
+            },
+
+
+            update:{
+
+
+              $set:{
+
+
+                domainName:
+                  zone.name,
+
+
+                status:
+                  zone.status,
+
+
+                nameServers:
+                  zone.name_servers,
+
+
+
+                registrationDate:
+                  new Date(
+                    zone.created_on
+                  ),
+
+
+
+                originalRegistrar:
+                  zone.original_registrar,
+
+
+
+                expiryDate,
+
+
+
+                managedBy:
+                  "Signroots",
+
+
+
+                customer:
+                  defaultCustomer._id,
+
+
+
+                domainSource:
+                  "Cloudflare",
+
+
+
+                cloudflareRegistered:
+                  true,
+
+
+
+                provider,
+
+
+
+                google_email:
+                  existingOrder?.google_email ||
+                  providerLower.includes(
+                    "google workspace"
+                  ),
+
+
+
+                microsoft_email:
+                  existingOrder?.microsoft_email ||
+                  providerLower.includes(
+                    "microsoft 365"
+                  ),
+
+
+
+                email_flag:
+                  existingOrder?.email_flag ||
+                  false,
+
+
+
+                email_customer:
+                  existingOrder?.email_customer ||
+                  "",
+
+
+
+                users:
+                  existingOrder?.users ||
+                  0,
+
+
+              }
+
+            },
+
+
+            upsert:true
+
+          }
+
+        });
+
+
+      }
+
+
+
+      if(bulkOps.length){
+
+
+        await Order.bulkWrite(
+          bulkOps
+        );
+
+
+      }
+
+
+
+      syncPage++;
+
+
+
+    }
+    while(
+      syncPage <= syncTotalPages
+    );
+    // =====================================
+// FINAL CLEANUP
+// REMOVE DOMAINS NOT IN CLOUDFLARE
+// =====================================
+
+
+const validCloudflareDomains = new Set<string>();
+
+
+// Registrar domains add
+Object.keys(registrarDomainMap)
+.forEach((domain)=>{
+
+  validCloudflareDomains.add(domain);
+
+});
+
+
+// Zone domains add
+activeZoneNames.forEach((domain)=>{
+
+  validCloudflareDomains.add(domain);
+
+});
+
+
+
+const orphanRemoved =
+  await Order.deleteMany({
+
+    domainSource:
+      "Cloudflare",
+
+
+    cloudflareRegistered:
+      true,
+
+
+    domainName:{
+
+      $nin:
+        Array.from(
+          validCloudflareDomains
+        )
+
+    }
+
+  });
+
+
+
+console.log(
+  `🗑 Removed missing Cloudflare domains: ${orphanRemoved.deletedCount}`
+);
+
+
+
+
+// =====================================
+// FINAL EXPIRED CLEANUP
+// =====================================
+
+
+const expiredRemoved =
+  await Order.deleteMany({
+
+    domainSource:
+      "Cloudflare",
+
+
+    email_flag:
+      false,
+
+
+    hosting:
+      false,
+
+
+    expiryDate:{
+
+      $lt:
+        new Date(
+          Date.now()
+          -
+          (
+            65 *
+            24 *
+            60 *
+            60 *
+            1000
+          )
+        )
+
+    }
+
+  });
+
+
+
+console.log(
+  `🗑 Expired cleanup removed: ${expiredRemoved.deletedCount}`
+);
+
+
+
+
+// =====================================
+// COMPLETE
+// =====================================
+
+
+console.log(
+  "✅ Cloudflare Sync Completed"
+);
 
 
 
