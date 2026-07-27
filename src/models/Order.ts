@@ -12,6 +12,10 @@ export interface IOrder extends Document {
   hoststorageId?: mongoose.Types.ObjectId;
   registrarName?: mongoose.Types.ObjectId;
   managedBy: "Signroots" | "Customer";
+  is_active:{
+  type:Boolean,
+  default:true
+},
   registrationDate?: Date;
   expiryDate?: Date;
   originalRegistrar?: string;
@@ -50,6 +54,7 @@ export interface IOrder extends Document {
   email_expiryDate?: Date | null;
   email_customer?: string;
   provider?: string;
+  
 }
 
 const orderSchema = new mongoose.Schema<IOrder>(
@@ -63,6 +68,11 @@ const orderSchema = new mongoose.Schema<IOrder>(
     client: { type: mongoose.Schema.Types.ObjectId, ref: "Client" },
     registrarName: { type: mongoose.Schema.Types.ObjectId, ref: "Registrar" },
     managedBy: { type: String, enum: ["Signroots", "Customer"] },
+
+  is_active:{
+    type:Boolean,
+    default:true
+  },
 
     // ========================
     // Dates
