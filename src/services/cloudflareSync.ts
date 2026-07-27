@@ -724,7 +724,18 @@ console.log(
   `🗑 Expired cleanup removed: ${expiredRemoved.deletedCount}`
 );
 
+console.log(
+ "DEBUG AUFWAY IN ACTIVE ZONES:",
+ activeZoneNames.includes("aufway.co")
+);
 
+
+console.log(
+ "DEBUG AUFWAY DB:",
+ await Order.findOne({
+   domainName:"aufway.co"
+ })
+);
 
 
 // =====================================
