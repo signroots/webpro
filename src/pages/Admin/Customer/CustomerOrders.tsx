@@ -478,49 +478,176 @@ const CustomerOrders: React.FC = () => {
 </td>
 
 
-                    <td className="px-4 py-4 text-center">
+<td className="px-1 py-2 font-medium">
+  {(() => {
 
-<div className="flex flex-col gap-1">
+    const formatDate = (date?: string): string | null => {
 
+      if (!date) return null;
 
-{/* Domain Expiry */}
-{order.domainExpiryDate && (
-  <span className="text-sm">
-    🌐 {new Date(order.domainExpiryDate).toLocaleDateString()}
-  </span>
-)}
+      const d = new Date(date);
 
+      const day = d.getUTCDate()
+        .toString()
+        .padStart(2, "0");
 
+      const month = (d.getUTCMonth() + 1)
+        .toString()
+        .padStart(2, "0");
 
-{/* Email Expiry */}
-{order.emailExpiryDate?.map(
-  (date:string,index:number)=>(
-    <span 
-      key={index}
-      className="text-sm text-blue-600"
-    >
-      ✉️ {new Date(date).toLocaleDateString()}
-    </span>
-  )
-)}
+      const year = d.getUTCFullYear();
+
+      return `${day}/${month}/${year}`;
+
+    };
 
 
-{
- !order.domainExpiryDate &&
- !order.emailExpiryDate?.length &&
- (
-  <span className="text-gray-400">
-    N/A
-  </span>
- )
-}
+
+    const domainDate: string | null = formatDate(
+      order.domainExpiryDate
+    );
 
 
-</div>
 
+    const emailDates: string[] = (order.emailExpiryDate || [])
+
+      .map((date: string) => formatDate(date))
+
+      .filter(
+        (d: string | null): d is string => Boolean(d)
+      );
+
+
+
+
+    const isSameExpiry =
+      Boolean(domainDate) &&
+      emailDates.length > 0 &&
+      emailDates.every(
+        (date: string) => date === domainDate
+      );
+
+
+
+
+    const badgeBase =
+      "inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium w-fit";
+
+
+
+    const iconBase =
+      "w-4 h-4 flex justify-center items-center rounded-full bg-white text-black text-[9px]";
+
+
+
+
+    return (
+
+      <div className="flex flex-col gap-1">
+
+
+
+        {/* 🟢 ED - Email + Domain Same Expiry */}
+
+        {isSameExpiry && domainDate && (
+
+          <div
+            className={`${badgeBase} bg-green-100 text-green-800`}
+          >
+
+            <span className={iconBase}>
+              ED
+            </span>
+
+            {domainDate}
+
+          </div>
+
+        )}
+
+
+
+
+
+
+        {/* 🔵 EE - Email Expiry */}
+
+        {!isSameExpiry &&
+
+          emailDates.map(
+            (date: string, index: number) => (
+
+              <div
+                key={index}
+                className={`${badgeBase} bg-blue-100 text-blue-800`}
+              >
+
+                <span className={iconBase}>
+                  EE
+                </span>
+
+                {date}
+
+              </div>
+
+            )
+
+          )
+
+        }
+
+
+
+
+
+
+        {/* 🟣 DE - Domain Expiry */}
+
+        {!isSameExpiry && domainDate && (
+
+          <div
+            className={`${badgeBase} bg-purple-100 text-purple-800`}
+          >
+
+            <span className={iconBase}>
+              DE
+            </span>
+
+            {domainDate}
+
+          </div>
+
+        )}
+
+
+
+
+
+
+        {/* ⚪ No Expiry */}
+
+        {
+          !domainDate &&
+          emailDates.length === 0 &&
+          (
+
+            <span className="text-gray-400 text-xs">
+              N/A
+            </span>
+
+          )
+        }
+
+
+
+
+      </div>
+
+    );
+
+
+  })()}
 </td>
-
-
 
 
 
