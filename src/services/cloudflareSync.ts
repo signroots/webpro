@@ -7,6 +7,7 @@ import Customer from "../models/Customer";
 dotenv.config();
 
 export async function syncCloudflareDomains() {
+  
 
   const CLOUDFLARE_TOKEN =
     process.env.CLOUDFLARE_TOKEN?.trim();
@@ -140,14 +141,49 @@ export async function syncCloudflareDomains() {
 
       result.map(async (zone: any) => {
 
-        const registrarInfo =
-          registrarDomainMap[zone.name];
+        const registrarInfo = registrarDomainMap[zone.name];
 
-        const expiryDate =
-          registrarInfo?.expires_at
-            ? new Date(registrarInfo.expires_at)
-            : null;
+        // =====================================
+        // DOMAIN NOT FOUND IN REGISTRAR
+        // =====================================
 
+        if (!registrarInfo) {
+
+          console.log(
+            `🗑 Removing ${zone.name} - Not found in registrar`
+          );
+
+          await Order.deleteOne({
+            domainName: zone.name,
+          });
+
+          return null;
+        }
+
+        const expiryDate = new Date(registrarInfo.expires_at);
+
+        // =====================================
+        // REMOVE IF EXPIRED > 65 DAYS
+        // =====================================
+
+        const today = new Date();
+
+        const diffDays =
+          (today.getTime() - expiryDate.getTime()) /
+          (1000 * 60 * 60 * 24);
+
+        if (diffDays > 65) {
+
+          console.log(
+            `🗑 Removing ${zone.name} - Expired ${Math.floor(diffDays)} days ago`
+          );
+
+          await Order.deleteOne({
+            domainName: zone.name,
+          });
+
+          return null;
+        }
         // =====================================
         // FIND EXISTING DOMAIN
         // =====================================
@@ -290,16 +326,31 @@ export async function syncCloudflareDomains() {
     // SAVE
     // =====================================
 
-    if (bulkOps.length > 0) {
+    const validBulkOps = bulkOps.filter(
+  (op): op is { updateOne: any } => op !== null
+);
 
-      await Order.bulkWrite(bulkOps);
+if (validBulkOps.length > 0) {
 
-    }
+  await Order.bulkWrite(validBulkOps);
+
+}
 
     page++;
 
   } while (page <= totalPages);
+  const registrarDomains = Object.keys(registrarDomainMap);
 
+const deleted = await Order.deleteMany({
+  domainSource: "Cloudflare",
+  domainName: {
+    $nin: registrarDomains,
+  },
+});
+
+console.log(
+  `🗑 Cleanup completed. Removed ${deleted.deletedCount} orphan domains`
+);
   console.log(
     "✅ Cloudflare Sync Completed"
   );
