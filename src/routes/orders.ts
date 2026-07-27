@@ -1,18 +1,13 @@
 import express, { Request, Response } from "express";
 import { IOrder,Order } from "../models/Order";
-import Customer, { ICustomer } from "../models/Customer";
 import mongoose from "mongoose";
 import { authMiddleware,AuthRequest  } from "../middleware/auth"; 
 import User from "../models/User";
-import UserType, { IUserType } from "../models/UserType"
+import  { IUserType } from "../models/UserType"
 import Client from "../models/Client";
-import { IState } from "../models/State";
-import { ICountry  } from "../models/Country";
-import  {OrderPlan, IOrderPlan } from "../models/OrderPlan";
-import { Storage } from "../models/Storage";
+import  {OrderPlan } from "../models/OrderPlan";
 import { PlanEmail } from "../models/PlanEmail";
 import { TypeEmail } from "../models/TypeEmail";
-import asyncHandler from "express-async-handler";
 import State from "../models/State";
 import Country from "../models/Country";
 const router = express.Router();
@@ -27,8 +22,18 @@ interface IOrderPlanResponse {
   noOfUsers: number;
 }
 
-router.get("/orders-by-month", async (_req: Request, res: Response) => {
+router.get(
+  "/orders-by-month",
+  authMiddleware,
+  async (_req: AuthRequest, res: Response) => {
   try {
+    if (_req.user?.role?.toLowerCase() !== "admin") {
+      res.status(403).json({
+        success:false,
+        error:"Admin access required"
+      });
+      return;
+    }
     const now = new Date();
 
     // Current month
@@ -79,8 +84,18 @@ router.get("/orders-by-month", async (_req: Request, res: Response) => {
 });
 
 
-router.get('/existing_customers', async (_req: Request, res: Response): Promise<void> => {
+router.get(
+  "/existing_customers",
+  authMiddleware,
+  async (_req: AuthRequest, res: Response): Promise<void> => {
   try {
+    if (_req.user?.role?.toLowerCase() !== "admin") {
+    res.status(403).json({
+      success:false,
+      error:"Admin access required"
+    });
+    return;
+  }
     // Only select email, phone, and name
     const clients = await Client.find({}, 'c_name c_email c_phone c_company').sort({ createdAt: -1 });
     res.status(200).json({ success: true, data: clients });
@@ -90,155 +105,6 @@ router.get('/existing_customers', async (_req: Request, res: Response): Promise<
   }
 });
 
-// GET all orders
-// router.get("/", async (_req: Request, res: Response): Promise<void> => {
-//   try {
-//     const orders = await Order.find().populate("customer");
-//     res.status(200).json({ success: true, data: orders });
-//   } catch (err) {
-//     res.status(500).json({ success: false, error: (err as Error).message });
-//   }
-// });
-// router.get("/dnsorders", authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
-//   try {
-//     const loggedInUser = req.user;
-
-//     if (!loggedInUser || !loggedInUser._id) {
-//       console.log("Unauthorized access attempt.");
-//       res.status(401).json({ success: false, error: "Unauthorized" });
-//       return;
-//     }
-
-//     const { filter } = req.query;
-
-//     const updateOrderStatuses = async (orders: any[]) => {
-//       const today = new Date();
-
-//       const updates = orders.map(async (order) => {
-//         let newStatus = "";
-
-//         if (!order.expiryDate || isNaN(new Date(order.expiryDate).getTime())) {
-//           newStatus = "";
-//         } else {
-//           const expiryDate = new Date(order.expiryDate);
-//           newStatus = expiryDate < today ? "EXPIRED" : "ACTIVE";
-//         }
-
-//         if (order.status !== newStatus) {
-//           order.status = newStatus;
-//           await order.save();
-//         }
-
-//         return order;
-//       });
-
-//       return Promise.all(updates);
-//     };
-
-//     const user = await User.findById(loggedInUser._id).populate("userType").exec();
-
-//     if (user && user.userType && typeof user.userType === "object") {
-//       const userRole = (user.userType as IUserType).name.toLowerCase();
-//       console.log("Resolved user role (User model):", userRole);
-
-//       // ---------------- ADMIN ----------------
-//     if (userRole === "admin") {
-//   const query: any = {};
-
-//   if (filter === "Cloudflare") {
-//     query.domainSource = "Cloudflare";
-//     query.$or = [
-//       { expiryDate: null },        // expiryDate is null
-//       { expiryDate: { $exists: false } }, // expiryDate field does not exist
-//     ];
-//   }
-
- 
-
-//         let orders = await Order.find(query).populate("client", "c_name c_email c_company").exec();
-//         orders = await updateOrderStatuses(orders);
-
-//         res.status(200).json({ success: true, data: orders });
-//         return;
-//       }
-
-//       // ---------------- CUSTOMER ----------------
-//       if (userRole === "customer") {
-//         const customer = await Client.findOne({ userType: user._id }).exec();
-
-//         if (!customer) {
-//           res.status(404).json({ success: false, error: "Customer profile not found" });
-//           return;
-//         }
-
-//         const query: any = { customer: customer._id };
-
-//         if (filter === "cloudflare") {
-//           query.domainSource = "cloudflare";
-//           query.$or = [
-//             { expiryDate: null },
-//             { expiryDate: "" },
-//             { expiryDate: { $exists: false } },
-//           ];
-//         }
-
-//         let orders = await Order.find(query).populate("customer", "name email").exec();
-//         orders = await updateOrderStatuses(orders);
-
-//         res.status(200).json({
-//           success: true,
-//           customer: {
-//             _id: customer._id,
-//             name: customer.c_name,
-//             email: customer.c_email,
-//           },
-//           data: orders,
-//         });
-//         return;
-//       }
-//     }
-
-//     // ---------------- CLIENT ----------------
-//     const client = await Client.findById(loggedInUser._id).populate("userType").exec();
-
-//     if (client && client.userType && typeof client.userType === "object") {
-//       const userRole = (client.userType as IUserType).name.toLowerCase();
-//       console.log("Resolved user role (Customer model):", userRole);
-
-//       if (userRole === "customer") {
-//         const query: any = { client: client._id };
-
-//         if (filter === "Cloudflare") {
-//           query.domainSource = "Cloudflare";
-//           query.$or = [
-//             { expiryDate: null },
-//             { expiryDate: "" },
-//             { expiryDate: { $exists: false } },
-//           ];
-//         }
-
-//         let orders = await Order.find(query).populate("client", "name email").exec();
-//         orders = await updateOrderStatuses(orders);
-
-//         res.status(200).json({
-//           success: true,
-//           client: {
-//             _id: client._id,
-//             name: client.c_name,
-//             email: client.c_email,
-//           },
-//           data: orders,
-//         });
-//         return;
-//       }
-//     }
-
-//     res.status(403).json({ success: false, error: "Access denied: Invalid role or user not found" });
-//   } catch (err) {
-//     console.error("❌ Error fetching orders:", err);
-//     res.status(500).json({ success: false, error: "Server error" });
-//   }
-// });
 
 router.get(
   "/dnsorders",
@@ -550,7 +416,8 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
 
 router.get(
   "/:id",
-  async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+  authMiddleware,
+  async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
 
@@ -576,6 +443,16 @@ router.get(
         .exec();
       if (!order) {
         res.status(404).json({ success: false, message: "Order not found" });
+        return;
+      }
+      if (
+        req.user?.role?.toLowerCase() !== "admin" &&
+        order.client?._id?.toString() !== req.user?._id
+      ) {
+        res.status(403).json({
+          success:false,
+          error:"Access denied"
+        });
         return;
       }
 
@@ -1123,115 +1000,316 @@ router.get("/provider/:name", async (req, res) => {
 });
 
 
-
 router.get("/customer_order_details/:customerId", async (req, res) => {
   try {
+
     const { customerId } = req.params;
 
+
     if (!mongoose.Types.ObjectId.isValid(customerId)) {
-      return res
-        .status(400)
-        .json({ status: "ERROR", message: "Invalid customer ID" });
+      return res.status(400).json({
+        status: "ERROR",
+        message: "Invalid customer ID"
+      });
     }
+
+
 
     // ================= CLIENT =================
-    const client = await Client.findById(customerId).lean();
+
+    const client = await Client.findById(customerId)
+      .select(`
+        c_name
+        c_email
+        c_mobilePhone
+        c_countryCode
+        c_company
+        c_address
+        c_city
+        c_zipCode
+        c_state
+        c_country
+      `)
+      .lean();
+
+
+
     if (!client) {
-      return res
-        .status(404)
-        .json({ status: "ERROR", message: "Customer not found" });
+      return res.status(404).json({
+        status:"ERROR",
+        message:"Customer not found"
+      });
     }
 
+
+
+
     // ================= HELPERS =================
-    const getName = async <T extends { name: string }>(
-      value: mongoose.Types.ObjectId | T | string | undefined,
-      model: mongoose.Model<T>
-    ): Promise<string | undefined> => {
-      if (!value) return undefined;
-      if (typeof value === "string") return value;
-      if (mongoose.Types.ObjectId.isValid(value as any)) {
+
+    const getName = async (
+      value:any,
+      model:any
+    ) => {
+
+      if(!value) return undefined;
+
+
+      if(typeof value === "string"){
         const doc = await model.findById(value);
         return doc?.name;
       }
-      return (value as T).name;
+
+
+      return value.name;
+
     };
 
-    const stateName = await getName(client.c_state, State);
-    const countryName = await getName(client.c_country, Country);
 
-    const clientWithNames = {
-      ...client,
-      c_state_name: stateName,
-      c_country_name: countryName,
-      c_countryCode: client.c_countryCode || "",
-    };
 
-    // ================= ORDERS =================
-    let orders = await Order.find({ client: customerId })
-      .sort({ createdAt: -1 })
-      .lean();
-
-    // ================= ATTACH EMAIL PLANS =================
-    const attachEmailPlans = async (orders: any[]) => {
-      return Promise.all(
-        orders.map(async (order) => {
-          const emailPlans = await OrderPlan.find({
-            orderId: order._id,
-            type: "email",
-          })
-            .populate("planId")
-            .populate("emailTypeId")
-            .lean();
-
-          return {
-            ...order,
-            emailPlans,
-          };
-        })
-      );
-    };
-
-    orders = await attachEmailPlans(orders);
-
-    // ================= UPDATE STATUS =================
-    const today = new Date();
-
-    orders = await Promise.all(
-      orders.map(async (order) => {
-        let newStatus = order.status || "";
-
-        if (order.expiryDate) {
-          newStatus =
-            new Date(order.expiryDate) < today ? "EXPIRED" : "ACTIVE";
-        }
-
-        if (order.status !== newStatus) {
-          await Order.updateOne(
-            { _id: order._id },
-            { status: newStatus }
-          );
-          order.status = newStatus;
-        }
-
-        return order;
-      })
+    const stateName = await getName(
+      client.c_state,
+      State
     );
 
-    // ================= RESPONSE =================
-    res.json({
-      status: "SUCCESS",
-      client: clientWithNames,
-      orders,
-    });
-  } catch (err) {
-    console.error("❌ Customer Order Details Error:", err);
-    res.status(500).json({
-      status: "ERROR",
-      message: "Server error",
-    });
-  }
-});
 
+    const countryName = await getName(
+      client.c_country,
+      Country
+    );
+
+
+
+
+    const clientData = {
+
+      ...client,
+
+      c_state_name: stateName,
+
+      c_country_name: countryName
+
+    };
+
+
+
+
+
+
+
+    // ================= ORDERS =================
+
+
+    let orders = await Order.find({
+      client: customerId
+    })
+    .select(`
+      domainName
+      domainSource
+
+      expiryDate
+      status
+
+      google_email
+      microsoft_email
+
+      hosting
+      website_flag
+
+      msoffice_services_flag
+      storage_services_flag
+
+      email_expiryDate
+
+      createdAt
+    `)
+    .sort({
+      createdAt:-1
+    })
+    .lean();
+
+
+
+
+
+
+    // ================= EMAIL EXPIRY =================
+
+
+    orders = await Promise.all(
+
+      orders.map(async(order:any)=>{
+
+
+        const emailPlans = await OrderPlan.find({
+
+          orderId:order._id,
+
+          type:"email"
+
+        })
+        .select("expiryDate")
+        .lean();
+
+
+
+        const emailExpiryDates = emailPlans
+
+          .map(
+            (item:any)=>item.expiryDate
+          )
+
+          .filter(Boolean);
+
+
+
+
+
+        return {
+
+
+          ...order,
+
+
+          // Domain expiry
+
+          domainExpiryDate:
+            order.expiryDate || null,
+
+
+
+          // Email expiry
+
+          emailExpiryDate:
+
+            emailExpiryDates.length
+
+            ? emailExpiryDates
+
+            :
+
+            order.email_expiryDate
+
+            ? [order.email_expiryDate]
+
+            :
+
+            []
+
+        };
+
+
+      })
+
+    );
+
+
+
+
+
+
+
+
+    // ================= STATUS UPDATE =================
+
+
+    const today = new Date();
+
+
+    orders = await Promise.all(
+
+      orders.map(async(order:any)=>{
+
+
+        let newStatus = order.status || "";
+
+
+
+        if(order.expiryDate){
+
+          newStatus =
+            new Date(order.expiryDate) < today
+            ?
+            "EXPIRED"
+            :
+            "ACTIVE";
+
+        }
+
+
+
+
+        if(order.status !== newStatus){
+
+
+          await Order.updateOne(
+
+            {
+              _id:order._id
+            },
+
+            {
+              status:newStatus
+            }
+
+          );
+
+
+          order.status = newStatus;
+
+        }
+
+
+
+        return order;
+
+
+      })
+
+    );
+
+
+
+
+
+
+
+    // ================= RESPONSE =================
+
+
+    return res.json({
+
+      status:"SUCCESS",
+
+      client:clientData,
+
+      orders
+
+
+    });
+
+
+
+  } catch(error){
+
+
+    console.error(
+      "❌ Customer Order Details Error:",
+      error
+    );
+
+
+    return res.status(500).json({
+
+      status:"ERROR",
+
+      message:"Server error"
+
+    });
+
+
+  }
+
+});
 router.get("/orderplans/:orderid", async (req: Request, res: Response): Promise<void> => {
   try {
     const orderplans = await OrderPlan.find({ orderId: req.params.orderid });
