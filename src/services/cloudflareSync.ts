@@ -627,54 +627,13 @@ export async function syncCloudflareDomains() {
 // =====================================
 
 
-const validCloudflareDomains = new Set<string>();
-
-
-// Registrar domains add
-Object.keys(registrarDomainMap)
-.forEach((domain)=>{
-
-  validCloudflareDomains.add(domain);
-
-});
-
-
-// Zone domains add
-activeZoneNames.forEach((domain)=>{
-
-  validCloudflareDomains.add(domain);
-
-});
+const validCloudflareDomains =
+  activeZoneNames;
 
 
 
-const orphanRemoved =
-  await Order.deleteMany({
-
-    domainSource:
-      "Cloudflare",
 
 
-    cloudflareRegistered:
-      true,
-
-
-    domainName:{
-
-      $nin:
-        Array.from(
-          validCloudflareDomains
-        )
-
-    }
-
-  });
-
-
-
-console.log(
-  `🗑 Removed missing Cloudflare domains: ${orphanRemoved.deletedCount}`
-);
 
 
 
@@ -691,12 +650,12 @@ const expiredRemoved =
       "Cloudflare",
 
 
-    email_flag:
-      false,
+    // email_flag:
+    //   false,
 
 
-    hosting:
-      false,
+    // hosting:
+    //   false,
 
 
     expiryDate:{
