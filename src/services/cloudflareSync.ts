@@ -7,7 +7,6 @@ import Customer from "../models/Customer";
 dotenv.config();
 
 export async function syncCloudflareDomains() {
-  
 
   const CLOUDFLARE_TOKEN =
     process.env.CLOUDFLARE_TOKEN?.trim();
@@ -21,337 +20,423 @@ export async function syncCloudflareDomains() {
   const CLOUDFLARE_EMAIL_ID =
     process.env.CLOUDFLARE_EMAIL?.trim();
 
+
   if (!CLOUDFLARE_TOKEN || !CLOUDFLARE_ACCOUNT_ID) {
     throw new Error("Missing Cloudflare credentials");
   }
 
+
   console.log("☁️ Cloudflare Sync Started");
+
 
   // =====================================
   // FETCH REGISTRAR DOMAINS
   // =====================================
 
-  let registrarPage = 0;
+  let registrarPage = 1;
 
   const registrarPerPage = 50;
 
   const registrarDomainMap: Record<string, any> = {};
 
+  let registrarTotal = 0;
+
   let registrarFetched = 0;
 
-  let registrarTotal = 0;
 
   do {
 
     const registrarResponse = await axios.get(
+
       `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/registrar/domains`,
+
       {
-        headers: {
+        headers:{
           "X-Auth-Email": CLOUDFLARE_EMAIL_ID,
           "X-Auth-Key": CLOUDFLARE_GLOBAL_KEY,
-          "Content-Type": "application/json",
+          "Content-Type":"application/json"
         },
-        params: {
+
+        params:{
           page: registrarPage,
-          per_page: registrarPerPage,
-        },
+          per_page: registrarPerPage
+        }
       }
     );
 
-    const { result, result_info } =
-      registrarResponse.data;
+
+    const {
+      result,
+      result_info
+    } = registrarResponse.data;
+
 
     registrarTotal =
-      result_info.total_count || registrarTotal;
+      result_info.total_count || 0;
+
 
     registrarFetched += result.length;
 
-    result.forEach((domain: any) => {
+
+    result.forEach((domain:any)=>{
+
       registrarDomainMap[domain.name] = domain;
+
     });
+
 
     registrarPage++;
 
-  } while (registrarFetched < registrarTotal);
+
+  }while(registrarFetched < registrarTotal);
+
+
 
   console.log(
-    `✅ Registrar Domains: ${
-      Object.keys(registrarDomainMap).length
-    }`
+    `✅ Registrar Domains: ${Object.keys(registrarDomainMap).length}`
   );
+
+
 
   // =====================================
   // DEFAULT CUSTOMER
   // =====================================
 
+
   const defaultCustomer =
     await Customer.findOneAndUpdate(
+
       {
-        email: "cloudflare@signroots.com",
+        email:"cloudflare@signroots.com"
       },
+
       {
-        name: "Cloudflare Client",
-        phone: "0000000000",
+        name:"Cloudflare Client",
+        phone:"0000000000"
       },
+
       {
-        upsert: true,
-        new: true,
+        upsert:true,
+        new:true
       }
+
     );
 
+
+
   // =====================================
-  // FETCH ZONES
+  // FETCH CLOUDFLARE ZONES
   // =====================================
+
 
   let page = 1;
 
   let totalPages = 1;
 
-  do {
+
+
+  do{
+
 
     const response = await axios.get(
+
       "https://api.cloudflare.com/client/v4/zones",
+
       {
-        headers: {
-          Authorization: `Bearer ${CLOUDFLARE_TOKEN}`,
-          "Content-Type": "application/json",
+        headers:{
+          Authorization:`Bearer ${CLOUDFLARE_TOKEN}`,
+          "Content-Type":"application/json"
         },
-        params: {
+
+        params:{
           page,
-          per_page: 50,
-        },
+          per_page:50
+        }
       }
+
     );
 
-    const { result, result_info } =
-      response.data;
+
+
+    const {
+      result,
+      result_info
+    } = response.data;
+
+
 
     totalPages =
       result_info.total_pages || 1;
+
+
 
     console.log(
       `🌐 Zones Page ${page}/${totalPages}`
     );
 
-    // =====================================
-    // BULK OPS
-    // =====================================
 
-    const bulkOps = await Promise.all(
 
-      result.map(async (zone: any) => {
+    const bulkOps:any[] = [];
 
-        const registrarInfo = registrarDomainMap[zone.name];
 
-        // =====================================
-        // DOMAIN NOT FOUND IN REGISTRAR
-        // =====================================
 
-        if (!registrarInfo) {
+    for(const zone of result){
 
-          console.log(
-            `🗑 Removing ${zone.name} - Not found in registrar`
-          );
 
-          await Order.deleteOne({
-            domainName: zone.name,
-          });
+      const registrarInfo =
+        registrarDomainMap[zone.name];
 
-          return null;
-        }
 
-        const expiryDate = new Date(registrarInfo.expires_at);
 
-        // =====================================
-        // REMOVE IF EXPIRED > 65 DAYS
-        // =====================================
+      const existingOrder =
+        await Order.findOne({
+          domainName:zone.name
+        });
 
-        const today = new Date();
+
+
+      // =====================================
+      // CHECK EXPIRY DATE
+      // =====================================
+
+
+      const expiryDate =
+        registrarInfo?.expires_at
+          ? new Date(registrarInfo.expires_at)
+          : existingOrder?.expiryDate
+          ? new Date(existingOrder.expiryDate)
+          : null;
+
+
+
+      if(!registrarInfo){
+
+        console.log(
+          `🗑 ${zone.name} removed - Not in registrar`
+        );
+
+
+        await Order.deleteOne({
+          domainName:zone.name
+        });
+
+
+        continue;
+
+      }
+
+
+
+      if(expiryDate){
+
 
         const diffDays =
-          (today.getTime() - expiryDate.getTime()) /
-          (1000 * 60 * 60 * 24);
+          (Date.now() - expiryDate.getTime())
+          /
+          (1000*60*60*24);
 
-        if (diffDays > 65) {
+
+
+        if(diffDays > 65){
+
 
           console.log(
-            `🗑 Removing ${zone.name} - Expired ${Math.floor(diffDays)} days ago`
+            `🗑 ${zone.name} removed - expired ${Math.floor(diffDays)} days`
           );
+
 
           await Order.deleteOne({
-            domainName: zone.name,
+            domainName:zone.name
           });
 
-          return null;
+
+          continue;
+
         }
-        // =====================================
-        // FIND EXISTING DOMAIN
-        // =====================================
 
-        const existingOrder =
-          await Order.findOne({
-            domainName: zone.name,
-          });
+      }
 
-        // =====================================
-        // PRESERVE EMAIL DATA
-        // =====================================
 
-        const provider =
-          existingOrder?.provider || "";
 
-        const providerLower =
-          provider.toLowerCase();
 
-        const hasGoogle =
-          providerLower.includes(
-            "google workspace"
-          );
+      const provider =
+        existingOrder?.provider || "";
 
-        const hasMicrosoft =
-          providerLower.includes(
-            "microsoft 365"
-          );
 
-        return {
 
-          updateOne: {
+      const providerLower =
+        provider.toLowerCase();
 
-            filter: {
-              domainName: zone.name,
-            },
 
-            update: {
 
-              $set: {
+      bulkOps.push({
 
-                // =====================================
-                // DOMAIN DATA
-                // =====================================
+        updateOne:{
 
-                domainName: zone.name,
+          filter:{
+            domainName:zone.name
+          },
 
-                status: zone.status,
 
-                nameServers:
-                  zone.name_servers,
+          update:{
 
-                registrationDate:
-                  new Date(zone.created_on),
+            $set:{
 
-                originalRegistrar:
-                  zone.original_registrar,
+              domainName:zone.name,
 
-                is_dns:
-                  zone.original_dnshost,
+              status:zone.status,
 
-                expiryDate,
 
-                managedBy: "Signroots",
+              nameServers:
+                zone.name_servers,
 
-                lockStatus:
-                  zone.paused
-                    ? "Locked"
-                    : "Unlocked",
 
-                customer:
-                  defaultCustomer._id,
+              registrationDate:
+                new Date(zone.created_on),
 
-                domainSource:
-                  "Cloudflare",
 
-                dnsDetails: [],
+              originalRegistrar:
+                zone.original_registrar,
 
-                cloudflareRegistered:
-                  !!registrarInfo,
 
-                // =====================================
-                // PRESERVE EMAIL DATA
-                // =====================================
+              expiryDate,
 
-                provider,
 
-                email_services:
-                  existingOrder?.email_services || [],
+              managedBy:"Signroots",
 
-                email_flag:
-                  existingOrder?.email_flag || false,
 
-                google_email:
-                existingOrder?.google_email === true
-                    ? true
-                    : hasGoogle,
+              customer:
+                defaultCustomer._id,
 
-                microsoft_email:
-                existingOrder?.microsoft_email === true
-                    ? true
-                    : hasMicrosoft,
 
-                email_customer:
-                  existingOrder?.email_customer || "",
+              domainSource:
+                "Cloudflare",
 
-                email_expiryDate:
-                  existingOrder?.email_expiryDate || null,
 
-                email_status:
-                  existingOrder?.email_status || "",
+              cloudflareRegistered:true,
 
-                username:
-                  existingOrder?.username || "",
 
-                password:
-                  existingOrder?.password || "",
 
-                subscription:
-                  existingOrder?.subscription || "",
+              provider,
 
-                users:
-                  existingOrder?.users || 0,
 
-              },
+              google_email:
+                existingOrder?.google_email ||
+                providerLower.includes(
+                  "google workspace"
+                ),
 
-            },
 
-            upsert: true,
+              microsoft_email:
+                existingOrder?.microsoft_email ||
+                providerLower.includes(
+                  "microsoft 365"
+                ),
+
+
+              email_flag:
+                existingOrder?.email_flag || false,
+
+
+              email_customer:
+                existingOrder?.email_customer || "",
+
+
+              users:
+                existingOrder?.users || 0,
+
+
+            }
 
           },
 
-        };
 
-      })
+          upsert:true
 
-    );
+        }
 
-    // =====================================
-    // SAVE
-    // =====================================
+      });
 
-    const validBulkOps = bulkOps.filter(
-  (op): op is { updateOne: any } => op !== null
-);
 
-if (validBulkOps.length > 0) {
+    }
 
-  await Order.bulkWrite(validBulkOps);
 
-}
+
+    if(bulkOps.length){
+
+      await Order.bulkWrite(bulkOps);
+
+    }
+
+
 
     page++;
 
-  } while (page <= totalPages);
-  const registrarDomains = Object.keys(registrarDomainMap);
 
-const deleted = await Order.deleteMany({
-  domainSource: "Cloudflare",
-  domainName: {
-    $nin: registrarDomains,
-  },
-});
+  }while(page <= totalPages);
 
-console.log(
-  `🗑 Cleanup completed. Removed ${deleted.deletedCount} orphan domains`
-);
+
+
+
+  // =====================================
+  // FINAL CLEANUP
+  // =====================================
+
+
+  const registrarDomains =
+    Object.keys(registrarDomainMap);
+
+
+
+  const orphanCleanup =
+    await Order.deleteMany({
+
+      domainSource:"Cloudflare",
+
+      domainName:{
+        $nin:registrarDomains
+      }
+
+    });
+
+
+
+  console.log(
+    `🗑 Orphan cleanup removed ${orphanCleanup.deletedCount}`
+  );
+
+
+
+  // =====================================
+  // EXPIRED DB CLEANUP
+  // =====================================
+
+
+  const expiredCleanup =
+    await Order.deleteMany({
+
+      domainSource:"Cloudflare",
+
+      expiryDate:{
+        $lt:
+          new Date(
+            Date.now() -
+            (65*24*60*60*1000)
+          )
+      }
+
+    });
+
+
+
+  console.log(
+    `🗑 Expired cleanup removed ${expiredCleanup.deletedCount}`
+  );
+
+
+
   console.log(
     "✅ Cloudflare Sync Completed"
   );
+
 }
