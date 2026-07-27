@@ -62,7 +62,17 @@ export async function syncCloudflareDomains() {
           per_page: registrarPerPage
         }
       }
+
     );
+
+
+    if(!registrarResponse.data.success){
+
+      throw new Error(
+        "Cloudflare Registrar API failed"
+      );
+
+    }
 
 
     const {
@@ -88,7 +98,7 @@ export async function syncCloudflareDomains() {
     registrarPage++;
 
 
-  }while(registrarFetched < registrarTotal);
+  } while(registrarFetched < registrarTotal);
 
 
 
@@ -135,7 +145,7 @@ export async function syncCloudflareDomains() {
 
 
 
-  do{
+  do {
 
 
     const response = await axios.get(
@@ -196,7 +206,7 @@ export async function syncCloudflareDomains() {
 
 
       // =====================================
-      // CHECK EXPIRY DATE
+      // GET EXPIRY DATE
       // =====================================
 
 
@@ -209,22 +219,64 @@ export async function syncCloudflareDomains() {
 
 
 
+      // =====================================
+      // NOT FOUND IN REGISTRAR
+      // CHECK OLD EXPIRY ONLY
+      // =====================================
+
+
       if(!registrarInfo){
 
+
         console.log(
-          `🗑 ${zone.name} removed - Not in registrar`
+          `⚠️ ${zone.name} not found in registrar`
         );
 
 
-        await Order.deleteOne({
-          domainName:zone.name
-        });
+
+        if(existingOrder?.expiryDate){
+
+
+          const oldExpiry =
+            new Date(existingOrder.expiryDate);
+
+
+
+          const diffDays =
+            (Date.now() - oldExpiry.getTime())
+            /
+            (1000*60*60*24);
+
+
+
+          if(diffDays > 65){
+
+
+            console.log(
+              `🗑 Removing ${zone.name} - expired ${Math.floor(diffDays)} days`
+            );
+
+
+            await Order.deleteOne({
+              domainName:zone.name
+            });
+
+
+          }
+
+        }
 
 
         continue;
 
       }
 
+
+
+
+      // =====================================
+      // EXPIRED MORE THAN 65 DAYS
+      // =====================================
 
 
       if(expiryDate){
@@ -241,7 +293,7 @@ export async function syncCloudflareDomains() {
 
 
           console.log(
-            `🗑 ${zone.name} removed - expired ${Math.floor(diffDays)} days`
+            `🗑 Removing ${zone.name} - expired ${Math.floor(diffDays)} days`
           );
 
 
@@ -259,9 +311,13 @@ export async function syncCloudflareDomains() {
 
 
 
+      // =====================================
+      // PRESERVE EMAIL DATA
+      // =====================================
+
+
       const provider =
         existingOrder?.provider || "";
-
 
 
       const providerLower =
@@ -273,6 +329,7 @@ export async function syncCloudflareDomains() {
 
         updateOne:{
 
+
           filter:{
             domainName:zone.name
           },
@@ -280,9 +337,12 @@ export async function syncCloudflareDomains() {
 
           update:{
 
+
             $set:{
 
+
               domainName:zone.name,
+
 
               status:zone.status,
 
@@ -295,22 +355,28 @@ export async function syncCloudflareDomains() {
                 new Date(zone.created_on),
 
 
+
               originalRegistrar:
                 zone.original_registrar,
+
 
 
               expiryDate,
 
 
+
               managedBy:"Signroots",
+
 
 
               customer:
                 defaultCustomer._id,
 
 
+
               domainSource:
                 "Cloudflare",
+
 
 
               cloudflareRegistered:true,
@@ -320,11 +386,13 @@ export async function syncCloudflareDomains() {
               provider,
 
 
+
               google_email:
                 existingOrder?.google_email ||
                 providerLower.includes(
                   "google workspace"
                 ),
+
 
 
               microsoft_email:
@@ -334,12 +402,15 @@ export async function syncCloudflareDomains() {
                 ),
 
 
+
               email_flag:
                 existingOrder?.email_flag || false,
 
 
+
               email_customer:
                 existingOrder?.email_customer || "",
+
 
 
               users:
@@ -373,42 +444,13 @@ export async function syncCloudflareDomains() {
     page++;
 
 
-  }while(page <= totalPages);
+  } while(page <= totalPages);
 
 
 
 
   // =====================================
-  // FINAL CLEANUP
-  // =====================================
-
-
-  const registrarDomains =
-    Object.keys(registrarDomainMap);
-
-
-
-  const orphanCleanup =
-    await Order.deleteMany({
-
-      domainSource:"Cloudflare",
-
-      domainName:{
-        $nin:registrarDomains
-      }
-
-    });
-
-
-
-  console.log(
-    `🗑 Orphan cleanup removed ${orphanCleanup.deletedCount}`
-  );
-
-
-
-  // =====================================
-  // EXPIRED DB CLEANUP
+  // FINAL EXPIRED CLEANUP
   // =====================================
 
 
@@ -416,6 +458,13 @@ export async function syncCloudflareDomains() {
     await Order.deleteMany({
 
       domainSource:"Cloudflare",
+
+
+      email_flag:false,
+
+
+      hosting:false,
+
 
       expiryDate:{
         $lt:
