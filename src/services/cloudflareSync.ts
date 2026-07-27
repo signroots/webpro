@@ -643,23 +643,12 @@ const validCloudflareDomains =
 // =====================================
 
 
-const expiredRemoved =
-  await Order.deleteMany({
-
-    domainSource:
-      "Cloudflare",
-
-
-    // email_flag:
-    //   false,
-
-
-    // hosting:
-    //   false,
-
+const expiredUpdated =
+await Order.updateMany(
+  {
+    domainSource:"Cloudflare",
 
     expiryDate:{
-
       $lt:
         new Date(
           Date.now()
@@ -672,16 +661,22 @@ const expiredRemoved =
             1000
           )
         )
-
     }
-
-  });
-
+  },
+  {
+    $set:{
+      is_active:false,
+      status:"EXPIRED"
+    }
+  }
+);
 
 
 console.log(
-  `🗑 Expired cleanup removed: ${expiredRemoved.deletedCount}`
+  `⚠️ Expired domains deactivated: ${expiredUpdated.modifiedCount}`
 );
+
+
 
 console.log(
  "DEBUG AUFWAY IN ACTIVE ZONES:",
