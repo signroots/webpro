@@ -240,11 +240,11 @@ const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
   {/* Company */}
   <td className="border p-2 text-left">
     <Link
-      to={`/customer/${c._id}/orders`}
-      className="text-blue-600 hover:underline"
-    >
-      {c.c_company || "-"}
-    </Link>
+   to={`/admin/orders/customer/${c._id}`}
+  className="text-blue-600 hover:underline"
+>
+  {c.c_company || "-"}
+</Link>
   </td>
 
   {/* Name */}

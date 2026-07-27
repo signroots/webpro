@@ -1,9 +1,0 @@
-/* Webfont: Tribes-Italic */@font-face {
-    font-family: 'Tribes';
-    src: url('Voodo-Italic.woff2') format('woff2'), /* Modern Browsers */
-         url('Voodo-Italic.ttf') format('truetype'); /* Safari, Android, iOS */
-             font-style: italic;
-    font-weight: normal;
-    text-rendering: optimizeLegibility;
-}
-
