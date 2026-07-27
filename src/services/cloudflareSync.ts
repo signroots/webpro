@@ -476,7 +476,45 @@ export async function syncCloudflareDomains() {
 
     });
 
+const cloudflareZonesResponse = await axios.get(
+  "https://api.cloudflare.com/client/v4/zones",
+  {
+    headers:{
+      Authorization:`Bearer ${CLOUDFLARE_TOKEN}`,
+      "Content-Type":"application/json"
+    },
+    params:{
+      per_page:100
+    }
+  }
+);
 
+
+const activeZoneNames =
+ cloudflareZonesResponse.data.result.map(
+   (zone:any)=>zone.name
+ );
+
+
+const removed =
+ await Order.deleteMany({
+
+   domainSource:"Cloudflare",
+
+   domainName:{
+     $nin:activeZoneNames
+   }
+
+ });
+
+
+console.log(
+ `🗑 Removed missing Cloudflare zones: ${removed.deletedCount}`
+);
+
+console.log(
+  `🗑 Removed domains not in Cloudflare zone: ${removed.deletedCount}`
+);
 
   console.log(
     `🗑 Expired cleanup removed ${expiredCleanup.deletedCount}`
