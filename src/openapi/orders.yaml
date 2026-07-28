@@ -1,6 +1,8 @@
 paths:
   /order:
     get:
+      security:
+        - bearerAuth: []
       tags:
         - Order
 
@@ -364,6 +366,8 @@ paths:
                     type: string
                     example: "Internal server error"
     post:
+      security:
+          - bearerAuth: []
       tags:
         - Order
 
@@ -768,68 +772,121 @@ paths:
     put:
       tags:
         - Order
+
       summary: Update an existing Order by ID
+
       parameters:
         - name: id
           in: path
           required: true
-          description: Order Mongo ID
+          description: Order MongoDB ID
           schema:
             type: string
             example: "6a59e227c76bf36534a02d2c"
+
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+
+              required:
+                - domainName
+                - managedBy
+
               properties:
+
                 is_customer:
                   type: boolean
                   example: true
+
                 client:
                   type: string
                   example: "6a59e227c76bf36534a02d2b"
+
                 domainName:
                   type: string
-                  example: "test.com"
+                  example: "ablegroupqatar.com"
+
                 managedBy:
                   type: string
-                  example: "Signroots"
-                hoststorageId:
+                  enum:
+                    - Signroots
+                    - Customer
+                  example: Signroots
+
+                domainSource:
                   type: string
-                  example: "6a54befb1e9ab96fe142b5c7"
+                  example: "Cloudflare"
+
+                registrationDate:
+                  type: string
+                  format: date
+                  example: "2026-04-19"
+
+                expiryDate:
+                  type: string
+                  format: date
+                  nullable: true
+                  example: ""
+
+                status:
+                  type: string
+                  example: "active"
+
+                # hoststorageId:
+                #   type: string
+                #   nullable: true
+                #   example: null
+
                 plans:
                   type: array
+
                   items:
                     type: object
+
+                    required:
+                      - planId
+                      - emailTypeId
+                      - type
+
                     properties:
+
                       planId:
                         type: string
                         example: "6a54befb1e9ab96fe142b5c5"
-                      planName:
-                        type: string
-                        example: "Business Starter"
+
                       emailTypeId:
                         type: string
                         example: "6a54bef61e9ab96fe142b5bf"
+
                       emailType:
                         type: string
-                        example: "Workspace"
+                        example: "Google Workspace"
+
                       type:
                         type: string
-                        example: "Google Workspace"
+                        enum:
+                          - email
+                          - storage
+                          - msoffice
+                        example: "email"
+
                       noOfUsers:
                         type: integer
-                        example: 2
+                        example: 23
+
                       registrationDate:
                         type: string
                         format: date
-                        example: "2026-07-25"
+                        example: "2020-08-09"
+
                       expiryDate:
                         type: string
                         format: date
-                        example: "2027-07-25"
+                        example: "2027-04-05"
+
       responses:
         "200":
           description: Order updated successfully
@@ -841,11 +898,51 @@ paths:
                   success:
                     type: boolean
                     example: true
+
                   data:
                     type: object
+
         "400":
-          description: Invalid client ID or missing data
+          description: Invalid client ID or missing required data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+
+                  message:
+                    type: string
+                    example: "Invalid client ID"
+
         "404":
           description: Order not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+
+                  message:
+                    type: string
+                    example: "Order not found"
+
         "500":
           description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+
+                  error:
+                    type: string
+                    example: "Internal server error"
