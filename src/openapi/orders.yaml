@@ -770,179 +770,317 @@ paths:
 
   /order/{id}:
     put:
-      tags:
-        - Order
+        security:
+          - bearerAuth: []
+        tags:
+          - Order
 
-      summary: Update an existing Order by ID
+        summary: Update an existing Order by ID
 
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Order MongoDB ID
-          schema:
-            type: string
-            example: "6a59e227c76bf36534a02d2c"
-
-      requestBody:
-        required: true
-        content:
-          application/json:
+        parameters:
+          - name: id
+            in: path
+            required: true
+            description: Order MongoDB ID
             schema:
-              type: object
+              type: string
+              example: "6a59e227c76bf36534a02d2c"
 
-              required:
-                - domainName
-                - managedBy
 
-              properties:
+        requestBody:
+          required: true
 
-                is_customer:
-                  type: boolean
-                  example: true
-
-                client:
-                  type: string
-                  example: "6a59e227c76bf36534a02d2b"
-
-                domainName:
-                  type: string
-                  example: "ablegroupqatar.com"
-
-                managedBy:
-                  type: string
-                  enum:
-                    - Signroots
-                    - Customer
-                  example: Signroots
-
-                domainSource:
-                  type: string
-                  example: "Cloudflare"
-
-                registrationDate:
-                  type: string
-                  format: date
-                  example: "2026-04-19"
-
-                expiryDate:
-                  type: string
-                  format: date
-                  nullable: true
-                  example: ""
-
-                status:
-                  type: string
-                  example: "active"
-
-                # hoststorageId:
-                #   type: string
-                #   nullable: true
-                #   example: null
-
-                plans:
-                  type: array
-
-                  items:
-                    type: object
-
-                    required:
-                      - planId
-                      - emailTypeId
-                      - type
-
-                    properties:
-
-                      planId:
-                        type: string
-                        example: "6a54befb1e9ab96fe142b5c5"
-
-                      emailTypeId:
-                        type: string
-                        example: "6a54bef61e9ab96fe142b5bf"
-
-                      emailType:
-                        type: string
-                        example: "Google Workspace"
-
-                      type:
-                        type: string
-                        enum:
-                          - email
-                          - storage
-                          - msoffice
-                        example: "email"
-
-                      noOfUsers:
-                        type: integer
-                        example: 23
-
-                      registrationDate:
-                        type: string
-                        format: date
-                        example: "2020-08-09"
-
-                      expiryDate:
-                        type: string
-                        format: date
-                        example: "2027-04-05"
-
-      responses:
-        "200":
-          description: Order updated successfully
           content:
             application/json:
+
               schema:
                 type: object
+
+
+                required:
+                  - domainName
+                  - managedBy
+
+
                 properties:
-                  success:
+
+
+                  is_customer:
                     type: boolean
                     example: true
 
-                  data:
+
+                  client:
+                    type: string
+                    example: "6a59e227c76bf36534a02d2b"
+
+
+
+                  newCustomer:
                     type: object
 
-        "400":
-          description: Invalid client ID or missing required data
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: false
+                    properties:
 
-                  message:
+                      c_name:
+                        type: string
+                        example: "John Doe"
+
+                      c_company:
+                        type: string
+                        example: "ABC Company"
+
+                      c_address:
+                        type: string
+                        example: "Kochi"
+
+                      c_city:
+                        type: string
+                        example: "Kochi"
+
+                      c_gst:
+                        type: string
+                        example: "32AAAAA0000A1Z5"
+
+                      c_zipCode:
+                        type: string
+                        example: "682001"
+
+                      c_phone:
+                        type: string
+                        example: "9876543210"
+
+                      c_email:
+                        type: string
+                        example: "john@example.com"
+
+
+
+                  domainName:
                     type: string
-                    example: "Invalid client ID"
+                    example: "ablegroupqatar.com"
 
-        "404":
-          description: Order not found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: false
 
-                  message:
+
+                  managedBy:
                     type: string
-                    example: "Order not found"
+                    enum:
+                      - Signroots
+                      - Customer
 
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: false
+                    example: Signroots
 
-                  error:
+
+
+                  domainSource:
                     type: string
-                    example: "Internal server error"
+                    enum:
+                      - Reseller Club
+                      - Hostinger
+                      - Squarespace
+                      - Sahara
+                      - Cloudflare
+                      - AE Server
+                    example: Cloudflare
+
+
+
+                  registrationDate:
+                    type: string
+                    format: date
+                    example: "2026-04-19"
+
+
+
+                  expiryDate:
+                    type: string
+                    format: date
+                    nullable: true
+                    example: null
+
+
+
+                  status:
+                    type: string
+                    enum:
+                      - active
+                      - expired
+
+                    example: active
+
+
+
+                  plans:
+
+                    type: array
+
+
+                    items:
+
+                      type: object
+
+
+                      required:
+                        - planId
+                        - emailTypeId
+                        - type
+
+
+                      properties:
+
+
+                        planId:
+                          type: string
+                          example: "6a54befb1e9ab96fe142b5c5"
+
+
+
+                        emailTypeId:
+                          type: string
+                          example: "6a54bef61e9ab96fe142b5bf"
+
+
+
+                        emailType:
+                          type: string
+                          example: "Google Workspace"
+
+
+
+                        type:
+                          type: string
+
+                          enum:
+                            - email
+                            - storage
+                            - msoffice
+
+                          example: email
+
+
+
+                        noOfUsers:
+                          type: integer
+                          example: 23
+
+
+
+                        registrationDate:
+                          type: string
+                          format: date
+
+                          example: "2020-08-09"
+
+
+
+                        expiryDate:
+                          type: string
+                          format: date
+
+                          example: "2027-04-05"
+
+
+
+
+        responses:
+
+
+          "200":
+
+            description: Order updated successfully
+
+            content:
+
+              application/json:
+
+                schema:
+
+                  type: object
+
+                  properties:
+
+                    success:
+                      type: boolean
+                      example: true
+
+
+                    data:
+                      type: object
+
+
+
+
+          "400":
+
+            description: Invalid client ID or missing required data
+
+            content:
+
+              application/json:
+
+                schema:
+
+                  type: object
+
+                  properties:
+
+                    success:
+                      type: boolean
+                      example: false
+
+
+                    message:
+                      type: string
+                      example: "Invalid client ID"
+
+
+
+
+          "404":
+
+            description: Order not found
+
+            content:
+
+              application/json:
+
+                schema:
+
+                  type: object
+
+                  properties:
+
+                    success:
+                      type: boolean
+                      example: false
+
+
+                    message:
+                      type: string
+                      example: "Order not found"
+
+
+
+
+          "500":
+
+            description: Internal server error
+
+            content:
+
+              application/json:
+
+                schema:
+
+                  type: object
+
+                  properties:
+
+                    success:
+                      type: boolean
+                      example: false
+
+
+                    error:
+                      type: string
+
+                      example: "Internal server error"
