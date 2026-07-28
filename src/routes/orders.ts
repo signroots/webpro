@@ -344,7 +344,7 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
     ...order,
 
 
-    emailPlans:
+    Plans:
       planMap.get(
         order._id.toString()
       ) || []
