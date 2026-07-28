@@ -76,14 +76,52 @@ export async function syncSubResellerDomains() {
       const registrationDate = d["orders.creationtime"]
         ? new Date(Number(d["orders.creationtime"]) * 1000)
         : null;
+// 🔹 Check expiry more than 65 days
 
+let isActive = true;
+let domainStatus = d["entity.currentstatus"];
+
+
+if (expiryDate) {
+
+  const diffDays =
+    (
+      Date.now() -
+      expiryDate.getTime()
+    )
+    /
+    (
+      1000 *
+      60 *
+      60 *
+      24
+    );
+
+
+  if (diffDays > 65) {
+
+    console.log(
+      `⚠️ Expired more than 65 days: ${domainName}`
+    );
+
+
+    isActive = false;
+
+    domainStatus = "EXPIRED";
+
+  }
+
+}
       // 🔹 Upsert domain
       const order = await Order.findOneAndUpdate(
         { domainName },
         {
           domainName,
           customer: customer._id,
-          status: d["entity.currentstatus"],
+          // status: d["entity.currentstatus"],
+          status: domainStatus,
+
+          is_active: isActive,
           managedBy: "Signroots",
           registrationDate,
           expiryDate,

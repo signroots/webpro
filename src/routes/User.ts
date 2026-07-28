@@ -253,44 +253,44 @@ console.log("Stored hash:", user.password);
   }
 });
 
-router.get("/customer/:id/decrypted", async (req: Request, res: Response): Promise<void> => {
-  try {
-    const client = await Client.findById(req.params.id);
-    if (!client) {
-      res.status(404).json({ error: "Client not found" });
-      return;
-    }
+// router.get("/customer/:id/decrypted", async (req: Request, res: Response): Promise<void> => {
+//   try {
+//     const client = await Client.findById(req.params.id);
+//     if (!client) {
+//       res.status(404).json({ error: "Client not found" });
+//       return;
+//     }
 
-    if (!client.encryptedPassword) {
-      res.status(404).json({ error: "No encrypted password found" });
-      return;
-    }
+//     if (!client.encryptedPassword) {
+//       res.status(404).json({ error: "No encrypted password found" });
+//       return;
+//     }
 
-    const [ivHex, encrypted] = client.encryptedPassword.split(":");
-    if (!ivHex || !encrypted) {
-      res.status(400).json({ error: "Invalid encrypted data format" });
-      return;
-    }
+//     const [ivHex, encrypted] = client.encryptedPassword.split(":");
+//     if (!ivHex || !encrypted) {
+//       res.status(400).json({ error: "Invalid encrypted data format" });
+//       return;
+//     }
 
-    const key = crypto
-      .createHash("sha256")
-      .update(process.env.ENCRYPTION_SECRET || "default_secret")
-      .digest();
+//     const key = crypto
+//       .createHash("sha256")
+//       .update(process.env.ENCRYPTION_SECRET || "default_secret")
+//       .digest();
 
-    const iv = Buffer.from(ivHex, "hex");
-    const decipher = crypto.createDecipheriv("aes-256-cbc", key, iv);
-    let decrypted = decipher.update(encrypted, "hex", "utf8");
-    decrypted += decipher.final("utf8");
+//     const iv = Buffer.from(ivHex, "hex");
+//     const decipher = crypto.createDecipheriv("aes-256-cbc", key, iv);
+//     let decrypted = decipher.update(encrypted, "hex", "utf8");
+//     decrypted += decipher.final("utf8");
 
-    res.json({
-      email: client.c_email?.[0] || null,
-      password: decrypted,
-    });
-  } catch (err: any) {
-    console.error("Decryption error:", err.message);
-    res.status(500).json({ error: "Failed to decrypt password" });
-  }
-});
+//     res.json({
+//       email: client.c_email?.[0] || null,
+//       password: decrypted,
+//     });
+//   } catch (err: any) {
+//     console.error("Decryption error:", err.message);
+//     res.status(500).json({ error: "Failed to decrypt password" });
+//   }
+// });
 
 // ✅ Refresh token route
 router.post("/refresh", async (req: Request, res: Response): Promise<void> => {

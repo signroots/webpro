@@ -112,159 +112,304 @@ paths:
     post:
       tags:
         - Order
-      summary: Create a new Order with plans and client details
+
+      summary: Create new order with email plans
+
       requestBody:
         required: true
+
         content:
           application/json:
+
             schema:
               type: object
+
               required:
                 - domainName
+                - managedBy
+
+
               properties:
-                domainName:
-                  type: string
-                  example: "test.com"
+
                 is_customer:
                   type: boolean
                   example: true
+
+
                 client:
                   type: string
                   example: "6a59e227c76bf36534a02d2b"
-                managedBy:
-                  type: string
-                  example: "Signroots"
-                users:
-                  type: integer
-                  example: 1
-                domainSource:
-                  type: string
-                  example: "Google Workspace"
-                registrationDate:
-                  type: string
-                  format: date
-                  example: "2026-07-25"
-                expiryDate:
-                  type: string
-                  format: date
-                  example: "2027-07-25"
-                hosting:
-                  type: boolean
-                  example: false
-                hosting_plan:
-                  type: string
-                  example: "6a54befb1e9ab96fe142b5c5"
-                hosting_subplan:
-                  type: string
-                  example: "6a54befb1e9ab96fe142b5c6"
-                storage:
-                  type: string
-                  example: "6a54befb1e9ab96fe142b5c7"
-                domain_flag:
-                  type: boolean
-                  example: false
-                email_flag:
-                  type: boolean
-                  example: true
-                host_flag:
-                  type: boolean
-                  example: false
-                ssl_flag:
-                  type: boolean
-                  example: false
-                website_flag:
-                  type: boolean
-                  example: false
+
+
                 newCustomer:
                   type: object
+
                   properties:
+
                     c_name:
                       type: string
                       example: "John Doe"
+
                     c_company:
                       type: string
-                      example: "ABC Corp"
+                      example: "ABC Company"
+
                     c_address:
                       type: string
-                      example: "Street 123"
+                      example: "Kochi"
+
                     c_city:
                       type: string
                       example: "Kochi"
+
                     c_gst:
                       type: string
                       example: "32AAAAA0000A1Z5"
+
                     c_zipCode:
                       type: string
                       example: "682001"
+
                     c_phone:
                       type: string
                       example: "9876543210"
+
                     c_email:
                       type: string
-                      example: "john@example.com"
+                      example: "john@gmail.com"
+
+
+
+                domainName:
+                  type: string
+                  example: "khTest.in"
+
+
+
+                managedBy:
+                  type: string
+                  enum:
+                    - Signroots
+                    - Customer
+                  example: Signroots
+
+
+
+                domainSource:
+                  type: string
+                  enum:
+                    - Reseller Club
+                    - Hostinger
+                    - Squarespace
+                    - Sahara
+                    - Cloudflare
+                    - AE Server
+                  example: Cloudflare
+
+
+
+                # domainSource:
+                #   type: string
+                #   example: ""
+
+
+
+                registrationDate:
+                  type: string
+                  format: date
+                  example: "2026-07-28"
+
+
+
+                expiryDate:
+                  type: string
+                  format: date
+                  example: "2027-07-28"
+
+
+
+                # users:
+                #   type: integer
+                #   example: 1
+
+
+
+                email_flag:
+                  type: boolean
+                  example: true
+
+
+
+                google_email:
+                  type: boolean
+                  example: true
+
+
+
+                microsoft_email:
+                  type: boolean
+                  example: false
+
+
+
+                # hosting:
+                #   type: boolean
+                #   example: false
+
+
+
+                # host_flag:
+                #   type: boolean
+                #   example: false
+
+
+
+                # website_flag:
+                #   type: boolean
+                #   example: false
+
+
+
+                domain_flag:
+                  type: boolean
+                  example: true
+
+
+
+                # ssl_flag:
+                #   type: boolean
+                #   example: false
+
+
+
+                # cloudflareRegistered:
+                #   type: boolean
+                #   example: false
+
+
+
+                # emailType:
+                #   type: string
+                #   example: "Google Workspace"
+
+
+
+                # email_registrationDate:
+                #   type: string
+                #   format: date
+                #   example: "2026-07-28"
+
+
+
+                # email_expiryDate:
+                #   type: string
+                #   format: date
+                #   example: "2027-07-28"
+
+
+
                 plans:
+
                   type: array
+
+
                   items:
+
                     type: object
+
+
                     required:
+
                       - planId
                       - emailTypeId
                       - type
+
+
                     properties:
-                      planId:
-                        type: string
-                        example: "6a54befb1e9ab96fe142b5c5"
+
                       emailTypeId:
                         type: string
                         example: "6a54bef61e9ab96fe142b5bf"
-                      type:
+                      emailType:
                         type: string
                         example: "Google Workspace"
+                      planId:
+                        type: string
+                        example: "6a54befb1e9ab96fe142b5c5"
+
+                      planName:
+                        type: string
+                        example: "Business Starter"
+                      type:
+                        type: string
+
+                        enum:
+                          - email
+                          - storage
+                          - msoffice
+
+                        example: storage
+
+
+
                       noOfUsers:
                         type: integer
                         example: 1
+
+
+
                       registrationDate:
                         type: string
                         format: date
-                        example: "2026-07-25"
+                        example: "2026-07-28"
+
+
+
                       expiryDate:
                         type: string
                         format: date
-                        example: "2027-07-25"
-                      google_email:
-                        type: boolean
-                        example: false
-                      microsoft_email:
-                        type: boolean
-                        example: false
-                      businessEmail:
-                        type: boolean
-                        example: false
-                      email_flag:
-                        type: boolean
-                        example: true
-                      msoffice_services_flag:
-                        type: boolean
-                        example: false
-                      storage_services_flag:
-                        type: boolean
-                        example: false
+                        example: "2026-07-31"
+
+
+
+                      # storage_services_flag:
+                      #   type: boolean
+                      #   example: true
+
+
+
+                      # msoffice_services_flag:
+                      #   type: boolean
+                      #   example: false
+
+
+
+                      # google_email:
+                      #   type: boolean
+                      #   example: true
+
+
+
+                      # microsoft_email:
+                      #   type: boolean
+                      #   example: false
+
+
+
       responses:
+
         "201":
+
           description: Order created successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  data:
-                    type: object
+
+
         "400":
-          description: Validation error or duplicate domain
+
+          description: Validation error
+
+
         "500":
+
           description: Internal server error
 
   /order/{id}:

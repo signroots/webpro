@@ -138,9 +138,45 @@ export async function importMainResellerClubDomains(){
           console.warn(`⚠️ Expiry date missing for ${domainName}`);
         }
       }
+      /* ---------- EXPIRY CHECK 65 DAYS ---------- */
 
+      let isActive = true;
+      let domainStatus = d['entity.currentstatus'];
+
+
+      if (expiryDate) {
+
+        const diffDays =
+          (
+            Date.now() -
+            expiryDate.getTime()
+          )
+          /
+          (
+            1000 *
+            60 *
+            60 *
+            24
+          );
+
+
+        if (diffDays > 65) {
+
+          console.log(
+            `⚠️ Expired more than 65 days: ${domainName}`
+          );
+
+
+          isActive = false;
+
+          domainStatus = "EXPIRED";
+
+        }
+
+      }
       /* ---------- UPSERT CUSTOMER ---------- */
       const customer = await Customer.findOneAndUpdate(
+        
         { resellerCustomerId: customerData.customerid },
         {
           name: customerData.name,
@@ -162,6 +198,7 @@ export async function importMainResellerClubDomains(){
         {
           domainName,
           customer: customer._id,
+          is_active: isActive,
           status: d['entity.currentstatus'],
           managedBy: 'Signroots',
           registrationDate: new Date(Number(d['orders.creationtime']) * 1000),

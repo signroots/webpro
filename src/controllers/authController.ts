@@ -1,5 +1,5 @@
 // controllers/authController.ts
-
+// Connect to Login  API
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import User from "../models/User";

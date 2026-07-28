@@ -212,206 +212,600 @@ router.get(
   }
 );
 router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
+
   try {
+
     const loggedInUser = req.user;
 
+
     if (!loggedInUser?._id) {
-      return res.status(401).json({ success: false, error: "Unauthorized" });
-    }
 
-    /* ================= QUERY PARAMS ================= */
-    const search = (req.query.search as string)?.trim() || "";
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 50;
-    const skip = (page - 1) * limit;
-
-    /* ================= SEARCH REGEX ================= */
-    const searchRegex = search ? new RegExp(search, "i") : null;
-    const startsWithRegex = search ? new RegExp(`^${search}`, "i") : null;
-
-    /* ================= Helper Functions ================= */
-    const attachEmailPlans = async (orders: any[]) => {
-      if (!orders.length) return orders;
-
-      const orderIds = orders.map(o => o._id);
-      const emailPlans = await OrderPlan.find({
-        orderId: { $in: orderIds },
-        type: "email",
-      })
-        .populate("planId")
-        .populate("emailTypeId")
-        .lean();
-
-      const map = new Map<string, any[]>();
-      emailPlans.forEach(p => {
-        const key = p.orderId.toString();
-        if (!map.has(key)) map.set(key, []);
-        map.get(key)!.push(p);
+      return res.status(401).json({
+        success:false,
+        message:"Unauthorized"
       });
 
-      return orders.map(o => ({
-        ...o,
-        emailPlans: map.get(o._id.toString()) || [],
-      }));
-    };
+    }
 
-    const updateOrderStatuses = async (orders: any[]) => {
+
+
+    // ================= QUERY VALIDATION =================
+
+
+    const search =
+      typeof req.query.search === "string"
+        ? req.query.search.trim()
+        : "";
+
+
+    const page =
+      Math.max(Number(req.query.page) || 1, 1);
+
+
+    const limit =
+      Math.min(Number(req.query.limit) || 50, 100);
+
+
+    const skip =
+      (page - 1) * limit;
+
+
+
+
+
+    // ================= ATTACH EMAIL EXPIRY =================
+
+
+   const attachEmailPlans = async (orders:any[]) => {
+
+  if(!orders.length)
+    return orders;
+
+
+  const orderIds = orders.map(
+    order => order._id
+  );
+
+
+  const emailPlans = await OrderPlan.find({
+
+    orderId:{
+      $in: orderIds
+    }
+
+  })
+  .populate(
+    {
+      path:"emailTypeId",
+      select:"name image"
+    }
+  )
+  .select(
+    "orderId type expiryDate emailTypeId planId"
+  )
+  .lean();
+
+
+
+  const planMap = new Map();
+
+
+
+  emailPlans.forEach(plan=>{
+
+
+    const key =
+      plan.orderId.toString();
+
+
+
+    if(!planMap.has(key)){
+
+      planMap.set(
+        key,
+        []
+      );
+
+    }
+
+
+
+    planMap.get(key).push({
+
+      type: plan.type,
+
+
+      expiryDate:
+        plan.expiryDate || null,
+
+
+      emailType:
+        (plan.emailTypeId as any)?.name || null,
+
+
+      emailTypeImage:
+        (plan.emailTypeId as any)?.image || null,
+
+
+      planId:
+        plan.planId
+
+    });
+
+
+
+  });
+
+
+
+
+  return orders.map(order=>({
+
+    ...order,
+
+
+    emailPlans:
+      planMap.get(
+        order._id.toString()
+      ) || []
+
+
+  }));
+
+};
+
+
+
+    // ================= STATUS UPDATE =================
+
+
+    const updateOrderStatuses = async(orders:any[])=>{
+
+
       const today = new Date();
-      const bulkOps: any[] = [];
 
-      orders.forEach(order => {
-        if (!order.expiryDate) return;
+      const bulkOps:any[]=[];
+
+
+
+      orders.forEach(order=>{
+
+
+        if(!order.expiryDate)
+          return;
+
+
 
         const newStatus =
-          new Date(order.expiryDate) < today ? "EXPIRED" : "ACTIVE";
 
-        if (order.status !== newStatus) {
+          new Date(order.expiryDate) < today
+
+          ? "EXPIRED"
+
+          : "ACTIVE";
+
+
+
+
+        if(order.status !== newStatus){
+
+
           bulkOps.push({
-            updateOne: {
-              filter: { _id: order._id },
-              update: { status: newStatus },
-            },
-          });
-          order.status = newStatus;
-        }
-      });
 
-      if (bulkOps.length) await Order.bulkWrite(bulkOps);
-      return orders;
-    };
+            updateOne:{
 
-    /* ================= BASE FILTER ================= */
-    const baseSearchFilter = search
-      ? {
-          $or: [
-            { domainName: { $regex: search, $options: "i" } },
-            { managedBy: { $regex: search, $options: "i" } },
-          ],
-        }
-      : {};
-
-    const cloudflareFilter = {
-      $or: [
-        { domainSource: { $ne: "Cloudflare" } },
-        {
-          $and: [
-            { domainSource: "Cloudflare" },
-            {
-              $or: [
-                { expiryDate: { $exists: true } },
-                { google_email: true },
-                { microsoft_email: true },
-              ],
-            },
-          ],
-        },
-      ],
-    };
-
-    const finalFilter = { ...baseSearchFilter, ...cloudflareFilter };
-
-    /* ================= ADMIN ================= */
-    const user = await User.findById(loggedInUser._id).populate("userType");
-
-    if (user?.userType && (user.userType as IUserType).name.toLowerCase() === "admin") {
-      const total = await Order.countDocuments(finalFilter);
-
-      let orders = await Order.aggregate([
-        { $match: finalFilter },
-
-        ...(search
-          ? [
-              {
-                $addFields: {
-                  relevance: {
-                    $cond: [
-                      { $regexMatch: { input: "$domainName", regex: startsWithRegex } },
-                      2,
-                      {
-                        $cond: [
-                          { $regexMatch: { input: "$domainName", regex: searchRegex } },
-                          1,
-                          0,
-                        ],
-                      },
-                    ],
-                  },
-                },
+              filter:{
+                _id:order._id
               },
-              // Fix TypeScript: enforce literal type -1
-              { $sort: { relevance: -1 as const } },
-            ]
-          : []),
 
-        { $skip: skip },
-        { $limit: limit },
-      ]);
+              update:{
+                status:newStatus
+              }
 
-      // Populate client and customer references
-      orders = await Order.populate(orders, [
-        { path: "client", select: "_id c_name c_email c_company" },
-        { path: "customer", select: "_id name email company" },
-      ]);
+            }
 
-      orders = await updateOrderStatuses(orders);
-      orders = await attachEmailPlans(orders);
-      
+          });
 
-      return res.status(200).json({
-        success: true,
-        data: orders,
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        },
+
+          order.status = newStatus;
+
+
+        }
+
+
       });
+
+
+
+
+      if(bulkOps.length){
+
+        await Order.bulkWrite(
+          bulkOps
+        );
+
+      }
+
+
+      return orders;
+
+
+    };
+
+
+
+
+
+
+
+    // ================= SEARCH FILTER =================
+
+
+
+    const filters:any[]=[];
+
+
+
+    if(search){
+
+
+      filters.push({
+
+        $or:[
+
+          {
+            domainName:{
+              $regex:search,
+              $options:"i"
+            }
+          },
+
+
+          {
+            managedBy:{
+              $regex:search,
+              $options:"i"
+            }
+          }
+
+
+        ]
+
+
+      });
+
+
     }
 
-    /* ================= CUSTOMER ================= */
-    const client = await Client.findById(loggedInUser._id).populate("userType");
 
-    if (client?.userType && (client.userType as IUserType).name.toLowerCase() === "customer") {
-      const clientFilter = { client: client._id, ...finalFilter };
-      const total = await Order.countDocuments(clientFilter);
 
-      let orders = await Order.find(clientFilter)
+
+
+
+    // ================= USER =================
+
+
+
+    const user =
+
+      await User.findById(
+        loggedInUser._id
+      )
+      .populate("userType");
+
+
+
+
+
+    const orderFields = {
+
+  domainName:1,
+
+  status:1,
+
+  is_active:1,
+
+  client:1,
+
+  managedBy:1,
+
+  registrationDate:1,
+
+  expiryDate:1,
+
+  lockStatus:1,
+
+  domainSource:1
+
+};
+
+
+
+
+
+
+    // ================= ADMIN =================
+
+
+
+    if(
+
+      user?.userType &&
+
+      (user.userType as IUserType)
+      .name
+      .toLowerCase()
+      === "admin"
+
+    ){
+
+
+
+      const finalFilter =
+
+        filters.length
+
+        ? {
+            $and:filters
+          }
+
+        : {};
+
+
+
+
+      const total =
+
+        await Order.countDocuments(
+          finalFilter
+        );
+
+
+
+
+
+      let orders:any =
+
+        await Order.find(
+          finalFilter
+        )
+        .select(orderFields)
         .skip(skip)
         .limit(limit)
-        .populate("client", "_id c_name c_email c_company")
-        .populate("customer", "_id name email company")
+        .populate(
+          "client",
+          "_id c_name c_company"
+        )
         .lean();
 
-      orders = await updateOrderStatuses(orders);
-      orders = await attachEmailPlans(orders);
+
+
+
+
+
+      orders =
+        await updateOrderStatuses(
+          orders
+        );
+
+
+
+      orders =
+ await attachEmailPlans(
+   orders
+ );
+
+
+
+
 
       return res.status(200).json({
-        success: true,
-        client: {
-          _id: client._id,
-          c_name: client.c_name,
-          c_email: client.c_email,
-          c_company: client.c_company,
-        },
-        data: orders,
-        pagination: {
+
+        success:true,
+
+        data:orders,
+
+
+        pagination:{
+
           page,
+
           limit,
+
           total,
-          totalPages: Math.ceil(total / limit),
-        },
+
+          totalPages:
+            Math.ceil(
+              total/limit
+            )
+
+        }
+
       });
+
+
     }
 
-    return res.status(403).json({ success: false, error: "Access denied" });
-  } catch (err) {
-    console.error("❌ Error:", err);
-    return res.status(500).json({ success: false, error: "Server error" });
+
+
+
+
+
+
+
+    // ================= CUSTOMER =================
+
+
+
+    const client =
+
+      await Client.findById(
+        loggedInUser._id
+      )
+      .populate("userType");
+
+
+
+
+
+
+    if(
+
+      client?.userType &&
+
+      (client.userType as IUserType)
+      .name
+      .toLowerCase()
+      === "customer"
+
+    ){
+
+
+
+      filters.push({
+
+        client:client._id
+
+      });
+
+
+
+      const finalFilter = {
+
+        $and:filters
+
+      };
+
+
+
+
+
+
+      const total =
+
+        await Order.countDocuments(
+          finalFilter
+        );
+
+
+
+
+
+      let orders:any =
+
+        await Order.find(
+          finalFilter
+        )
+        .select(orderFields)
+        .skip(skip)
+        .limit(limit)
+        .populate(
+          "client",
+          "_id c_name c_company"
+        )
+        .lean();
+
+
+
+
+
+
+      orders =
+        await updateOrderStatuses(
+          orders
+        );
+
+
+
+      orders =
+ await attachEmailPlans(
+   orders
+ );
+
+
+
+
+
+      return res.status(200).json({
+
+        success:true,
+
+
+        client:{
+
+          _id:client._id,
+
+          c_name:client.c_name,
+
+          c_email:client.c_email,
+
+          c_company:client.c_company
+
+        },
+
+
+        data:orders,
+
+
+        pagination:{
+
+          page,
+
+          limit,
+
+          total,
+
+          totalPages:
+            Math.ceil(
+              total/limit
+            )
+
+        }
+
+
+      });
+
+
+    }
+
+
+
+
+
+
+    return res.status(403).json({
+
+      success:false,
+
+      message:"Access denied"
+
+    });
+
+
+
+
+  } catch(error){
+
+
+    console.error(
+      "ORDER GET ERROR:",
+      error
+    );
+
+
+    return res.status(500).json({
+
+      success:false,
+
+      message:"Internal server error"
+
+    });
+
+
   }
+
+
 });
-
-
 // GET single order by ID
 
 router.get(
@@ -615,7 +1009,13 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
     // ===== Customer Handling =====
     if (data.is_customer) {
       if (!data.client || !(await Client.findById(data.client))) {
-        res.status(400).json({ success: false, message: "Invalid client" });
+        res.status(400).json({
+          success:false,
+          error:{
+            code:"INVALID_CLIENT",
+            message:"Invalid client"
+          }
+        });
         return;
       }
       customerId = data.client.toString();
@@ -649,14 +1049,28 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
 
     // ===== Domain Validation =====
     if (!data.domainName) {
-      res.status(400).json({ success: false, message: "Domain name is required" });
-      return;
+      res.status(400).json({
+      success:false,
+      error:{
+        code:"DOMAIN_REQUIRED",
+        message:"Domain name is required"
+      }
+    });
+
+    return;
     }
 
     const existingOrder = await Order.findOne({ domainName: data.domainName });
     if (existingOrder) {
-      res.status(400).json({ success: false, message: "Domain already exists" });
-      return;
+      res.status(400).json({
+      success:false,
+      error:{
+        code:"DOMAIN_EXISTS",
+        message:"Domain already exists"
+      }
+    });
+
+    return;
     }
 
     // ===== Provider Validation =====
@@ -692,8 +1106,18 @@ if (data.plans && Array.isArray(data.plans)) {
     data.plans.map(async (p: any) => {
 
       if (!p.planId || !p.emailTypeId || !p.type) {
-        throw new Error("PlanId, EmailTypeId or type is missing");
-      }
+        
+
+        const error:any = new Error(
+          "PlanId, EmailTypeId or type is missing"
+        );
+
+        error.statusCode = 400;
+
+        throw error;
+
+        }
+      
 
 
       const planDoc = await PlanEmail.findById(p.planId);
@@ -769,16 +1193,66 @@ if (data.plans && Array.isArray(data.plans)) {
 }
 
     res.status(201).json({ success: true, data: savedOrder });
-  } catch (err: any) {
+  } catch(err:any){
+
     console.error(err);
-    if (err.name === "ValidationError") {
-      res.status(400).json({ success: false, error: err.message });
-    } else if (err.code === 11000) {
-      res.status(400).json({ success: false, error: "Domain already exists" });
-    } else {
-      res.status(500).json({ success: false, error: err.message });
+
+
+    if(err.statusCode){
+
+      res.status(err.statusCode).json({
+        success:false,
+        error:{
+          code:"VALIDATION_ERROR",
+          message:err.message
+        }
+      });
+
+      return;
     }
-  }
+
+
+    if(err.name==="ValidationError"){
+
+      res.status(400).json({
+        success:false,
+        error:{
+          code:"VALIDATION_ERROR",
+          message:err.message
+        }
+      });
+
+      return;
+
+    }
+
+
+    if(err.code===11000){
+
+      res.status(400).json({
+        success:false,
+        error:{
+          code:"DUPLICATE_ENTRY",
+          message:"Domain already exists"
+        }
+      });
+
+      return;
+
+    }
+
+
+
+    res.status(500).json({
+      success:false,
+      error:{
+        code:"INTERNAL_SERVER_ERROR",
+        message:"Something went wrong"
+      }
+    });
+
+
+    }
 });
 
 
@@ -964,7 +1438,7 @@ router.get("/provider/:name", async (req, res) => {
       );
     };
 
-    orders = await attachEmailPlans(orders);
+    // orders = await attachEmailPlans(orders);
 
     // 3️⃣ Optional: Update domain statuses like in / route
     const today = new Date();
