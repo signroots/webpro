@@ -101,7 +101,7 @@ paths:
                         is_active:
                           type: boolean
                           example: true
-                        status:
+                        order_status:
                           type: string
                           enum:
                             - ACTIVE
@@ -708,7 +708,7 @@ paths:
                         type: string
                         example: "aapkapath.com"
 
-                      status:
+                      order_status:
                         type: string
                         enum:
                           - ACTIVE
@@ -1215,11 +1215,11 @@ paths:
 
 
 
-                  status:
+                  order_status:
                     type: string
                     enum:
-                      - active
-                      - expired
+                      - ACTIVE
+                      - EXPIRED
 
                     example: active
 
