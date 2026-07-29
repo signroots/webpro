@@ -1139,7 +1139,7 @@ z-50
 
     const domainDate = formatDate(order.expiryDate);
 
-    const emailDates = (order.emailPlans || [])
+    const emailDates = (order.Plans || [])
       .map(plan => formatDate(plan.expiryDate))
       .filter((d): d is string => Boolean(d));
 
