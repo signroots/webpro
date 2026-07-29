@@ -434,7 +434,13 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
 
 
 
+// ================= EXPIRY 65 DAYS FILTER =================
 
+const expiryLimitDate = new Date();
+
+expiryLimitDate.setDate(
+  expiryLimitDate.getDate() - 65
+);
 
 
 
@@ -539,18 +545,26 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
 
     ){
 
+const expiryFilter = {
+  $or: [
+    {
+      expiryDate: {
+        $gte: expiryLimitDate
+      }
+    },
+    {
+      expiryDate: null
+    }
+  ]
+};
 
 
-      const finalFilter =
-
-        filters.length
-
-        ? {
-            $and:filters
-          }
-
-        : {};
-
+const finalFilter = {
+  $and: [
+    ...filters,
+    expiryFilter
+  ]
+};
 
 
 
@@ -670,13 +684,26 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
 
 
 
-      const finalFilter = {
+    const expiryFilter = {
+  $or: [
+    {
+      expiryDate: {
+        $gte: expiryLimitDate
+      }
+    },
+    {
+      expiryDate:null
+    }
+  ]
+};
 
-        $and:filters
 
-      };
-
-
+const finalFilter = {
+  $and:[
+    ...filters,
+    expiryFilter
+  ]
+};
 
 
 
