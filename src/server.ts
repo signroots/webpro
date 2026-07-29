@@ -51,6 +51,7 @@ const allowedOrigins = [
   "http://localhost:5174",
   "http://localhost:5173",
   "https://signroots.app",
+  "https://signroots-pro-panel.faisalkkn9946.workers.dev",
   "http://192.168.220.39:5173",
 ];
 

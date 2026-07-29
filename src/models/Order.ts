@@ -16,6 +16,11 @@ export interface IOrder extends Document {
   type:Boolean,
   default:true
 },
+order_status: {
+  type: String,
+  enum: ["ACTIVE", "EXPIRED"],
+  default: "ACTIVE"
+},
   registrationDate?: Date;
   expiryDate?: Date;
   originalRegistrar?: string;
@@ -64,6 +69,11 @@ const orderSchema = new mongoose.Schema<IOrder>(
     // ========================
     domainName: { type: String, required: true, index: true, unique: true },
     status: { type: String },
+    order_status: {
+    type: String,
+    enum: ["ACTIVE", "EXPIRED"],
+    default: "ACTIVE"
+  },
     customer: { type: mongoose.Schema.Types.ObjectId, ref: "Customer" },
     client: { type: mongoose.Schema.Types.ObjectId, ref: "Client" },
     registrarName: { type: mongoose.Schema.Types.ObjectId, ref: "Registrar" },

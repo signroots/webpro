@@ -387,7 +387,7 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
 
 
 
-        if(order.status !== newStatus){
+        if(order.order_status !== newStatus){
 
 
           bulkOps.push({
@@ -501,7 +501,7 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
 
   domainName:1,
 
-  status:1,
+  order_status:1,
 
   is_active:1,
 
@@ -823,18 +823,31 @@ router.get(
 
       // Fetch order
       const order = await Order.findById(id)
-        .populate("customer")
-        .populate({
-          path: "client",
-          populate: [
-            { path: "c_country", model: "Country", select: "name code" },
-            { path: "c_state", model: "State", select: "name stateCode" }
-          ]
-        })
-        .populate("hosttypeid")
-        .populate("subHostTypeId")
-        .populate("hoststorageId")
-        .exec();
+  .populate({
+    path: "customer",
+    select: "name email phone company address city state country zipCode"
+  })
+  .populate({
+    path: "client",
+    select:
+      "c_name c_email c_phone c_company c_address c_city c_state c_country c_zipCode",
+    populate: [
+      {
+        path: "c_country",
+        model: "Country",
+        select: "name code"
+      },
+      {
+        path: "c_state",
+        model: "State",
+        select: "name stateCode"
+      }
+    ]
+  })
+  .populate("hosttypeid")
+  .populate("subHostTypeId")
+  .populate("hoststorageId")
+  .exec();
       if (!order) {
         res.status(404).json({ success: false, message: "Order not found" });
         return;
@@ -905,14 +918,24 @@ router.get(
 
       // Final response
       res.status(200).json({
-        success: true,
-        data: {
-          ...orderObj,
-          dns_flag: orderObj.dns_flag ?? false, // ✅ FIXED
-          // customerDetails: mergedCustomerDetails,
-          plans: orderPlans,
-        },
-      });
+  success: true,
+  data: {
+    _id: orderObj._id,
+    domainName: orderObj.domainName,
+    status: orderObj.status,
+    managedBy: orderObj.managedBy,
+    domainSource: orderObj.domainSource,
+    registrationDate: orderObj.registrationDate,
+    expiryDate: orderObj.expiryDate,
+    lockStatus: orderObj.lockStatus,
+    domain_flag: orderObj.domain_flag,
+    nameServers: orderObj.nameServers,
+    client: orderObj.client,
+    customer: orderObj.customer,
+    plans: orderPlans,
+    __v: orderObj.__v
+  }
+});
     } catch (err) {
       console.error("❌ Error fetching order:", err);
       res.status(500).json({
@@ -1375,8 +1398,217 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+router.put(
+  "/assignclient/:id",
+  authMiddleware,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { id } = req.params;
+      const {
+        is_customer,
+        client,
+        newCustomer
+      } = req.body;
 
 
+      // Validate Order ID
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid order ID"
+        });
+      }
+
+
+      // Find Order
+      const order = await Order.findById(id);
+
+      if (!order) {
+        return res.status(404).json({
+          success: false,
+          message: "Order not found"
+        });
+      }
+
+
+
+      let clientId;
+
+
+
+      // =========================
+      // EXISTING CLIENT
+      // =========================
+
+      if (is_customer === true) {
+
+
+        if (!client || !mongoose.Types.ObjectId.isValid(client)) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid client ID"
+          });
+        }
+
+
+
+        const existingClient = await Client.findById(client);
+
+
+        if (!existingClient) {
+          return res.status(404).json({
+            success: false,
+            message: "Client not found"
+          });
+        }
+
+
+        clientId = existingClient._id;
+
+      }
+
+
+
+      // =========================
+      // NEW CLIENT CREATE
+      // =========================
+
+      else {
+
+
+        if (!newCustomer) {
+          return res.status(400).json({
+            success: false,
+            message: "New customer details required"
+          });
+        }
+
+
+
+        const createdClient = await Client.create({
+
+          c_salutation:
+            newCustomer.c_salutation || "",
+
+          c_firstName:
+            newCustomer.c_firstName || "",
+
+          c_lastName:
+            newCustomer.c_lastName || "",
+
+          c_name:
+            newCustomer.c_name,
+
+          c_email:
+            newCustomer.c_email,
+
+          c_phone:
+            newCustomer.c_phone,
+
+          c_company:
+            newCustomer.c_company || "",
+
+          c_address:
+            newCustomer.c_address || "",
+
+          c_address2:
+            newCustomer.c_address2 || "",
+
+          c_city:
+            newCustomer.c_city || "",
+
+          c_country:
+            newCustomer.c_country || null,
+
+          c_state:
+            newCustomer.c_state || null,
+
+          c_zipCode:
+            newCustomer.c_zipCode || "",
+
+          c_gst:
+            newCustomer.c_gst || "",
+
+          c_countryCode:
+            newCustomer.c_countryCode || "",
+
+          c_portalEnabled:
+            newCustomer.c_portalEnabled || false,
+
+          c_bankAccountPayment:
+            newCustomer.c_bankAccountPayment || "",
+
+          c_placeOfContact:
+            newCustomer.c_placeOfContact || "",
+
+          c_placeOfContactWithStateCode:
+            newCustomer.c_placeOfContactWithStateCode || ""
+
+        });
+
+
+
+        clientId = createdClient._id;
+
+      }
+
+
+
+
+      // =========================
+      // ASSIGN CLIENT TO ORDER
+      // =========================
+
+
+      order.client = clientId;
+
+
+      await order.save();
+
+
+
+      return res.status(200).json({
+
+        success: true,
+
+        message:
+          is_customer
+            ? "Existing client assigned successfully"
+            : "New client created and assigned successfully",
+
+        data: {
+
+          orderId: order._id,
+
+          clientId: clientId
+
+        }
+
+      });
+
+
+
+    } catch(error) {
+
+
+      console.error(
+        "Assign client error:",
+        error
+      );
+
+
+      return res.status(500).json({
+
+        success:false,
+
+        error:
+          (error as Error).message
+
+      });
+
+    }
+  }
+);
 // router.put("/:id", async (req: Request<{ id: string }, {}, Partial<IOrder>>, res: Response): Promise<void> => {
 //   try {
 //     const updatedOrder = await mongoose.model<IOrder>("Order").findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
@@ -1415,7 +1647,23 @@ router.get("/provider/:name", async (req, res) => {
     let orders = await mongoose
       .model("Order")
       .find({ provider })
-      .populate("client")
+      .populate({
+  path: "client",
+  select:
+    "c_name c_email c_phone c_company c_address c_city c_state c_country c_zipCode",
+  populate: [
+    {
+      path: "c_country",
+      model: "Country",
+      select: "name code"
+    },
+    {
+      path: "c_state",
+      model: "State",
+      select: "name stateCode"
+    }
+  ]
+})
       .populate("customer")
       .lean();
 
