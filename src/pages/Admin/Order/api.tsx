@@ -104,8 +104,15 @@ export const fetchDNSOrders = async () => {
   return response?.data?.data || [];
 };
 export const fetchRenewListOrders = async () => {
+  const token = localStorage.getItem("token");
+
   return axios.get(
-    `${import.meta.env.VITE_API_BASE_URL}/api/orders/orders-by-month`
+    `${import.meta.env.VITE_API_BASE_URL}/api/orders/orders-by-month`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
   );
 };
 
@@ -147,7 +154,18 @@ export const fetchCustomerOrder = async (id: string) => {
 export const fetchOrderById = async (
   id: string
 ): Promise<OrderApiResponse> => {
-  const response = await axios.get(`${API_BASE_URL}/api/orders/${id}`);
+
+  const token = localStorage.getItem("token");
+
+  const response = await axios.get(
+    `${API_BASE_URL}/api/orders/${id}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
+  );
+
   return response.data.data;
 };
 

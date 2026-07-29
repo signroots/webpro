@@ -188,7 +188,7 @@ const OrderDetails: React.FC = () => {
             <div className="flex items-center gap-4 font-medium text-gray-800">
               <span>{order.domainSource || "-"}</span>
 
-              {order.domainSource === "Cloudflare" && (
+              {/* {order.domainSource === "Cloudflare" && (
                 <div className="flex items-center gap-2 text-gray-600">
                   <input
                     type="checkbox"
@@ -198,36 +198,59 @@ const OrderDetails: React.FC = () => {
                   />
                   <span className="text-sm">Domain Flag</span>
                 </div>
-              )}
+              )} */}
             </div>
           </div>
 
           <Info label="Registration Date" value={formatDate(order.registrationDate)} />
           <Info label="Expiry Date" value={formatDate(order.expiryDate)} />
           <Info label="Lock Status" value={order.lockStatus} />
-          <Info label="Username" value={order.username} />
-          <Info label="Business Email" value={order.businessEmail ? "Yes" : "No"} />
+          {/* <Info label="Username" value={order.username} />
+          <Info label="Business Email" value={order.businessEmail ? "Yes" : "No"} /> */}
           {/* <Info label="Cloudflare Registered" value={order.cloudflareRegistered ? "Yes" : "No"} /> */}
-          <Info label="Google Email" value={order.google_email ? "Yes" : "No"} />
+          {/* <Info label="Google Email" value={order.google_email ? "Yes" : "No"} />
           <Info label="Microsoft Email" value={order.microsoft_email ? "Yes" : "No"} />
-          <Info label="Email Status" value={order.email_status} />
+          <Info label="Email Status" value={order.email_status} /> */}
           <Info label="Name Servers" value={order.nameServers} />
-          <Info label="Storage Services" value={order.storage_services_flag ? "Yes" : "No"} />
+          {/* <Info label="Storage Services" value={order.storage_services_flag ? "Yes" : "No"} /> */}
         </Section>
 
 
         {order.customer && (
-          <Section title="Customer Details">
-            <Info label="Name" value={order.customer.name} />
-            <Info label="Company" value={order.customer.company} />
-            <Info label="Email" value={order.customer.email} />
-            <Info label="Phone" value={order.customer.phone} />
-            <Info label="Address" value={order.customer.address} />
-            <Info label="City" value={order.customer.city} />
-            <Info label="State" value={order.customer.state} />
-            <Info label="Country" value={order.customer.country} />
-          </Section>
-        )}
+  <Section title="Customer Details">
+    {order.customer.name && (
+      <Info label="Name" value={order.customer.name} />
+    )}
+
+    {order.customer.company && (
+      <Info label="Company" value={order.customer.company} />
+    )}
+
+    {order.customer.email && (
+      <Info label="Email" value={order.customer.email} />
+    )}
+
+    {order.customer.phone && (
+      <Info label="Phone" value={order.customer.phone} />
+    )}
+
+    {order.customer.address && (
+      <Info label="Address" value={order.customer.address} />
+    )}
+
+    {order.customer.city && (
+      <Info label="City" value={order.customer.city} />
+    )}
+
+    {order.customer.state && (
+      <Info label="State" value={order.customer.state} />
+    )}
+
+    {order.customer.country && (
+      <Info label="Country" value={order.customer.country} />
+    )}
+  </Section>
+)}
         {order.client && (
           <Section title="Client Details">
             <Info label="Name" value={order.client.name} />
@@ -249,27 +272,29 @@ const OrderDetails: React.FC = () => {
               <table className="w-full border border-gray-300">
                 <thead className="bg-gray-100">
                   <tr>
+                      <th className="border px-2 py-1">Email Type</th>
                     <th className="border px-2 py-1">Plan Name</th>
-                    <th className="border px-2 py-1">Service Type</th>
+                    {/* <th className="border px-2 py-1">Service Type</th> */}
                     <th className="border px-2 py-1">Type</th>
-                    <th className="border px-2 py-1">Provider</th>
+                    {/* <th className="border px-2 py-1">Provider</th> */}
                     <th className="border px-2 py-1">Users</th>
                     <th className="border px-2 py-1">Reg Date</th>
                     <th className="border px-2 py-1">Exp Date</th>
-                    <th className="border px-2 py-1">Email Type</th>
+                  
                   </tr>
                 </thead>
                 <tbody>
                   {order.plans.map((plan) => (
                     <tr key={plan._id}>
+                      <td className="border px-2 py-1">{plan.emailType}</td>
                       <td className="border px-2 py-1">{plan.planName}</td>
-                      <td className="border px-2 py-1">{plan.serviceType}</td>
+                      {/* <td className="border px-2 py-1">{plan.serviceType}</td> */}
                       <td className="border px-2 py-1">{plan.type}</td>
-                      <td className="border px-2 py-1">{plan.provider}</td>
+                      {/* <td className="border px-2 py-1">{plan.provider}</td> */}
                       <td className="border px-2 py-1">{plan.noOfUsers}</td>
                       <td className="border px-2 py-1">{formatDate(plan.registrationDate)}</td>
                       <td className="border px-2 py-1">{formatDate(plan.expiryDate)}</td>
-                      <td className="border px-2 py-1">{plan.emailType}</td>
+                      
                     </tr>
                   ))}
                 </tbody>
@@ -279,14 +304,14 @@ const OrderDetails: React.FC = () => {
         )}
 
         {/* Active Services */}
-        <Section title="Active Services">
+        {/* <Section title="Active Services">
           <ul className="list-disc pl-6">
             {order.email_flag && <li>Email</li>}
             {order.host_flag && <li>Hosting</li>}
             {order.ssl_flag && <li>SSL</li>}
             {order.website_flag && <li>Website</li>}
           </ul>
-        </Section>
+        </Section> */}
 
         {/* Actions */}
         <div className="flex justify-end gap-3">

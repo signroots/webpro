@@ -60,8 +60,19 @@ export const createOrder = async (orderData: Partial<Order>): Promise<Order> => 
 
 // ✅ Get existing customers
 export const getExistingCustomers = async (): Promise<Client[]> => {
-  const response = await axios.get(`${FULL_API_URL}/orders/existing_customers`);
-  return response.data.data; // Only the data array
+
+  const token = localStorage.getItem("token");
+
+  const response = await axios.get(
+    `${FULL_API_URL}/orders/existing_customers`,
+    {
+      headers:{
+        Authorization:`Bearer ${token}`
+      }
+    }
+  );
+
+  return response.data.data;
 };
 // ✅ Get all active email types
 export const getEmailTypes = async (): Promise<any[]> => {

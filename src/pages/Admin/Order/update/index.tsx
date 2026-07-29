@@ -676,7 +676,17 @@ const UpdateOrder: React.FC = () => {
 
     const fetchOrder = async () => {
       try {
-        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/orders/${orderId}`);
+        const token = localStorage.getItem("token");
+
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/api/orders/${orderId}`,
+          {
+            headers:{
+              Authorization:`Bearer ${token}`
+            }
+          }
+        );
+
         const order = res.data.data || res.data;
 
         setEmailChecked(!!order.email_flag);
@@ -1011,19 +1021,30 @@ const UpdateOrder: React.FC = () => {
 
 
   // ------------------- FETCH CLIENTS -------------------
-  useEffect(() => {
-    const fetchClients = async () => {
-      if (customerType === "existing") {
-        try {
-          const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/orders/existing_customers`);
-          setClients(res.data.data);
-        } catch (err) {
-          console.error(err);
-        }
+useEffect(() => {
+  const fetchClients = async () => {
+    if (customerType === "existing") {
+      try {
+        const token = localStorage.getItem("token"); // നിങ്ങളുടെ token key
+
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/api/orders/existing_customers`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        setClients(res.data.data);
+      } catch (err) {
+        console.error(err);
       }
-    };
-    fetchClients();
-  }, [customerType]);
+    }
+  };
+
+  fetchClients();
+}, [customerType]);
 
   // ------------------- FETCH COUNTRIES -------------------
   useEffect(() => {

@@ -69,6 +69,7 @@ interface Order {
   domainName: string;
   lockStatus?: string;
   status?: string;
+  order_status?:string;
   users?: number;
   domain_flag?: boolean;
   managedBy?: string;
@@ -80,6 +81,7 @@ interface Order {
   cloudflareRegistered?: boolean;
   hosting?: boolean;
   email_flag?: boolean;
+  
   website_flag?: boolean;
   ssl_flag?: boolean;
   host_flag?: boolean;
@@ -158,6 +160,14 @@ interface Order {
     c_placeOfContactWithStateCode?: string;
     c_portalEnabled?: boolean;
   };
+  // API Response Plans
+Plans?: {
+  type: "email" | "storage" | "msoffice";
+  expiryDate: string;
+  emailType: string;
+  emailTypeImage: string;
+  planId: string;
+}[];
 
 }
 
@@ -346,14 +356,25 @@ useEffect(() => {
   }, [modalType]);
 
   // Fetch existing customers when "existing" is selected
-  useEffect(() => {
-    if (customerType === "existing") {
-      axios
-        .get(`${import.meta.env.VITE_API_BASE_URL}/api/orders/existing_customers`)
-        .then((res) => setClient(res.data.data))
-        .catch((err) => console.error(err));
-    }
-  }, [customerType]);
+ useEffect(() => {
+  if (customerType === "existing") {
+
+    const token = localStorage.getItem("token");
+
+    axios
+      .get(
+        `${import.meta.env.VITE_API_BASE_URL}/api/orders/existing_customers`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+      .then((res) => setClient(res.data.data))
+      .catch((err) => console.error(err));
+
+  }
+}, [customerType]);
   useEffect(() => {
     if (typeof location.state?.fromPage === "number") {
       isRestoringRef.current = true;
@@ -899,7 +920,7 @@ const getStatusClass = (status?: string) => {
                 <td className="px-2 py-4 max-w-[200px] truncate">
                   {order.client ? (
                     <Link
-                      to={`/customer/${order.client._id}/orders`}
+                        to={`/admin/orders/customer/${order.client?._id}`}
                       className="text-blue-600 hover:underline"
                       title={order.client.c_company} // Full name on hover tooltip
                     >
@@ -948,14 +969,59 @@ const getStatusClass = (status?: string) => {
                       <FaGlobe className="w-6 h-6 text-gray-300" title="No Domain Source" />
                     )}
 
-                    {/* Email Service */}
-                    {order.google_email ? (
-                      <img src="/download.png" className="w-5 h-5" title="Google Workspace" />
-                    ) : order.microsoft_email ? (
-                      <img src="/microsoft.png" className="w-5 h-5" title="Microsoft 365" />
-                    ) : (
-                      <FaEnvelope className="w-5 h-5 text-gray-300" title="No Email" />
-                    )}
+                    {/* EMAIL PLANS */}
+
+{order.Plans?.filter(
+(plan)=>plan.type==="email"
+)
+.map((plan,index)=>(
+
+<div
+key={index}
+className="relative group"
+>
+<img
+  src={`${import.meta.env.VITE_API_BASE_URL}${plan.emailTypeImage}`}
+  className="w-5 h-5 cursor-pointer"
+  title={plan.emailType}
+/>
+<div
+className="
+hidden group-hover:block
+absolute left-0 top-full mt-2
+bg-gray-900 text-white
+text-xs
+p-3
+rounded-lg
+w-64
+shadow-xl
+z-50
+"
+>
+
+<p>
+<b>Email:</b> {plan.emailType}
+</p>
+
+
+<p>
+<b>Expiry:</b>{" "}
+{new Date(plan.expiryDate)
+.toLocaleDateString()}
+</p>
+
+
+<p>
+<b>Plan ID:</b> {plan.planId}
+</p>
+
+
+</div>
+
+</div>
+
+))}
+
 
                     {/* MS OFFICE */}
                     {/* MS OFFICE */}
@@ -1140,7 +1206,7 @@ const getStatusClass = (status?: string) => {
       <span className="w-4 h-4 flex justify-center items-center rounded-full bg-white text-black text-[9px]">
         D
       </span>
-      {order.status || "N/A"}
+      {order.order_status || "N/A"}
     </span>
 
     <span className="text-gray-400 text-xs">|</span>
@@ -1383,7 +1449,7 @@ const getStatusClass = (status?: string) => {
                   <label className="block">
                     Status:
                     <select
-                      defaultValue={selectedOrder.status}
+                      defaultValue={selectedOrder.order_status}
                       className="border px-3 py-2 rounded w-full text-black"
                     >
                       <option>Active</option>

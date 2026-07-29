@@ -68,15 +68,42 @@ export interface OrderResponse {
 }
 
 // ✅ Fetch single order
-export const fetchOrderById = async (id: string): Promise<OrderResponse> => {
-  const response = await axios.get(`${API_BASE_URL}/api/orders/${id}`);
+export const fetchOrderById = async (
+  id: string
+): Promise<OrderResponse> => {
+
+  const token = localStorage.getItem("token");
+
+  const response = await axios.get(
+    `${API_BASE_URL}/api/orders/${id}`,
+    {
+      headers:{
+        Authorization:`Bearer ${token}`
+      }
+    }
+  );
+
   return response.data;
 };
 
-
 // ✅ Update order (PUT)
-export const updateOrder = async (id: string, data: Partial<Order>): Promise<Order> => {
-  const response = await axios.put(`${API_BASE_URL}/api/orders/${id}`, data);
+export const updateOrder = async (
+  id: string,
+  data: Partial<Order>
+): Promise<Order> => {
+
+  const token = localStorage.getItem("token");
+
+  const response = await axios.put(
+    `${API_BASE_URL}/api/orders/${id}`,
+    data,
+    {
+      headers:{
+        Authorization:`Bearer ${token}`
+      }
+    }
+  );
+
   return response.data;
 };
 
