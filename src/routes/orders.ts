@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import { authMiddleware,AuthRequest  } from "../middleware/auth"; 
 import User from "../models/User";
 import  { IUserType } from "../models/UserType"
+import DomainSource from "../models/DomainSource";
 import Client from "../models/Client";
 import  {OrderPlan } from "../models/OrderPlan";
 import { PlanEmail } from "../models/PlanEmail";
@@ -136,15 +137,30 @@ router.get(
       // ===================== ADMIN =========================
       // =====================================================
     if (userRole === "admin") {
-  const query: any = {
-    domainSource: "Cloudflare", // Only Cloudflare domains
-    dns_flag: true,           // Only domains with domain_flag true
-    $or: [
-      { expiryDate: null },
-      { expiryDate: { $exists: false } },
-      { expiryDate: "" },
-    ],
-  };
+ const cloudflareSource = await DomainSource.findOne({
+  name: {
+    $regex: "Cloudflare",
+    $options: "i"
+  }
+});
+
+
+const query:any = {
+  dns_flag:true,
+  $or:[
+    { expiryDate:null },
+    { expiryDate:{ $exists:false } },
+    { expiryDate:"" }
+  ]
+};
+
+
+if(cloudflareSource){
+  query.domainSource = cloudflareSource._id;
+}
+else{
+  query.domainSource = null;
+}
 
   const orders = await Order.find(query)
     .populate("customer", "name email company")
@@ -193,15 +209,23 @@ const filteredOrders = orders.filter(
 
         if (filter === "Cloudflare") {
         // Correct way to add multiple fields
-        Object.assign(query, {
-          domainSource: "Cloudflare",
-          dns_flag: true,
-          $or: [
-            { expiryDate: null },
-            { expiryDate: { $exists: false } },
-            { expiryDate: "" },
-          ],
-        });
+        const cloudflareSource = await DomainSource.findOne({
+  name:{
+    $regex:"Cloudflare",
+    $options:"i"
+  }
+});
+
+
+Object.assign(query,{
+  dns_flag:true,
+  $or:[
+    { expiryDate:null },
+    { expiryDate:{ $exists:false }},
+    { expiryDate:"" }
+  ],
+  domainSource: cloudflareSource?._id || null
+});
       }
 
         const orders = await Order.find(query)
