@@ -138,7 +138,7 @@ router.get(
     if (userRole === "admin") {
   const query: any = {
     domainSource: "Cloudflare", // Only Cloudflare domains
-    domain_flag: true,           // Only domains with domain_flag true
+    dns_flag: true,           // Only domains with domain_flag true
     $or: [
       { expiryDate: null },
       { expiryDate: { $exists: false } },
@@ -150,10 +150,27 @@ router.get(
     .populate("customer", "name email company")
     .populate("client", "c_name c_email c_company")
     .exec();
+    const orderIds = orders.map(order => order._id);
+
+const plans = await OrderPlan.find({
+  orderId: {
+    $in: orderIds
+  }
+}).select("orderId");
+
+
+const planOrderIds = new Set(
+  plans.map(plan => plan.orderId.toString())
+);
+
+
+const filteredOrders = orders.filter(
+  order => !planOrderIds.has(order._id.toString())
+);
 
   res.status(200).json({
     success: true,
-    data: orders,
+    data: filteredOrders,
   });
   return;
 }
@@ -178,7 +195,7 @@ router.get(
         // Correct way to add multiple fields
         Object.assign(query, {
           domainSource: "Cloudflare",
-          domain_flag: true,
+          dns_flag: true,
           $or: [
             { expiryDate: null },
             { expiryDate: { $exists: false } },
@@ -190,6 +207,23 @@ router.get(
         const orders = await Order.find(query)
           .populate("client", "c_name c_email c_company")
           .exec();
+          const orderIds = orders.map(order => order._id);
+
+const plans = await OrderPlan.find({
+  orderId: {
+    $in: orderIds
+  }
+}).select("orderId");
+
+
+const planOrderIds = new Set(
+  plans.map(plan => plan.orderId.toString())
+);
+
+
+const filteredOrders = orders.filter(
+  order => !planOrderIds.has(order._id.toString())
+);
 
         res.status(200).json({
           success: true,
@@ -199,7 +233,7 @@ router.get(
             c_company: client.c_company,
             email: client.c_email,
           },
-          data: orders,
+          data: filteredOrders,
         });
         return;
       }
