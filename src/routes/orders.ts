@@ -396,80 +396,94 @@ const emailType =
     // ================= STATUS UPDATE =================
 
 
-    const updateOrderStatuses = async(orders:any[])=>{
+    const updateOrderStatuses = async (orders:any[]) => {
+
+  const today = new Date();
+
+  const bulkOps:any[] = [];
 
 
-      const today = new Date();
+  orders.forEach(order => {
 
-      const bulkOps:any[]=[];
-
-
-
-      orders.forEach(order=>{
+    let isExpired = false;
 
 
-        if(!order.expiryDate)
-          return;
+    // 1. Check Order expiryDate
+    if(order.expiryDate){
+
+      if(new Date(order.expiryDate) < today){
+        isExpired = true;
+      }
+
+    }
+
+
+    // 2. Check Plans expiryDate
+    if(order.Plans && order.Plans.length > 0){
+
+      const planExpired = order.Plans.some(
+        (plan:any) =>
+          plan.expiryDate &&
+          new Date(plan.expiryDate) < today
+      );
+
+
+      if(planExpired){
+        isExpired = true;
+      }
+
+    }
 
 
 
-        const newStatus =
-
-          new Date(order.expiryDate) < today
-
-          ? "EXPIRED"
-
-          : "ACTIVE";
+    const newStatus = isExpired
+      ? "EXPIRED"
+      : "ACTIVE";
 
 
 
+    if(order.order_status !== newStatus){
 
-        if(order.order_status !== newStatus){
+      bulkOps.push({
 
+        updateOne:{
 
-          bulkOps.push({
+          filter:{
+            _id:order._id
+          },
 
-            updateOne:{
-
-              filter:{
-                _id:order._id
-              },
-
-              update:{
-                status:newStatus
-              }
-
+          update:{
+            $set:{
+              order_status:newStatus
             }
-
-          });
-
-
-          order.status = newStatus;
-
+          }
 
         }
-
 
       });
 
 
+      order.order_status = newStatus;
+
+    }
 
 
-      if(bulkOps.length){
-
-        await Order.bulkWrite(
-          bulkOps
-        );
-
-      }
+  });
 
 
-      return orders;
+
+  if(bulkOps.length){
+
+    await Order.bulkWrite(
+      bulkOps
+    );
+
+  }
 
 
-    };
+  return orders;
 
-
+};
 
 // ================= EXPIRY 65 DAYS FILTER =================
 
@@ -718,7 +732,10 @@ const finalFilter = {
 
 
 
-
+      orders =
+ await attachEmailPlans(
+   orders
+ );
 
       orders =
         await updateOrderStatuses(
@@ -727,10 +744,7 @@ const finalFilter = {
 
 
 
-      orders =
- await attachEmailPlans(
-   orders
- );
+
 orders = orders.filter(
   (order:any) =>
     order.Plans &&
@@ -855,6 +869,10 @@ const finalFilter = {
 
 
 
+      orders =
+ await attachEmailPlans(
+   orders
+ );
 
       orders =
         await updateOrderStatuses(
@@ -863,10 +881,6 @@ const finalFilter = {
 
 
 
-      orders =
- await attachEmailPlans(
-   orders
- );
 
 
 orders = orders.filter(
