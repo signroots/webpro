@@ -2,6 +2,7 @@ import { ICustomer, updateCustomer } from "./api";
 import { FaEye, FaEdit, FaCopy, FaKey, FaEyeSlash } from "react-icons/fa";
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { FaTrash } from "react-icons/fa";
 interface Props {
   customers: ICustomer[];
   currentPage: number;
@@ -9,6 +10,7 @@ interface Props {
   onPageChange: (page: number) => void;
   onView: (customer: ICustomer) => void;
   onEdit: (customer: ICustomer) => void;
+  onDelete: (customerId: string) => void;
   highlightCustomerId: string | null;
 }
 
@@ -19,6 +21,7 @@ const CustomerList: React.FC<Props> = ({
   onPageChange,
   onView,
   onEdit,
+  onDelete,
   highlightCustomerId,
 }) => {
   // const startIndex = (currentPage - 1) * itemsPerPage;
@@ -35,6 +38,8 @@ const CustomerList: React.FC<Props> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [savedPassword, setSavedPassword] = useState("");
+  const [deleteModal, setDeleteModal] = useState(false);
+const [customerToDelete, setCustomerToDelete] = useState<any>(null);
 
 const [searchTerm, setSearchTerm] = useState("");
   const onAddPassword = (customer: ICustomer) => {
@@ -44,6 +49,21 @@ const [searchTerm, setSearchTerm] = useState("");
     setNewPassword("");
     setSavedPassword("");
   };
+  
+const handleDeleteClick = (customer: ICustomer) => {
+  setCustomerToDelete(customer);
+  setDeleteModal(true);
+};
+
+
+const confirmDelete = () => {
+  if (customerToDelete?._id) {
+    onDelete(customerToDelete._id);
+  }
+
+  setDeleteModal(false);
+  setCustomerToDelete(null);
+};
   
   // ✅ Save Password (Auto or Manual)
   const handleSavePassword = async () => {
@@ -289,9 +309,16 @@ const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
       <button onClick={() => onAddPassword(c)} className="text-yellow-600 hover:text-yellow-800">
         <FaKey />
       </button>
+        <button
+    onClick={() => handleDeleteClick(c)}
+    className="text-red-600 hover:text-red-800"
+  >
+    <FaTrash />
+  </button>
     </div>
   </td>
 </tr>
+
             );
           })}
         </tbody>
@@ -480,6 +507,49 @@ const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
           </div>
         </div>
       )}
+      {deleteModal && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+
+    <div className="bg-white rounded-xl shadow-xl w-[400px] p-6">
+
+      <h2 className="text-xl font-semibold text-gray-800">
+        Delete Customer
+      </h2>
+
+      <p className="text-gray-600 mt-3">
+        Are you sure you want to delete 
+        <strong>
+          {" "}{customerToDelete?.c_company || customerToDelete?.c_name}
+        </strong>?
+      </p>
+
+
+      <div className="flex justify-end gap-3 mt-6">
+
+        <button
+          onClick={() => {
+            setDeleteModal(false);
+            setCustomerToDelete(null);
+          }}
+          className="px-4 py-2 bg-gray-200 rounded-lg"
+        >
+          Cancel
+        </button>
+
+
+        <button
+          onClick={confirmDelete}
+          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+        >
+          Delete
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+)}
     </div>
   );
 };

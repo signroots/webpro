@@ -11,7 +11,7 @@ import {
 } from "react-icons/fa";
 import { SiCloudflare,SiHostinger } from "react-icons/si";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { fetchOrders,fetchOrdersByProvider ,fetchCustomerOrder} from "../Order/api";
+import { fetchOrders ,fetchCustomerOrder} from "../Order/api";
 import { fetchDNSOrders } from "../Order/api";
 // import { createOrder } from "./new/api";
 import axios from "axios";
@@ -101,7 +101,7 @@ const DNSOrders: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
    const [client, setClient] = useState<Client[]>([]);
   const navigate = useNavigate();
-
+const [emailType, setEmailType] = useState("");
   const [formData, setFormData] = useState<Order>({
     _id: "",
     domainName: "",
@@ -188,31 +188,41 @@ useEffect(() => {
   }, [customerType]);
 
   // -------------------- Apply Filters --------------------
-  useEffect(() => {
-    const applyFilters = async () => {
-      let filtered: Order[] = allOrders;
-
-      if (provider) {
-        try {
-          const providerOrders = await fetchOrdersByProvider(provider);
-          filtered = providerOrders;
-        } catch (err) {
-          console.error("Failed to fetch provider orders", err);
-        }
-      }
-
-      if (statusFilter) {
-        filtered = filtered.filter(
-          (o) => o.status?.toLowerCase() === statusFilter.toLowerCase()
-        );
-      }
-
-      setOrders(filtered);
-      setCurrentPage(1);
-    };
-
-    applyFilters();
-  }, [provider, statusFilter, allOrders]);
+  useEffect(()=>{
+  
+   const applyFilters = async()=>{
+  
+  
+     let filtered = allOrders;
+  
+  
+     if(emailType){
+  
+       const response = await fetchOrders({
+  
+         emailType:emailType
+  
+       });
+  
+  
+       filtered = response.data;
+  
+     }
+  
+  
+     setOrders(filtered);
+  
+  
+   };
+  
+  
+   applyFilters();
+  
+  
+  },[
+   emailType,
+   allOrders
+  ]);
 
   // -------------------- Handlers --------------------
 const handleView = async (order: Order) => {

@@ -122,9 +122,15 @@ export const updateCustomer = async (
 };
 
 // Delete customer
-export const deleteCustomer = async (id: string): Promise<{ message: string }> => {
-  const res = await axios.delete<{ message: string }>(`${API_BASE_URL}/api/client/${id}`);
-  return res.data;
+export const deleteCustomer = async (id: string) => {
+  const response = await fetch(
+    `${import.meta.env.VITE_API_BASE_URL}/api/client/${id}`,
+    {
+      method: "DELETE",
+    }
+  );
+
+  return await response.json();
 };
 
 

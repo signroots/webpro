@@ -3,6 +3,7 @@ import {
   ICustomer,
   fetchCustomers,
   createCustomer,
+  deleteCustomer,
   updateCustomer,
   fetchCountries,
   fetchStatesByCountry,
@@ -197,7 +198,23 @@ const Customers: React.FC = () => {
       setLoading(false);
     }
   };
+const handleDeleteCustomer = async (id: string) => {
+  try {
 
+    const response = await deleteCustomer(id);
+
+    if (response?.success) {
+      notify("Customer deleted successfully!", "success");
+      refreshCustomers();
+    } else {
+      notify(response?.error || "Failed to delete customer", "error");
+    }
+
+  } catch (error) {
+    console.error("Delete customer error:", error);
+    notify("Failed to delete customer", "error");
+  }
+};
   const handleCreate = () => {
     setSelectedCustomer(null);
     setModalForm({
@@ -381,6 +398,7 @@ useEffect(() => {
           onPageChange={setCurrentPage}
           onView={handleView}
           onEdit={handleEdit}
+          onDelete={handleDeleteCustomer}
           highlightCustomerId={highlightCustomerId}
         />
       )}

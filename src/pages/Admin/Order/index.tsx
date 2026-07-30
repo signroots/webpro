@@ -12,7 +12,7 @@ import {
 import { useLocation } from "react-router-dom";
 import { SiCloudflare, SiHostinger } from "react-icons/si";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { fetchOrders, fetchOrdersByProvider, fetchCustomerOrder } from "./api";
+import { fetchOrders, fetchCustomerOrder } from "./api";
 import { fetchOrderById } from "./update/api";
 import { createOrder } from "./new/api";
 import axios from "axios";
@@ -75,7 +75,12 @@ interface Order {
   managedBy?: string;
   registrationDate?: string;
   expiryDate?: string;
-  domainSource?: string;
+ domainSource?: {
+  _id:string;
+  name:string;
+  code:string;
+  image?:string;
+};
   google_email?: boolean;
   microsoft_email?: boolean;
   cloudflareRegistered?: boolean;
@@ -199,7 +204,7 @@ const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
     typeof location.state?.updatedOrderId === "string"
       ? location.state.updatedOrderId
       : null;
-
+const [emailType, setEmailType] = useState<string | undefined>(undefined);
   const fromPage: number | null =
     typeof location.state?.fromPage === "number"
       ? location.state.fromPage
@@ -240,7 +245,7 @@ const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
 
 
   // Filters
-  const [provider, setProvider] = useState<string | undefined>(undefined);
+  // const [provider, setProvider] = useState<string | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
   const [customerType, setCustomerType] = useState<"existing" | "new" | undefined>(undefined);
   const [emailChecked, setEmailChecked] = useState(false);
@@ -281,30 +286,80 @@ const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
 
 
 
+const closeCustomerModal = () => {
+  setModalType(null);
+  setSelectedOrder(null);
 
+  setCustomerType("existing");
+
+  setFormData((prev) => ({
+    ...prev,
+    client: null,
+    newCustomer: {},
+  }));
+};
 
 useEffect(() => {
+
   const loadOrders = async () => {
+
     try {
+
       setLoading(true);
-      const response = await fetchOrders(
-        debouncedSearch,
-        currentPage,
-        itemsPerPage
+
+
+      const response = await fetchOrders({
+
+        search: debouncedSearch,
+
+        page: currentPage,
+
+        limit: itemsPerPage,
+
+      });
+
+
+
+      setOrders(
+        response.data || []
       );
 
-      setOrders(response.data || []);
-      setTotalPages(response.totalPages || 1);
-      setTotalOrders(response.total || 0);
+
+      setTotalPages(
+        response.totalPages || 1
+      );
+
+
+      setTotalOrders(
+        response.total || 0
+      );
+
+
     } catch (err) {
-      console.error("Failed to fetch orders", err);
+
+      console.error(
+        "Failed to fetch orders",
+        err
+      );
+
+
     } finally {
+
       setLoading(false);
+
     }
+
   };
 
+
   loadOrders();
-}, [debouncedSearch, currentPage, itemsPerPage]);
+
+
+}, [
+  debouncedSearch,
+  currentPage,
+  itemsPerPage
+]);
 
 useEffect(() => {
   const handler = setTimeout(() => {
@@ -641,32 +696,41 @@ useEffect(() => {
   useEffect(() => {
   setCurrentPage(1);
 }, [searchTerm])
-  useEffect(() => {
-    const applyFilters = async () => {
-      let filtered: Order[] = allOrders;
+useEffect(()=>{
 
-      if (provider) {
-        try {
-          const providerOrders = await fetchOrdersByProvider(provider);
-          filtered = providerOrders;
-        } catch (err) {
-          console.error("Failed to fetch provider orders", err);
-        }
-      }
+ const applyFilters = async()=>{
 
-      // if (statusFilter) {
-      //   filtered = filtered.filter(
-      //     (o) => o.status?.toLowerCase() === statusFilter.toLowerCase()
-      //   );
-      // }
 
-      setOrders(filtered);
-      setCurrentPage(1);
-    };
+   let filtered = allOrders;
 
-    applyFilters();
-  }, [provider, statusFilter, allOrders, customerType]);
 
+   if(emailType){
+
+     const response = await fetchOrders({
+
+       emailType:emailType
+
+     });
+
+
+     filtered = response.data;
+
+   }
+
+
+   setOrders(filtered);
+
+
+ };
+
+
+ applyFilters();
+
+
+},[
+ emailType,
+ allOrders
+]);
   // const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
   const paginatedOrders = orders;
 const getStatusClass = (status?: string) => {
@@ -773,17 +837,17 @@ const getStatusClass = (status?: string) => {
             className="w-full border px-4 py-2 rounded-lg bg-white flex items-center justify-between text-black"
           >
             <div className="flex items-center gap-2">
-              {provider === "Google Workspace" && (
+              {emailType === "Google Workspace" && (
                 <img src="/download.png" alt="Google Workspace" className="w-5 h-5" />
               )}
-              {provider === "Microsoft 365" && (
+              {emailType === "Microsoft 365" && (
                 <img src="/microsoft.png" alt="Microsoft 365" className="w-5 h-5" />
               )}
-              {!provider && (
+              {!emailType && (
                 <img src="/reset.png" alt="All Providers" className="w-5 h-5" />
               )}
               <span>
-                {provider || "All Providers"}
+                {emailType || "All Providers"}
               </span>
             </div>
             <span className="text-gray-500">▼</span>
@@ -793,7 +857,7 @@ const getStatusClass = (status?: string) => {
             <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg">
               <div
                 onClick={() => {
-                  setProvider(undefined);
+                  setEmailType(undefined);
                   setDropdownOpen(false);
                 }}
                 className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer"
@@ -804,7 +868,7 @@ const getStatusClass = (status?: string) => {
 
               <div
                 onClick={() => {
-                  setProvider("Google Workspace");
+                  setEmailType("Google Workspace");
                   setDropdownOpen(false);
                 }}
                 className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer"
@@ -815,7 +879,7 @@ const getStatusClass = (status?: string) => {
 
               <div
                 onClick={() => {
-                  setProvider("Microsoft 365");
+                  setEmailType("Microsoft 365");
                   setDropdownOpen(false);
                 }}
                 className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer"
@@ -842,7 +906,7 @@ const getStatusClass = (status?: string) => {
   </select> */}
       </div>
 {/* PAGINATION — TOP */}
-{!provider && (
+{ !emailType && (
   <div className="mb-3 flex justify-end gap-4 text-black">
     <button
       disabled={currentPage === 1}
@@ -949,25 +1013,36 @@ const getStatusClass = (status?: string) => {
                 {/* SERVICES */}
                 <td className="px-1 py-2">
                   <div className="flex items-center gap-3">
+                    
 
                     {/* Domain Source */}
-                    {order.domainSource ? (
-                      order.domainSource.toLowerCase() === "resellerclub" ? (
-                        <img src="/images/resellerclub.png" className="w-6 h-6" title="ResellerClub" />
-                      ) : order.domainSource.toLowerCase() === "cloudflare" && order.domain_flag === true ? (
-                        <img src="/dns_logo.png" className="w-6 h-6" title="DNS Cloudflare" />
-                      ) : order.domainSource.toLowerCase() === "cloudflare" ? (
-                        <img src="/images/cloudflare.png" className="w-7 h-7" title="Cloudflare" />
-                      ) : order.domainSource.toLowerCase() === "hostinger" ? (
-                        <SiHostinger className="w-6 h-6 text-blue-500" title="Hostinger" />
-                      ) : order.domainSource.toLowerCase() === "ae server" ? (
-                        <img src="/images/aeserverlogo.png" className="w-7 h-7" title="AE Server" />
-                      ) : (
-                        <FaGlobe className="w-6 h-6 text-gray-400" title={order.domainSource} />
-                      )
-                    ) : (
-                      <FaGlobe className="w-6 h-6 text-gray-300" title="No Domain Source" />
-                    )}
+                    {/* Domain Source */}
+
+{
+  order.domainSource && order.domainSource.image ? (
+
+    <img
+      src={
+        order.domainSource.image.startsWith("/uploads")
+          ? `${import.meta.env.VITE_API_BASE_URL}${order.domainSource.image}`
+          : `/images/${order.domainSource.image}`
+      }
+      className="w-7 h-7 object-contain"
+      title={order.domainSource.name}
+      onError={(e)=>{
+        e.currentTarget.src="/images/default-domain.png";
+      }}
+    />
+
+  ) : (
+
+    <FaGlobe
+      className="w-6 h-6 text-gray-400"
+      title="No Domain Source"
+    />
+
+  )
+}
 
                     {/* EMAIL PLANS */}
 
@@ -1261,7 +1336,7 @@ z-50
       </div>
 
       {/* Pagination */}
-      {!provider && (
+      {!emailType && (
         <div className="mt-4 flex justify-center gap-4 text-black">
           <button
             disabled={currentPage === 1}
@@ -1354,7 +1429,7 @@ z-50
                           />
 
                           {/* <InfoItem label="Expiry Date" value={selectedOrder.expiryDate? new Date(selectedOrder.expiryDate).toLocaleDateString("en-GB"):"N/A"} /> */}
-                          <InfoItem label="Provider" value={selectedOrder.provider} />
+                      
                           <InfoItem label="Subscription" value={selectedOrder.subscription} />
                         </div>
                       </section>
@@ -1439,7 +1514,7 @@ z-50
                     Domain:
                     <input
                       type="text"
-                      value={selectedOrder.domainSource}
+                      value={selectedOrder.domainSource?.name || ""}
                       className="border px-3 py-2 rounded w-full text-black"
                       readOnly
                     />
@@ -1518,7 +1593,7 @@ z-50
                 <div className="fixed inset-0 bg-black bg-opacity-30 z-40" />
                 <div
                   className="fixed inset-0 bg-black bg-opacity-30 z-50 flex justify-center items-center"
-                  onClick={() => setModalType(null)}
+                  onClick={closeCustomerModal}
                 >
                   <div
                     ref={modalRef}
@@ -1530,7 +1605,7 @@ z-50
                     {/* Close Button at Top Right */}
                     <button
                       className="absolute top-3 right-3 text-black text-2xl font-bold hover:text-red-500"
-                      onClick={() => setModalType(null)}
+                      onClick={closeCustomerModal}
                     >
                       ×
                     </button>

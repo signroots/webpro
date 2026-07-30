@@ -17,6 +17,7 @@ import DnsOrder from "../../pages/Admin/DnsOrder";
 import RenewList from "../../pages/Admin/RenewList";
 import OrderDetails from "../../pages/Admin/Order/OrderDetails"
 import Dashboard from "../../pages/Admin/Dashboard";
+import DomainSource from "../../pages/Admin/DomainSource"
 export default function AdminRoutes() {
   return (
     <Routes>
@@ -46,6 +47,7 @@ export default function AdminRoutes() {
 
         <Route path="categories" element={<Categories />} />
         <Route path="user-types" element={<UserTypes />} />
+        <Route path="domain-source" element={<DomainSource />} />
       </Route>
     </Routes>
   );

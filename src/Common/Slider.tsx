@@ -9,6 +9,7 @@ import {
   Settings,
   Layers,
   Globe,
+  Database,
 } from "lucide-react";
 
 interface MenuItem {
@@ -30,6 +31,7 @@ const menuItems: MenuItem[] = [
       { name: "Status", icon: <BarChart size={16} /> },
       { name: "User Types", icon: <Layers size={16} /> },
       { name: "Data Management", icon: <Layers size={16} /> },
+       { name: "Domain Source", icon: <Database size={16} /> },
     ],
   },
 ];
@@ -66,6 +68,8 @@ const Slider: React.FC = () => {
         return "/admin/user-types";
       case "Data Management":
         return "/admin/data-management";
+      case "Domain Source":
+        return "/admin/domain-source";
       default:
         return "#";
     }

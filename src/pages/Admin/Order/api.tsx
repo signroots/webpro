@@ -17,7 +17,7 @@ export interface Order {
   password: string;
   users: number;
   email_customer: string;
-  provider: string;
+
   customer?: {
     _id: string;
    c_name: string;
@@ -62,41 +62,61 @@ const token = localStorage.getItem("token");
 // orders/api.ts (or ./api.ts – wherever fetchOrders is defined)
 
 export const fetchOrders = async (
-  search: string = "",
-  page: number = 1,
-  limit: number = 50
+  params:{
+    search?: string;
+    emailType?: string;
+    page?: number;
+    limit?: number;
+  } = {}
 ): Promise<{
   data: Order[];
   totalPages: number;
   total: number;
 }> => {
+
+
   const token = localStorage.getItem("token");
 
-  const response = await axios.get(`${FULL_API_URL}/orders`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    params: {
-      search,
-      page,
-      limit,
-    },
-  });
 
-  // 👇👇👇 THIS IS WHERE YOU ADD IT
+  const response = await axios.get(
+    `${FULL_API_URL}/orders`,
+    {
+      headers:{
+        Authorization:`Bearer ${token}`,
+      },
+
+      params:{
+        search: params.search || "",
+        emailType: params.emailType || "",
+        page: params.page || 1,
+        limit: params.limit || 50,
+      }
+
+    }
+  );
+
+
+
   return {
-    data: response.data.data,
-    totalPages: response.data.pagination.totalPages,
-    total: response.data.pagination.total,
-  };
-};
 
+    data: response.data.data,
+
+    totalPages:
+      response.data.pagination.totalPages,
+
+    total:
+      response.data.pagination.total,
+
+  };
+
+
+};
 
 // ✅ Fetch DNS Orders (Cloudflare filter)
 // api.tsx
 export const fetchDNSOrders = async () => {
   const token = localStorage.getItem("token"); 
-  const response = await axios.get(`${API_BASE_URL}/api/orders/dnsorders?filter=DNSCloudflare`,{
+  const response = await axios.get(`${API_BASE_URL}/api/orders/dnsorders?filter=Cloudflare`,{
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -117,11 +137,6 @@ export const fetchRenewListOrders = async () => {
 };
 
 
-// ✅ Fetch orders by provider (Google Workspace or Microsoft 365)
-export const fetchOrdersByProvider = async (provider: string): Promise<Order[]> => {
-  const response = await axios.get(`${FULL_API_URL}/orders/provider/${encodeURIComponent(provider)}`);
-  return response.data.data;
-};
 
 // ✅ Create a new order (POST)
 export const createOrder = async (orderData: Partial<Order>): Promise<Order> => {
