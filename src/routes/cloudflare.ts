@@ -121,6 +121,7 @@ router.get(
               : null;
 
             const cloudflareRegistered = !!registrarInfo;
+            const dnsFlag = registrarInfo ? false : true;
 
            
 
@@ -141,6 +142,7 @@ router.get(
                     customer: defaultCustomer._id,
                     domainSource: "Cloudflare",
                     dnsDetails: [],
+                    dns_flag: dnsFlag,
                     cloudflareRegistered,
                   },
                 },
