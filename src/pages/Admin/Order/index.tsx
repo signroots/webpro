@@ -643,13 +643,19 @@ useEffect(() => {
       closeModal();
       resetFormData();
       notify("Order Updated Successfully...", "success");
-      navigate("/admin/orders", {
-        state: {
-          fromPage: currentPage,
-          updatedOrderId: orderId,
-        },
-      });
+      // same page maintain
+setCurrentPage(currentPage);
 
+// refresh order list
+const response = await fetchOrders({
+  search: debouncedSearch,
+  page: currentPage,
+  limit: itemsPerPage,
+});
+
+setOrders(response.data || []);
+setTotalPages(response.totalPages || 1);
+setTotalOrders(response.total || 0);
 
 
 
@@ -1271,35 +1277,18 @@ z-50
 
 
 <td className="px-2 py-4">
-  <div className="inline-flex items-center gap-2 whitespace-nowrap">
-
-    {/* Domain Status */}
-    <span
-      className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium
-        ${getStatusClass(order.status)}`}
-    >
-      <span className="w-4 h-4 flex justify-center items-center rounded-full bg-white text-black text-[9px]">
-        D
-      </span>
-      {order.order_status || "N/A"}
+  <span
+    className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium
+      ${getStatusClass(order.order_status)}`}
+  >
+    <span className="w-4 h-4 flex justify-center items-center rounded-full bg-white text-black text-[9px]">
+      D
     </span>
 
-    <span className="text-gray-400 text-xs">|</span>
+    {order.order_status || "N/A"}
 
-    {/* Email Status */}
-    <span
-      className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium
-        ${getStatusClass(order.email_status)}`}
-    >
-      <span className="w-4 h-4 flex justify-center items-center rounded-full bg-white text-black text-[9px]">
-        E
-      </span>
-      {order.email_status || "N/A"}
-    </span>
-
-  </div>
+  </span>
 </td>
-
 
 
 
