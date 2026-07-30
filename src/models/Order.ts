@@ -29,7 +29,7 @@ order_status: {
   nameServers: string[];
   dnsDetails: string[];
   lockStatus?: string;
-  domainSource?: string;
+  domainSource?: mongoose.Types.ObjectId;
   resellerCustomerId?: string;
   businessEmail?: boolean;
   hosting?: boolean;
@@ -110,7 +110,10 @@ const orderSchema = new mongoose.Schema<IOrder>(
     nameServers: [{ type: String }],
     dnsDetails: [{ type: String }],
     lockStatus: { type: String },
-    domainSource: { type: String },
+    domainSource: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "DomainSource"
+},
     resellerCustomerId: { type: String },
     cloudflareRegistered: { type: Boolean, default: false },
 
