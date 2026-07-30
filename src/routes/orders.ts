@@ -441,7 +441,31 @@ const expiryLimitDate = new Date();
 expiryLimitDate.setDate(
   expiryLimitDate.getDate() - 65
 );
+// ================= COMMON EXPIRY FILTER =================
 
+const getExpiryFilter = () => {
+  return {
+    $and: [
+      {
+        $or: [
+          {
+            expiryDate: {
+              $gte: expiryLimitDate
+            }
+          },
+          {
+            expiryDate: null
+          }
+        ]
+      },
+      {
+        dns_flag: {
+          $ne: true
+        }
+      }
+    ]
+  };
+};
 
 
     // ================= SEARCH FILTER =================
@@ -545,18 +569,7 @@ expiryLimitDate.setDate(
 
     ){
 
-const expiryFilter = {
-  $or: [
-    {
-      expiryDate: {
-        $gte: expiryLimitDate
-      }
-    },
-    {
-      expiryDate: null
-    }
-  ]
-};
+const expiryFilter = getExpiryFilter();
 
 
 const finalFilter = {
@@ -608,7 +621,11 @@ const finalFilter = {
  await attachEmailPlans(
    orders
  );
-
+orders = orders.filter(
+  (order:any) =>
+    order.Plans &&
+    order.Plans.length > 0
+);
 
 
 
@@ -684,18 +701,7 @@ const finalFilter = {
 
 
 
-    const expiryFilter = {
-  $or: [
-    {
-      expiryDate: {
-        $gte: expiryLimitDate
-      }
-    },
-    {
-      expiryDate:null
-    }
-  ]
-};
+ const expiryFilter = getExpiryFilter();
 
 
 const finalFilter = {
@@ -750,7 +756,11 @@ const finalFilter = {
  );
 
 
-
+orders = orders.filter(
+  (order:any) =>
+    order.Plans &&
+    order.Plans.length > 0
+);
 
 
       return res.status(200).json({
