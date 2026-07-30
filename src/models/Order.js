@@ -36,7 +36,11 @@ var orderSchema = new mongoose_1.default.Schema({
     nameServers: [{ type: String }],
     dnsDetails: [{ type: String }],
     lockStatus: { type: String },
-    domainSource: { type: String },
+    domainSource: {
+  type: mongoose_1.default.Schema.Types.ObjectId,
+  ref: "DomainSource"
+},
+
     resellerCustomerId: { type: String },
     cloudflareRegistered: { type: Boolean, default: false },
     // ========================
@@ -49,6 +53,7 @@ var orderSchema = new mongoose_1.default.Schema({
     email_flag: { type: Boolean, default: false },
     website_flag: { type: Boolean, default: false },
     domain_flag: { type: Boolean, default: false },
+    dns_flag: { type: Boolean, default: false },
     ssl_flag: { type: Boolean, default: false },
     host_flag: { type: Boolean, default: false },
     storage_services_flag: { type: Boolean, default: false },

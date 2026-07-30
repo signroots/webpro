@@ -352,5 +352,30 @@ router.get("/client-country-codes", async (req, res) => {
     });
   }
 });
+router.delete("/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
 
+    const deletedClient = await Client.findByIdAndDelete(id);
+
+    if (!deletedClient) {
+      return res.status(404).json({
+        success: false,
+        message: "Client not found"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Client deleted successfully"
+    });
+
+  } catch (error) {
+    console.error("Delete client error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete client"
+    });
+  }
+});
 export default router;

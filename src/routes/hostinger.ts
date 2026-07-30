@@ -2,11 +2,20 @@ import express from "express";
 import axios from "axios";
 import Order from "../models/Order";
 import Customer from "../models/Customer";
-
+import DomainSource from "../models/DomainSource";
 const router = express.Router();
 
 router.get("/import-hostinger-domains", async (req, res) => {
   try {
+    const hostingerSource = await DomainSource.findOne({
+  code: "HOSTINGER"
+});
+
+if (!hostingerSource) {
+  return res.status(400).json({
+    error: "Hostinger domain source not configured"
+  });
+}
     const TOKEN = process.env.HOSTINGER_API_TOKEN;
 
     if (!TOKEN) {
@@ -59,7 +68,7 @@ router.get("/import-hostinger-domains", async (req, res) => {
               ? new Date(d.expires_at)
               : null,
             managedBy: "Signroots",
-            domainSource: "Hostinger",
+            domainSource: hostingerSource._id,
             customer: hostingerCustomer._id,
             domain_flag: true,
           },

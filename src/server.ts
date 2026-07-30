@@ -28,7 +28,7 @@ import hostSubTypeRoutes from "./routes/hostSubTyperoute";
 import dashboard from "./routes/dashboard";
 import storageRoutes from "./routes/storageroute";
 import hostinger from "./routes/hostinger";
-
+import domainSourceRoutes from "./routes/domainSource";
 import { exportOrders } from "./controllers/export.controller";
 
 // Cron
@@ -90,7 +90,7 @@ app.get("/", (_req: Request, res: Response) => {
 app.use("/api/cloudflare", cloudflareRoutes);
 
 app.use("/api/hostinger", hostinger);
-
+app.use("/api/domain-sources", domainSourceRoutes);
 app.use("/api/customers", customerRoutes);
 
 app.use("/api/mainreseller", MainResellerRoutes);

@@ -271,7 +271,10 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
         ? req.query.search.trim()
         : "";
 
-
+const emailType =
+  typeof req.query.emailType === "string"
+    ? req.query.emailType.trim()
+    : "";
     const page =
       Math.max(Number(req.query.page) || 1, 1);
 
@@ -508,7 +511,75 @@ const getExpiryFilter = () => {
 
     const filters:any[]=[];
 
+if(emailType){
 
+  console.log(
+    "SEARCH EMAIL TYPE:",
+    emailType
+  );
+
+
+  const emailPlans =
+    await OrderPlan.find({
+      type:"email"
+    })
+    .populate({
+      path:"emailTypeId",
+      select:"name"
+    })
+    .select(
+      "orderId emailTypeId"
+    )
+    .lean();
+
+
+
+  const orderIds =
+    emailPlans
+    .filter((plan:any)=>{
+
+      const name =
+        plan.emailTypeId?.name || "";
+
+
+      return (
+        name.trim()
+        .toLowerCase()
+        ===
+        emailType.trim()
+        .toLowerCase()
+      );
+
+    })
+    .map(
+      (plan:any)=>plan.orderId
+    )
+    .filter(
+      (id:any)=>
+        mongoose.Types.ObjectId.isValid(id)
+    );
+
+
+
+  console.log(
+    "FILTER IDS:",
+    orderIds
+  );
+
+
+
+  filters.push({
+
+    _id:{
+      $in:
+        orderIds.length
+        ? orderIds
+        : []
+    }
+
+  });
+
+}
 
     if(search){
 
@@ -568,6 +639,7 @@ const getExpiryFilter = () => {
   order_status:1,
 
   is_active:1,
+  dns_flag:1,
 
   client:1,
 
@@ -636,6 +708,10 @@ const finalFilter = {
         .populate(
           "client",
           "_id c_name c_company"
+        )
+        .populate(
+    "domainSource",
+    "name code image"
         )
         .lean();
 
@@ -770,8 +846,11 @@ const finalFilter = {
           "client",
           "_id c_name c_company"
         )
+        .populate(
+        "domainSource",
+        "name code image"
+        )
         .lean();
-
 
 
 

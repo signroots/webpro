@@ -1,0 +1,299 @@
+import express, { Request, Response } from "express";
+import DomainSource from "../models/DomainSource";
+import multer from "multer";
+
+const router = express.Router();
+
+
+// ===============================
+// MULTER CONFIG
+// ===============================
+
+const upload = multer({
+  storage: multer.memoryStorage()
+});
+
+
+
+/*
+======================================================
+ CREATE DOMAIN SOURCE
+======================================================
+*/
+
+router.post(
+  "/",
+  upload.single("image"),
+  async (req: Request, res: Response) => {
+
+  try {
+
+    console.log("CREATE BODY:", req.body);
+
+
+    const {
+      name,
+      code,
+      image
+    } = req.body;
+
+
+
+    if (!name || !code) {
+
+      return res.status(400).json({
+        success:false,
+        message:"Name and code are required"
+      });
+
+    }
+
+
+
+    const existing =
+      await DomainSource.findOne({
+        code: code.toUpperCase()
+      });
+
+
+
+    if(existing){
+
+      return res.status(400).json({
+        success:false,
+        message:"Domain source already exists"
+      });
+
+    }
+
+
+
+    const source =
+      await DomainSource.create({
+
+        name,
+
+        code:code.toUpperCase(),
+
+        image:image || "",
+
+        is_active:true
+
+      });
+
+
+
+    return res.status(201).json({
+
+      success:true,
+
+      data:source
+
+    });
+
+
+
+  } catch(error:any){
+
+    console.error(
+      "DOMAIN SOURCE CREATE ERROR",
+      error
+    );
+
+
+    return res.status(500).json({
+
+      success:false,
+
+      message:"Server error"
+
+    });
+
+  }
+
+});
+
+
+
+
+/*
+======================================================
+ GET ALL DOMAIN SOURCES
+======================================================
+*/
+
+router.get(
+"/",
+async (_req:Request,res:Response)=>{
+
+try{
+
+
+const sources =
+await DomainSource.find()
+.sort({
+ name:1
+});
+
+
+
+return res.json({
+
+ success:true,
+
+ data:sources
+
+});
+
+
+
+}catch(error:any){
+
+
+return res.status(500).json({
+
+ success:false,
+
+ message:"Server error"
+
+});
+
+
+}
+
+
+});
+
+
+
+
+
+/*
+======================================================
+ UPDATE DOMAIN SOURCE
+======================================================
+*/
+
+router.put(
+  "/:id",
+  upload.single("image"),
+  async (req: Request, res: Response) => {
+
+    try {
+
+      console.log("UPDATE BODY:", req.body);
+      console.log("UPDATE FILE:", req.file);
+
+
+      const {
+        name,
+        code,
+        is_active
+      } = req.body;
+
+
+
+      if(!name || !code){
+
+        return res.status(400).json({
+          success:false,
+          message:"Name and code required"
+        });
+
+      }
+
+
+
+      let imagePath = "";
+
+      if(req.file){
+
+        // temporary filename
+        imagePath = req.file.originalname;
+
+      }
+      else {
+
+        imagePath = req.body.image || "";
+
+      }
+
+
+
+      const source =
+      await DomainSource.findByIdAndUpdate(
+
+        req.params.id,
+
+        {
+
+          name,
+
+          code:code.toUpperCase(),
+
+          image:imagePath,
+
+          is_active:
+            is_active === "true" ||
+            is_active === true
+
+        },
+
+        {
+          new:true,
+          runValidators:true
+        }
+
+      );
+
+
+
+      if(!source){
+
+        return res.status(404).json({
+
+          success:false,
+
+          message:"Domain source not found"
+
+        });
+
+      }
+
+
+
+      return res.json({
+
+        success:true,
+
+        data:source
+
+      });
+
+
+
+    } catch(error:any){
+
+      console.error(
+        "DOMAIN SOURCE UPDATE ERROR:",
+        error
+      );
+
+
+      return res.status(500).json({
+
+        success:false,
+
+        message:"Update failed",
+
+        error:error.message
+
+      });
+
+
+    }
+
+});
+
+
+export default router;

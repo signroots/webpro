@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 import Order from "../models/Order";
 import Customer from "../models/Customer";
 // import Email from "../models/email";  
-
+import DomainSource from "../models/DomainSource";
 import { Request, Response } from "express";
 
 dotenv.config();
@@ -57,7 +57,7 @@ router.get(
 
         registrarTotal = result_info.total_count || registrarTotal;
         registrarFetched += result.length;
-
+        
         console.log(
           `📄 Registrar Page ${registrarPage} → ${result.length} domains`
         );
@@ -82,7 +82,12 @@ router.get(
         { name: "Cloudflare Client", phone: "0000000000" },
         { upsert: true, new: true }
       );
-
+      const cloudflareSource = await DomainSource.findOne({
+        code: "CLOUDFLARE"
+      });
+      if (!cloudflareSource) {
+        throw new Error("Cloudflare domain source not found");
+      }
       // ✅ Step 3: Fetch and store all Cloudflare zones with pagination
       let page = 1;
       let totalPages = 1;
@@ -124,7 +129,11 @@ router.get(
             const dnsFlag = registrarInfo ? false : true;
 
            
-
+console.log("DNS DEBUG:", {
+  domain: zone.name,
+  registrarFound: !!registrarInfo,
+  dnsFlag
+});
             return {
               updateOne: {
                 filter: { domainName: zone.name },
@@ -140,7 +149,7 @@ router.get(
                     managedBy: "Signroots",
                     lockStatus: zone.paused ? "Locked" : "Unlocked",
                     customer: defaultCustomer._id,
-                    domainSource: "Cloudflare",
+                    domainSource: cloudflareSource._id,
                     dnsDetails: [],
                     dns_flag: dnsFlag,
                     cloudflareRegistered,

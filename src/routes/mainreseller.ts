@@ -3,7 +3,7 @@ import axios from 'axios';
 import dotenv from 'dotenv';
 import Order from '../models/Order';
 import Customer from '../models/Customer';
-
+import DomainSource from "../models/DomainSource";
 dotenv.config();
 const router = express.Router();
 
@@ -12,6 +12,15 @@ const router = express.Router();
 ====================================================== */
 export async function importMainResellerClubDomains(){
   try {
+    const resellerSource = await DomainSource.findOne({
+      code: "RESELLERCLUB"
+    });
+
+    if (!resellerSource) {
+      throw new Error(
+        "ResellerClub domain source not configured"
+      );
+    }
     const { MAIN_RESELLER_USER_ID, MAIN_RESELLER_API_KEY, RESELLER_USER_ID } = process.env;
 
     if (!MAIN_RESELLER_USER_ID || !MAIN_RESELLER_API_KEY) {
@@ -205,7 +214,7 @@ export async function importMainResellerClubDomains(){
           expiryDate,
           originalRegistrar: d['entitytype.entitytypekey'] || 'Unknown',
           lockStatus: d['orders.transferlock'] === 'true' ? 'Locked' : 'Unlocked',
-          domainSource: 'resellerclub',
+          domainSource: resellerSource._id,
           nameServers: [],
           dnsDetails: [],
           reseller_outside_inside: resellerType,

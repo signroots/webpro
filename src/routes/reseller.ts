@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 import Customer from "../models/Customer";
 import Order from "../models/Order";
 import { Email } from "../models/email";
-
+import DomainSource from "../models/DomainSource";
 dotenv.config();
 const router = express.Router();
 
@@ -31,6 +31,15 @@ router.get("/", async (_req: Request, res: Response) => {
 ====================================================== */
 router.get("/import/resellerclub", async (_req: Request, res: Response) => {
   try {
+    const resellerSource = await DomainSource.findOne({
+  code: "RESELLERCLUB"
+});
+
+if (!resellerSource) {
+  return res.status(400).json({
+    error: "ResellerClub domain source not configured"
+  });
+}
     const {
       RESELLER_USER_ID,
       RESELLER_API_KEY
@@ -113,7 +122,7 @@ router.get("/import/resellerclub", async (_req: Request, res: Response) => {
         originalRegistrar: "-",
         lockStatus:
           d["orders.transferlock"] === "true" ? "Locked" : "Unlocked",
-        domainSource: "resellerclub",
+        domainSource: resellerSource._id,
         nameServers: [],
         dnsDetails: [],
         reseller_outside_inside: "SubReseller",
