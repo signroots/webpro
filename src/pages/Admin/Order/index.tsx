@@ -313,6 +313,7 @@ useEffect(() => {
         search: debouncedSearch,
 
         page: currentPage,
+        emailType: emailType || "",
 
         limit: itemsPerPage,
 
@@ -358,6 +359,7 @@ useEffect(() => {
 }, [
   debouncedSearch,
   currentPage,
+  emailType,
   itemsPerPage
 ]);
 
