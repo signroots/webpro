@@ -1301,9 +1301,33 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
     };
 
     // Ensure domainSource is an array
-    if (data.domainSource && typeof data.domainSource === "string") {
-      mappedData.domainSource = data.domainSource;
+    // ===== Domain Source Mapping =====
+if (data.domainSource) {
+
+  if (mongoose.Types.ObjectId.isValid(data.domainSource)) {
+
+    mappedData.domainSource = data.domainSource;
+
+  } else {
+
+    const domainSourceDoc = await DomainSource.findOne({
+      name: data.domainSource
+    });
+
+    if (!domainSourceDoc) {
+      res.status(400).json({
+        success:false,
+        error:{
+          code:"INVALID_DOMAIN_SOURCE",
+          message:"Domain source not found"
+        }
+      });
+      return;
     }
+
+    mappedData.domainSource = domainSourceDoc._id;
+  }
+}
 
     // ===== Create Order =====
     const newOrder = new Order(mappedData);
@@ -1316,30 +1340,51 @@ if (data.plans && Array.isArray(data.plans)) {
   const plansToSave = await Promise.all(
     data.plans.map(async (p: any) => {
 
-      if (!p.planId || !p.emailTypeId || !p.type) {
-        
+
+      // ===== Validate Plans =====
+      if (
+        !p.type ||
+        (
+          (p.type === "email" ||
+           p.type === "storage" ||
+           p.type === "msoffice") &&
+          (!p.planId || !p.emailTypeId)
+        )
+      ) {
 
         const error:any = new Error(
-          "PlanId, EmailTypeId or type is missing"
+          "PlanId and EmailTypeId are required for email, storage and msoffice"
         );
 
         error.statusCode = 400;
 
         throw error;
+      }
 
+
+      let planDoc = null;
+      let emailTypeDoc = null;
+
+
+      // Only email/storage/msoffice have plan & email type
+      if (
+        p.type === "email" ||
+        p.type === "storage" ||
+        p.type === "msoffice"
+      ) {
+
+        planDoc = await PlanEmail.findById(p.planId);
+
+        emailTypeDoc = await TypeEmail.findById(
+          p.emailTypeId
+        );
+
+
+        if (!planDoc || !emailTypeDoc) {
+          throw new Error(
+            "Invalid planId or emailTypeId"
+          );
         }
-      
-
-
-      const planDoc = await PlanEmail.findById(p.planId);
-
-      const emailTypeDoc = await TypeEmail.findById(
-        p.emailTypeId
-      );
-
-
-      if (!planDoc || !emailTypeDoc) {
-        throw new Error("Invalid planId or emailTypeId");
       }
 
 
@@ -1347,9 +1392,9 @@ if (data.plans && Array.isArray(data.plans)) {
 
         orderId: savedOrder._id,
 
-        planId: planDoc._id,
+        planId: planDoc?._id || null,
 
-        emailTypeId: emailTypeDoc._id,
+        emailTypeId: emailTypeDoc?._id || null,
 
         type: p.type,
 
@@ -1368,30 +1413,6 @@ if (data.plans && Array.isArray(data.plans)) {
 
         noOfUsers:
           Number(p.noOfUsers || 1),
-
-
-        google_email:
-          p.google_email || false,
-
-
-        microsoft_email:
-          p.microsoft_email || false,
-
-
-        businessEmail:
-          p.businessEmail || false,
-
-
-        email_flag:
-          p.email_flag || false,
-
-
-        msoffice_services_flag:
-          p.msoffice_services_flag || false,
-
-
-        storage_services_flag:
-          p.storage_services_flag || false,
 
       };
 
