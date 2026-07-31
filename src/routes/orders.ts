@@ -382,161 +382,380 @@ router.get(
       const loggedInUser = req.user;
 
       if (!loggedInUser?._id) {
-        res.status(401).json({ success: false, error: "Unauthorized" });
+        res.status(401).json({
+          success: false,
+          error: "Unauthorized",
+        });
         return;
       }
 
       const { filter } = req.query;
 
+
       // ---------------- LOAD USER ----------------
+
       const user = await User.findById(loggedInUser._id)
         .populate("userType")
         .exec();
 
+
       if (!user || typeof user.userType !== "object") {
-        res.status(403).json({ success: false, error: "Invalid user role" });
-        return;
-      }
-
-      const userRole = (user.userType as IUserType).name.toLowerCase();
-
-      // =====================================================
-      // ===================== ADMIN =========================
-      // =====================================================
-    if (userRole === "admin") {
- const cloudflareSource = await DomainSource.findOne({
-  name: {
-    $regex: "Cloudflare",
-    $options: "i"
-  }
-});
-
-
-const query:any = {
-  dns_flag:true,
-  $or:[
-    { expiryDate:null },
-    { expiryDate:{ $exists:false } },
-    { expiryDate:"" }
-  ]
-};
-
-
-if(cloudflareSource){
-  query.domainSource = cloudflareSource._id;
-}
-else{
-  query.domainSource = null;
-}
-
-  const orders = await Order.find(query)
-  .populate("customer", "name email company")
-  .populate("client", "c_name c_email c_company")
-  .populate("domainSource")
-  .exec();
-    const orderIds = orders.map(order => order._id);
-
-const plans = await OrderPlan.find({
-  orderId: {
-    $in: orderIds
-  }
-}).select("orderId");
-
-
-const planOrderIds = new Set(
-  plans.map(plan => plan.orderId.toString())
-);
-
-
-const filteredOrders = orders.filter(
-  order => !planOrderIds.has(order._id.toString())
-);
-
-  res.status(200).json({
-    success: true,
-    data: filteredOrders,
-  });
-  return;
-}
-
-      // =====================================================
-      // =================== CUSTOMER ========================
-      // =====================================================
-      if (userRole === "customer") {
-        const client = await Client.findOne({ userType: user._id }).exec();
-
-        if (!client) {
-          res.status(404).json({
-            success: false,
-            error: "Customer profile not found",
-          });
-          return;
-        }
-
-        const query: any = { client: client._id };
-
-        if (filter === "Cloudflare") {
-        // Correct way to add multiple fields
-        const cloudflareSource = await DomainSource.findOne({
-  name:{
-    $regex:"Cloudflare",
-    $options:"i"
-  }
-});
-
-
-Object.assign(query,{
-  dns_flag:true,
-  $or:[
-    { expiryDate:null },
-    { expiryDate:{ $exists:false }},
-    { expiryDate:"" }
-  ],
-  domainSource: cloudflareSource?._id || null
-});
-      }
-
-        const orders = await Order.find(query)
-  .populate("customer", "name email company")
-  .populate("client", "c_name c_email c_company")
-  .populate("domainSource")
-  .exec();
-          const orderIds = orders.map(order => order._id);
-
-const plans = await OrderPlan.find({
-  orderId: {
-    $in: orderIds
-  }
-}).select("orderId");
-
-
-const planOrderIds = new Set(
-  plans.map(plan => plan.orderId.toString())
-);
-
-
-const filteredOrders = orders.filter(
-  order => !planOrderIds.has(order._id.toString())
-);
-
-        res.status(200).json({
-          success: true,
-          customer: {
-            _id: client._id,
-            name: client.c_name,
-            c_company: client.c_company,
-            email: client.c_email,
-          },
-          data: filteredOrders,
+        res.status(403).json({
+          success:false,
+          error:"Invalid user role"
         });
         return;
       }
 
-      res.status(403).json({ success: false, error: "Access denied" });
-    } catch (err) {
-      console.error("❌ Error fetching DNS orders:", err);
-      res.status(500).json({ success: false, error: "Server error" });
+
+      const userRole =
+        (user.userType as IUserType).name.toLowerCase();
+
+
+
+      // =====================================================
+      // ===================== ADMIN =========================
+      // =====================================================
+
+      if(userRole === "admin") {
+
+
+        const cloudflareSource = await DomainSource.findOne({
+          name:{
+            $regex:"Cloudflare",
+            $options:"i"
+          }
+        });
+
+
+
+        const query:any = {
+
+          dns_flag:true,
+
+          $or:[
+            {
+              expiryDate:null
+            },
+            {
+              expiryDate:{
+                $exists:false
+              }
+            },
+            {
+              expiryDate:""
+            }
+          ]
+        };
+
+
+
+        query.domainSource =
+          cloudflareSource?._id || null;
+
+
+
+        const orders = await Order.find(query)
+
+          .populate("customer","name email company")
+
+          .populate("client","c_name c_email c_company")
+
+          .populate("domainSource")
+
+          .exec();
+
+
+
+        const orderIds = orders.map(
+          order => order._id
+        );
+
+
+
+        // GET PLANS WITH DETAILS
+
+        const plans = await OrderPlan.find({
+
+          orderId:{
+            $in:orderIds
+          }
+
+        })
+
+        .populate("hostTypeId")
+
+        .populate("hostSubTypeId")
+
+        .populate("storageId")
+
+        .populate("planId")
+
+        .populate("emailTypeId")
+
+        .exec();
+
+
+
+        const ordersWithPlans = orders.map(
+          (order:any)=>{
+
+
+            const orderPlans = plans.filter(
+              (p:any)=>
+                p.orderId.toString()
+                ===
+                order._id.toString()
+            );
+
+
+            return {
+
+              ...order.toObject(),
+
+              plans:orderPlans
+
+            };
+
+          }
+        );
+
+
+
+        res.status(200).json({
+
+          success:true,
+
+          data:ordersWithPlans
+
+        });
+
+        return;
+
+      }
+
+
+
+
+
+      // =====================================================
+      // =================== CUSTOMER ========================
+      // =====================================================
+
+
+      if(userRole === "customer"){
+
+
+        const client =
+          await Client.findOne({
+            userType:user._id
+          }).exec();
+
+
+
+        if(!client){
+
+          res.status(404).json({
+
+            success:false,
+
+            error:"Customer profile not found"
+
+          });
+
+          return;
+        }
+
+
+
+        const query:any = {
+
+          client:client._id
+
+        };
+
+
+
+        if(filter==="Cloudflare"){
+
+
+          const cloudflareSource =
+            await DomainSource.findOne({
+
+              name:{
+                $regex:"Cloudflare",
+                $options:"i"
+              }
+
+            });
+
+
+
+          Object.assign(query,{
+
+            dns_flag:true,
+
+
+            $or:[
+
+              {
+                expiryDate:null
+              },
+
+              {
+                expiryDate:{
+                  $exists:false
+                }
+              },
+
+              {
+                expiryDate:""
+              }
+
+            ],
+
+
+            domainSource:
+              cloudflareSource?._id || null
+
+          });
+
+        }
+
+
+
+
+
+        const orders = await Order.find(query)
+
+          .populate("customer","name email company")
+
+          .populate("client","c_name c_email c_company")
+
+          .populate("domainSource")
+
+          .exec();
+
+
+
+
+        const orderIds =
+          orders.map(order=>order._id);
+
+
+
+
+        const plans = await OrderPlan.find({
+
+          orderId:{
+            $in:orderIds
+          }
+
+        })
+
+        .populate("hostTypeId")
+
+        .populate("hostSubTypeId")
+
+        .populate("storageId")
+
+        .populate("planId")
+
+        .populate("emailTypeId")
+
+        .exec();
+
+
+
+
+
+        const ordersWithPlans = orders.map(
+          (order:any)=>{
+
+
+            const orderPlans =
+              plans.filter(
+                (p:any)=>
+                p.orderId.toString()
+                ===
+                order._id.toString()
+              );
+
+
+            return {
+
+              ...order.toObject(),
+
+              plans:orderPlans
+
+            };
+
+          }
+        );
+
+
+
+
+
+        res.status(200).json({
+
+          success:true,
+
+
+          customer:{
+
+            _id:client._id,
+
+            name:client.c_name,
+
+            c_company:client.c_company,
+
+            email:client.c_email
+
+          },
+
+
+          data:ordersWithPlans
+
+        });
+
+
+        return;
+
+      }
+
+
+
+
+
+      res.status(403).json({
+
+        success:false,
+
+        error:"Access denied"
+
+      });
+
+
+
+    }catch(err){
+
+      console.error(
+        "❌ Error fetching DNS orders:",
+        err
+      );
+
+
+      res.status(500).json({
+
+        success:false,
+
+        error:"Server error"
+
+      });
+
     }
+
   }
 );
 router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
