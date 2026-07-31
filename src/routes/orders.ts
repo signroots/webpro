@@ -420,9 +420,11 @@ const emailType =
     // ================= STATUS UPDATE =================
 
 
-    const updateOrderStatuses = async (orders:any[]) => {
+   const updateOrderStatuses = async (orders:any[]) => {
 
   const today = new Date();
+
+  today.setHours(0,0,0,0);
 
   const bulkOps:any[] = [];
 
@@ -432,23 +434,36 @@ const emailType =
     let isExpired = false;
 
 
-    // 1. Check Order expiryDate
     if(order.expiryDate){
 
-      if(new Date(order.expiryDate) < today){
+      const expiry = new Date(order.expiryDate);
+
+      expiry.setHours(0,0,0,0);
+
+      if(expiry < today){
         isExpired = true;
       }
 
     }
 
 
-    // 2. Check Plans expiryDate
     if(order.Plans && order.Plans.length > 0){
 
       const planExpired = order.Plans.some(
-        (plan:any) =>
-          plan.expiryDate &&
-          new Date(plan.expiryDate) < today
+        (plan:any)=>{
+
+          if(!plan.expiryDate)
+            return false;
+
+
+          const expiry = new Date(plan.expiryDate);
+
+          expiry.setHours(0,0,0,0);
+
+
+          return expiry < today;
+
+        }
       );
 
 
@@ -463,7 +478,6 @@ const emailType =
     const newStatus = isExpired
       ? "EXPIRED"
       : "ACTIVE";
-
 
 
     if(order.order_status !== newStatus){
@@ -487,20 +501,16 @@ const emailType =
       });
 
 
-      order.order_status = newStatus;
+      order.order_status=newStatus;
 
     }
-
 
   });
 
 
-
   if(bulkOps.length){
 
-    await Order.bulkWrite(
-      bulkOps
-    );
+    await Order.bulkWrite(bulkOps);
 
   }
 
