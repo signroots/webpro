@@ -378,7 +378,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
     if (existingOrder) {
       return res.status(400).json({
         success: false,
-        message: "Cannot delete client. Client already has orders."
+        error: "Cannot delete client. Client already has orders."
       });
     }
 
