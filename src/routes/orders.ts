@@ -1354,7 +1354,7 @@ router.get(
 })
 .lean();
 
-      const orderPlans: IOrderPlanResponse[] = orderPlansRaw.map((p: any) => ({
+     const orderPlans: IOrderPlanResponse[] = orderPlansRaw.map((p:any) => ({
   _id: p._id.toString(),
   orderId: p.orderId.toString(),
 
@@ -1366,12 +1366,14 @@ router.get(
 
   emailType: p.emailTypeId?.name || "",
 
+
   hostType: p.hostTypeId
     ? {
         _id: p.hostTypeId._id,
-        name: p.hostTypeId.name,
+        type: p.hostTypeId.type,
       }
     : null,
+
 
   hostSubType: p.hostSubTypeId
     ? {
@@ -1380,12 +1382,14 @@ router.get(
       }
     : null,
 
+
   storage: p.storageId
     ? {
         _id: p.storageId._id,
         name: p.storageId.name,
       }
     : null,
+
 
   registrationDate: p.registrationDate,
   expiryDate: p.expiryDate,
