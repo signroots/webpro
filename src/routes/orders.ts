@@ -430,9 +430,10 @@ else{
 }
 
   const orders = await Order.find(query)
-    .populate("customer", "name email company")
-    .populate("client", "c_name c_email c_company")
-    .exec();
+  .populate("customer", "name email company")
+  .populate("client", "c_name c_email c_company")
+  .populate("domainSource")
+  .exec();
     const orderIds = orders.map(order => order._id);
 
 const plans = await OrderPlan.find({
@@ -496,8 +497,10 @@ Object.assign(query,{
       }
 
         const orders = await Order.find(query)
-          .populate("client", "c_name c_email c_company")
-          .exec();
+  .populate("customer", "name email company")
+  .populate("client", "c_name c_email c_company")
+  .populate("domainSource")
+  .exec();
           const orderIds = orders.map(order => order._id);
 
 const plans = await OrderPlan.find({
