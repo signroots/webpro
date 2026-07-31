@@ -595,21 +595,40 @@ const emailType =
   );
 
 
-  const emailPlans = await OrderPlan.find({
+  const plans = await OrderPlan.find({
 
     orderId:{
       $in: orderIds
     }
 
   })
-  .populate(
-    {
-      path:"emailTypeId",
-      select:"name image"
-    }
-  )
+  .populate({
+    path:"emailTypeId",
+    select:"name image"
+  })
+  .populate({
+    path:"hostTypeId",
+    select:"type"
+  })
+  .populate({
+    path:"hostSubTypeId",
+    select:"name"
+  })
+  .populate({
+    path:"storageId",
+    select:"name"
+  })
   .select(
-    "orderId type expiryDate emailTypeId planId"
+    `
+    orderId
+    type
+    expiryDate
+    emailTypeId
+    planId
+    hostTypeId
+    hostSubTypeId
+    storageId
+    `
   )
   .lean();
 
@@ -619,7 +638,7 @@ const emailType =
 
 
 
-  emailPlans.forEach(plan=>{
+  plans.forEach((plan:any)=>{
 
 
     const key =
@@ -640,7 +659,7 @@ const emailType =
 
     planMap.get(key).push({
 
-      type: plan.type,
+      type:plan.type,
 
 
       expiryDate:
@@ -648,22 +667,51 @@ const emailType =
 
 
       emailType:
-        (plan.emailTypeId as any)?.name || null,
+        plan.emailTypeId?.name || null,
 
 
       emailTypeImage:
-        (plan.emailTypeId as any)?.image || null,
+        plan.emailTypeId?.image || null,
 
 
       planId:
-        plan.planId
+        plan.planId || null,
+
+
+
+      hostType:
+        plan.hostTypeId
+        ? {
+            _id:plan.hostTypeId._id,
+            type:plan.hostTypeId.type
+          }
+        : null,
+
+
+
+      hostSubType:
+        plan.hostSubTypeId
+        ? {
+            _id:plan.hostSubTypeId._id,
+            name:plan.hostSubTypeId.name
+          }
+        : null,
+
+
+
+      storage:
+        plan.storageId
+        ? {
+            _id:plan.storageId._id,
+            name:plan.storageId.name
+          }
+        : null
+
 
     });
 
 
-
   });
-
 
 
 
@@ -671,14 +719,13 @@ const emailType =
 
     ...order,
 
-
     Plans:
       planMap.get(
         order._id.toString()
       ) || []
 
-
   }));
+
 
 };
 
