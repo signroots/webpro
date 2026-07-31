@@ -2,6 +2,7 @@ import axios from "axios";
 import Customer from "../models/Customer";
 import Order from "../models/Order";
 import { Email } from "../models/email";
+import DomainSource from "../models/DomainSource";
 
 export async function syncSubResellerDomains() {
   const {
@@ -14,7 +15,16 @@ export async function syncSubResellerDomains() {
   let totalFetched = 0;
 
   console.log("🔄 ResellerClub Sync Started");
+const resellerSource = await DomainSource.findOne({
+  name: {
+    $regex: "ResellerClub",
+    $options: "i"
+  }
+});
 
+if (!resellerSource) {
+  throw new Error("ResellerClub domain source not found");
+}
   while (true) {
     const response = await axios.get(
       "https://httpapi.com/api/domains/search.json",
@@ -126,7 +136,7 @@ if (expiryDate) {
           registrationDate,
           expiryDate,
           lockStatus: d["orders.transferlock"] === "true" ? "Locked" : "Unlocked",
-          domainSource: "resellerclub",
+          domainSource: resellerSource._id,
           reseller_outside_inside: "SubReseller",
           reseller_id: c.resellerid,
           resellerCustomerId: c.customerid,
