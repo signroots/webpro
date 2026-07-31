@@ -1398,36 +1398,40 @@ if(
 if(p.type==="hosting"){
 
  if(
-  !p.hosttypeid ||
-  !p.subHostTypeId ||
-  !p.hoststorageId
+  !p.hostingType ||
+  !p.hostingSubType ||
+  !p.storage
  ){
 
   const error:any = new Error(
-   "Hosting details required"
+    "Hosting details required"
   );
 
-  error.statusCode=400;
+  error.statusCode = 400;
 
   throw error;
  }
 
-}{
+}if(
+ p.type==="email" ||
+ p.type==="storage" ||
+ p.type==="msoffice"
+){
 
-        planDoc = await PlanEmail.findById(p.planId);
+ planDoc = await PlanEmail.findById(p.planId);
 
-        emailTypeDoc = await TypeEmail.findById(
-          p.emailTypeId
-        );
+ emailTypeDoc = await TypeEmail.findById(
+   p.emailTypeId
+ );
 
 
-        if (!planDoc || !emailTypeDoc) {
-          throw new Error(
-            "Invalid planId or emailTypeId"
-          );
-        }
-      }
+ if (!planDoc || !emailTypeDoc) {
+   throw new Error(
+    "Invalid planId or emailTypeId"
+   );
+ }
 
+}
 
       return {
 
@@ -1443,14 +1447,15 @@ if(p.type==="hosting"){
 
  // hosting
 
- hosttypeid:
-   p.hosttypeid || null,
+hosttypeid:
+   p.hostingType || null,
 
- subHostTypeId:
-   p.subHostTypeId || null,
 
- hoststorageId:
-   p.hoststorageId || null,
+subHostTypeId:
+   p.hostingSubType || null,
+
+hoststorageId:
+   p.storage || null,
 
 
  type:p.type,
