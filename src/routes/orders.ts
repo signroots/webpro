@@ -1329,10 +1329,30 @@ router.get(
       }
 
       // Fetch related plans
-      const orderPlansRaw = await OrderPlan.find({ orderId: order._id })
-        .populate({ path: "planId", model: "PlanEmail" })
-        .populate({ path: "emailTypeId", model: "TypeEmail" })
-        .lean();
+      const orderPlansRaw = await OrderPlan.find({
+  orderId: order._id
+})
+.populate({
+  path: "planId",
+  model: "PlanEmail"
+})
+.populate({
+  path: "emailTypeId",
+  model: "TypeEmail"
+})
+.populate({
+  path: "hostTypeId",
+  model: "HostType"
+})
+.populate({
+  path: "hostSubTypeId",
+  model: "HostSubType"
+})
+.populate({
+  path: "storageId",
+  model: "Storage"
+})
+.lean();
 
       const orderPlans: IOrderPlanResponse[] = orderPlansRaw.map((p: any) => ({
         _id: p._id.toString(),
