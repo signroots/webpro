@@ -15,63 +15,67 @@ interface Client {
 }
 
 interface storagePlans {
-  email_service?: string;
-  selected_plan?: string;
-  email_service_id?: string;
-  plans?: { _id: string; plan: string }[]
-  workspace_plan?: string;
-  microsoft_plan?: string;
-  registrationDate?: string;
-  expiryDate?: string;
-  planName?: string;
-  users?: number;
-  google_email?: boolean;
-  microsoft_email?: boolean;
-  businessEmail?: boolean;
-  email_flag?: boolean;
-  storage_services_flag?: boolean;
-  type: string;
-}
-interface MsofficeOrderPlan {
-  email_service_id?: string;
-  emailType?: string;
 
-  planId?: string;
+  email_service?: string;
+
+  email_service_id?: string;
+
   selected_plan?: string;
-  planName?: string;
 
   plans?: {
-    _id: string;
-    plan: string;
+    _id:string;
+    plan:string;
   }[];
 
   registrationDate?: string;
+
   expiryDate?: string;
 
-  noOfUsers?: number;
   users?: number | string;
 
-  type?: string;
+  type:string;
 
-  msoffice_services_flag?: boolean;
-
-  email_service?: string;
 }
+interface MsofficeOrderPlan {
 
-interface EmailPlan {
-  email_service?: string;
   email_service_id?: string;
+
+  email_service?: string;
+
   selected_plan?: string;
-  plans?: { _id: string; plan: string }[];
-  workspace_plan?: string;
-  microsoft_plan?: string;
+
+  plans?: {
+    _id:string;
+    plan:string;
+  }[];
+
   registrationDate?: string;
+
   expiryDate?: string;
-  users?: number;
-  google_email?: boolean;       // ✅ added
-  microsoft_email?: boolean;
-  businessEmail?: boolean;// ✅ added
-  email_flag?: boolean; 
+
+  users?: number | string;
+
+  type?:string;
+
+}
+interface EmailPlan {
+
+  email_service?: string;
+
+  email_service_id?: string;
+
+  selected_plan?: string;
+
+  plans?: {
+    _id:string;
+    plan:string;
+  }[];
+
+  registrationDate?: string;
+
+  expiryDate?: string;
+
+  users?: number | string;
 
 }
 interface NewOrderForm {
@@ -133,7 +137,9 @@ const NewOrder: React.FC = () => {
   const formRef = React.useRef<HTMLFormElement>(null);
   // useEnterNavigation(formRef);
   const navigate = useNavigate();
+  
 
+const [domainSources, setDomainSources] = useState<any[]>([]);
   const [formData, setFormData] = useState<NewOrderForm>({
     domainName: "",
     managedBy: "",
@@ -174,12 +180,29 @@ const NewOrder: React.FC = () => {
     }
   });
 
-  const [emailPlans, setEmailPlans] = useState<EmailPlan[]>([
-    { email_service: "", workspace_plan: "", microsoft_plan: "", registrationDate: "", expiryDate: "", users: 1 },
-  ]);
-   const [storagePlans, setStoragePlans] = useState<storagePlans[]>([
-      { email_service: "", workspace_plan: "", microsoft_plan: "", registrationDate: "", expiryDate: "", users: 1, type: "" },
-    ]);
+ const [emailPlans, setEmailPlans] = useState<EmailPlan[]>([
+  {
+    email_service: "",
+    email_service_id: "",
+    selected_plan: "",
+    plans: [],
+    registrationDate: "",
+    expiryDate: "",
+    users: 1
+  }
+]);
+const [storagePlans, setStoragePlans] = useState<storagePlans[]>([
+{
+ email_service: "",
+ email_service_id:"",
+ selected_plan:"",
+ plans:[],
+ registrationDate:"",
+ expiryDate:"",
+ users:1,
+ type:"storage"
+}
+]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [emailChecked, setEmailChecked] = useState(false);
@@ -342,7 +365,22 @@ useEffect(() => {
 
   setDefaultCountryAndState();
 }, [customerType]);
+useEffect(() => {
+  const fetchDomainSources = async () => {
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/api/domain-sources`
+      );
 
+      setDomainSources(res.data.data || []);
+
+    } catch (error) {
+      console.error("Failed to fetch domain sources", error);
+    }
+  };
+
+  fetchDomainSources();
+}, []);
 
 useEffect(() => {
   const fetchHostTypes = async () => {
@@ -367,6 +405,7 @@ useEffect(() => {
   // Input handler
 const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
   const { name, value } = e.target;
+   console.log("FIELD:", name, "VALUE:", value);
 
   if (customerType === "new" && name.startsWith("newCustomer.")) {
     const key = name.split(".")[1] as keyof NewOrderForm["newCustomer"];
@@ -443,9 +482,9 @@ const handleCheckboxChange = (
             users: 1,
             registrationDate: "",
             expiryDate: "",
-            google_email: false,
-            microsoft_email: false,
-            businessEmail: false
+            // google_email: false,
+            // microsoft_email: false,
+            // businessEmail: false
           }
         ]);
       }
@@ -532,8 +571,8 @@ const handleCheckboxChange = (
       registrationDate: "",
       expiryDate: "",
       users: 1,
-      google_email: false,
-      microsoft_email: false,
+      // google_email: false,
+      // microsoft_email: false,
       plans: [],
       selected_plan: "",
     },
@@ -578,125 +617,231 @@ const handleHostTypeChange = async (hostTypeId: string) => {
   }
 };
 
-const handleEmailPlanChange = (index: number, key: keyof EmailPlan, value: any) => {
-  setEmailPlans((prevPlans) => {
-    const updatedPlans = [...prevPlans];
-    const updatedPlan = { ...updatedPlans[index], [key]: value };
+const handleEmailPlanChange = (
+  index:number,
+  key:keyof EmailPlan,
+  value:any
+)=>{
 
-    // 🔹 Automatically set flags when email service changes
-    if (key === "email_service") {
-      updatedPlan.email_flag = !!value; // true if any type is selected
-      updatedPlan.google_email = value === "Google Workspace";
-      updatedPlan.microsoft_email = value === "Microsoft 365";
-      updatedPlan.businessEmail = value === "Business Email";
-    }
+  setEmailPlans(prev=>{
 
-    updatedPlans[index] = updatedPlan;
-    return updatedPlans;
+    const updated=[...prev];
+
+
+    updated[index]={
+      ...updated[index],
+      [key]:value
+    };
+
+
+    return updated;
+
   });
+
 };
 
-const handleStoragePlanChange = async (
-    index: number,
-    key: keyof storagePlans,
-    value: any
-  ) => {
-    if (key === "email_service_id") {
-      const typeObj = emailTypes.find((t: any) => t._id === value);
-      if (!typeObj) {
-        console.log("❌ No matching email type found");
-        return;
-      }
+const handleStoragePlanChange = async(
+ index:number,
+ key:keyof storagePlans,
+ value:any
+)=>{
 
-      let activePlans: { _id: string; plan: string }[] = [];
-      try {
-        const res = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/api/plans/planlist/${typeObj._id}`
-        );
-        activePlans = res.data.data
-          .filter((p: any) => p.isActive)
-          .map((p: any) => ({ _id: p._id, plan: p.plan }));
-      } catch (err) {
-        console.log("❌ Error loading plans", err);
-      }
 
-      // ✅ Use map to safely update state
-      setStoragePlans((prevPlans) =>
-        prevPlans.map((plan, i) =>
-          i === index
-            ? {
-              ...plan,
-              email_service_id: value,
-              plans: activePlans,      // assign fetched plans
-              selected_plan: "",       // reset selected plan
-              email_flag: !!value,
-              google_email: typeObj.name === "Google Workspace",
-              microsoft_email: typeObj.name === "Microsoft 365",
-              businessEmail: typeObj.name === "Business Email",
-            }
-            : plan
-        )
+  if(key==="email_service_id"){
+
+
+    const typeObj=emailTypes.find(
+      t=>t._id===value
+    );
+
+
+    if(!typeObj) return;
+
+
+
+    try{
+
+
+      const plans=await getPlansByEmailType(
+        typeObj._id
       );
-    } else {
-      // update other keys like selected_plan, users, etc.
-      setStoragePlans((prevPlans) =>
-        prevPlans.map((plan, i) =>
-          i === index ? { ...plan, [key]: value } : plan
+
+
+
+      setStoragePlans(prev=>
+
+        prev.map((plan,i)=>
+
+          i===index
+
+          ?
+
+          {
+            ...plan,
+
+            email_service_id:typeObj._id,
+
+            email_service:typeObj.name,
+
+            plans:plans,
+
+            selected_plan:""
+
+          }
+
+          :
+
+          plan
+
         )
+
       );
+
+
     }
-  };
+    catch(err){
 
-const handleMsofficePlanChange = async (
-    index: number,
-    key: keyof MsofficeOrderPlan,
-    value: any
-  ) => {
-    if (key === "email_service_id") {
-      const typeObj = emailTypes.find((t: any) => t._id === value);
-      if (!typeObj) {
-        console.log("❌ No matching email type found");
-        return;
-      }
-
-      let activePlans: { _id: string; plan: string }[] = [];
-      try {
-        const res = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/api/plans/planlist/${typeObj._id}`
-        );
-        activePlans = res.data.data
-          .filter((p: any) => p.isActive)
-          .map((p: any) => ({ _id: p._id, plan: p.plan }));
-      } catch (err) {
-        console.log("❌ Error loading plans", err);
-      }
-
-      // ✅ Use map to safely update state
-      setMsofficePlans((prevPlans) =>
-        prevPlans.map((plan, i) =>
-          i === index
-            ? {
-              ...plan,
-              email_service_id: value,
-              plans: activePlans,      // assign fetched plans
-              selected_plan: "",       // reset selected plan
-              email_flag: !!value,
-              google_email: typeObj.name === "Google Workspace",
-              microsoft_email: typeObj.name === "Microsoft 365",
-              businessEmail: typeObj.name === "Business Email",
-            }
-            : plan
-        )
+      console.log(
+        "Storage plan loading error",
+        err
       );
-    } else {
-      // update other keys like selected_plan, users, etc.
-      setMsofficePlans((prevPlans) =>
-        prevPlans.map((plan, i) =>
-          i === index ? { ...plan, [key]: value } : plan
-        )
-      );
+
     }
-  };
+
+
+  }
+
+
+  else{
+
+
+    setStoragePlans(prev=>
+
+      prev.map((plan,i)=>
+
+        i===index
+
+        ?
+
+        {
+          ...plan,
+          [key]:value
+        }
+
+        :
+
+        plan
+
+      )
+
+    );
+
+
+  }
+
+
+};
+const handleMsofficePlanChange = async(
+ index:number,
+ key:keyof MsofficeOrderPlan,
+ value:any
+)=>{
+
+
+ if(key==="email_service_id"){
+
+
+   const typeObj=emailTypes.find(
+     t=>t._id===value
+   );
+
+
+   if(!typeObj) return;
+
+
+
+   try{
+
+
+    const plans=await getPlansByEmailType(
+      typeObj._id
+    );
+
+
+
+    setMsofficePlans(prev=>
+
+      prev.map((plan,i)=>
+
+        i===index
+
+        ?
+
+        {
+
+          ...plan,
+
+          email_service_id:typeObj._id,
+
+          email_service:typeObj.name,
+
+          plans:plans,
+
+          selected_plan:""
+
+        }
+
+        :
+
+        plan
+
+      )
+
+    );
+
+
+   }
+   catch(err){
+
+    console.log(
+      "MS Office plan loading error",
+      err
+    );
+
+   }
+
+
+ }
+
+ else{
+
+
+  setMsofficePlans(prev=>
+
+    prev.map((plan,i)=>
+
+      i===index
+
+      ?
+
+      {
+        ...plan,
+        [key]:value
+      }
+
+      :
+
+      plan
+
+    )
+
+  );
+
+
+ }
+
+
+};
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   setLoading(true);
@@ -780,193 +925,214 @@ const handleSubmit = async (e: React.FormEvent) => {
     // EMAIL PLANS
     // ============================
 
-    if (emailChecked && emailPlans.length > 0) {
+    if(emailChecked && emailPlans.length > 0){
 
-      emailPlans.forEach((plan) => {
-
-
-        const typeObj = emailTypes.find(
-          (t) => t.name === plan.email_service
-        );
+  emailPlans.forEach((plan)=>{
 
 
-        const planObj = plan.plans?.find(
-          (p) => p.plan === plan.selected_plan
-        );
+    const typeObj = emailTypes.find(
+      (t)=>t.name === plan.email_service
+    );
 
 
-
-        if (typeObj && planObj) {
-
-          combinedPlans.push({
-
-            planId: planObj._id,
-
-            emailTypeId: typeObj._id,
-
-            emailType: plan.email_service,
-
-            planName: plan.selected_plan || "",
+    const planObj = plan.plans?.find(
+      (p)=>p.plan === plan.selected_plan
+    );
 
 
-            registrationDate:
-              plan.registrationDate,
+    if(typeObj && planObj){
 
-            expiryDate:
-              plan.expiryDate,
+      combinedPlans.push({
 
+        planId: planObj._id,
 
-            noOfUsers:
-              Number(plan.users || 1),
+        emailTypeId: typeObj._id,
 
+        emailType: typeObj.name,
 
-            type: "email",
+        planName: planObj.plan,
 
+        noOfUsers:Number(plan.users || 1),
 
-            google_email:
-              plan.email_service === "Google Workspace",
+        registrationDate:
+          plan.registrationDate,
 
+        expiryDate:
+          plan.expiryDate,
 
-            microsoft_email:
-              plan.email_service === "Microsoft 365",
-
-
-            businessEmail:
-              plan.email_service === "Business Email",
-
-
-            email_flag:true
-
-          });
-
-        }
+        type:"email"
 
       });
 
     }
 
 
+  });
 
+}
     // ============================
     // STORAGE PLANS
     // ============================
 
-    if (storageChecked && storagePlans.length > 0) {
-
-      storagePlans.forEach((plan)=>{
+    if(storageChecked && storagePlans.length > 0){
 
 
-        const typeObj = emailTypes.find(
-          (t)=>t._id === plan.email_service_id
-        );
+ storagePlans.forEach((plan)=>{
 
 
-        const planObj = plan.plans?.find(
-          (p)=>p._id === plan.selected_plan
-        );
+   const typeObj=emailTypes.find(
+     (t)=>t._id===plan.email_service_id
+   );
 
 
-        if(typeObj && planObj){
-
-          combinedPlans.push({
-
-            planId:planObj._id,
-
-            emailTypeId:typeObj._id,
-
-            emailType:typeObj.name,
-
-            planName:planObj.plan,
+   const planObj=plan.plans?.find(
+     (p)=>p._id===plan.selected_plan
+   );
 
 
-            registrationDate:
-              plan.registrationDate,
-
-            expiryDate:
-              plan.expiryDate,
+   if(typeObj && planObj){
 
 
-            noOfUsers:
-              Number(plan.users || 1),
+    combinedPlans.push({
+
+      planId:planObj._id,
+
+      emailTypeId:typeObj._id,
+
+      emailType:typeObj.name,
+
+      planName:planObj.plan,
+
+      noOfUsers:Number(plan.users || 1),
+
+      registrationDate:
+        plan.registrationDate,
+
+      expiryDate:
+        plan.expiryDate,
+
+      type:"storage"
+
+    });
 
 
-            type:"storage",
+   }
 
 
-            storage_services_flag:true
-
-          });
-
-        }
-
-      });
-
-    }
+ });
 
 
+}
 
     // ============================
     // MS OFFICE PLANS
     // ============================
 
-    if (msofficeChecked && msofficePlans.length > 0) {
+    if(msofficeChecked && msofficePlans.length > 0){
 
 
-      msofficePlans.forEach((plan)=>{
+msofficePlans.forEach((plan)=>{
 
 
-        const typeObj = emailTypes.find(
-          (t)=>t._id === plan.email_service_id
-        );
+ const typeObj=emailTypes.find(
+   (t)=>t._id===plan.email_service_id
+ );
 
 
-        const planObj = plan.plans?.find(
-          (p)=>p._id === plan.selected_plan
-        );
+ const planObj=plan.plans?.find(
+   (p)=>p._id===plan.selected_plan
+ );
 
 
-        if(typeObj && planObj){
+ if(typeObj && planObj){
 
 
-          combinedPlans.push({
+  combinedPlans.push({
 
-            planId:planObj._id,
+    planId:planObj._id,
 
-            emailTypeId:typeObj._id,
+    emailTypeId:typeObj._id,
 
-            emailType:typeObj.name,
+    emailType:typeObj.name,
 
-            planName:planObj.plan,
+    planName:planObj.plan,
 
+    noOfUsers:Number(plan.users || 1),
 
-            registrationDate:
-              plan.registrationDate,
+    registrationDate:
+      plan.registrationDate,
 
-            expiryDate:
-              plan.expiryDate,
+    expiryDate:
+      plan.expiryDate,
 
+    type:"msoffice"
 
-            noOfUsers:
-              Number(plan.users || 1),
-
-
-            type:"msoffice",
+  });
 
 
-            msoffice_services_flag:true
-
-          });
+ }
 
 
-        }
+});
 
 
-      });
-
-    }
+}
 
 
+// ============================
+// HOSTING PLAN
+// ============================
 
+if (hosting) {
+
+  combinedPlans.push({
+
+    type: "hosting",
+
+    hostingType:
+      formData.hosting_plan,
+
+    hostingSubType:
+      formData.hosting_subplan,
+
+    storage:
+      formData.storage,
+
+    hosting_flag: true
+
+  });
+
+}
+
+
+// ============================
+// WEBSITE & SSL
+// ============================
+
+if (formData.website_flag) {
+
+  combinedPlans.push({
+
+    type: "website",
+
+    website_flag: true
+
+  });
+
+}
+
+
+if (formData.ssl_flag) {
+
+  combinedPlans.push({
+
+    type: "ssl",
+
+    ssl_flag: true
+
+  });
+
+}
 
     // assign plans
     if(combinedPlans.length > 0){
@@ -978,8 +1144,6 @@ const handleSubmit = async (e: React.FormEvent) => {
       delete payload.plans;
 
     }
-
-
 
 
     // ===================================
@@ -1052,41 +1216,39 @@ if(payload.microsoft_email){
 
   } catch(err:any){
 
-
-    console.error(
-      "Order creation failed:",
-      err
-    );
+  console.error("Order creation failed:", err);
 
 
-    const errorMsg =
-      err?.response?.data?.message ||
-      err?.response?.data?.error ||
-      err?.message ||
-      "Failed to create order";
+  const errorMsg =
+    err?.response?.data?.error?.message ||
+    err?.response?.data?.message ||
+    err?.message ||
+    "Failed to create order";
 
 
-    setError(errorMsg);
+  setError(errorMsg);
 
-    notify(
-      errorMsg,
-      "error"
-    );
+  notify(errorMsg, "error");
 
 
-  } finally {
+} finally {
 
-    setLoading(false);
+  setLoading(false);
 
-  }
+}
 
 };
 
   return (
+    
     <div className="min-h-screen bg-gray-100 p-1">
       <div className="max-w-6xl mx-auto bg-white shadow-md rounded-lg p-6">
         <h1 className="text-3xl font-bold mb-6 text-gray-700">Create New Order</h1>
-        {error && <p className="bg-red-100 text-red-700 px-4 py-2 rounded mb-4">{error}</p>}
+        {error && (
+      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        {error}
+      </div>
+    )}
 
         <form ref={formRef} className="space-y-6" onSubmit={handleSubmit}>
           {/* Customer Type */}
@@ -1371,74 +1533,117 @@ if(payload.microsoft_email){
               <label className="block text-gray-700 font-medium mb-2">Domain Name</label>
               <input type="text" name="domainName" value={formData.domainName} onChange={handleInputChange} className="w-full border rounded px-3 py-2" required />
             </div>
-         {/* Registrar / Domain Source */}
-             <div>
-              <label className="block text-gray-700 font-medium mb-2">Managed By</label>
-              <select
-                name="managedBy"
-                value={formData.managedBy}
-                onChange={handleInputChange}
-                className="w-full border rounded px-3 py-2"
-              >
-                <option value="">-- Select Managed By --</option>
-                <option value="Signroots">Signroots</option>
-                <option value="Customer">Customer</option>
-              </select>
-            </div>
+     {/* Registrar / Domain Source */}
+
+<div>
+  <label className="block text-gray-700 font-medium mb-2">
+    Managed By
+  </label>
+
+  <select
+    name="managedBy"
+    value={formData.managedBy}
+    onChange={handleInputChange}
+    className="w-full border rounded px-3 py-2"
+  >
+    <option value="">-- Select Managed By --</option>
+    <option value="Signroots">Signroots</option>
+    <option value="Customer">Customer</option>
+  </select>
+</div>
+
+
 {(formData.managedBy === "Signroots" ||
   formData.managedBy === "Customer") && (
+
   <div>
     <label className="block text-gray-700 font-medium mb-2">
       Registrar
     </label>
+
     <select
       name="domainSource"
       value={formData.domainSource || ""}
       onChange={handleInputChange}
       className="w-full border rounded px-3 py-2"
     >
-      <option value="">-- Select Registrar --</option>
 
-      {formData.managedBy === "Signroots" && (
-        <>
-          <option value="resellerclub">RESELLER CLUB</option>
-          <option value="Hostinger">HOSTINGER</option>
-          <option value="SQUARESPACE">SQUARESPACE</option>
-          <option value="SAHARA">SAHARA</option>
-          <option value="Cloudflare">CLOUDFLARE</option>
-          {/* <option value="DNS Cloudflare">DNS CLOUDFLARE</option> */}
-          <option value="AE Server">AE SERVER</option>
-        </>
-      )}
+      <option value="">
+        -- Select Registrar --
+      </option>
 
-       {formData.managedBy === "Customer" && (
-        <>
-          <option value="Cloudflare">CLOUDFLARE</option>
-          <option value="Hostinger">HOSTINGER</option>
-        </>
-      )}
-    </select>
-     {["Cloudflare",].includes(formData.domainSource ?? "") && (
-  <div className="mt-4 flex items-center gap-2">
-    <input
-      type="checkbox"
-      name="dns_flag"
-      checked={formData.domain_flag}
-      disabled={formData.managedBy === "Customer"}
-      onChange={(e) =>
-        setFormData((prev) => ({
-          ...prev,
-          
-      domain_flag: e.target.checked,
-        }))
+
+      {/* Signroots can see all registrar */}
+      {formData.managedBy === "Signroots" &&
+        domainSources
+          .filter((source) => source.is_active)
+          .map((source) => (
+            <option
+              key={source._id}
+              value={source._id}
+            >
+              {source.name}
+            </option>
+          ))
       }
-      className="w-4 h-4"
-    />
-    <label className="text-gray-700 font-medium">
-      DNS Flag
-    </label>
-  </div>
-)}
+
+
+      {/* Customer only Cloudflare & Hostinger */}
+      {formData.managedBy === "Customer" &&
+        domainSources
+          .filter(
+            (source) =>
+              source.is_active &&
+              (
+                source.name === "Cloudflare" ||
+                source.name === "Hostinger"
+              )
+          )
+          .map((source) => (
+            <option
+              key={source._id}
+              value={source._id}
+            >
+              {source.name}
+            </option>
+          ))
+      }
+
+
+    </select>
+
+
+    {/* DNS Flag only for Cloudflare */}
+
+    {domainSources.find(
+      (source) =>
+        source._id === formData.domainSource &&
+        source.name === "Cloudflare"
+    ) && (
+
+      <div className="mt-4 flex items-center gap-2">
+
+        <input
+          type="checkbox"
+          name="dns_flag"
+          checked={formData.domain_flag || false}
+          disabled={formData.managedBy === "Customer"}
+          onChange={(e) =>
+            setFormData((prev) => ({
+              ...prev,
+              domain_flag: e.target.checked,
+            }))
+          }
+          className="w-4 h-4"
+        />
+
+        <label className="text-gray-700 font-medium">
+          DNS Flag
+        </label>
+
+      </div>
+
+    )}
 
   </div>
 )}
@@ -1475,43 +1680,55 @@ if(payload.microsoft_email){
               {emailChecked && emailPlans.map((plan, idx) => (
                 <div key={idx} className="border rounded p-4 mt-2">
                   <div className="grid grid-cols-1 md:grid-cols-5 gap-2 items-end">
-                    <div>
+                   <div>
   <label>Email Type</label>
- <select
-  value={plan.email_service}
-  onChange={(e) => {
-    const selectedTypeName = e.target.value;
-    handleEmailPlanChange(idx, "email_service", selectedTypeName);
 
-    // Reset all flags first
-    handleEmailPlanChange(idx, "google_email", false);
-    handleEmailPlanChange(idx, "microsoft_email", false);
-    handleEmailPlanChange(idx, "businessEmail", false);
+  <select
+    value={plan.email_service || ""}
+    onChange={(e) => {
 
-    // Set the correct flag based on selection
-    if (selectedTypeName === "Google Workspace") {
-      handleEmailPlanChange(idx, "google_email", true);
-    } else if (selectedTypeName === "Microsoft 365") {
-      handleEmailPlanChange(idx, "microsoft_email", true);
-    } else if (selectedTypeName === "Business Email") {
-      handleEmailPlanChange(idx, "businessEmail", true);
-    }
+      const selectedTypeName = e.target.value;
 
-    // Find the selected type ID from emailTypes
-    const typeObj = emailTypes.find((t) => t.name === selectedTypeName);
-    if (typeObj) {
-      fetchPlansByEmailType(typeObj._id, idx);
-    }
-  }}
-  className="w-full border rounded px-2 py-1"
->
-  <option value="">-- Select Type --</option>
-  {emailTypes.map((type) => (
-    <option key={type._id} value={type.name}>
-      {type.name}
+      handleEmailPlanChange(
+        idx,
+        "email_service",
+        selectedTypeName
+      );
+
+
+      const typeObj = emailTypes.find(
+        (t) => t.name === selectedTypeName
+      );
+
+
+      if (typeObj) {
+
+        fetchPlansByEmailType(
+          typeObj._id,
+          idx
+        );
+
+      }
+
+    }}
+    className="w-full border rounded px-2 py-1"
+  >
+
+    <option value="">
+      -- Select Type --
     </option>
-  ))}
-</select>
+
+    {emailTypes.map((type) => (
+      <option 
+        key={type._id} 
+        value={type.name}
+      >
+        {type.name}
+      </option>
+    ))}
+
+  </select>
+
 </div>
                  {plan.plans && plan.plans.length > 0 && (
   <div>
@@ -1683,18 +1900,15 @@ if(payload.microsoft_email){
                       <label>MS Office Type</label>
                       <select
                         value={plan.email_service_id || ""}
-                        onChange={(e) => {
-                          const selectedId = e.target.value;
-                          const typeObj = emailTypes.find((t) => t._id === selectedId);
-                          if (typeObj) {
-                            // update state properly
-                            handleMsofficePlanChange(idx, "email_service_id", typeObj._id);
-                            handleMsofficePlanChange(idx, "email_service", typeObj.name);
+                       onChange={(e)=>{
 
-                            // fetch plans for this type
-                            fetchPlansByEmailType(typeObj._id, idx);
-                          }
-                        }}
+ handleMsofficePlanChange(
+   idx,
+   "email_service_id",
+   e.target.value
+ );
+
+}}
                         className="w-full border rounded px-2 py-1"
                       >
                         <option value="">-- Select Type --</option>

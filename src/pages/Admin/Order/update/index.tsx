@@ -29,7 +29,7 @@ interface EmailPlan {
 interface MsofficeOrderPlan {
   email_service_id?: string;
   emailType?: string;
-  planId?: string;      
+  planId?: string;
   selected_plan?: string;
   planName?: string;
   plans?: { _id: string; plan: string }[];
@@ -131,10 +131,10 @@ interface OrderForm {
   hosting_subplan: string;
   hosting_plan: string;
   email_service?: "Google Workspace" | "Microsoft 365" | "Business Email" | "Titan Email";
-  hosting?: boolean;
-  website_flag?: boolean;
-  ssl_flag?: boolean;
-  host_flag?: boolean;
+  // hosting?: boolean;
+  // website_flag?: boolean;
+  // ssl_flag?: boolean;
+  // host_flag?: boolean;
   domainSource?: string;
   email_expiryDate?: string;
   users?: number;
@@ -156,9 +156,15 @@ const UpdateOrder: React.FC = () => {
     "w-full h-11 border border-gray-300 rounded-md px-3 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500";
 
   // const [confirmIndex, setConfirmIndex] = useState<number | null>(null);
-  type RemoveTarget = "email" | "storage" | "msoffice";
+  type RemoveTarget =
+    "email" |
+    "storage" |
+    "msoffice" |
+    "hosting" |
+    "website" |
+    "ssl";
   const [highlightedOrderId, setHighlightedOrderId] = useState<string | null | undefined>(null);
-
+  const [domainSources, setDomainSources] = useState<any[]>([]);
 
   const [confirmRemove, setConfirmRemove] = useState<{
     index: number;
@@ -238,7 +244,10 @@ const UpdateOrder: React.FC = () => {
   const [storages, setStorages] = useState<Storage[]>([]);
 
   const [msofficePlans, setMsofficePlans] = useState<any[]>([]);
-
+  const [hostingPlans, setHostingPlans] = useState<any[]>([]);
+  const [hostingChecked, setHostingChecked] = useState(false);
+  const [websiteChecked, setWebsiteChecked] = useState(false);
+  const [sslChecked, setSslChecked] = useState(false);
 
   // ------------------- FETCH EMAIL TYPES -------------------
   const fetchPlansByEmailType = async (typeId: string, index: number) => {
@@ -667,6 +676,29 @@ const UpdateOrder: React.FC = () => {
     fetchHostTypes();
   }, []);
 
+  useEffect(() => {
+    const fetchDomainSources = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/api/domain-sources`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        setDomainSources(res.data.data || []);
+
+      } catch (error) {
+        console.error("Failed to fetch domain sources", error);
+      }
+    };
+
+    fetchDomainSources();
+  }, []);
 
 
   // ------------------- FETCH ORDER DATA -------------------
@@ -681,26 +713,69 @@ const UpdateOrder: React.FC = () => {
         const res = await axios.get(
           `${import.meta.env.VITE_API_BASE_URL}/api/orders/${orderId}`,
           {
-            headers:{
-              Authorization:`Bearer ${token}`
+            headers: {
+              Authorization: `Bearer ${token}`
             }
           }
         );
 
         const order = res.data.data || res.data;
+        const hostingPlan = order.plans?.some(
+          (p: any) => p.type === "hosting"
+        );
 
-        setEmailChecked(!!order.email_flag);
-        setStorageChecked(!!order.storage_services_flag);
-        setMsofficeChecked(!!order.msoffice_services_flag);
+        const websitePlan = order.plans?.some(
+          (p: any) => p.type === "website"
+        );
+
+        const sslPlan = order.plans?.some(
+          (p: any) => p.type === "ssl"
+        );
+        const emailOnly = order.plans?.filter(
+          (p: any) => p.serviceType === "email" || p.type === "email"
+        ) || [];
+
+        const storageOnly = order.plans?.filter(
+          (p: any) => p.serviceType === "storage" || p.type === "storage"
+        ) || [];
+
+        const msofficeOnly = order.plans?.filter(
+          (p: any) => p.serviceType === "msoffice" || p.type === "msoffice"
+        ) || [];
+        const hostingOnly = order.plans?.filter(
+          (p: any) => p.type === "hosting" || p.serviceType === "hosting"
+        ) || [];
+        setEmailChecked(emailOnly.length > 0);
+        setStorageChecked(storageOnly.length > 0);
+        setMsofficeChecked(msofficeOnly.length > 0);
+        setHostingChecked(hostingPlan);
+        setWebsiteChecked(websitePlan);
+        setSslChecked(sslPlan);
+        setCustomerType(order.client ? "existing" : "new");
         setCustomerType(order.client ? "existing" : "new");
 
         // Extract hosting details safely
-        const hostTypeObj = order.hosttypeid || order.hostType || null;
-        const subHostObj = order.subHostTypeId || order.storageDetails?.hostSubType || null;
-        const storageObj = order.hoststorageId || order.storageDetails || null;
-        const emailOnly = order.plans?.filter((p: OrderPlan) => p.type === "email") || [];
-        const storageOnly = order.plans?.filter((p: OrderPlan) => p.type === "storage") || [];
-        const msofficeOnly = order.plans?.filter((p: OrderPlan) => p.type === "msoffice") || [];
+        const hostingPlanData =
+          order.plans?.find(
+            (p: any) =>
+              p.type === "hosting" ||
+              p.serviceType === "hosting"
+          );
+
+
+        const hostTypeObj =
+          hostingPlanData?.hostType || null;
+
+
+        const subHostObj =
+          hostingPlanData?.hostSubType || null;
+
+
+        const storageObj =
+          hostingPlanData?.storage || null;
+        // const emailOnly = order.plans?.filter((p: OrderPlan) => p.type === "email") || [];
+        // const storageOnly = order.plans?.filter((p: OrderPlan) => p.type === "storage") || [];
+        // const msofficeOnly = order.plans?.filter((p: OrderPlan) => p.type === "msoffice") || [];
 
         // Set Email Plans
         // When mapping emailOnly
@@ -717,7 +792,12 @@ const UpdateOrder: React.FC = () => {
               expiryDate: p.expiryDate?.slice(0, 10),
               users: p.noOfUsers || 1,
               type: p.type || "email",
-              plans: p.plans || [],
+              plans: [
+                {
+                  _id: p.planId,
+                  plan: p.planName
+                }
+              ],
               google_email: typeObj?.name === "Google Workspace",
               microsoft_email: typeObj?.name === "Microsoft 365",
               businessEmail: typeObj?.name === "Business Email",
@@ -753,6 +833,30 @@ const UpdateOrder: React.FC = () => {
             expiryDate: p.expiryDate?.slice(0, 10),
             users: p.noOfUsers, // ✅ Correct user count (1)
             type: p.type,
+          }))
+        );
+
+        setHostingPlans(
+          hostingOnly.map((p: any) => ({
+            type: "hosting",
+
+            hostingType:
+              p.hostType?._id || "",
+
+            hostingSubType:
+              p.hostSubType?._id || "",
+
+            storage:
+              p.storage?._id || "",
+
+            registrationDate:
+              p.registrationDate?.slice(0, 10) || "",
+
+            expiryDate:
+              p.expiryDate?.slice(0, 10) || "",
+
+            users:
+              p.noOfUsers || 1
           }))
         );
 
@@ -794,21 +898,22 @@ const UpdateOrder: React.FC = () => {
               order.client?.c_placeOfContactWithStateCode || "",
           },
 
-          hosting: !!order.hosting,
-          website_flag: !!order.website_flag,
-          ssl_flag: !!order.ssl_flag,
-          host_flag: !!order.host_flag,
+          // hosting: !!order.hosting,
+          // website_flag: !!order.website_flag,
+          // ssl_flag: !!order.ssl_flag,
+          // host_flag: !!order.host_flag,
+
           domainSource: order.domainSource || "",
           email_expiryDate: order.email_expiryDate?.slice(0, 10) || "",
           users: order.users || 1,
           plans: order.plans || [],
 
-          hosttypeid: hostTypeObj,
-          hosting_plan: hostTypeObj?._id || "",
-          subHostTypeId: subHostObj,
-          hosting_subplan: subHostObj?._id || "",
-          hoststorageId: storageObj,
-          storage: storageObj?._id || "",
+          // hosttypeid: hostTypeObj,
+          // hosting_plan: hostTypeObj?._id || "",
+          // subHostTypeId: subHostObj,
+          // hosting_subplan: subHostObj?._id || "",
+          // hoststorageId: storageObj,
+          // storage: storageObj?._id || "",
         }));
 
         // Initially populate host types dropdown
@@ -817,9 +922,28 @@ const UpdateOrder: React.FC = () => {
 
         // If a host type is selected, fetch its subtypes and storage
         if (hostTypeObj?._id) {
-          fetchSubTypesAndStorage(hostTypeObj._id, subHostObj?._id, storageObj?._id);
-        }
 
+  setFormData(prev=>({
+    ...prev,
+
+    hosttypeid: hostTypeObj,
+    hosting_plan: hostTypeObj._id,
+
+    subHostTypeId: subHostObj,
+    hosting_subplan: subHostObj?._id || "",
+
+    hoststorageId: storageObj,
+    storage: storageObj?._id || "",
+  }));
+
+
+  fetchSubTypesAndStorage(
+    hostTypeObj._id,
+    subHostObj?._id,
+    storageObj?._id
+  );
+
+}
         // ---------------- Email Plans ----------------
         if (order.email_flag && order.plans && order.plans.length > 0 && emailTypes.length > 0) {
           const updatedPlans = await Promise.all(
@@ -828,7 +952,10 @@ const UpdateOrder: React.FC = () => {
               .map(async (p: any) => {
                 // ✅ Find the email type object by ID or name
                 const typeObj = emailTypes.find(
-                  (t: any) => t._id === p.email_service_id || t.name === p.emailType
+                  (t: any) =>
+                    t._id === p.emailTypeId ||
+                    t._id === p.email_service_id ||
+                    t.name === p.emailType
                 );
 
                 let plans: any[] = [];
@@ -841,7 +968,11 @@ const UpdateOrder: React.FC = () => {
 
                     // Ensure selected plan exists in plans array
                     if (!plans.some((pl) => pl._id === p.planId) && p.planId && p.planName) {
-                      plans.unshift({ _id: p.planId, plan: p.planName });
+                      plans.unshift({
+                        _id: p.planId,
+                        plan: p.planName,
+                        planName: p.planName
+                      });
                     }
                   } catch (err) {
                     console.error("Failed to fetch plans for email type", err);
@@ -850,14 +981,18 @@ const UpdateOrder: React.FC = () => {
 
                 return {
                   email_service: typeObj?.name || p.emailType || "", // ✅ display name
-                  email_service_id: typeObj?._id || p.email_service_id || "", // ✅ ID for <select>
+                  email_service_id:
+                    typeObj?._id ||
+                    p.emailTypeId ||
+                    p.email_service_id ||
+                    "",// ✅ ID for <select>
                   selected_plan: p.planId || "",
                   registrationDate: p.registrationDate?.slice(0, 10) || "",
                   expiryDate: p.expiryDate?.slice(0, 10) || "",
                   users: p.noOfUsers || 1,
-                  google_email: typeObj?.name === "Google Workspace",
-                  microsoft_email: typeObj?.name === "Microsoft 365",
-                  businessEmail: typeObj?.name === "Business Email",
+                  // google_email: typeObj?.name === "Google Workspace",
+                  // microsoft_email: typeObj?.name === "Microsoft 365",
+                  // businessEmail: typeObj?.name === "Business Email",
                   email_flag: true,
                   type: p.type || "email",
                   plans,
@@ -869,12 +1004,17 @@ const UpdateOrder: React.FC = () => {
         }
 
         // ---------------- Storage Plans ----------------
-        if (order.storage_services_flag && order.plans && order.plans.length > 0) {
+        if (order.plans && order.plans.length > 0) {
           const updatedStoragePlans = await Promise.all(
             order.plans
               .filter((p: any) => p.type === "storage")
               .map(async (p: any) => {
-                const typeObj = emailTypes.find((t: any) => t.name === p.emailType);
+                const typeObj = emailTypes.find(
+                  (t: any) =>
+                    t.name === p.emailType ||
+                    t._id === p.emailTypeId ||
+                    t._id === p.email_service_id
+                );
                 // Find the type object if needed (you may have a storageTypes array similar to emailTypes)
                 let plans: any[] = [];
                 if (typeObj) {
@@ -888,7 +1028,11 @@ const UpdateOrder: React.FC = () => {
                     // Make sure the selected plan is included
                     const exists = plans.some((pl) => pl._id === p.planId);
                     if (!exists && p.planId && p.planName) {
-                      plans.unshift({ _id: p.planId, plan: p.planName });
+                      plans.unshift({
+                        _id: p.planId,
+                        plan: p.planName,
+                        planName: p.planName
+                      });
                     }
                   } catch (err) {
                     console.error("Failed to fetch storage plans", err);
@@ -896,7 +1040,11 @@ const UpdateOrder: React.FC = () => {
                 }
                 return {
                   email_service: typeObj?.name || p.emailType || "", // ✅ display name
-                  email_service_id: typeObj?._id || p.email_service_id || "", // ✅ ID for <select>
+                  email_service_id:
+                    typeObj?._id ||
+                    p.emailTypeId ||
+                    p.email_service_id ||
+                    "",// ✅ ID for <select>
                   selected_plan: p.planId || "",
                   registrationDate: p.registrationDate?.slice(0, 10) || "",
                   expiryDate: p.expiryDate?.slice(0, 10) || "",
@@ -910,13 +1058,18 @@ const UpdateOrder: React.FC = () => {
           setStoragePlans(updatedStoragePlans);
         }
         // ---------------- MS Office Plans ----------------
-        if (order.msoffice_services_flag && order.plans && order.plans.length > 0) {
+        if (order.plans && order.plans.length > 0) {
           const updatedMsofficePlans = await Promise.all(
             order.plans
               .filter((p: any) => p.type === "msoffice")
               .map(async (p: any) => {
                 // Find the MS Office type object
-                const typeObj = emailTypes.find((t: any) => t.name === p.emailType); // or use a msofficeTypes array if needed
+                const typeObj = emailTypes.find(
+                  (t: any) =>
+                    t.name === p.emailType ||
+                    t._id === p.emailTypeId ||
+                    t._id === p.email_service_id
+                );// or use a msofficeTypes array if needed
 
                 // Fetch plans for this MS Office type
                 let plans: any[] = [];
@@ -930,7 +1083,11 @@ const UpdateOrder: React.FC = () => {
                     // Ensure the selected plan is included
                     const exists = plans.some((pl) => pl._id === p.planId);
                     if (!exists && p.planId && p.planName) {
-                      plans.unshift({ _id: p.planId, plan: p.planName });
+                      plans.unshift({
+                        _id: p.planId,
+                        plan: p.planName,
+                        planName: p.planName
+                      });
                     }
                   } catch (err) {
                     console.error("Failed to fetch MS Office plans", err);
@@ -939,7 +1096,11 @@ const UpdateOrder: React.FC = () => {
 
                 return {
                   email_service: typeObj?.name || p.emailType || "", // ✅ display name
-                  email_service_id: typeObj?._id || p.email_service_id || "", // ✅ ID for <select>
+                  email_service_id:
+                    typeObj?._id ||
+                    p.emailTypeId ||
+                    p.email_service_id ||
+                    "",// ✅ ID for <select>
                   selected_plan: p.planId || "", // Must match option value
                   registrationDate: p.registrationDate?.slice(0, 10) || "",
                   expiryDate: p.expiryDate?.slice(0, 10) || "",
@@ -1021,30 +1182,30 @@ const UpdateOrder: React.FC = () => {
 
 
   // ------------------- FETCH CLIENTS -------------------
-useEffect(() => {
-  const fetchClients = async () => {
-    if (customerType === "existing") {
-      try {
-        const token = localStorage.getItem("token"); // നിങ്ങളുടെ token key
+  useEffect(() => {
+    const fetchClients = async () => {
+      if (customerType === "existing") {
+        try {
+          const token = localStorage.getItem("token"); // നിങ്ങളുടെ token key
 
-        const res = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/api/orders/existing_customers`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+          const res = await axios.get(
+            `${import.meta.env.VITE_API_BASE_URL}/api/orders/existing_customers`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
 
-        setClients(res.data.data);
-      } catch (err) {
-        console.error(err);
+          setClients(res.data.data);
+        } catch (err) {
+          console.error(err);
+        }
       }
-    }
-  };
+    };
 
-  fetchClients();
-}, [customerType]);
+    fetchClients();
+  }, [customerType]);
 
   // ------------------- FETCH COUNTRIES -------------------
   useEffect(() => {
@@ -1139,6 +1300,58 @@ useEffect(() => {
           });
         });
       }
+      // HOSTING PLAN
+if (hostingChecked) {
+  combinedPlans.push({
+    type: "hosting",
+
+    hostingType:
+      formData.hosting_plan || "",
+
+    hostingSubType:
+      formData.hosting_subplan || "",
+
+    storage:
+      formData.storage || "",
+
+    registrationDate:
+      formData.registrationDate,
+
+    expiryDate:
+      formData.expiryDate,
+
+    noOfUsers: 1,
+  });
+}
+
+      // WEBSITE SERVICE
+      if (websiteChecked) {
+        combinedPlans.push({
+          planId: null,
+          emailTypeId: null,
+          emailType: "",
+          planName: "",
+          registrationDate: formData.registrationDate,
+          expiryDate: formData.expiryDate,
+          noOfUsers: 1,
+          type: "website",
+        });
+      }
+
+
+      // SSL SERVICE
+      if (sslChecked) {
+        combinedPlans.push({
+          planId: null,
+          emailTypeId: null,
+          emailType: "",
+          planName: "",
+          registrationDate: formData.registrationDate,
+          expiryDate: formData.expiryDate,
+          noOfUsers: 1,
+          type: "ssl",
+        });
+      }
 
       // assign combined plans
       payload.plans = combinedPlans;
@@ -1147,9 +1360,14 @@ useEffect(() => {
       payload.email_flag = combinedPlans.some(p => p.type === "email");
       payload.storage_services_flag = combinedPlans.some(p => p.type === "storage");
       payload.msoffice_services_flag = combinedPlans.some(p => p.type === "msoffice");
-      payload.domain_flag = formData.domainSource === "Cloudflare"
-        ? !!formData.domain_flag
-        : false;
+      const selectedDomainSource = domainSources.find(
+        (source) => source._id === formData.domainSource
+      );
+
+      payload.domain_flag =
+        selectedDomainSource?.name === "Cloudflare"
+          ? !!formData.domain_flag
+          : false;
 
       // send update request
       const res = await axios.put(`${import.meta.env.VITE_API_BASE_URL}/api/orders/${orderId}`, payload);
@@ -1533,7 +1751,6 @@ useEffect(() => {
                 <option value="Customer">Customer</option>
               </select>
             </div>
-
             {/* Registrar / Domain Source */}
             {(formData.managedBy === "Signroots" ||
               formData.managedBy === "Customer") && (
@@ -1541,6 +1758,7 @@ useEffect(() => {
                   <label className="block text-gray-700 font-medium mb-2">
                     Registrar
                   </label>
+
                   <select
                     name="domainSource"
                     value={formData.domainSource || ""}
@@ -1549,68 +1767,55 @@ useEffect(() => {
                   >
                     <option value="">-- Select Registrar --</option>
 
-                    {formData.managedBy === "Signroots" && (
-                      <>
-                        <option value="resellerclub">RESELLER CLUB</option>
-                        <option value="Hostinger">HOSTINGER</option>
-                        <option value="SQUARESPACE">SQUARESPACE</option>
-                        <option value="SAHARA">SAHARA</option>
-                        <option value="Cloudflare">CLOUDFLARE</option>
-                        {/* <option value="DNS Cloudflare">DNS CLOUDFLARE</option> */}
-                        <option value="AE Server">AE SERVER</option>
-                      </>
-                    )}
-
-                    {formData.managedBy === "Customer" && (
-                      <>
-                        <option value="Cloudflare">CLOUDFLARE</option>
-                        <option value="Hostinger">HOSTINGER</option>
-                      </>
-                    )}
-                  </select>
-                  {["Cloudflare",].includes(formData.domainSource ?? "") && (
-                    <div className="mt-4 flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        name="dns_flag"
-                        checked={formData.domain_flag}
-                        disabled={formData.managedBy === "Customer"}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-
-                            domain_flag: e.target.checked,
-                          }))
+                    {domainSources
+                      .filter((source) => source.is_active)
+                      .filter((source) => {
+                        if (formData.managedBy === "Customer") {
+                          return (
+                            source.name === "Cloudflare" ||
+                            source.name === "Hostinger"
+                          );
                         }
-                        className="w-4 h-4"
-                      />
-                      <label className="text-gray-700 font-medium">
-                        DNS Flag
-                      </label>
-                    </div>
-                  )}
+
+                        return true; // Signroots കാണും എല്ലാ registrar-ുകളും
+                      })
+                      .map((source) => (
+                        <option key={source._id} value={source._id}>
+                          {source.name}
+                        </option>
+                      ))}
+                  </select>
+
+
+                  {/* DNS Flag */}
+                  {domainSources.find(
+                    (source) =>
+                      source._id === formData.domainSource &&
+                      source.name.toLowerCase() === "cloudflare"
+                  ) && (
+                      <div className="mt-4 flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          name="dns_flag"
+                          checked={formData.domain_flag || false}
+                          disabled={formData.managedBy === "Customer"}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              domain_flag: e.target.checked,
+                            }))
+                          }
+                          className="w-4 h-4"
+                        />
+
+                        <label className="text-gray-700 font-medium">
+                          DNS Flag
+                        </label>
+                      </div>
+                    )}
 
                 </div>
               )}
-            {/* {formData.domainSource === "Cloudflare" && (
-  <div className="mt-4 flex items-center gap-2">
-    <input
-      type="checkbox"
-      name="dns_flag"
-      checked={formData.dns_flag}
-      onChange={(e) =>
-        setFormData({
-          ...formData,
-          dns_flag: e.target.checked,
-        })
-      }
-      className="w-4 h-4"
-    />
-    <label className="text-gray-700 font-medium">
-      DNS Flag
-    </label>
-  </div>
-)} */}
 
             <div>
               <label className="block text-gray-700 font-medium mb-2">Registration Date</label>
@@ -1867,7 +2072,7 @@ useEffect(() => {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setConfirmRemove({ index: idx, type: "storage" })}
+                    onClick={() => setConfirmRemove({ index: idx, type: "msoffice" })}
                     className="text-red-500 mt-2 hover:text-red-700"
                   >
                     Remove
@@ -2006,18 +2211,15 @@ useEffect(() => {
           <label className="flex items-center gap-2 mt-3">
             <input
               type="checkbox"
-              name="host_flag"
-              checked={formData.host_flag || false}
-              onChange={(e) =>
-                setFormData((prev: any) => ({ ...prev, host_flag: e.target.checked }))
-              }
+              checked={hostingChecked}
+              onChange={(e) => setHostingChecked(e.target.checked)}
               className="h-4 w-4"
             />
             Hosting
           </label>
 
           {/* Hosting Details */}
-          {formData.host_flag && (
+          {hostingChecked && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2 p-3 border rounded bg-gray-50">
 
               {/* Hosting Type */}
@@ -2092,27 +2294,28 @@ useEffect(() => {
           )}
 
 
-          {/* Website & SSL (outside Hosting Details div) */}
+          {/* Website & SSL */}
           <div className="mt-3">
+
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
-                name="website_flag"
-                checked={formData.website_flag || false}
-                onChange={handleCheckboxChange}
+                checked={websiteChecked}
+                onChange={(e) => setWebsiteChecked(e.target.checked)}
                 className="h-4 w-4"
               />
               Website
             </label>
 
+
             <label className="flex items-center gap-2 mt-2">
               <input
                 type="checkbox"
-                name="ssl_flag"
-                checked={formData.ssl_flag || false}
-                onChange={handleCheckboxChange}
+                checked={sslChecked}
+                onChange={(e) => setSslChecked(e.target.checked)}
                 className="h-4 w-4"
               />
+              SSL
               SSL
             </label>
           </div>

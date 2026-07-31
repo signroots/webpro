@@ -116,7 +116,13 @@ interface Order {
     registrationDate: string;
     expiryDate: string; // 👈 IMPORTANT
     noOfUsers: number;
-    type: "email" | "storage" | "msoffice";
+    type:
+    | "email"
+    | "storage"
+    | "msoffice"
+    | "hosting"
+    | "website"
+    | "ssl";
     adminEmail: string;
     adminPassword: string;
     status: string;
@@ -167,7 +173,13 @@ interface Order {
   };
   // API Response Plans
 Plans?: {
-  type: "email" | "storage" | "msoffice";
+  type:
+    | "email"
+    | "storage"
+    | "msoffice"
+    | "hosting"
+    | "website"
+    | "ssl";
   expiryDate: string;
   emailType: string;
   emailTypeImage: string;
@@ -1187,25 +1199,73 @@ z-50
                         }`}
                       title="Hosting"
                     /> */}
-                    {order.hosting && (
-                      <FaServer
-                        className="w-5 h-5 text-purple-500"
-                        title="Hosting"
-                      />
-                    )}
+                 {/* ================= HOSTING ================= */}
 
-                    {/* Website */}
-                    {/* <FaLaptopCode
-                      className={`w-5 h-5 ${order.website_flag ? "text-purple-500" : "text-gray-400 opacity-40"
-                        }`}
-                      title="Website"
-                    /> */}
-                    {order.website_flag && (
-                      <FaLaptopCode
-                        className="w-5 h-5 text-purple-500"
-                        title="Website"
-                      />
-                    )}
+{order.Plans?.some(
+  (plan) => plan.type === "hosting"
+) ? (
+
+  <FaServer
+    className="w-5 h-5 text-purple-500"
+    title="Hosting"
+  />
+
+) : (
+
+  <FaServer
+    className="w-5 h-5 text-gray-300 opacity-40"
+    title="No Hosting"
+  />
+
+)}
+
+
+
+{/* ================= WEBSITE ================= */}
+
+{order.Plans?.some(
+  (plan) => plan.type === "website"
+) ? (
+
+  <FaLaptopCode
+    className="w-5 h-5 text-blue-500"
+    title="Website"
+  />
+
+) : (
+
+  <FaLaptopCode
+    className="w-5 h-5 text-gray-300 opacity-40"
+    title="No Website"
+  />
+
+)}
+
+
+
+{/* ================= SSL ================= */}
+
+{/* ================= SSL ================= */}
+
+{order.Plans?.some(
+  (plan) => plan.type === "ssl"
+) ? (
+
+  <img
+    src="/ssl.jpg"
+    className="w-5 h-5 object-contain"
+    title="SSL"
+  />
+
+) : (
+
+  <img
+    src="/ssl.jpg"
+    className="w-5 h-5 object-contain opacity-30 grayscale"
+    title="No SSL"
+  />
+
+)}
                   </div>
                 </td>
 
@@ -1222,15 +1282,15 @@ z-50
 
     const domainDate = formatDate(order.expiryDate);
 
-    const emailDates = (order.Plans || [])
-      .map(plan => formatDate(plan.expiryDate))
-      .filter((d): d is string => Boolean(d));
+const emailDates = (order.Plans || [])
+  .filter(plan => plan.type === "email") // only email expiry
+  .map(plan => formatDate(plan.expiryDate))
+  .filter((d): d is string => Boolean(d));
 
-    const isSameExpiry =
-      domainDate &&
-      emailDates.length > 0 &&
-      emailDates.every(d => d === domainDate);
-
+const isSameExpiry =
+  !!domainDate &&
+  emailDates.length > 0 &&
+  emailDates.every(d => d === domainDate);
     const badgeBase =
       "inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium w-fit";
 

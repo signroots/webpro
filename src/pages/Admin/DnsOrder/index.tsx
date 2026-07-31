@@ -17,8 +17,9 @@ import { fetchDNSOrders } from "../Order/api";
 import axios from "axios";
 // import { updateOrder } from "./update/api";
 import { fetchCountries, fetchStatesByCountry } from "../Customer/api";
-
+import ServiceIcons from "../Order/ServiceIcons";
 // -------------------- Types --------------------
+
 interface Customer {
   _id: string;
   name?: string;
@@ -28,8 +29,9 @@ interface Customer {
   address?: string;
   city?: string;
   country?: string;
- 
 }
+
+
 interface Client {
   _id: string;
   c_name?: string;
@@ -39,53 +41,181 @@ interface Client {
   c_address?: string;
   c_city?: string;
   c_country?: string;
-
 }
+
+
 interface ICountry {
   _id: string;
   name: string;
 }
 
-interface Order {
-  _id: string;
-  domainName: string;
-  lockStatus?: string;
-  status?: string;
-  users?: number;
-  managedBy?: string;
+
+// Order Plans
+interface OrderPlan {
+
+  type:
+    | "email"
+    | "storage"
+    | "msoffice"
+    | "hosting"
+    | "website"
+    | "ssl";
+
+
+  emailType?: string | null;
+
+  emailTypeId?: string | null;
+
+
+  planId?: string | null;
+
+  planName?: string;
+
+
+  hostType?: {
+    _id: string;
+    type?: string;
+  } | null;
+
+
+  hostSubType?: {
+    _id: string;
+    name?: string;
+  } | null;
+
+
+  storage?: {
+    _id: string;
+    name?: string;
+  } | null;
+
+
   registrationDate?: string;
+
   expiryDate?: string;
-  domainSource?: string;
+
+  noOfUsers?: number;
+
+}
+
+
+
+// Main Order
+interface Order {
+
+  _id: string;
+
+  domainName: string;
+
+
+  lockStatus?: string;
+
+  status?: string;
+
+
+  users?: number;
+
+
+  managedBy?: string;
+
+
+  registrationDate?: string;
+
+
+  expiryDate?: string;
+
+
+
+  // Domain Source
+  domainSource?: {
+    _id:string;
+    name:string;
+    code?:string;
+    image?:string;
+  } | null;
+
+
+
+  // Services
+  plans?: OrderPlan[];
+
+
+
   google_email?: boolean;
+
   microsoft_email?: boolean;
+
+
   cloudflareRegistered?: boolean;
+
+
+
   hosting?: boolean;
+
   email_flag?: boolean;
+
   website_flag?: boolean;
+
   ssl_flag?: boolean;
+
   host_flag?: boolean;
+
+
+
   customer?: Customer | null;
+
+
   client?: Client | null;
+
+
+
   subResellerName?: string;
+
   subResellerEmail?: string;
+
+
   subscription?: string;
+
+
   provider?: string;
+
+
+
   email_status?: string;
-  email_service?: "Google Workspace" | "Microsoft 365";
+
+
+  email_service?: 
+    | "Google Workspace"
+    | "Microsoft 365";
+
+
   email_expiryDate?: string;
+
+
+
   newCustomer?: {
-  // resellerCustomerId?: string;
-  c_name?: string;
-  c_email?:string[];
-  c_phone?: string;
-  c_company?: string;
-  c_address?: string;
-  c_city?: string;
-  c_state?: string;
-  c_country?: string;
+
+    c_name?: string;
+
+    c_email?: string[];
+
+    c_phone?: string;
+
+    c_company?: string;
+
+    c_address?: string;
+
+    c_city?: string;
+
+    c_state?: string;
+
+    c_country?: string;
+
     c_zipCode?: string;
+
     c_gst?: string;
-};
+
+  };
 
 }
 
@@ -551,77 +681,12 @@ const handleSubmit = async (e: React.FormEvent) => {
   )}
 </td>
 
-                 {/* Services */}
+              {/* Services */}
 <td className="px-6 py-4 flex items-center gap-2">
-  {/* Domain Source */}
-  {order.domainSource ? (
-    order.domainSource.toLowerCase() === "resellerclub" ? (
-      <img
-        src="/resellerclub-logo-2x.png"
-        className="w-6 h-6"
-        title="ResellerClub"
-      />
-    ) : order.domainSource.toLowerCase() === "cloudflare"? (
-      <SiCloudflare
-        className="w-6 h-6 text-orange-500"
-        title="Cloudflare"
-      />
-    ): order.domainSource.toLowerCase() === "cloudflare" || "DNS Cloudflare" ? (
-      <SiCloudflare
-        className="w-6 h-6 text-orange-500"
-        title="Cloudflare"
-      />
-    ) : order.domainSource.toLowerCase() === "hostinger" ? (
-      <SiHostinger
-        className="w-6 h-6 text-blue-500"
-        title="Hostinger"
-      />
-    ) : (
-      <FaGlobe
-        className="w-6 h-6 text-gray-400"
-        title={order.domainSource}
-      />
-    )
-  ) : (
-    <FaGlobe
-      className="w-6 h-6 text-gray-300"
-      title="No Domain Source"
-    />
-  )}
 
-  {/* Email Service */}
-  {order.google_email ? (
-    <img
-      src="/download.png"
-      className="w-5 h-5"
-      title="Google Workspace"
-    />
-  ) : order.microsoft_email ? (
-    <img
-      src="/microsoft.png"
-      className="w-5 h-5"
-      title="Microsoft 365"
-    />
-  ) : (
-    <FaEnvelope
-      className="w-5 h-5 text-gray-300"
-      title="No Email"
-    />
-  )}
+  <ServiceIcons order={order} />
 
-  {/* Hosting */}
-  <FaServer
-    className="w-5 h-5 text-purple-400"
-    title="Hosting"
-  />
-
-  {/* Website */}
-  <FaLaptopCode
-    className="w-5 h-5 text-pink-400"
-    title="Website"
-  />
 </td>
-
 {/* Expiry Date */}
 <td className="px-6 py-4">
   {(() => {
@@ -864,15 +929,15 @@ const handleSubmit = async (e: React.FormEvent) => {
                 readOnly
               />
                   </label>
-                   <label className="block">
-              Domain:
-              <input
-                type="text"
-                value={selectedOrder.domainSource}
-                className="border px-3 py-2 rounded w-full text-black"
-                readOnly
-              />
-            </label>
+                  <label className="block">
+  Domain Source:
+  <input
+    type="text"
+    value={selectedOrder.domainSource?.name || ""}
+    className="border px-3 py-2 rounded w-full text-black"
+    readOnly
+  />
+</label>
 
 
             <label className="block">
