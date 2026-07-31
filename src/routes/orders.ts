@@ -1417,7 +1417,7 @@ router.get(
   hostType: p.hostTypeId
     ? {
         _id: p.hostTypeId._id,
-        type: p.hostTypeId.type,
+        name: p.hostTypeId.type,
       }
     : null,
 
@@ -1433,7 +1433,7 @@ router.get(
   storage: p.storageId
     ? {
         _id: p.storageId._id,
-        name: p.storageId.name,
+        name: p.storageId.storage,
       }
     : null,
 
