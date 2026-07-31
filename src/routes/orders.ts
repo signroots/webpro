@@ -1367,11 +1367,52 @@ if (data.plans && Array.isArray(data.plans)) {
 
 
       // Only email/storage/msoffice have plan & email type
-      if (
-        p.type === "email" ||
-        p.type === "storage" ||
-        p.type === "msoffice"
-      ) {
+     if(!p.type){
+ throw new Error("Service type required");
+}
+
+
+// email/storage/msoffice validation
+
+if(
+ p.type==="email" ||
+ p.type==="storage" ||
+ p.type==="msoffice"
+){
+
+ if(!p.planId || !p.emailTypeId){
+   const error:any = new Error(
+    "Plan and Email Type required"
+   );
+
+   error.statusCode=400;
+
+   throw error;
+ }
+
+}
+
+
+// hosting validation
+
+if(p.type==="hosting"){
+
+ if(
+  !p.hosttypeid ||
+  !p.subHostTypeId ||
+  !p.hoststorageId
+ ){
+
+  const error:any = new Error(
+   "Hosting details required"
+  );
+
+  error.statusCode=400;
+
+  throw error;
+ }
+
+}{
 
         planDoc = await PlanEmail.findById(p.planId);
 
@@ -1390,31 +1431,47 @@ if (data.plans && Array.isArray(data.plans)) {
 
       return {
 
-        orderId: savedOrder._id,
-
-        planId: planDoc?._id || null,
-
-        emailTypeId: emailTypeDoc?._id || null,
-
-        type: p.type,
+ orderId:savedOrder._id,
 
 
-        registrationDate:
-          p.registrationDate
-            ? new Date(p.registrationDate)
-            : new Date(),
+ // email/storage/msoffice
+
+ planId: planDoc?._id || null,
+
+ emailTypeId: emailTypeDoc?._id || null,
 
 
-        expiryDate:
-          p.expiryDate
-            ? new Date(p.expiryDate)
-            : new Date(),
+ // hosting
+
+ hosttypeid:
+   p.hosttypeid || null,
+
+ subHostTypeId:
+   p.subHostTypeId || null,
+
+ hoststorageId:
+   p.hoststorageId || null,
 
 
-        noOfUsers:
-          Number(p.noOfUsers || 1),
+ type:p.type,
 
-      };
+
+ registrationDate:
+ p.registrationDate
+ ? new Date(p.registrationDate)
+ : new Date(),
+
+
+ expiryDate:
+ p.expiryDate
+ ? new Date(p.expiryDate)
+ : new Date(),
+
+
+ noOfUsers:
+ Number(p.noOfUsers || 1)
+
+};
 
     })
   );

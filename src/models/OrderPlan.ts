@@ -1,15 +1,10 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface IOrderPlan extends Document {
+
   orderId: mongoose.Types.ObjectId;
-  planId: mongoose.Types.ObjectId;
-  emailTypeId: mongoose.Types.ObjectId;
 
-  registrationDate: Date | null;
-  expiryDate: Date | null;
-
-  noOfUsers: number;
- type:
+  type:
   | "email"
   | "storage"
   | "msoffice"
@@ -17,64 +12,162 @@ export interface IOrderPlan extends Document {
   | "website"
   | "ssl";
 
-  adminEmail: string;
-  adminPassword: string;
-  status: string;
+
+  // Email / Storage / MS Office common fields
+  emailTypeId?: mongoose.Types.ObjectId | null;
+
+  planId?: mongoose.Types.ObjectId | null;
+
+  noOfUsers?: number;
+
+  registrationDate?: Date | null;
+
+  expiryDate?: Date | null;
+
+
+
+  // Hosting specific fields
+  hostTypeId?: mongoose.Types.ObjectId | null;
+
+  hostSubTypeId?: mongoose.Types.ObjectId | null;
+
+  storageId?: mongoose.Types.ObjectId | null;
+
+
+
+  // Future Website / SSL fields
+  websiteDetails?: any;
+
+  sslDetails?: any;
+
+
+
+  adminEmail?: string;
+
+  adminPassword?: string;
+
+  status?: string;
+
 
   createdAt: Date;
   updatedAt: Date;
 }
+const OrderPlanSchema = new Schema({
 
-const OrderPlanSchema = new Schema(
-  {
-    orderId: { type: Schema.Types.ObjectId, ref: "Order", required: true },
-planId: { 
-  type: Schema.Types.ObjectId, 
-  ref: "PlanEmail", 
-  required: false,
-  default: null
+orderId:{
+ type:Schema.Types.ObjectId,
+ ref:"Order",
+ required:true
 },
 
-emailTypeId: { 
-  type: Schema.Types.ObjectId, 
-  ref: "TypeEmail", 
-  required: false,
-  default: null
+
+type:{
+ type:String,
+ enum:[
+ "email",
+ "storage",
+ "msoffice",
+ "hosting",
+ "website",
+ "ssl"
+ ],
+ required:true
 },
 
-    registrationDate: {
-  type: Date,
-  required: false,
-  default: null,
+
+// email/storage/msoffice
+
+emailTypeId:{
+ type:Schema.Types.ObjectId,
+ ref:"TypeEmail",
+ default:null
 },
-    expiryDate: {
-    type: Date,
-    required: false,
-    default: null,
-  },
 
-    noOfUsers: { type: Number, default: 1 },
 
-    type: {
-      type: String,
-      enum: [
-  "email",
-  "storage",
-  "msoffice",
-  "hosting",
-  "website",
-  "ssl"
-],
-      required: true,
-    },
+planId:{
+ type:Schema.Types.ObjectId,
+ ref:"PlanEmail",
+ default:null
+},
 
-    // NEW FIELDS FROM CSV
-    adminEmail: { type: String, default: "" },
-    adminPassword: { type: String, default: "" },
-    status: { type: String, default: "" },
-  },
-  { timestamps: true }
-);
+
+noOfUsers:{
+ type:Number,
+ default:1
+},
+
+
+registrationDate:{
+ type:Date,
+ default:null
+},
+
+
+expiryDate:{
+ type:Date,
+ default:null
+},
+
+
+
+// hosting
+
+hostTypeId:{
+ type:Schema.Types.ObjectId,
+ ref:"HostType",
+ default:null
+},
+
+
+hostSubTypeId:{
+ type:Schema.Types.ObjectId,
+ ref:"HostSubType",
+ default:null
+},
+
+
+storageId:{
+ type:Schema.Types.ObjectId,
+ ref:"Storage",
+ default:null
+},
+
+
+// future
+
+websiteDetails:{
+ type:Object,
+ default:null
+},
+
+
+sslDetails:{
+ type:Object,
+ default:null
+},
+
+
+adminEmail:{
+ type:String,
+ default:""
+},
+
+
+adminPassword:{
+ type:String,
+ default:""
+},
+
+
+status:{
+ type:String,
+ default:""
+}
+
+
+},{
+timestamps:true
+});
 
 export const OrderPlan =
   mongoose.models.OrderPlan ||
