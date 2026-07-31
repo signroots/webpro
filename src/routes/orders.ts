@@ -1531,44 +1531,119 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
     // -------------------------
     // Handle Order Plans
     // -------------------------
-    if (plans && Array.isArray(plans)) {
-      // ✅ Clear existing plans first
-      await OrderPlan.deleteMany({ orderId: updatedOrder._id });
+    // -------------------------
+// Handle Order Plans
+// -------------------------
+if (plans && Array.isArray(plans)) {
 
-      const planDocs = await Promise.all(
-        plans.map(async (p: any) => {
-          // ✅ Validate PlanEmail
-          let planId = p.planId;
-          if (!planId) {
-            const plan = await PlanEmail.findOne({ name: p.planName });
-            if (!plan) throw new Error(`PlanEmail not found: ${p.planName}`);
-            planId = plan._id;
+  // Remove old plans
+  await OrderPlan.deleteMany({
+    orderId: updatedOrder._id
+  });
+
+  const planDocs = await Promise.all(
+    plans.map(async (p: any) => {
+
+      let planId = p.planId || null;
+      let emailTypeId = p.emailTypeId || null;
+
+
+      // -------------------------
+      // EMAIL / STORAGE / MS OFFICE
+      // Need PlanEmail + TypeEmail
+      // -------------------------
+      if (
+        p.type === "email" ||
+        p.type === "storage" ||
+        p.type === "msoffice"
+      ) {
+
+        // Plan validation
+        if (!planId && p.planName) {
+
+          const plan = await PlanEmail.findOne({
+            plan: p.planName
+          });
+
+          if (!plan) {
+            throw new Error(
+              `PlanEmail not found: ${p.planName}`
+            );
           }
 
-          // ✅ Validate TypeEmail
-          let emailTypeId = p.emailTypeId;
-          if (!emailTypeId) {
-            const emailType = await TypeEmail.findOne({ type: p.emailType });
-            if (!emailType) throw new Error(`TypeEmail not found: ${p.emailType}`);
-            emailTypeId = emailType._id;
+          planId = plan._id;
+        }
+
+
+        // Email type validation
+        if (!emailTypeId && p.emailType) {
+
+          const emailType = await TypeEmail.findOne({
+            type: p.emailType
+          });
+
+          if (!emailType) {
+            throw new Error(
+              `TypeEmail not found: ${p.emailType}`
+            );
           }
 
-          return {
-            orderId: updatedOrder._id,
-            planId: new mongoose.Types.ObjectId(planId),
-            emailTypeId: new mongoose.Types.ObjectId(emailTypeId),
-            registrationDate: new Date(p.registrationDate),
-            expiryDate: new Date(p.expiryDate),
-            noOfUsers: Number(p.noOfUsers || 1),
-             type: p.type,
-          };
-        })
-      );
+          emailTypeId = emailType._id;
+        }
+      }
 
-      // ✅ Insert all plans
-      await OrderPlan.insertMany(planDocs);
-    }
 
+      // -------------------------
+      // HOSTING / WEBSITE / SSL
+      // No PlanEmail validation
+      // -------------------------
+
+
+      return {
+
+        orderId: updatedOrder._id,
+
+
+        planId:
+          planId &&
+          mongoose.Types.ObjectId.isValid(planId)
+            ? new mongoose.Types.ObjectId(planId)
+            : null,
+
+
+        emailTypeId:
+          emailTypeId &&
+          mongoose.Types.ObjectId.isValid(emailTypeId)
+            ? new mongoose.Types.ObjectId(emailTypeId)
+            : null,
+
+
+        registrationDate:
+          p.registrationDate
+            ? new Date(p.registrationDate)
+            : null,
+
+
+        expiryDate:
+          p.expiryDate
+            ? new Date(p.expiryDate)
+            : null,
+
+
+        noOfUsers:
+          Number(p.noOfUsers || 1),
+
+
+        type: p.type,
+
+      };
+
+    })
+  );
+
+
+  await OrderPlan.insertMany(planDocs);
+}
     // -------------------------
     // Populate for response
     // -------------------------

@@ -9,7 +9,13 @@ export interface IOrderPlan extends Document {
   expiryDate: Date | null;
 
   noOfUsers: number;
-  type: "email" | "storage" | "msoffice";
+ type:
+  | "email"
+  | "storage"
+  | "msoffice"
+  | "hosting"
+  | "website"
+  | "ssl";
 
   adminEmail: string;
   adminPassword: string;
@@ -22,8 +28,19 @@ export interface IOrderPlan extends Document {
 const OrderPlanSchema = new Schema(
   {
     orderId: { type: Schema.Types.ObjectId, ref: "Order", required: true },
-    planId: { type: Schema.Types.ObjectId, ref: "PlanEmail", required: true },
-    emailTypeId: { type: Schema.Types.ObjectId, ref: "TypeEmail", required: true },
+planId: { 
+  type: Schema.Types.ObjectId, 
+  ref: "PlanEmail", 
+  required: false,
+  default: null
+},
+
+emailTypeId: { 
+  type: Schema.Types.ObjectId, 
+  ref: "TypeEmail", 
+  required: false,
+  default: null
+},
 
     registrationDate: {
   type: Date,
@@ -40,7 +57,14 @@ const OrderPlanSchema = new Schema(
 
     type: {
       type: String,
-      enum: ["email", "storage", "msoffice"],
+      enum: [
+  "email",
+  "storage",
+  "msoffice",
+  "hosting",
+  "website",
+  "ssl"
+],
       required: true,
     },
 
