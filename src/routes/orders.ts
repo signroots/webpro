@@ -616,7 +616,7 @@ const emailType =
   })
   .populate({
     path:"storageId",
-    select:"name"
+    select:"storage"
   })
   .select(
     `
