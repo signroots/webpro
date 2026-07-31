@@ -356,26 +356,55 @@ router.delete("/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const deletedClient = await Client.findByIdAndDelete(id);
 
-    if (!deletedClient) {
+    // Check client exists
+    const client = await Client.findById(id);
+
+    if (!client) {
       return res.status(404).json({
         success: false,
         message: "Client not found"
       });
     }
 
+
+
+    // Check client already used in orders
+    const existingOrder = await Order.findOne({
+      client: id
+    });
+
+
+    if (existingOrder) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot delete client. Client already has orders."
+      });
+    }
+
+
+
+    // Delete client
+    await Client.findByIdAndDelete(id);
+
+
+
     res.json({
       success: true,
       message: "Client deleted successfully"
     });
 
+
+
   } catch (error) {
+
     console.error("Delete client error:", error);
+
     res.status(500).json({
-      success: false,
-      message: "Failed to delete client"
+      success:false,
+      message:"Failed to delete client"
     });
+
   }
 });
 export default router;
