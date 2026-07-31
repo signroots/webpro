@@ -2042,43 +2042,64 @@ if (plans && Array.isArray(plans)) {
 
       return {
 
-        orderId: updatedOrder._id,
+  orderId: updatedOrder._id,
 
 
-        planId:
-          planId &&
-          mongoose.Types.ObjectId.isValid(planId)
-            ? new mongoose.Types.ObjectId(planId)
-            : null,
+  planId:
+    planId &&
+    mongoose.Types.ObjectId.isValid(planId)
+      ? new mongoose.Types.ObjectId(planId)
+      : null,
 
 
-        emailTypeId:
-          emailTypeId &&
-          mongoose.Types.ObjectId.isValid(emailTypeId)
-            ? new mongoose.Types.ObjectId(emailTypeId)
-            : null,
+  emailTypeId:
+    emailTypeId &&
+    mongoose.Types.ObjectId.isValid(emailTypeId)
+      ? new mongoose.Types.ObjectId(emailTypeId)
+      : null,
 
 
-        registrationDate:
-          p.registrationDate
-            ? new Date(p.registrationDate)
-            : null,
+  // ✅ HOSTING FIELDS
+  hostTypeId:
+    p.hostingType &&
+    mongoose.Types.ObjectId.isValid(p.hostingType)
+      ? new mongoose.Types.ObjectId(p.hostingType)
+      : null,
 
 
-        expiryDate:
-          p.expiryDate
-            ? new Date(p.expiryDate)
-            : null,
+  hostSubTypeId:
+    p.hostingSubType &&
+    mongoose.Types.ObjectId.isValid(p.hostingSubType)
+      ? new mongoose.Types.ObjectId(p.hostingSubType)
+      : null,
 
 
-        noOfUsers:
-          Number(p.noOfUsers || 1),
+  storageId:
+    p.storage &&
+    mongoose.Types.ObjectId.isValid(p.storage)
+      ? new mongoose.Types.ObjectId(p.storage)
+      : null,
 
 
-        type: p.type,
+  registrationDate:
+    p.registrationDate
+      ? new Date(p.registrationDate)
+      : null,
 
-      };
 
+  expiryDate:
+    p.expiryDate
+      ? new Date(p.expiryDate)
+      : null,
+
+
+  noOfUsers:
+    Number(p.noOfUsers || 1),
+
+
+  type: p.type,
+
+};
     })
   );
 
