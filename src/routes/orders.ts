@@ -60,9 +60,9 @@ router.get(
         select: "name email mobile", // adjust fields as per Customer schema
       })
       .populate({
-        path: "client",
-        select: "companyName", // adjust as per Client schema
-      })
+  path: "client",
+  select: "_id c_name c_company c_email c_phone",
+})
       .sort({ expiryDate: 1 });
 
     res.status(200).json({
