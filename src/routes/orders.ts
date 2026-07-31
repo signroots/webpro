@@ -1755,48 +1755,33 @@ if(p.type==="hosting"){
 
 }
 
-      return {
+    return {
 
- orderId:savedOrder._id,
+  orderId: savedOrder._id,
 
+  // Email / Storage / MS Office
+  planId: planDoc?._id || null,
 
- // email/storage/msoffice
+  emailTypeId: emailTypeDoc?._id || null,
 
- planId: planDoc?._id || null,
+  // Hosting
+  hostTypeId: p.hostingType || null,
 
- emailTypeId: emailTypeDoc?._id || null,
+  hostSubTypeId: p.hostingSubType || null,
 
+  storageId: p.storage || null,
 
- // hosting
+  type: p.type,
 
-hosttypeid:
-   p.hostingType || null,
+  registrationDate: p.registrationDate
+    ? new Date(p.registrationDate)
+    : new Date(),
 
+  expiryDate: p.expiryDate
+    ? new Date(p.expiryDate)
+    : new Date(),
 
-subHostTypeId:
-   p.hostingSubType || null,
-
-hoststorageId:
-   p.storage || null,
-
-
- type:p.type,
-
-
- registrationDate:
- p.registrationDate
- ? new Date(p.registrationDate)
- : new Date(),
-
-
- expiryDate:
- p.expiryDate
- ? new Date(p.expiryDate)
- : new Date(),
-
-
- noOfUsers:
- Number(p.noOfUsers || 1)
+  noOfUsers: Number(p.noOfUsers || 1)
 
 };
 
