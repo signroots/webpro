@@ -754,7 +754,7 @@ storageId
             finalFilter
           )
           .select({
-
+            _id:1,
             domainName:1,
             dns_flag:1,
             order_status:1,
@@ -891,7 +891,7 @@ storageId
             finalFilter
           )
           .select({
-
+             _id:1,
             domainName:1,
             dns_flag:1,
             order_status:1,
