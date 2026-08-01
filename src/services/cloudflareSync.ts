@@ -70,9 +70,9 @@ export async function syncCloudflareDomains() {
         throw new Error("Cloudflare registrar API failed");
       }
 
-      registrarResponse.data.result.forEach((domain: any) => {
-        registrarDomainMap[domain.name] = domain;
-      });
+ registrarResponse.data.result.forEach((domain: any) => {
+  registrarDomainMap[domain.name.toLowerCase()] = domain;
+});
 
       registrarTotalPages =
         registrarResponse.data.result_info.total_pages || 1;
@@ -140,29 +140,26 @@ export async function syncCloudflareDomains() {
       for (const zone of zones) {
 
         const registrarInfo =
-          registrarDomainMap[zone.name];
+  registrarDomainMap[zone.name.toLowerCase()];
 
-        if (!registrarInfo) {
+if (!registrarInfo) {
 
-          console.log(
-            `⚠️ ${zone.name} not found in Cloudflare Registrar`
-          );
+  console.log(
+    `ℹ️ ${zone.name} DNS only - no registrar expiry`
+  );
 
-          continue;
-        }
-
+}
         const existingOrder =
           await Order.findOne({
             domainName: zone.name,
           });
 
         const expiryDate =
-          registrarInfo.expires_at
-            ? new Date(registrarInfo.expires_at)
-            : existingOrder?.expiryDate
-            ? new Date(existingOrder.expiryDate)
-            : null;
-
+  registrarInfo?.expires_at
+    ? new Date(registrarInfo.expires_at)
+    : existingOrder?.expiryDate
+    ? new Date(existingOrder.expiryDate)
+    : null;
         const provider =
           existingOrder?.provider || "";
 
