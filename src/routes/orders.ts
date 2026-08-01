@@ -1101,6 +1101,15 @@ const getExpiryFilter = () => {
 
 
     const filters:any[]=[];
+    // ================= ONLY ORDERS HAVING PLANS =================
+
+const planOrderIds = await OrderPlan.distinct("orderId");
+
+filters.push({
+  _id:{
+    $in: planOrderIds
+  }
+});
 
 if(emailType){
 
@@ -1322,12 +1331,6 @@ const finalFilter = {
 
 
 
-orders = orders.filter(
-  (order:any) =>
-    order.Plans &&
-    order.Plans.length > 0
-);
-
 
 
 
@@ -1456,15 +1459,6 @@ const finalFilter = {
           orders
         );
 
-
-
-
-
-orders = orders.filter(
-  (order:any) =>
-    order.Plans &&
-    order.Plans.length > 0
-);
 
 
       return res.status(200).json({
