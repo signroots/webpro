@@ -1070,23 +1070,26 @@ expiryLimitDate.setDate(
 
 const getExpiryFilter = () => {
   return {
-    $and: [
+    $or: [
+      // Normal domains
       {
-        $or: [
+        $and: [
           {
             expiryDate: {
               $gte: expiryLimitDate
             }
           },
           {
-            expiryDate: null
+            dns_flag: {
+              $ne: true
+            }
           }
         ]
       },
+
+      // DNS enabled domains
       {
-        dns_flag: {
-          $ne: true
-        }
+        dns_flag: true
       }
     ]
   };
