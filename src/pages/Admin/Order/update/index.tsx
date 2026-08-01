@@ -141,7 +141,7 @@ interface OrderForm {
   hostType?: any;
   hostSubType?: any;
 
-  domain_flag?: boolean;
+  dns_flag?: boolean;
   //  hosttypeid?: string | null;
   // subHostTypeId?: string | null;
   hosttypeid: HostType | null;
@@ -174,7 +174,7 @@ const UpdateOrder: React.FC = () => {
     domainName: "",
     managedBy: "Signroots",
 
-    domain_flag: false,
+    dns_flag: false,
     newCustomer: {
       c_salutation: "",
       c_name: "",
@@ -478,58 +478,108 @@ const UpdateOrder: React.FC = () => {
 
 
 
-  const handleStoragePlanChange = async (
-    index: number,
-    key: keyof storagePlans,
-    value: any
-  ) => {
-    if (key === "email_service_id") {
-      const typeObj = emailTypes.find((t: any) => t._id === value);
-      if (!typeObj) {
-        console.log("❌ No matching email type found");
-        return;
-      }
+ const handleStoragePlanChange = async (
+  index: number,
+  key: keyof storagePlans,
+  value: any
+) => {
 
-      let activePlans: { _id: string; plan: string }[] = [];
-      try {
-        const res = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/api/plans/planlist/${typeObj._id}`
-        );
-        activePlans = res.data.data
-          .filter((p: any) => p.isActive)
-          .map((p: any) => ({ _id: p._id, plan: p.plan }));
-      } catch (err) {
-        console.log("❌ Error loading plans", err);
-      }
+  if (key === "email_service_id") {
 
-      // ✅ Use map to safely update state
-      setStoragePlans((prevPlans) =>
-        prevPlans.map((plan, i) =>
-          i === index
-            ? {
-              ...plan,
-              email_service_id: value,
-              plans: activePlans,      // assign fetched plans
-              selected_plan: "",       // reset selected plan
-              email_flag: !!value,
-              google_email: typeObj.name === "Google Workspace",
-              microsoft_email: typeObj.name === "Microsoft 365",
-              businessEmail: typeObj.name === "Business Email",
-            }
-            : plan
-        )
-      );
-    } else {
-      // update other keys like selected_plan, users, etc.
-      setStoragePlans((prevPlans) =>
-        prevPlans.map((plan, i) =>
-          i === index ? { ...plan, [key]: value } : plan
-        )
-      );
+    const typeObj = emailTypes.find(
+      (t: any) => t._id === value
+    );
+
+    if (!typeObj) {
+      console.log("❌ No matching storage type found");
+      return;
     }
-  };
 
 
+    let activePlans: { _id: string; plan: string }[] = [];
+
+    try {
+
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/api/plans/planlist/${typeObj._id}`
+      );
+
+
+      activePlans = res.data.data
+        .filter((p: any) => p.isActive)
+        .map((p: any) => ({
+          _id: p._id,
+          plan: p.plan
+        }));
+
+
+    } catch(err) {
+
+      console.log("❌ Error loading storage plans", err);
+
+    }
+
+
+
+    setStoragePlans(prev =>
+      prev.map((plan,i)=>
+
+        i === index
+        ?
+        {
+          ...plan,
+
+          email_service_id:value,
+
+          email_service:typeObj.name,
+
+          plans:activePlans,
+
+          selected_plan:"",
+
+          storage_services_flag:true,
+
+          google_email:
+            typeObj.name === "Google Workspace",
+
+          microsoft_email:
+            typeObj.name === "Microsoft 365",
+
+          businessEmail:
+            typeObj.name === "Business Email",
+
+        }
+
+        :
+
+        plan
+
+      )
+    );
+
+
+  }
+
+  else {
+
+    setStoragePlans(prev =>
+      prev.map((plan,i)=>
+
+        i===index
+        ?
+        {
+          ...plan,
+          [key]:value
+        }
+        :
+        plan
+
+      )
+    );
+
+  }
+
+};
 
 
   // ------------------- INPUT & CHECKBOX HANDLERS -------------------
@@ -550,14 +600,24 @@ const UpdateOrder: React.FC = () => {
       }));
     }
     // DOMAIN SOURCE LOGIC
-    else if (name === "domainSource") {
-      setFormData((prev) => ({
-        ...prev,
-        domainSource: value,
+  else if (name === "domainSource") {
 
-        domain_flag: value === "Cloudflare",
-      }));
-    }
+  const selectedSource = domainSources.find(
+    (source:any)=> source._id === value
+  );
+
+  setFormData((prev) => ({
+    ...prev,
+    domainSource: value,
+
+    // only Cloudflare enable DNS flag
+    dns_flag:
+      selectedSource?.name?.toLowerCase() === "cloudflare"
+        ? prev.dns_flag
+        : false,
+  }));
+
+}
     // DEFAULT
     else {
       setFormData((prev) => ({
@@ -566,25 +626,23 @@ const UpdateOrder: React.FC = () => {
       }));
     }
   };
-  useEffect(() => {
-    if (formData.managedBy === "Customer") {
-      setFormData((prev) => ({
-        ...prev,
-        domainSource: "Cloudflare",
+useEffect(() => {
 
-        domain_flag: true,
-      }));
-    }
+  if (!domainSources.length) return;
 
-    if (formData.managedBy === "Signroots") {
-      setFormData((prev) => ({
-        ...prev,
-        domainSource: "",
 
-        domain_flag: false,
-      }));
-    }
-  }, [formData.managedBy]);
+  if(formData.managedBy==="Signroots" ||
+     formData.managedBy==="Customer"){
+
+    setFormData(prev=>({
+      ...prev,
+      domainSource: prev.domainSource || "",
+      dns_flag:false
+    }));
+
+  }
+
+},[formData.managedBy, domainSources]);
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = e.target;
@@ -865,7 +923,7 @@ const UpdateOrder: React.FC = () => {
         setFormData((prev) => ({
           ...prev,
           domainName: order.domainName || "",
-          domain_flag: order.domain_flag,
+          dns_flag: order.dns_flag,
           managedBy: order.managedBy || "Signroots",
           registrationDate: order.registrationDate?.slice(0, 10) || "",
           expiryDate: order.expiryDate?.slice(0, 10) || "",
@@ -1228,7 +1286,7 @@ const UpdateOrder: React.FC = () => {
 
     try {
       // create initial payload
-      const payload: any = { ...formData, is_customer: customerType === "existing" };
+      const payload: any = { ...formData, is_customer: customerType === "existing", domainSource: formData.domainSource || undefined, };
 
       if (customerType === "existing") delete payload.newCustomer;
       else delete payload.client;
@@ -1238,7 +1296,9 @@ const UpdateOrder: React.FC = () => {
         }
         // delete payload.newCustomer.c_mobilePhone;
       }
-      if (!payload.domainSource) payload.domainSource = formData.domainSource || "";
+   if (payload.domainSource === "") {
+  payload.domainSource = null;
+}
 
       // combine all plans
       const combinedPlans: any[] = [];
@@ -1364,10 +1424,9 @@ if (hostingChecked) {
         (source) => source._id === formData.domainSource
       );
 
-      payload.domain_flag =
-        selectedDomainSource?.name === "Cloudflare"
-          ? !!formData.domain_flag
-          : false;
+//      if (!payload.domainSource) {
+//   delete payload.domainSource;
+// }
 
       // send update request
       const res = await axios.put(`${import.meta.env.VITE_API_BASE_URL}/api/orders/${orderId}`, payload);
@@ -1426,7 +1485,7 @@ if (hostingChecked) {
     if (formData.domainSource === "Hostinger") {
       setFormData((prev) => ({
         ...prev,
-        domain_flag: true,
+        dns_flag: true,
       }));
     }
   }, [formData.domainSource]);
@@ -1759,60 +1818,49 @@ if (hostingChecked) {
                     Registrar
                   </label>
 
-                  <select
-                    name="domainSource"
-                    value={formData.domainSource || ""}
-                    onChange={handleInputChange}
-                    className="w-full border rounded px-3 py-2"
-                  >
-                    <option value="">-- Select Registrar --</option>
+                 <select
+  name="domainSource"
+  value={formData.domainSource || ""}
+  onChange={handleInputChange}
+  className="w-full border rounded px-3 py-2"
+>
+  <option value="">-- Select Registrar --</option>
 
-                    {domainSources
-                      .filter((source) => source.is_active)
-                      .filter((source) => {
-                        if (formData.managedBy === "Customer") {
-                          return (
-                            source.name === "Cloudflare" ||
-                            source.name === "Hostinger"
-                          );
-                        }
-
-                        return true; // Signroots കാണും എല്ലാ registrar-ുകളും
-                      })
-                      .map((source) => (
-                        <option key={source._id} value={source._id}>
-                          {source.name}
-                        </option>
-                      ))}
-                  </select>
+  {domainSources
+    .filter((source) => source.is_active)
+    .map((source) => (
+      <option key={source._id} value={source._id}>
+        {source.name}
+      </option>
+    ))}
+</select>
 
 
-                  {/* DNS Flag */}
-                  {domainSources.find(
-                    (source) =>
-                      source._id === formData.domainSource &&
-                      source.name.toLowerCase() === "cloudflare"
-                  ) && (
-                      <div className="mt-4 flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          name="dns_flag"
-                          checked={formData.domain_flag || false}
-                          disabled={formData.managedBy === "Customer"}
-                          onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              domain_flag: e.target.checked,
-                            }))
-                          }
-                          className="w-4 h-4"
-                        />
+{/* DNS Flag */}
+{domainSources.some(
+  (source) =>
+    source._id === formData.domainSource &&
+    source.name.toLowerCase() === "cloudflare"
+) && (
+  <div className="mt-4 flex items-center gap-2">
+    <input
+      type="checkbox"
+      name="dns_flag"
+      checked={formData.dns_flag || false}
+      onChange={(e) =>
+        setFormData((prev) => ({
+          ...prev,
+          dns_flag: e.target.checked,
+        }))
+      }
+      className="w-4 h-4"
+    />
 
-                        <label className="text-gray-700 font-medium">
-                          DNS Flag
-                        </label>
-                      </div>
-                    )}
+    <label className="text-gray-700 font-medium">
+      DNS Flag
+    </label>
+  </div>
+)}
 
                 </div>
               )}
@@ -2072,7 +2120,12 @@ if (hostingChecked) {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setConfirmRemove({ index: idx, type: "msoffice" })}
+                    onClick={() => 
+ setConfirmRemove({ 
+   index: idx, 
+   type:"storage" 
+ })
+}
                     className="text-red-500 mt-2 hover:text-red-700"
                   >
                     Remove
@@ -2193,7 +2246,12 @@ if (hostingChecked) {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setConfirmRemove({ index: idx, type: "storage" })}
+                   onClick={() => 
+ setConfirmRemove({
+   index:idx,
+   type:"msoffice"
+ })
+}
                     className="text-red-500 mt-2 hover:text-red-700"
                   >
                     Remove

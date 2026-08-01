@@ -986,7 +986,7 @@ const getStatusClass = (status?: string) => {
                 </td>
 
                 {/* DOMAIN + LOCK */}
-                <td className="px-2 py-4 flex items-center gap-2 max-w-[200px] truncate">
+                <td className="px-2 py-4 flex items-center gap-2 min-w-[250px]">
                   <span className="flex items-center justify-center w-5 h-5 shrink-0">
                     {order.lockStatus === "Locked" ? (
                       <FaLock className="text-red-500 w-4 h-4" />
@@ -1001,7 +1001,7 @@ const getStatusClass = (status?: string) => {
 
 
                 {/* CUSTOMER */}
-                <td className="px-2 py-4 max-w-[200px] truncate">
+              <td className="px-2 py-4 min-w-[300px]">
                   {order.client ? (
                     <Link
                         to={`/admin/orders/customer/${order.client?._id}`}
