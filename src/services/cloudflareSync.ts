@@ -141,15 +141,22 @@ export async function syncCloudflareDomains() {
       for (const zone of zones) {
 
         const registrarInfo =
-          registrarDomainMap[zone.name.toLowerCase()];
+  registrarDomainMap[zone.name.toLowerCase().trim()];
 
         if (!registrarInfo) {
 
-          console.log(
-            `ℹ️ ${zone.name} DNS only - no registrar expiry`
-          );
+  console.log(
+    `ℹ️ ${zone.name} DNS only - no registrar expiry`
+  );
 
-        }
+}
+else {
+
+  console.log(
+    `✅ Registrar found: ${zone.name} expiry ${registrarInfo.expires_at}`
+  );
+
+}
         const existingOrder =
           await Order.findOne({
             domainName: zone.name,
