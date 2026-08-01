@@ -382,147 +382,410 @@ router.get(
   "/dnsorders",
   authMiddleware,
   async (req: AuthRequest, res: Response): Promise<void> => {
+
     try {
+
       const loggedInUser = req.user;
 
-      if (!loggedInUser?._id) {
+
+      if(!loggedInUser?._id){
+
         res.status(401).json({
-          success: false,
-          error: "Unauthorized",
+          success:false,
+          message:"Unauthorized"
         });
+
         return;
       }
 
-      const { filter } = req.query;
 
 
-      // ---------------- LOAD USER ----------------
-
-      const user = await User.findById(loggedInUser._id)
-        .populate("userType")
-        .exec();
+      // ================= PAGINATION =================
 
 
-      if (!user || typeof user.userType !== "object") {
+      const page =
+        Math.max(
+          Number(req.query.page) || 1,
+          1
+        );
+
+
+      const limit =
+        Math.min(
+          Number(req.query.limit) || 50,
+          100
+        );
+
+
+      const skip =
+        (page - 1) * limit;
+
+
+
+      // ================= SEARCH =================
+
+
+      const search =
+        typeof req.query.search === "string"
+        ?
+        req.query.search.trim()
+        :
+        "";
+
+
+
+      // ================= USER =================
+
+
+      const user =
+        await User.findById(
+          loggedInUser._id
+        )
+        .populate("userType");
+
+
+
+      if(
+        !user ||
+        typeof user.userType !== "object"
+      ){
+
         res.status(403).json({
           success:false,
-          error:"Invalid user role"
+          message:"Invalid user"
         });
+
         return;
       }
 
 
-      const userRole =
-        (user.userType as IUserType).name.toLowerCase();
+
+      const role =
+        (user.userType as IUserType)
+        .name
+        .toLowerCase();
 
 
 
-      // =====================================================
-      // ===================== ADMIN =========================
-      // =====================================================
 
-      if(userRole === "admin") {
+      // ================= PLAN MAPPING =================
 
 
-        const cloudflareSource = await DomainSource.findOne({
+      const attachPlans = async(
+        orders:any[]
+      )=>{
+
+
+        if(!orders.length)
+          return orders;
+
+
+
+        const orderIds =
+          orders.map(
+            order=>order._id
+          );
+
+
+
+        const plans =
+          await OrderPlan.find({
+
+            orderId:{
+              $in:orderIds
+            }
+
+          })
+          .populate({
+
+            path:"emailTypeId",
+            select:"name image"
+
+          })
+          .populate({
+
+            path:"hostTypeId",
+            select:"type"
+
+          })
+          .populate({
+
+            path:"hostSubTypeId",
+            select:"name"
+
+          })
+          .populate({
+
+            path:"storageId",
+            select:"name storage"
+
+          })
+          .select(
+`
+orderId
+type
+expiryDate
+emailTypeId
+planId
+hostTypeId
+hostSubTypeId
+storageId
+`
+          )
+          .lean();
+
+
+
+
+        const planMap = new Map();
+
+
+
+        plans.forEach((plan:any)=>{
+
+
+          const key =
+            plan.orderId.toString();
+
+
+
+          if(!planMap.has(key)){
+
+            planMap.set(
+              key,
+              []
+            );
+
+          }
+
+
+
+
+          planMap.get(key)
+          .push({
+
+            type:plan.type,
+
+
+            expiryDate:
+              plan.expiryDate || null,
+
+
+            emailType:
+              plan.emailTypeId?.name || null,
+
+
+            emailTypeImage:
+              plan.emailTypeId?.image || null,
+
+
+            planId:
+              plan.planId || null,
+
+
+
+            hostType:
+              plan.hostTypeId
+              ?
+              {
+                _id:
+                plan.hostTypeId._id,
+
+                type:
+                plan.hostTypeId.type
+              }
+              :
+              null,
+
+
+
+            hostSubType:
+              plan.hostSubTypeId
+              ?
+              {
+                _id:
+                plan.hostSubTypeId._id,
+
+                name:
+                plan.hostSubTypeId.name
+              }
+              :
+              null,
+
+
+
+            storage:
+              plan.storageId
+              ?
+              {
+                _id:
+                plan.storageId._id,
+
+                name:
+                plan.storageId.name
+              }
+              :
+              null
+
+
+          });
+
+
+        });
+
+
+
+        return orders.map(order=>({
+
+          ...order,
+
+          Plans:
+          planMap.get(
+            order._id.toString()
+          ) || []
+
+        }));
+
+
+      };
+
+
+
+
+      // ================= CLOUDFLARE =================
+
+
+      const cloudflareSource =
+        await DomainSource.findOne({
+
           name:{
             $regex:"Cloudflare",
             $options:"i"
           }
+
         });
 
 
 
-        const query:any = {
 
-          dns_flag:true,
+      const filters:any[]=[
+
+        {
+          dns_flag:true
+        },
+
+        {
+
+          domainSource:
+          cloudflareSource?._id
+
+        }
+
+      ];
+
+
+
+
+
+      if(search){
+
+
+        filters.push({
 
           $or:[
+
             {
-              expiryDate:null
-            },
-            {
-              expiryDate:{
-                $exists:false
+
+              domainName:{
+                $regex:search,
+                $options:"i"
               }
+
             },
+
+
             {
-              expiryDate:""
+
+              managedBy:{
+                $regex:search,
+                $options:"i"
+              }
+
             }
+
           ]
+
+        });
+
+
+      }
+
+
+
+
+
+      // ================= ADMIN =================
+
+
+
+      if(role==="admin"){
+
+
+
+        const finalFilter={
+
+          $and:filters
+
         };
 
 
 
-        query.domainSource =
-          cloudflareSource?._id || null;
+
+        const total =
+          await Order.countDocuments(
+            finalFilter
+          );
 
 
 
-        const orders = await Order.find(query)
 
-          .populate("customer","name email company")
+        let orders =
+          await Order.find(
+            finalFilter
+          )
+          .select({
 
-          .populate("client","c_name c_email c_company")
+            domainName:1,
+            dns_flag:1,
+            order_status:1,
+            client:1,
+            managedBy:1,
+            registrationDate:1,
+            expiryDate:1,
+            domainSource:1,
+            lockStatus:1
 
-          .populate("domainSource")
-
-          .exec();
-
-
-
-        const orderIds = orders.map(
-          order => order._id
-        );
-
-
-
-        // GET PLANS WITH DETAILS
-
-        const plans = await OrderPlan.find({
-
-          orderId:{
-            $in:orderIds
-          }
-
-        })
-
-        .populate("hostTypeId")
-
-        .populate("hostSubTypeId")
-
-        .populate("storageId")
-
-        .populate("planId")
-
-        .populate("emailTypeId")
-
-        .exec();
+          })
+          .populate(
+            "client",
+            "_id c_name c_company"
+          )
+          .populate(
+            "domainSource",
+            "name image code"
+          )
+          .skip(skip)
+          .limit(limit)
+          .lean();
 
 
 
-        const ordersWithPlans = orders.map(
-          (order:any)=>{
 
+        orders =
+          await attachPlans(
+            orders
+          );
 
-            const orderPlans = plans.filter(
-              (p:any)=>
-                p.orderId.toString()
-                ===
-                order._id.toString()
-            );
-
-
-            return {
-
-              ...order.toObject(),
-
-              plans:orderPlans
-
-            };
-
-          }
-        );
 
 
 
@@ -530,9 +793,26 @@ router.get(
 
           success:true,
 
-          data:ordersWithPlans
+          data:orders,
+
+
+          pagination:{
+
+            page,
+
+            limit,
+
+            total,
+
+            totalPages:
+            Math.ceil(
+              total / limit
+            )
+
+          }
 
         });
+
 
         return;
 
@@ -542,18 +822,20 @@ router.get(
 
 
 
-      // =====================================================
-      // =================== CUSTOMER ========================
-      // =====================================================
+      // ================= CUSTOMER =================
 
 
-      if(userRole === "customer"){
+
+      if(role==="customer"){
+
 
 
         const client =
           await Client.findOne({
+
             userType:user._id
-          }).exec();
+
+          });
 
 
 
@@ -563,140 +845,84 @@ router.get(
 
             success:false,
 
-            error:"Customer profile not found"
+            message:"Client not found"
 
           });
 
           return;
+
         }
 
 
 
-        const query:any = {
+
+
+        filters.push({
 
           client:client._id
+
+        });
+
+
+
+
+
+        const finalFilter={
+
+          $and:filters
 
         };
 
 
 
-        if(filter==="Cloudflare"){
 
 
-          const cloudflareSource =
-            await DomainSource.findOne({
-
-              name:{
-                $regex:"Cloudflare",
-                $options:"i"
-              }
-
-            });
-
-
-
-          Object.assign(query,{
-
-            dns_flag:true,
-
-
-            $or:[
-
-              {
-                expiryDate:null
-              },
-
-              {
-                expiryDate:{
-                  $exists:false
-                }
-              },
-
-              {
-                expiryDate:""
-              }
-
-            ],
-
-
-            domainSource:
-              cloudflareSource?._id || null
-
-          });
-
-        }
+        const total =
+          await Order.countDocuments(
+            finalFilter
+          );
 
 
 
 
 
-        const orders = await Order.find(query)
+        let orders =
+          await Order.find(
+            finalFilter
+          )
+          .select({
 
-          .populate("customer","name email company")
+            domainName:1,
+            dns_flag:1,
+            order_status:1,
+            client:1,
+            managedBy:1,
+            registrationDate:1,
+            expiryDate:1,
+            domainSource:1,
+            lockStatus:1
 
-          .populate("client","c_name c_email c_company")
-
-          .populate("domainSource")
-
-          .exec();
-
-
-
-
-        const orderIds =
-          orders.map(order=>order._id);
-
-
-
-
-        const plans = await OrderPlan.find({
-
-          orderId:{
-            $in:orderIds
-          }
-
-        })
-
-        .populate("hostTypeId")
-
-        .populate("hostSubTypeId")
-
-        .populate("storageId")
-
-        .populate("planId")
-
-        .populate("emailTypeId")
-
-        .exec();
+          })
+          .populate(
+            "client",
+            "_id c_name c_company"
+          )
+          .populate(
+            "domainSource",
+            "name image code"
+          )
+          .skip(skip)
+          .limit(limit)
+          .lean();
 
 
 
 
 
-        const ordersWithPlans = orders.map(
-          (order:any)=>{
-
-
-            const orderPlans =
-              plans.filter(
-                (p:any)=>
-                p.orderId.toString()
-                ===
-                order._id.toString()
-              );
-
-
-            return {
-
-              ...order.toObject(),
-
-              plans:orderPlans
-
-            };
-
-          }
-        );
-
+        orders =
+          await attachPlans(
+            orders
+          );
 
 
 
@@ -706,25 +932,45 @@ router.get(
           success:true,
 
 
-          customer:{
+          client:{
 
             _id:client._id,
 
-            name:client.c_name,
+            c_name:client.c_name,
 
-            c_company:client.c_company,
+            c_email:client.c_email,
 
-            email:client.c_email
+            c_company:client.c_company
 
           },
 
 
-          data:ordersWithPlans
+
+          data:orders,
+
+
+
+          pagination:{
+
+            page,
+
+            limit,
+
+            total,
+
+            totalPages:
+            Math.ceil(
+              total / limit
+            )
+
+          }
 
         });
 
 
+
         return;
+
 
       }
 
@@ -736,29 +982,34 @@ router.get(
 
         success:false,
 
-        error:"Access denied"
+        message:"Access denied"
 
       });
 
 
 
-    }catch(err){
+    }
+    catch(error){
+
 
       console.error(
-        "❌ Error fetching DNS orders:",
-        err
+        "DNS ORDER ERROR:",
+        error
       );
+
 
 
       res.status(500).json({
 
         success:false,
 
-        error:"Server error"
+        message:"Internal server error"
 
       });
 
+
     }
+
 
   }
 );
