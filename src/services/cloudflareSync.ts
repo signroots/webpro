@@ -47,45 +47,68 @@ export async function syncCloudflareDomains() {
 
     const registrarDomainMap: Record<string, any> = {};
 
-    let registrarPage = 1;
-    let registrarTotalPages = 1;
+   let registrarPage = 1;
+let registrarTotalPages = 1;
 
-    do {
+do {
 
-      const registrarResponse = await axios.get(
-        `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/registrar/domains`,
-        {
-          headers: {
-            "X-Auth-Email": CLOUDFLARE_EMAIL_ID,
-            "X-Auth-Key": CLOUDFLARE_GLOBAL_KEY,
-            "Content-Type": "application/json",
-          },
-          params: {
-            page: registrarPage,
-            per_page: 100,
-          },
-        }
-      );
+ const registrarResponse = await axios.get(
+  `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/registrar/domains`,
+  {
+    headers:{
+      "X-Auth-Email": CLOUDFLARE_EMAIL_ID,
+      "X-Auth-Key": CLOUDFLARE_GLOBAL_KEY,
+      "Content-Type":"application/json"
+    },
+    params:{
+      page: registrarPage,
+      per_page: 20
+    }
+  }
+ );
 
-      if (!registrarResponse.data.success) {
-        throw new Error("Cloudflare registrar API failed");
-      }
 
-      registrarResponse.data.result.forEach((domain: any) => {
-        registrarDomainMap[domain.name.toLowerCase()] = domain;
-      });
+ console.log(
+   "Registrar page",
+   registrarPage,
+   registrarResponse.data.result.length
+ );
 
-      registrarTotalPages =
-        registrarResponse.data.result_info.total_pages || 1;
 
-      registrarPage++;
+ registrarResponse.data.result.forEach((domain:any)=>{
 
-    } while (registrarPage <= registrarTotalPages);
+   console.log(
+    "Registrar domain:",
+    domain.name,
+    domain.expires_at
+   );
 
-    console.log(
-      `✅ Registrar Domains: ${Object.keys(registrarDomainMap).length}`
-    );
+   registrarDomainMap[
+     domain.name.toLowerCase().trim()
+   ] = domain;
 
+ });
+
+
+registrarTotalPages =
+ registrarResponse.data.result_info?.total_pages || 1;
+
+
+ registrarPage++;
+
+
+} while(
+ registrarPage <= registrarTotalPages
+);
+console.log(
+ "TOTAL REGISTRAR DOMAINS:",
+ Object.keys(registrarDomainMap).length
+);
+
+console.log(
+ "VOLTOPAINTS:",
+ registrarDomainMap["voltopaints.com"]
+);
     // =====================================
     // FETCH DEFAULT CUSTOMER
     // =====================================
