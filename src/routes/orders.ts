@@ -1350,16 +1350,14 @@ const planOrderIds = await OrderPlan.distinct("orderId");
 
 filters.push({
   $or:[
-    // DNS true ആയാൽ Plan നിർബന്ധം
     {
-      dns_flag:true,
+      // Plan ഉള്ള എല്ലാ orders
       _id:{
         $in:planOrderIds
       }
     },
-
-    // DNS false ആണെങ്കിൽ Plan ഉണ്ടെങ്കിലും ഇല്ലെങ്കിലും കാണിക്കുക
     {
+      // Plan ഇല്ലെങ്കിലും normal domain കാണിക്കുക
       dns_flag:false
     }
   ]
