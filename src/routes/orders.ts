@@ -1320,41 +1320,75 @@ const emailType =
 
 // ================= EXPIRY 65 DAYS FILTER =================
 
-const expiryLimitDate = new Date();
 
-expiryLimitDate.setDate(
-  expiryLimitDate.getDate() - 65
+// ================= EXPIRY 65 DAYS WINDOW =================
+
+
+const today = new Date();
+
+today.setHours(0,0,0,0);
+
+
+
+const before65Days = new Date();
+
+before65Days.setDate(
+  before65Days.getDate() - 65
 );
-// ================= COMMON EXPIRY FILTER =================
+
+before65Days.setHours(0,0,0,0);
+
+
+
+const after65Days = new Date();
+
+after65Days.setDate(
+  after65Days.getDate() + 65
+);
+
+after65Days.setHours(0,0,0,0);
+
+
+
+
+// ================= EXPIRY FILTER =================
+
 
 const getExpiryFilter = () => {
+
+
   return {
-    $or: [
-      // Normal domains
+
+
+    $or:[
+
+
+      // Normal domain
       {
-        $and: [
-          {
-            expiryDate: {
-              $gte: expiryLimitDate
-            }
-          },
-          {
-            dns_flag: {
-              $ne: true
-            }
-          }
-        ]
+        dns_flag:{
+          $ne:true
+        },
+
+        expiryDate:{
+          $gte:before65Days,
+          $lte:after65Days
+        }
       },
 
-      // DNS enabled domains
+
+      // DNS domains
       {
-        dns_flag: true
+        dns_flag:true
       }
+
+
     ]
+
+
   };
+
+
 };
-
-
     // ================= SEARCH FILTER =================
 
 
@@ -1576,16 +1610,78 @@ const finalFilter = {
 
 
 
-
-      orders =
+orders =
  await attachEmailPlans(
    orders
  );
 
-      orders =
-        await updateOrderStatuses(
-          orders
-        );
+
+
+// ================= REMOVE INVALID DNS ORDERS =================
+
+
+orders = orders.filter((order:any)=>{
+
+
+  // DNS TRUE ആയാൽ plan വേണം
+
+  if(order.dns_flag === true){
+
+    return (
+      order.Plans &&
+      order.Plans.length > 0
+    );
+
+  }
+
+
+
+  // Plan expiry check
+
+  if(order.Plans?.length){
+
+
+    const expiredPlan =
+      order.Plans.some((plan:any)=>{
+
+
+        if(!plan.expiryDate)
+          return false;
+
+
+        const expiry =
+          new Date(plan.expiryDate);
+
+
+        expiry.setHours(0,0,0,0);
+
+
+        return expiry < today;
+
+
+      });
+
+
+
+    if(expiredPlan)
+      return false;
+
+
+  }
+
+
+
+  return true;
+
+
+});
+
+
+
+orders =
+ await updateOrderStatuses(
+   orders
+ );
 
 
 
@@ -1706,18 +1802,78 @@ const finalFilter = {
         .lean();
 
 
-
-
-      orders =
+orders =
  await attachEmailPlans(
    orders
  );
 
-      orders =
-        await updateOrderStatuses(
-          orders
-        );
 
+
+// ================= REMOVE INVALID DNS ORDERS =================
+
+
+orders = orders.filter((order:any)=>{
+
+
+  // DNS TRUE ആയാൽ plan വേണം
+
+  if(order.dns_flag === true){
+
+    return (
+      order.Plans &&
+      order.Plans.length > 0
+    );
+
+  }
+
+
+
+  // Plan expiry check
+
+  if(order.Plans?.length){
+
+
+    const expiredPlan =
+      order.Plans.some((plan:any)=>{
+
+
+        if(!plan.expiryDate)
+          return false;
+
+
+        const expiry =
+          new Date(plan.expiryDate);
+
+
+        expiry.setHours(0,0,0,0);
+
+
+        return expiry < today;
+
+
+      });
+
+
+
+    if(expiredPlan)
+      return false;
+
+
+  }
+
+
+
+  return true;
+
+
+});
+
+
+
+orders =
+ await updateOrderStatuses(
+   orders
+ );
 
 
       return res.status(200).json({
