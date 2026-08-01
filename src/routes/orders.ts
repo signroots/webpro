@@ -650,79 +650,72 @@ storageId
       };
 
 
+// ================= CLOUDFLARE =================
 
-
-      // ================= CLOUDFLARE =================
-
-
-      const cloudflareSource =
-        await DomainSource.findOne({
-
-          name:{
-            $regex:"Cloudflare",
-            $options:"i"
-          }
-
-        });
+const cloudflareSource =
+  await DomainSource.findOne({
+    name:{
+      $regex:"Cloudflare",
+      $options:"i"
+    }
+  });
 
 
 
+const filters:any[]=[
 
-      const filters:any[]=[
+  {
+    dns_flag:true
+  },
 
-        {
-          dns_flag:true
-        },
+  {
+    domainSource: cloudflareSource?._id
+  }
 
-        {
+];
 
-          domainSource:
-          cloudflareSource?._id
 
+// ================= ONLY DNS ORDERS WITHOUT PLANS =================
+
+const planOrderIds =
+  await OrderPlan.distinct("orderId");
+
+
+filters.push({
+
+  _id:{
+    $nin: planOrderIds
+  }
+
+});
+
+
+
+if(search){
+
+  filters.push({
+
+    $or:[
+
+      {
+        domainName:{
+          $regex:search,
+          $options:"i"
         }
+      },
 
-      ];
-
-
-
-
-
-      if(search){
-
-
-        filters.push({
-
-          $or:[
-
-            {
-
-              domainName:{
-                $regex:search,
-                $options:"i"
-              }
-
-            },
-
-
-            {
-
-              managedBy:{
-                $regex:search,
-                $options:"i"
-              }
-
-            }
-
-          ]
-
-        });
-
-
+      {
+        managedBy:{
+          $regex:search,
+          $options:"i"
+        }
       }
 
+    ]
 
+  });
 
-
+}
 
       // ================= ADMIN =================
 
