@@ -1313,32 +1313,44 @@ expiryLimitDate.setDate(
 // ================= COMMON EXPIRY FILTER =================
 
 const getExpiryFilter = () => {
+
+  const expiryLimitDate = new Date();
+
+  expiryLimitDate.setDate(
+    expiryLimitDate.getDate() - 65
+  );
+
+
   return {
-    $or: [
-      // Normal domains
+    $or:[
+
+      // Plan ഉള്ള orders എല്ലാം
       {
-        $and: [
-          {
-            expiryDate: {
-              $gte: expiryLimitDate
-            }
-          },
-          {
-            dns_flag: {
-              $ne: true
-            }
-          }
-        ]
+        _id:{
+          $in: planOrderIds
+        }
       },
 
-      // DNS enabled domains
+
+      // Plan ഇല്ലാത്ത normal domains
       {
-        dns_flag: true
+        dns_flag:false,
+        expiryDate:{
+          $gte:expiryLimitDate
+        }
+      },
+
+
+      // Plan ഇല്ലാത്ത expiryDate ഇല്ലാത്ത domains
+      {
+        dns_flag:false,
+        expiryDate:null
       }
+
     ]
   };
-};
 
+};
 
     // ================= SEARCH FILTER =================
 
