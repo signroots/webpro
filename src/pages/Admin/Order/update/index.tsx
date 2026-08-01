@@ -478,108 +478,108 @@ const UpdateOrder: React.FC = () => {
 
 
 
- const handleStoragePlanChange = async (
-  index: number,
-  key: keyof storagePlans,
-  value: any
-) => {
+  const handleStoragePlanChange = async (
+    index: number,
+    key: keyof storagePlans,
+    value: any
+  ) => {
 
-  if (key === "email_service_id") {
+    if (key === "email_service_id") {
 
-    const typeObj = emailTypes.find(
-      (t: any) => t._id === value
-    );
+      const typeObj = emailTypes.find(
+        (t: any) => t._id === value
+      );
 
-    if (!typeObj) {
-      console.log("❌ No matching storage type found");
-      return;
-    }
+      if (!typeObj) {
+        console.log("❌ No matching storage type found");
+        return;
+      }
 
 
-    let activePlans: { _id: string; plan: string }[] = [];
+      let activePlans: { _id: string; plan: string }[] = [];
 
-    try {
+      try {
 
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/api/plans/planlist/${typeObj._id}`
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/api/plans/planlist/${typeObj._id}`
+        );
+
+
+        activePlans = res.data.data
+          .filter((p: any) => p.isActive)
+          .map((p: any) => ({
+            _id: p._id,
+            plan: p.plan
+          }));
+
+
+      } catch (err) {
+
+        console.log("❌ Error loading storage plans", err);
+
+      }
+
+
+
+      setStoragePlans(prev =>
+        prev.map((plan, i) =>
+
+          i === index
+            ?
+            {
+              ...plan,
+
+              email_service_id: value,
+
+              email_service: typeObj.name,
+
+              plans: activePlans,
+
+              selected_plan: "",
+
+              storage_services_flag: true,
+
+              google_email:
+                typeObj.name === "Google Workspace",
+
+              microsoft_email:
+                typeObj.name === "Microsoft 365",
+
+              businessEmail:
+                typeObj.name === "Business Email",
+
+            }
+
+            :
+
+            plan
+
+        )
       );
 
 
-      activePlans = res.data.data
-        .filter((p: any) => p.isActive)
-        .map((p: any) => ({
-          _id: p._id,
-          plan: p.plan
-        }));
+    }
 
+    else {
 
-    } catch(err) {
+      setStoragePlans(prev =>
+        prev.map((plan, i) =>
 
-      console.log("❌ Error loading storage plans", err);
+          i === index
+            ?
+            {
+              ...plan,
+              [key]: value
+            }
+            :
+            plan
+
+        )
+      );
 
     }
 
-
-
-    setStoragePlans(prev =>
-      prev.map((plan,i)=>
-
-        i === index
-        ?
-        {
-          ...plan,
-
-          email_service_id:value,
-
-          email_service:typeObj.name,
-
-          plans:activePlans,
-
-          selected_plan:"",
-
-          storage_services_flag:true,
-
-          google_email:
-            typeObj.name === "Google Workspace",
-
-          microsoft_email:
-            typeObj.name === "Microsoft 365",
-
-          businessEmail:
-            typeObj.name === "Business Email",
-
-        }
-
-        :
-
-        plan
-
-      )
-    );
-
-
-  }
-
-  else {
-
-    setStoragePlans(prev =>
-      prev.map((plan,i)=>
-
-        i===index
-        ?
-        {
-          ...plan,
-          [key]:value
-        }
-        :
-        plan
-
-      )
-    );
-
-  }
-
-};
+  };
 
 
   // ------------------- INPUT & CHECKBOX HANDLERS -------------------
@@ -600,24 +600,24 @@ const UpdateOrder: React.FC = () => {
       }));
     }
     // DOMAIN SOURCE LOGIC
-  else if (name === "domainSource") {
+    else if (name === "domainSource") {
 
-  const selectedSource = domainSources.find(
-    (source:any)=> source._id === value
-  );
+      const selectedSource = domainSources.find(
+        (source: any) => source._id === value
+      );
 
-  setFormData((prev) => ({
-    ...prev,
-    domainSource: value,
+      setFormData((prev) => ({
+        ...prev,
+        domainSource: value,
 
-    // only Cloudflare enable DNS flag
-    dns_flag:
-      selectedSource?.name?.toLowerCase() === "cloudflare"
-        ? prev.dns_flag
-        : false,
-  }));
+        // only Cloudflare enable DNS flag
+        dns_flag:
+          selectedSource?.name?.toLowerCase() === "cloudflare"
+            ? prev.dns_flag
+            : false,
+      }));
 
-}
+    }
     // DEFAULT
     else {
       setFormData((prev) => ({
@@ -626,23 +626,23 @@ const UpdateOrder: React.FC = () => {
       }));
     }
   };
-useEffect(() => {
+  useEffect(() => {
 
-  if (!domainSources.length) return;
+    if (!domainSources.length) return;
 
 
-  if(formData.managedBy==="Signroots" ||
-     formData.managedBy==="Customer"){
+    if (formData.managedBy === "Signroots" ||
+      formData.managedBy === "Customer") {
 
-    setFormData(prev=>({
-      ...prev,
-      domainSource: prev.domainSource || "",
-      dns_flag:false
-    }));
+      setFormData(prev => ({
+        ...prev,
+        domainSource: prev.domainSource || "",
+        dns_flag: false
+      }));
 
-  }
+    }
 
-},[formData.managedBy, domainSources]);
+  }, [formData.managedBy, domainSources]);
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = e.target;
@@ -981,27 +981,27 @@ useEffect(() => {
         // If a host type is selected, fetch its subtypes and storage
         if (hostTypeObj?._id) {
 
-  setFormData(prev=>({
-    ...prev,
+          setFormData(prev => ({
+            ...prev,
 
-    hosttypeid: hostTypeObj,
-    hosting_plan: hostTypeObj._id,
+            hosttypeid: hostTypeObj,
+            hosting_plan: hostTypeObj._id,
 
-    subHostTypeId: subHostObj,
-    hosting_subplan: subHostObj?._id || "",
+            subHostTypeId: subHostObj,
+            hosting_subplan: subHostObj?._id || "",
 
-    hoststorageId: storageObj,
-    storage: storageObj?._id || "",
-  }));
+            hoststorageId: storageObj,
+            storage: storageObj?._id || "",
+          }));
 
 
-  fetchSubTypesAndStorage(
-    hostTypeObj._id,
-    subHostObj?._id,
-    storageObj?._id
-  );
+          fetchSubTypesAndStorage(
+            hostTypeObj._id,
+            subHostObj?._id,
+            storageObj?._id
+          );
 
-}
+        }
         // ---------------- Email Plans ----------------
         if (order.email_flag && order.plans && order.plans.length > 0 && emailTypes.length > 0) {
           const updatedPlans = await Promise.all(
@@ -1286,7 +1286,7 @@ useEffect(() => {
 
     try {
       // create initial payload
-      const payload: any = { ...formData, is_customer: customerType === "existing", domainSource: formData.domainSource || undefined, };
+      const payload: any = { ...formData, is_customer: customerType === "existing", domainSource: formData.domainSource || null };
 
       if (customerType === "existing") delete payload.newCustomer;
       else delete payload.client;
@@ -1296,9 +1296,9 @@ useEffect(() => {
         }
         // delete payload.newCustomer.c_mobilePhone;
       }
-   if (payload.domainSource === "") {
-  payload.domainSource = null;
-}
+      // if (payload.domainSource === "") {
+      //   payload.domainSource = null;
+      // }
 
       // combine all plans
       const combinedPlans: any[] = [];
@@ -1361,28 +1361,28 @@ useEffect(() => {
         });
       }
       // HOSTING PLAN
-if (hostingChecked) {
-  combinedPlans.push({
-    type: "hosting",
+      if (hostingChecked) {
+        combinedPlans.push({
+          type: "hosting",
 
-    hostingType:
-      formData.hosting_plan || "",
+          hostingType:
+            formData.hosting_plan || "",
 
-    hostingSubType:
-      formData.hosting_subplan || "",
+          hostingSubType:
+            formData.hosting_subplan || "",
 
-    storage:
-      formData.storage || "",
+          storage:
+            formData.storage || "",
 
-    registrationDate:
-      formData.registrationDate,
+          registrationDate:
+            formData.registrationDate,
 
-    expiryDate:
-      formData.expiryDate,
+          expiryDate:
+            formData.expiryDate,
 
-    noOfUsers: 1,
-  });
-}
+          noOfUsers: 1,
+        });
+      }
 
       // WEBSITE SERVICE
       if (websiteChecked) {
@@ -1424,9 +1424,9 @@ if (hostingChecked) {
         (source) => source._id === formData.domainSource
       );
 
-//      if (!payload.domainSource) {
-//   delete payload.domainSource;
-// }
+      //      if (!payload.domainSource) {
+      //   delete payload.domainSource;
+      // }
 
       // send update request
       const res = await axios.put(`${import.meta.env.VITE_API_BASE_URL}/api/orders/${orderId}`, payload);
@@ -1818,49 +1818,49 @@ if (hostingChecked) {
                     Registrar
                   </label>
 
-                 <select
-  name="domainSource"
-  value={formData.domainSource || ""}
-  onChange={handleInputChange}
-  className="w-full border rounded px-3 py-2"
->
-  <option value="">-- Select Registrar --</option>
+                  <select
+                    name="domainSource"
+                    value={formData.domainSource || ""}
+                    onChange={handleInputChange}
+                    className="w-full border rounded px-3 py-2"
+                  >
+                    <option value="">-- Select Registrar --</option>
 
-  {domainSources
-    .filter((source) => source.is_active)
-    .map((source) => (
-      <option key={source._id} value={source._id}>
-        {source.name}
-      </option>
-    ))}
-</select>
+                    {domainSources
+                      .filter((source) => source.is_active)
+                      .map((source) => (
+                        <option key={source._id} value={source._id}>
+                          {source.name}
+                        </option>
+                      ))}
+                  </select>
 
 
-{/* DNS Flag */}
-{domainSources.some(
-  (source) =>
-    source._id === formData.domainSource &&
-    source.name.toLowerCase() === "cloudflare"
-) && (
-  <div className="mt-4 flex items-center gap-2">
-    <input
-      type="checkbox"
-      name="dns_flag"
-      checked={formData.dns_flag || false}
-      onChange={(e) =>
-        setFormData((prev) => ({
-          ...prev,
-          dns_flag: e.target.checked,
-        }))
-      }
-      className="w-4 h-4"
-    />
+                  {/* DNS Flag */}
+                  {domainSources.some(
+                    (source) =>
+                      source._id === formData.domainSource &&
+                      source.name.toLowerCase() === "cloudflare"
+                  ) && (
+                      <div className="mt-4 flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          name="dns_flag"
+                          checked={formData.dns_flag || false}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              dns_flag: e.target.checked,
+                            }))
+                          }
+                          className="w-4 h-4"
+                        />
 
-    <label className="text-gray-700 font-medium">
-      DNS Flag
-    </label>
-  </div>
-)}
+                        <label className="text-gray-700 font-medium">
+                          DNS Flag
+                        </label>
+                      </div>
+                    )}
 
                 </div>
               )}
@@ -2120,12 +2120,12 @@ if (hostingChecked) {
                   </div>
                   <button
                     type="button"
-                    onClick={() => 
- setConfirmRemove({ 
-   index: idx, 
-   type:"storage" 
- })
-}
+                    onClick={() =>
+                      setConfirmRemove({
+                        index: idx,
+                        type: "storage"
+                      })
+                    }
                     className="text-red-500 mt-2 hover:text-red-700"
                   >
                     Remove
@@ -2246,12 +2246,12 @@ if (hostingChecked) {
                   </div>
                   <button
                     type="button"
-                   onClick={() => 
- setConfirmRemove({
-   index:idx,
-   type:"msoffice"
- })
-}
+                    onClick={() =>
+                      setConfirmRemove({
+                        index: idx,
+                        type: "msoffice"
+                      })
+                    }
                     className="text-red-500 mt-2 hover:text-red-700"
                   >
                     Remove
