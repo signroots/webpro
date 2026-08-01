@@ -135,7 +135,7 @@ interface OrderForm {
   // website_flag?: boolean;
   // ssl_flag?: boolean;
   // host_flag?: boolean;
-  domainSource?: string;
+  domainSource?: string | null;
   email_expiryDate?: string;
   users?: number;
   hostType?: any;
@@ -199,7 +199,7 @@ const UpdateOrder: React.FC = () => {
     hosting_subplan: "",
     hosting_plan: "",
     plans: [],
-    domainSource: "",
+    domainSource: null,
     hosttypeid: null,
     subHostTypeId: null,
     hoststorageId: null,
