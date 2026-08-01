@@ -3,7 +3,8 @@ import dotenv from "dotenv";
 
 import Order from "../models/Order";
 import Customer from "../models/Customer";
-
+import mongoose from "mongoose";
+import DomainSource from "../models/DomainSource";
 dotenv.config();
 
 let cloudflareSyncRunning = false;
@@ -70,9 +71,9 @@ export async function syncCloudflareDomains() {
         throw new Error("Cloudflare registrar API failed");
       }
 
- registrarResponse.data.result.forEach((domain: any) => {
-  registrarDomainMap[domain.name.toLowerCase()] = domain;
-});
+      registrarResponse.data.result.forEach((domain: any) => {
+        registrarDomainMap[domain.name.toLowerCase()] = domain;
+      });
 
       registrarTotalPages =
         registrarResponse.data.result_info.total_pages || 1;
@@ -140,32 +141,32 @@ export async function syncCloudflareDomains() {
       for (const zone of zones) {
 
         const registrarInfo =
-  registrarDomainMap[zone.name.toLowerCase()];
+          registrarDomainMap[zone.name.toLowerCase()];
 
-if (!registrarInfo) {
+        if (!registrarInfo) {
 
-  console.log(
-    `ℹ️ ${zone.name} DNS only - no registrar expiry`
-  );
+          console.log(
+            `ℹ️ ${zone.name} DNS only - no registrar expiry`
+          );
 
-}
+        }
         const existingOrder =
           await Order.findOne({
             domainName: zone.name,
           });
 
         const expiryDate =
-  registrarInfo?.expires_at
-    ? new Date(registrarInfo.expires_at)
-    : existingOrder?.expiryDate
-    ? new Date(existingOrder.expiryDate)
-    : null;
+          registrarInfo?.expires_at
+            ? new Date(registrarInfo.expires_at)
+            : existingOrder?.expiryDate
+              ? new Date(existingOrder.expiryDate)
+              : null;
         const provider =
           existingOrder?.provider || "";
 
         const providerLower =
           provider.toLowerCase();
-                  // =====================================
+        // =====================================
         // CHECK EXPIRY MORE THAN 65 DAYS
         // =====================================
 
@@ -247,9 +248,9 @@ if (!registrarInfo) {
                 registrationDate:
                   zone.created_on
                     ?
-                  new Date(zone.created_on)
+                    new Date(zone.created_on)
                     :
-                  existingOrder?.registrationDate || null,
+                    existingOrder?.registrationDate || null,
 
 
                 originalRegistrar:
@@ -268,7 +269,7 @@ if (!registrarInfo) {
 
 
                 domainSource:
-                  "Cloudflare",
+                  new mongoose.Types.ObjectId("6a6b2104fc628050e088d64d"),
 
 
                 cloudflareRegistered:
@@ -315,10 +316,10 @@ if (!registrarInfo) {
             upsert: true
 
           }
-          
+
 
         });
-            } // close for (const zone of zones)
+      } // close for (const zone of zones)
 
 
       // =====================================
@@ -352,7 +353,7 @@ if (!registrarInfo) {
 
 
   }
-  catch(error:any) {
+  catch (error: any) {
 
     console.error(
       "❌ Cloudflare Sync Failed:",
