@@ -1346,13 +1346,23 @@ const getExpiryFilter = () => {
 
     const filters:any[]=[];
     // ================= ONLY ORDERS HAVING PLANS =================
-
 const planOrderIds = await OrderPlan.distinct("orderId");
 
 filters.push({
-  _id:{
-    $in: planOrderIds
-  }
+  $or:[
+    // DNS true ആയാൽ Plan നിർബന്ധം
+    {
+      dns_flag:true,
+      _id:{
+        $in:planOrderIds
+      }
+    },
+
+    // DNS false ആണെങ്കിൽ Plan ഉണ്ടെങ്കിലും ഇല്ലെങ്കിലും കാണിക്കുക
+    {
+      dns_flag:false
+    }
+  ]
 });
 
 if(emailType){
