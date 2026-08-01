@@ -2,7 +2,7 @@ import axios, { AxiosError } from "axios";
 import dotenv from "dotenv";
 import Domain from "../models/Domain";
 import { CloudflareRegistrarDomain } from "../types/cloudflare";
-
+import DomainSource from "../models/DomainSource";
 dotenv.config();
 
 /* ================= CLOUDflare CONFIG ================= */
@@ -29,7 +29,25 @@ export const syncDomains = async () => {
     /* ================= CLOUDflare ================= */
     const zonesRes = await axios.get(CF_ZONES_API, { headers: cfHeaders });
     const zones = zonesRes.data?.result || [];
+const cloudflareSource =
+  await DomainSource.findOne({
+    name:{
+      $regex:"Cloudflare",
+      $options:"i"
+    }
+  });
 
+
+if(!cloudflareSource){
+  throw new Error("Cloudflare domain source not found");
+}
+
+
+const orderData = {
+
+  domainSource: cloudflareSource._id
+
+};
     let registrarDomains: CloudflareRegistrarDomain[] = [];
     try {
       const regRes = await axios.get(CF_REGISTRAR_API, { headers: cfHeaders });
@@ -60,7 +78,7 @@ export const syncDomains = async () => {
               ? new Date(reg.registered_at)
               : null,
             status: expiryDate && expiryDate < new Date() ? "EXPIRED" : "ACTIVE",
-            domainSource: "Cloudflare",
+            domainSource: cloudflareSource._id,
             lockStatus: reg?.locked ? "Locked" : "Unlocked",
             nameServers: reg?.name_servers || z.name_servers || [],
             cloudflareRegistered: true,
