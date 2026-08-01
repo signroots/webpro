@@ -668,22 +668,30 @@ storageId
 
 
 
-      const filters:any[]=[
+      // ================= REMOVE ORDERS HAVING PLANS =================
 
-        {
-          dns_flag:true
-        },
-
-        {
-
-          domainSource:
-          cloudflareSource?._id
-
-        }
-
-      ];
+const planOrderIds =
+  await OrderPlan.distinct("orderId");
 
 
+
+const filters:any[]=[
+
+  {
+    dns_flag:true
+  },
+
+  {
+    domainSource: cloudflareSource?._id
+  },
+
+  {
+    _id:{
+      $nin: planOrderIds
+    }
+  }
+
+];
 
 
 
