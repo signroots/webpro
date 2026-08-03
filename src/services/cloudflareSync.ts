@@ -73,10 +73,9 @@ const registrarResponse = await axios.get(
 
   
       headers: {
-        "X-Auth-Email": process.env.CLOUDFLARE_EMAIL,
-        "X-Auth-Key": process.env.CLOUDFLARE_API_KEY,
-        "Content-Type": "application/json"
-      },
+      Authorization: `Bearer ${CLOUDFLARE_TOKEN}`,
+      "Content-Type": "application/json"
+    },
     
 //    headers:{
 //   "X-Auth-Email": CLOUDFLARE_EMAIL_ID,
