@@ -49,17 +49,40 @@ export async function syncCloudflareDomains() {
 
    let registrarPage = 1;
 let registrarTotalPages = 1;
+const dnsCloudflareSource =
+ await DomainSource.findOne({
+   code:"DNS-CLOUDFLARE"
+ });
+
+
+const cloudflareSource =
+ await DomainSource.findOne({
+   code:"CLOUDFLARE"
+ });
+
+
+if(!dnsCloudflareSource || !cloudflareSource){
+ throw new Error("Cloudflare domain sources missing");
+}
 
 do {
 
 const registrarResponse = await axios.get(
   `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/registrar/domains`,
  {
-   headers:{
-  "X-Auth-Email": CLOUDFLARE_EMAIL_ID,
-  "X-Auth-Key": CLOUDFLARE_GLOBAL_KEY,
-  "Content-Type":"application/json"
-},
+
+  
+      headers: {
+        "X-Auth-Email": process.env.CLOUDFLARE_EMAIL,
+        "X-Auth-Key": process.env.CLOUDFLARE_API_KEY,
+        "Content-Type": "application/json"
+      },
+    
+//    headers:{
+//   "X-Auth-Email": CLOUDFLARE_EMAIL_ID,
+//   "X-Auth-Key": CLOUDFLARE_GLOBAL_KEY,
+//   "Content-Type":"application/json"
+// },
     params:{
       page: registrarPage,
       per_page: 100
@@ -305,9 +328,10 @@ else {
                 customer:
                   defaultCustomer._id,
 
-
-                domainSource:
-                  new mongoose.Types.ObjectId("6a6b2104fc628050e088d64d"),
+domainSource:
+ registrarInfo
+ ? cloudflareSource._id
+ : dnsCloudflareSource._id,
 
 
                 cloudflareRegistered:
