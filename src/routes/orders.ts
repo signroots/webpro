@@ -3150,10 +3150,28 @@ plans.forEach((plan:any)=>{
 });
 
 
-
 orders = orders.map((order:any)=>({
 
   ...order,
+
+
+  domainSource: order.domainSource
+    ? {
+        ...order.domainSource,
+
+        image:
+          order.domainSource.image
+          ? (
+              order.domainSource.image.startsWith("/uploads")
+              ?
+              order.domainSource.image
+              :
+              `/uploads/domainsources/${order.domainSource.image}`
+            )
+          : null
+      }
+    : null,
+
 
   Plans:
     planMap.get(
@@ -3161,8 +3179,6 @@ orders = orders.map((order:any)=>({
     ) || []
 
 }));
-
-
     // ================= EMAIL EXPIRY =================
 
 
