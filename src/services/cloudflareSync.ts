@@ -82,10 +82,7 @@ const registrarResponse = await axios.get(
 //   "X-Auth-Key": CLOUDFLARE_GLOBAL_KEY,
 //   "Content-Type":"application/json"
 // },
-    params:{
-      page: registrarPage,
-      per_page: 100
-    }
+
   }
 );
 
