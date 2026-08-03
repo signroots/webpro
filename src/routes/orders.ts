@@ -3016,6 +3016,7 @@ router.get("/customer_order_details/:customerId", async (req, res) => {
   "domainSource",
   "name image code"
 )
+
     .select(`
       domainName
       domainSource
@@ -3103,7 +3104,9 @@ plans.forEach((plan:any)=>{
 
 
     emailTypeImage:
-      plan.emailTypeId?.image || null,
+  plan.emailTypeId?.image
+    ? `/uploads/typeemails/${plan.emailTypeId.image}`
+    : null,
 
 
     planId:
