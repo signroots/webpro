@@ -30,12 +30,15 @@ router.post(
 
     console.log("CREATE BODY:", req.body);
     console.log("CREATE FILE:", req.file);
+const {
+  name,
+  code
+} = req.body;
 
 
-    const {
-      name,
-      code
-    } = req.body;
+const image = req.file
+  ? req.file.filename
+  : "";
 
 
 
@@ -82,7 +85,10 @@ router.post(
 
         code:code.toUpperCase(),
 
-        image:imageName,
+        image: req.file
+          ? req.file.filename
+          : "",
+
 
         is_active:true
 
