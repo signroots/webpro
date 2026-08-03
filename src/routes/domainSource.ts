@@ -104,7 +104,10 @@ const {
 
 
 
-    const imageName = req.file?.filename || "";
+    const imagePath = req.file
+  ? `/uploads/domainsources/${req.file.filename}`
+  : "";
+
 
 const source =
 await DomainSource.create({
@@ -113,7 +116,7 @@ await DomainSource.create({
 
   code: code.toUpperCase(),
 
-  image: imageName,
+  image: imagePath,
 
   is_active: true
 
@@ -242,9 +245,10 @@ router.put(
 
 
       let imagePath = "";
+
 if(req.file){
 
-  imagePath = req.file.filename;
+  imagePath = `/uploads/domainsources/${req.file.filename}`;
 
 }
 else {
