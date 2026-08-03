@@ -127,6 +127,21 @@ console.log(
           new: true,
         }
       );
+      const dnsCloudflareSource =
+ await DomainSource.findOne({
+   code:"DNS-CLOUDFLARE"
+ });
+
+
+const cloudflareSource =
+ await DomainSource.findOne({
+   code:"CLOUDFLARE"
+ });
+ if (!cloudflareSource || !dnsCloudflareSource) {
+  throw new Error(
+    "Cloudflare domain sources not found in database"
+  );
+}
     // =====================================
     // FETCH & SYNC CLOUDFLARE ZONES
     // =====================================
@@ -297,9 +312,13 @@ else {
                 customer:
                   defaultCustomer._id,
 
-
-                domainSource:
-                  new mongoose.Types.ObjectId("6a6b2104fc628050e088d64d"),
+domainSource:
+ registrarInfo
+ ?
+ cloudflareSource?._id
+ :
+ dnsCloudflareSource?._id,
+ 
 
 
                 cloudflareRegistered:
