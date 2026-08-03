@@ -8,7 +8,7 @@ import {
   FaLock,
   FaLaptopCode
 } from "react-icons/fa";
-
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 import { SiHostinger } from "react-icons/si";
 
 const CustomerOrders: React.FC = () => {
@@ -351,132 +351,105 @@ const CustomerOrders: React.FC = () => {
 {/* SERVICES */}
 <td className="px-4 py-4">
 
-<div className="flex items-center justify-center gap-3">
+  <div className="flex items-center justify-center gap-3 flex-wrap">
 
 
-{/* DOMAIN SOURCE */}
-{order.domainSource ? (
+    {/* ================= DOMAIN SOURCE ================= */}
 
-  order.domainSource.toLowerCase() === "resellerclub" ? (
+    {order.domainSource && order.domainSource.image ? (
 
-    <img
-      src="/images/resellerclub.png"
-      className="w-6 h-6"
-      title="ResellerClub"
-    />
+      <img
+        src={`${API_BASE_URL}${order.domainSource.image}`}
+        className="w-6 h-6 object-contain flex-shrink-0"
+        title={order.domainSource.name}
+        alt={order.domainSource.name}
+      />
 
-  ) : order.domainSource.toLowerCase() === "cloudflare" && order.domain_flag ? (
+    ) : (
 
-    <img
-      src="/dns_logo.png"
-      className="w-6 h-6"
-      title="DNS Cloudflare"
-    />
+      <FaGlobe
+        className="w-6 h-6 text-gray-300 flex-shrink-0"
+        title="Domain"
+      />
 
-  ) : order.domainSource.toLowerCase() === "cloudflare" ? (
-
-    <img
-      src="/images/cloudflare.png"
-      className="w-7 h-7"
-      title="Cloudflare"
-    />
-
-  ) : order.domainSource.toLowerCase() === "hostinger" ? (
-
-    <SiHostinger
-      className="w-6 h-6 text-blue-500"
-      title="Hostinger"
-    />
-
-  ) : (
-
-    <FaGlobe
-      className="w-6 h-6 text-gray-400"
-      title={order.domainSource}
-    />
-
-  )
-
-) : (
-
-<FaGlobe
- className="w-6 h-6 text-gray-300"
- title="Domain"
-/>
-
-)}
+    )}
 
 
 
-{/* EMAIL */}
+    {/* ================= PLANS SERVICES ================= */}
 
-{order.google_email ? (
+    {order.Plans?.map(
+      (plan:any, index:number) => (
 
-<img
- src="/download.png"
- className="w-5 h-5"
- title="Google Workspace"
-/>
-
-) : order.microsoft_email ? (
-
-<img
- src="/microsoft.png"
- className="w-5 h-5"
- title="Microsoft 365"
-/>
-
-) : null}
+        <div
+          key={index}
+          className="flex items-center justify-center gap-2"
+        >
 
 
+          {/* EMAIL TYPE IMAGE */}
 
+          {plan.type === "email" && plan.emailTypeImage && (
 
-{/* MS OFFICE */}
+            <img
+              src={`${API_BASE_URL}${plan.emailTypeImage}`}
+              className="w-5 h-5 object-contain flex-shrink-0"
+              title={plan.emailType}
+              alt={plan.emailType || "Email"}
+            />
 
-{order.msoffice_services_flag && (
-
-<img
- src="/MSOffice.png"
- className="w-5 h-5"
- title="MS Office"
-/>
-
-)}
+          )}
 
 
 
+          {/* HOSTING */}
 
-{/* HOSTING */}
+          {plan.type === "hosting" && (
 
-{order.hosting && (
+            <FaServer
+              className="w-5 h-5 text-purple-500 flex-shrink-0"
+              title="Hosting"
+            />
 
-<FaServer
- className="w-5 h-5 text-purple-500"
- title="Hosting"
-/>
-
-)}
-
+          )}
 
 
 
-{/* WEBSITE */}
+          {/* WEBSITE */}
 
-{order.website_flag && (
+          {plan.type === "website" && (
 
-<FaLaptopCode
- className="w-5 h-5 text-purple-500"
- title="Website"
-/>
+            <FaLaptopCode
+              className="w-5 h-5 text-pink-500 flex-shrink-0"
+              title="Website"
+            />
 
-)}
+          )}
 
 
 
-</div>
+          {/* SSL */}
+
+          {plan.type === "ssl" && (
+
+            <FaLock
+              className="w-5 h-5 text-yellow-500 flex-shrink-0"
+              title="SSL"
+            />
+
+          )}
+
+
+        </div>
+
+      )
+
+    )}
+
+
+  </div>
 
 </td>
-
 
 <td className="px-1 py-2 font-medium">
   {(() => {
