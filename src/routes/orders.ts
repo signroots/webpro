@@ -3012,6 +3012,10 @@ router.get("/customer_order_details/:customerId", async (req, res) => {
     let orders = await Order.find({
       client: customerId
     })
+    .populate(
+  "domainSource",
+  "name image code"
+)
     .select(`
       domainName
       domainSource
@@ -3019,14 +3023,14 @@ router.get("/customer_order_details/:customerId", async (req, res) => {
       expiryDate
       status
 
-      google_email
-      microsoft_email
+      // google_email
+      // microsoft_email
 
-      hosting
-      website_flag
+      // hosting
+      // website_flag
 
-      msoffice_services_flag
-      storage_services_flag
+      // msoffice_services_flag
+      // storage_services_flag
 
       email_expiryDate
 
@@ -3039,7 +3043,121 @@ router.get("/customer_order_details/:customerId", async (req, res) => {
 
 
 
+// ================= ADD PLANS =================
 
+const orderIds = orders.map(
+  (order:any)=>order._id
+);
+
+
+const plans = await OrderPlan.find({
+
+  orderId:{
+    $in:orderIds
+  }
+
+})
+.populate({
+  path:"emailTypeId",
+  select:"name image"
+})
+.populate({
+  path:"hostTypeId",
+  select:"type"
+})
+.populate({
+  path:"hostSubTypeId",
+  select:"name"
+})
+.populate({
+  path:"storageId",
+  select:"name storage"
+})
+.lean();
+
+
+
+const planMap = new Map();
+
+
+plans.forEach((plan:any)=>{
+
+  const key = plan.orderId.toString();
+
+
+  if(!planMap.has(key)){
+    planMap.set(key,[]);
+  }
+
+
+  planMap.get(key).push({
+
+    type:plan.type,
+
+    expiryDate:
+      plan.expiryDate || null,
+
+
+    emailType:
+      plan.emailTypeId?.name || null,
+
+
+    emailTypeImage:
+      plan.emailTypeId?.image || null,
+
+
+    planId:
+      plan.planId || null,
+
+
+    hostType:
+      plan.hostTypeId
+      ?
+      {
+        _id:plan.hostTypeId._id,
+        type:plan.hostTypeId.type
+      }
+      :
+      null,
+
+
+    hostSubType:
+      plan.hostSubTypeId
+      ?
+      {
+        _id:plan.hostSubTypeId._id,
+        name:plan.hostSubTypeId.name
+      }
+      :
+      null,
+
+
+    storage:
+      plan.storageId
+      ?
+      {
+        _id:plan.storageId._id,
+        name:plan.storageId.name
+      }
+      :
+      null
+
+  });
+
+});
+
+
+
+orders = orders.map((order:any)=>({
+
+  ...order,
+
+  Plans:
+    planMap.get(
+      order._id.toString()
+    ) || []
+
+}));
 
 
     // ================= EMAIL EXPIRY =================
