@@ -16,8 +16,8 @@ const storage = multer.diskStorage({
 
   destination:(req,file,cb)=>{
 
-    const uploadPath =
-      path.join(__dirname,"../../uploads/domainsources");
+   const uploadPath =
+ path.join(process.cwd(),"uploads/domainsources");
 
 
     if(!fs.existsSync(uploadPath)){
