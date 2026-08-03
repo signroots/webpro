@@ -54,10 +54,9 @@ do {
 
 const registrarResponse = await axios.get(
   `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/registrar/domains`,
-  {
+ {
     headers:{
-      "X-Auth-Email": CLOUDFLARE_EMAIL_ID,
-      "X-Auth-Key": CLOUDFLARE_GLOBAL_KEY,
+      Authorization: `Bearer ${CLOUDFLARE_TOKEN}`,
       "Content-Type":"application/json"
     },
     params:{
