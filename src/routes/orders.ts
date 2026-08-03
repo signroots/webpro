@@ -3103,11 +3103,8 @@ plans.forEach((plan:any)=>{
       plan.emailTypeId?.name || null,
 
 
-    emailTypeImage:
-  plan.emailTypeId?.image
-    ? `/uploads/typeemails/${plan.emailTypeId.image}`
-    : null,
-
+ emailTypeImage:
+  plan.emailTypeId?.image || null,
 
     planId:
       plan.planId || null,
