@@ -116,7 +116,7 @@ console.log(
 );
 
 registrarTotalPages =
- registrarResponse.data.result_info?.total_pages || registrarPage;
+ registrarResponse.data.result_info?.total_pages || 1;
 
 
  registrarPage++;
@@ -191,6 +191,29 @@ const cloudflareSource =
       );
 
       const zones = zoneResponse.data.result;
+      const registrarDomains: any[] = Object.values(registrarDomainMap);
+
+const allDomainsMap:any = {};
+
+zones.forEach((zone:any)=>{
+  allDomainsMap[zone.name.toLowerCase()] = {
+    ...zone,
+    fromZone:true
+  };
+});
+
+
+registrarDomains.forEach((domain:any)=>{
+  if(!allDomainsMap[domain.name.toLowerCase()]){
+    allDomainsMap[domain.name.toLowerCase()] = {
+      ...domain,
+      name: domain.name,
+      fromRegistrar:true
+    };
+  }
+});
+
+const allDomains: any[] = Object.values(allDomainsMap);
 
       zoneTotalPages =
         zoneResponse.data.result_info.total_pages || 1;
@@ -201,14 +224,16 @@ const cloudflareSource =
 
       const bulkOps: any[] = [];
 
-for (const zone of zones) {
+for (const zone of allDomains) {
 
   const domainKey = zone.name
     .toLowerCase()
     .trim();
 
+
   const registrarInfo =
     registrarDomainMap[domainKey];
+
 
   console.log(
     "DOMAIN CHECK:",
@@ -218,16 +243,20 @@ for (const zone of zones) {
 
 
   if (registrarInfo) {
+
     console.log(
-      "✅ Registrar found:",
+      "✅ Registrar domain:",
       zone.name,
       registrarInfo.expires_at
     );
+
   } else {
+
     console.log(
       "ℹ️ DNS only:",
       zone.name
     );
+
   }
 
 
@@ -236,202 +265,180 @@ for (const zone of zones) {
       domainName: zone.name,
     });
 
-  // ബാക്കി code ഇവിടെ continue ചെയ്യുക
-}
-      for (const zone of zones) {
 
-        const registrarInfo =
-  registrarDomainMap[zone.name.toLowerCase().trim()];
-
-        if (!registrarInfo) {
-
-  console.log(
-    `ℹ️ ${zone.name} DNS only - no registrar expiry`
-  );
-
-}
-else {
-
-  console.log(
-    `✅ Registrar found: ${zone.name} expiry ${registrarInfo.expires_at}`
-  );
-
-}
-        const existingOrder =
-          await Order.findOne({
-            domainName: zone.name,
-          });
-
-        const expiryDate =
-          registrarInfo?.expires_at
-            ? new Date(registrarInfo.expires_at)
-            : existingOrder?.expiryDate
-              ? new Date(existingOrder.expiryDate)
-              : null;
-        const provider =
-          existingOrder?.provider || "";
-
-        const providerLower =
-          provider.toLowerCase();
-        // =====================================
-        // CHECK EXPIRY MORE THAN 65 DAYS
-        // =====================================
-
-        let isActive = true;
-        let domainStatus = zone.status;
+  const expiryDate =
+    registrarInfo?.expires_at
+      ? new Date(registrarInfo.expires_at)
+      : existingOrder?.expiryDate
+        ? new Date(existingOrder.expiryDate)
+        : null;
 
 
-        if (expiryDate) {
-
-          const diffDays =
-            (
-              Date.now() -
-              expiryDate.getTime()
-            )
-            /
-            (
-              1000 *
-              60 *
-              60 *
-              24
-            );
+  const provider =
+    existingOrder?.provider || "";
 
 
-          if (diffDays > 65) {
-
-            console.log(
-              `⚠️ Expired more than 65 days: ${zone.name}`
-            );
+  const providerLower =
+    provider.toLowerCase();
 
 
-            isActive = false;
 
-            domainStatus = "EXPIRED";
+  let isActive = true;
 
-          }
+  let domainStatus =
+    zone.status || "active";
+
+
+
+  if (expiryDate) {
+
+    const diffDays =
+      (
+        Date.now() -
+        expiryDate.getTime()
+      )
+      /
+      (
+        1000 *
+        60 *
+        60 *
+        24
+      );
+
+
+    if (diffDays > 65) {
+
+      console.log(
+        `⚠️ Expired more than 65 days: ${zone.name}`
+      );
+
+
+      isActive = false;
+
+      domainStatus = "EXPIRED";
+
+    }
+
+  }
+
+
+
+  bulkOps.push({
+
+    updateOne: {
+
+      filter: {
+        domainName: zone.name
+      },
+
+
+      update: {
+
+        $set: {
+
+
+          domainName:
+            zone.name,
+
+
+          status:
+            domainStatus,
+
+
+          is_active:
+            isActive,
+
+
+          nameServers:
+            zone.name_servers || [],
+
+
+
+          registrationDate:
+            zone.created_on
+              ? new Date(zone.created_on)
+              : existingOrder?.registrationDate || null,
+
+
+
+          originalRegistrar:
+            zone.original_registrar || "",
+
+
+
+          expiryDate,
+
+
+          managedBy:
+            "Signroots",
+
+
+
+          customer:
+            defaultCustomer._id,
+
+
+
+          // IMPORTANT PART
+          domainSource:
+            registrarInfo
+              ? cloudflareSource._id
+              : dnsCloudflareSource._id,
+
+
+
+          cloudflareRegistered:
+            true,
+
+
+
+          provider,
+
+
+
+          google_email:
+            existingOrder?.google_email ||
+            providerLower.includes(
+              "google workspace"
+            ),
+
+
+
+          microsoft_email:
+            existingOrder?.microsoft_email ||
+            providerLower.includes(
+              "microsoft 365"
+            ),
+
+
+
+          email_flag:
+            existingOrder?.email_flag || false,
+
+
+
+          email_customer:
+            existingOrder?.email_customer || "",
+
+
+
+          users:
+            existingOrder?.users || 0,
+
 
         }
 
+      },
 
 
-        // =====================================
-        // ADD / UPDATE ORDER
-        // =====================================
+      upsert:true
+
+    }
+
+  });
 
 
-        bulkOps.push({
-
-          updateOne: {
-
-            filter: {
-
-              domainName:
-                zone.name
-
-            },
-
-
-            update: {
-
-              $set: {
-
-
-                domainName:
-                  zone.name,
-
-
-                status:
-                  domainStatus,
-
-
-                is_active:
-                  isActive,
-
-
-                nameServers:
-                  zone.name_servers,
-
-
-                registrationDate:
-                  zone.created_on
-                    ?
-                    new Date(zone.created_on)
-                    :
-                    existingOrder?.registrationDate || null,
-
-
-                originalRegistrar:
-                  zone.original_registrar,
-
-
-                expiryDate,
-
-
-                managedBy:
-                  "Signroots",
-
-
-                customer:
-                  defaultCustomer._id,
-
-domainSource:
- registrarInfo?.cloudflare_registration === true
- ?
- cloudflareSource._id
- :
- dnsCloudflareSource._id,
- 
-
-
-                cloudflareRegistered:
-                  true,
-
-
-                provider,
-
-
-                google_email:
-                  existingOrder?.google_email ||
-                  providerLower.includes(
-                    "google workspace"
-                  ),
-
-
-                microsoft_email:
-                  existingOrder?.microsoft_email ||
-                  providerLower.includes(
-                    "microsoft 365"
-                  ),
-
-
-                email_flag:
-                  existingOrder?.email_flag ||
-                  false,
-
-
-                email_customer:
-                  existingOrder?.email_customer ||
-                  "",
-
-
-                users:
-                  existingOrder?.users ||
-                  0,
-
-
-              }
-
-            },
-
-
-            upsert: true
-
-          }
-
-
-        });
-      } // close for (const zone of zones)
-
+}
 
       // =====================================
       // BULK UPDATE DATABASE
