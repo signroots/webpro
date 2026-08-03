@@ -514,7 +514,11 @@ export default function DomainSource() {
                           source.image ?
 
 <img
-  src={`${import.meta.env.VITE_API_BASE_URL}${source.image}`}
+  src={
+    source.image?.startsWith("/")
+      ? `${import.meta.env.VITE_API_BASE_URL}${source.image}`
+      : `${import.meta.env.VITE_API_BASE_URL}/uploads/domainsources/${source.image}`
+  }
   className="w-10 h-10 object-contain"
   alt={source.name}
 />
