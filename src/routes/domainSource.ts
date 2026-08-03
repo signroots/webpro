@@ -8,11 +8,48 @@ const router = express.Router();
 // ===============================
 // MULTER CONFIG
 // ===============================
+import path from "path";
+import fs from "fs";
 
-const upload = multer({
-  storage: multer.memoryStorage()
+
+const storage = multer.diskStorage({
+
+  destination:(req,file,cb)=>{
+
+    const uploadPath =
+      path.join(__dirname,"../../uploads/domainsources");
+
+
+    if(!fs.existsSync(uploadPath)){
+      fs.mkdirSync(uploadPath,{
+        recursive:true
+      });
+    }
+
+
+    cb(null,uploadPath);
+
+  },
+
+
+  filename:(req,file,cb)=>{
+
+    const uniqueName =
+      Date.now() +
+      "-" +
+      file.originalname;
+
+
+    cb(null,uniqueName);
+
+  }
+
 });
 
+
+const upload = multer({
+  storage
+});
 
 
 /*
@@ -35,10 +72,6 @@ const {
   code
 } = req.body;
 
-
-const image = req.file
-  ? req.file.filename
-  : "";
 
 
 
@@ -71,28 +104,20 @@ const image = req.file
 
 
 
-    const imageName =
-      req.file
-      ? req.file.filename
-      : "";
+    const imageName = req.file?.filename || "";
 
+const source =
+await DomainSource.create({
 
+  name,
 
-    const source =
-      await DomainSource.create({
+  code: code.toUpperCase(),
 
-        name,
+  image: imageName,
 
-        code:code.toUpperCase(),
+  is_active: true
 
-        image: req.file
-          ? req.file.filename
-          : "",
-
-
-        is_active:true
-
-      });
+});
 
 
 
@@ -217,18 +242,16 @@ router.put(
 
 
       let imagePath = "";
+if(req.file){
 
-      if(req.file){
+  imagePath = req.file.filename;
 
-        // temporary filename
-        imagePath = req.file.originalname;
+}
+else {
 
-      }
-      else {
+  imagePath = req.body.image || "";
 
-        imagePath = req.body.image || "";
-
-      }
+}
 
 
 
