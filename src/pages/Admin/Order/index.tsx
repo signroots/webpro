@@ -1016,7 +1016,7 @@ const getStatusClass = (status?: string) => {
                           return order.client.c_company;
                         }
                         // Join first 3 words + "..."
-                        return words.slice(0, 3).join(" ") + " ...";
+                        return words.slice(0, 5).join(" ") + " ...";
                       })()}
                     </Link>
                   ) : (
