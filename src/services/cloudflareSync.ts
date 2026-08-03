@@ -97,16 +97,16 @@ console.log(
 
 registrarResponse.data.result.forEach((domain:any)=>{
 
-  const key = domain.name
-    .toLowerCase()
-    .trim();
+  console.log("REGISTRAR RAW DOMAIN:", domain);
 
-  console.log(
-    "ADDING REGISTRAR KEY:",
-    key
-  );
+  const key =
+    (domain.name || domain.domain)
+      ?.toLowerCase()
+      .trim();
 
-  registrarDomainMap[key] = domain;
+  if(key){
+    registrarDomainMap[key] = domain;
+  }
 
 });
 console.log(
