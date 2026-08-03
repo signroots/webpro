@@ -74,8 +74,24 @@ export const fetchOrders = async (
   total: number;
 }> => {
 
-
   const token = localStorage.getItem("token");
+
+  const queryParams:any = {
+    search: params.search || "",
+  };
+
+
+  // emailType filter ആണെങ്കിൽ pagination വേണ്ട
+  if(params.emailType){
+
+    queryParams.emailType = params.emailType;
+
+  } else {
+
+    queryParams.page = params.page || 1;
+    queryParams.limit = params.limit || 50;
+
+  }
 
 
   const response = await axios.get(
@@ -85,16 +101,10 @@ export const fetchOrders = async (
         Authorization:`Bearer ${token}`,
       },
 
-      params:{
-        search: params.search || "",
-        emailType: params.emailType || "",
-        page: params.page || 1,
-        limit: params.limit || 50,
-      }
+      params: queryParams
 
     }
   );
-
 
 
   return {
@@ -102,13 +112,12 @@ export const fetchOrders = async (
     data: response.data.data,
 
     totalPages:
-      response.data.pagination.totalPages,
+      response.data.pagination?.totalPages || 1,
 
     total:
-      response.data.pagination.total,
+      response.data.pagination?.total || response.data.data.length,
 
   };
-
 
 };
 

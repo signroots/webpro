@@ -324,13 +324,16 @@ useEffect(() => {
 
         search: debouncedSearch,
 
-        page: currentPage,
-        emailType: emailType || "",
-
-        limit: itemsPerPage,
+        ...(emailType
+          ? {
+              emailType: emailType
+            }
+          : {
+              page: currentPage,
+              limit: itemsPerPage
+            })
 
       });
-
 
 
       setOrders(
@@ -374,7 +377,6 @@ useEffect(() => {
   emailType,
   itemsPerPage
 ]);
-
 useEffect(() => {
   const handler = setTimeout(() => {
     setDebouncedSearch(searchTerm);
@@ -716,41 +718,41 @@ setTotalOrders(response.total || 0);
   useEffect(() => {
   setCurrentPage(1);
 }, [searchTerm])
-useEffect(()=>{
+// useEffect(()=>{
 
- const applyFilters = async()=>{
-
-
-   let filtered = allOrders;
+//  const applyFilters = async()=>{
 
 
-   if(emailType){
-
-     const response = await fetchOrders({
-
-       emailType:emailType
-
-     });
+//    let filtered = allOrders;
 
 
-     filtered = response.data;
+//    if(emailType){
 
-   }
+//      const response = await fetchOrders({
 
+//        emailType:emailType
 
-   setOrders(filtered);
-
-
- };
+//      });
 
 
- applyFilters();
+//      filtered = response.data;
+
+//    }
 
 
-},[
- emailType,
- allOrders
-]);
+//    setOrders(filtered);
+
+
+//  };
+
+
+//  applyFilters();
+
+
+// },[
+//  emailType,
+//  allOrders
+// ]);
   // const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
   const paginatedOrders = orders;
 const getStatusClass = (status?: string) => {
