@@ -40,109 +40,108 @@ export async function syncCloudflareDomains() {
     }
 
     console.log("☁️ Cloudflare Sync Started");
-console.log(
-  "ACCOUNT ID:",
-  CLOUDFLARE_ACCOUNT_ID
-);
+    console.log(
+      "ACCOUNT ID:",
+      CLOUDFLARE_ACCOUNT_ID
+    );
 
-console.log(
-  "EMAIL:",
-  CLOUDFLARE_EMAIL_ID
-);
+    console.log(
+      "EMAIL:",
+      CLOUDFLARE_EMAIL_ID
+    );
 
-console.log(
-  "HAS API KEY:",
-  !!CLOUDFLARE_GLOBAL_KEY
-);
+    console.log(
+      "HAS API KEY:",
+      !!CLOUDFLARE_GLOBAL_KEY
+    );
     // =====================================
     // FETCH ALL REGISTRAR DOMAINS
     // =====================================
 
     const registrarDomainMap: Record<string, any> = {};
 
-   let registrarPage = 1;
-let registrarTotalPages = 1;
+    let registrarPage = 1;
+    let registrarTotalPages = 1;
 
-do {
+    do {
 
- const registrarResponse = await axios.get(
-  `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/registrar/domains`,
-  {
-    headers:{
-      "X-Auth-Email": CLOUDFLARE_EMAIL_ID,
-      "X-Auth-Key": CLOUDFLARE_GLOBAL_KEY,
-      "Content-Type":"application/json"
-    },
-    params:{
-      page: registrarPage,
-      per_page: 100
-    }
-  }
- );
-console.log(
- "REGISTRAR RESPONSE COUNT:",
- registrarResponse.data.result.length
-);
+      const registrarResponse = await axios.get(
+        `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/registrar/domains`,
+        {
+          headers: {
+            Authorization: `Bearer ${CLOUDFLARE_TOKEN}`,
+            "Content-Type": "application/json"
+          },
+          params: {
+            page: registrarPage,
+            per_page: 100
+          }
+        }
+      );
+      console.log(
+        "REGISTRAR RESPONSE COUNT:",
+        registrarResponse.data.result.length
+      );
 
-console.log(
- "FIRST REGISTRAR DOMAIN:",
- registrarResponse.data.result[0]
-);
+      console.log(
+        "FIRST REGISTRAR DOMAIN:",
+        registrarResponse.data.result[0]
+      );
 
- console.log(
-   "Registrar page",
-   registrarPage,
-   registrarResponse.data.result.length
- );
- console.log(
-  "REGISTRAR RESULT:",
-  registrarResponse.data.result
-);
+      console.log(
+        "Registrar page",
+        registrarPage,
+        registrarResponse.data.result.length
+      );
+      console.log(
+        "REGISTRAR RESULT:",
+        registrarResponse.data.result
+      );
 
-console.log(
-  "IS ARRAY:",
-  Array.isArray(registrarResponse.data.result)
-);
+      console.log(
+        "IS ARRAY:",
+        Array.isArray(registrarResponse.data.result)
+      );
 
-registrarResponse.data.result.forEach((domain:any)=>{
+      registrarResponse.data.result.forEach((domain: any) => {
 
-  console.log("REGISTRAR RAW DOMAIN:", domain);
+        console.log("REGISTRAR RAW DOMAIN:", domain);
 
-  const key =
-    (domain.name || domain.domain)
-      ?.toLowerCase()
-      .trim();
+        const key =
+          (domain.name || domain.domain)
+            ?.toLowerCase()
+            .trim();
 
-  if(key){
-    registrarDomainMap[key] = domain;
-  }
+        if (key) {
+          registrarDomainMap[key] = domain;
+        }
 
-});
-console.log(
- "HAS ALFAA:",
- Object.keys(registrarDomainMap)
-   .includes("alfaaconnect.org")
-);
+      });
+      console.log(
+        "HAS ALFAA:",
+        Object.keys(registrarDomainMap)
+          .includes("alfaaconnect.org")
+      );
 
-registrarTotalPages =
- registrarResponse.data.result_info?.total_pages || 1;
-
-
- registrarPage++;
+      registrarTotalPages =
+        registrarResponse.data.result_info?.total_pages || 1;
 
 
-} while(
- registrarPage <= registrarTotalPages
-);
-console.log(
- "TOTAL REGISTRAR DOMAINS:",
- Object.keys(registrarDomainMap).length
-);
+      registrarPage++;
 
-console.log(
- "VOLTOPAINTS:",
- registrarDomainMap["voltopaints.com"]
-);
+
+    } while (
+      registrarPage <= registrarTotalPages
+    );
+    console.log(
+      "TOTAL REGISTRAR DOMAINS:",
+      Object.keys(registrarDomainMap).length
+    );
+
+    console.log(
+      "VOLTOPAINTS:",
+      registrarDomainMap["voltopaints.com"]
+    );
     // =====================================
     // FETCH DEFAULT CUSTOMER
     // =====================================
@@ -161,21 +160,21 @@ console.log(
           new: true,
         }
       );
-      const dnsCloudflareSource =
- await DomainSource.findOne({
-   code:"DNS-CLOUDFLARE"
- });
+    const dnsCloudflareSource =
+      await DomainSource.findOne({
+        code: "DNS-CLOUDFLARE"
+      });
 
 
-const cloudflareSource =
- await DomainSource.findOne({
-   code:"CLOUDFLARE"
- });
- if (!cloudflareSource || !dnsCloudflareSource) {
-  throw new Error(
-    "Cloudflare domain sources not found in database"
-  );
-}
+    const cloudflareSource =
+      await DomainSource.findOne({
+        code: "CLOUDFLARE"
+      });
+    if (!cloudflareSource || !dnsCloudflareSource) {
+      throw new Error(
+        "Cloudflare domain sources not found in database"
+      );
+    }
     // =====================================
     // FETCH & SYNC CLOUDFLARE ZONES
     // =====================================
@@ -202,27 +201,27 @@ const cloudflareSource =
       const zones = zoneResponse.data.result;
       const registrarDomains: any[] = Object.values(registrarDomainMap);
 
-const allDomainsMap:any = {};
+      const allDomainsMap: any = {};
 
-zones.forEach((zone:any)=>{
-  allDomainsMap[zone.name.toLowerCase()] = {
-    ...zone,
-    fromZone:true
-  };
-});
+      zones.forEach((zone: any) => {
+        allDomainsMap[zone.name.toLowerCase()] = {
+          ...zone,
+          fromZone: true
+        };
+      });
 
 
-registrarDomains.forEach((domain:any)=>{
-  if(!allDomainsMap[domain.name.toLowerCase()]){
-    allDomainsMap[domain.name.toLowerCase()] = {
-      ...domain,
-      name: domain.name,
-      fromRegistrar:true
-    };
-  }
-});
+      registrarDomains.forEach((domain: any) => {
+        if (!allDomainsMap[domain.name.toLowerCase()]) {
+          allDomainsMap[domain.name.toLowerCase()] = {
+            ...domain,
+            name: domain.name,
+            fromRegistrar: true
+          };
+        }
+      });
 
-const allDomains: any[] = Object.values(allDomainsMap);
+      const allDomains: any[] = Object.values(allDomainsMap);
 
       zoneTotalPages =
         zoneResponse.data.result_info.total_pages || 1;
@@ -233,221 +232,221 @@ const allDomains: any[] = Object.values(allDomainsMap);
 
       const bulkOps: any[] = [];
 
-for (const zone of allDomains) {
+      for (const zone of allDomains) {
 
-  const domainKey = zone.name
-    .toLowerCase()
-    .trim();
-
-
-  const registrarInfo =
-    registrarDomainMap[domainKey];
+        const domainKey = zone.name
+          .toLowerCase()
+          .trim();
 
 
-  console.log(
-    "DOMAIN CHECK:",
-    domainKey,
-    !!registrarInfo
-  );
+        const registrarInfo =
+          registrarDomainMap[domainKey];
 
 
-  if (registrarInfo) {
-
-    console.log(
-      "✅ Registrar domain:",
-      zone.name,
-      registrarInfo.expires_at
-    );
-
-  } else {
-
-    console.log(
-      "ℹ️ DNS only:",
-      zone.name
-    );
-
-  }
+        console.log(
+          "DOMAIN CHECK:",
+          domainKey,
+          !!registrarInfo
+        );
 
 
-  const existingOrder =
-    await Order.findOne({
-      domainName: zone.name,
-    });
+        if (registrarInfo) {
 
-
-  const expiryDate =
-    registrarInfo?.expires_at
-      ? new Date(registrarInfo.expires_at)
-      : existingOrder?.expiryDate
-        ? new Date(existingOrder.expiryDate)
-        : null;
-
-
-  const provider =
-    existingOrder?.provider || "";
-
-
-  const providerLower =
-    provider.toLowerCase();
-
-
-
-  let isActive = true;
-
-  let domainStatus =
-    zone.status || "active";
-
-
-
-  if (expiryDate) {
-
-    const diffDays =
-      (
-        Date.now() -
-        expiryDate.getTime()
-      )
-      /
-      (
-        1000 *
-        60 *
-        60 *
-        24
-      );
-
-
-    if (diffDays > 65) {
-
-      console.log(
-        `⚠️ Expired more than 65 days: ${zone.name}`
-      );
-
-
-      isActive = false;
-
-      domainStatus = "EXPIRED";
-
-    }
-
-  }
-
-
-
-  bulkOps.push({
-
-    updateOne: {
-
-      filter: {
-        domainName: zone.name
-      },
-
-
-      update: {
-
-        $set: {
-
-
-          domainName:
+          console.log(
+            "✅ Registrar domain:",
             zone.name,
+            registrarInfo.expires_at
+          );
 
+        } else {
 
-          status:
-            domainStatus,
-
-
-          is_active:
-            isActive,
-
-
-          nameServers:
-            zone.name_servers || [],
-
-
-
-          registrationDate:
-            zone.created_on
-              ? new Date(zone.created_on)
-              : existingOrder?.registrationDate || null,
-
-
-
-          originalRegistrar:
-            zone.original_registrar || "",
-
-
-
-          expiryDate,
-
-
-          managedBy:
-            "Signroots",
-
-
-
-          customer:
-            defaultCustomer._id,
-
-
-
-          // IMPORTANT PART
-          domainSource:
-            registrarInfo
-              ? cloudflareSource._id
-              : dnsCloudflareSource._id,
-
-
-
-          cloudflareRegistered:
-            true,
-
-
-
-          provider,
-
-
-
-          google_email:
-            existingOrder?.google_email ||
-            providerLower.includes(
-              "google workspace"
-            ),
-
-
-
-          microsoft_email:
-            existingOrder?.microsoft_email ||
-            providerLower.includes(
-              "microsoft 365"
-            ),
-
-
-
-          email_flag:
-            existingOrder?.email_flag || false,
-
-
-
-          email_customer:
-            existingOrder?.email_customer || "",
-
-
-
-          users:
-            existingOrder?.users || 0,
-
+          console.log(
+            "ℹ️ DNS only:",
+            zone.name
+          );
 
         }
 
-      },
+
+        const existingOrder =
+          await Order.findOne({
+            domainName: zone.name,
+          });
 
 
-      upsert:true
+        const expiryDate =
+          registrarInfo?.expires_at
+            ? new Date(registrarInfo.expires_at)
+            : existingOrder?.expiryDate
+              ? new Date(existingOrder.expiryDate)
+              : null;
 
-    }
 
-  });
+        const provider =
+          existingOrder?.provider || "";
 
 
-}
+        const providerLower =
+          provider.toLowerCase();
+
+
+
+        let isActive = true;
+
+        let domainStatus =
+          zone.status || "active";
+
+
+
+        if (expiryDate) {
+
+          const diffDays =
+            (
+              Date.now() -
+              expiryDate.getTime()
+            )
+            /
+            (
+              1000 *
+              60 *
+              60 *
+              24
+            );
+
+
+          if (diffDays > 65) {
+
+            console.log(
+              `⚠️ Expired more than 65 days: ${zone.name}`
+            );
+
+
+            isActive = false;
+
+            domainStatus = "EXPIRED";
+
+          }
+
+        }
+
+
+
+        bulkOps.push({
+
+          updateOne: {
+
+            filter: {
+              domainName: zone.name
+            },
+
+
+            update: {
+
+              $set: {
+
+
+                domainName:
+                  zone.name,
+
+
+                status:
+                  domainStatus,
+
+
+                is_active:
+                  isActive,
+
+
+                nameServers:
+                  zone.name_servers || [],
+
+
+
+                registrationDate:
+                  zone.created_on
+                    ? new Date(zone.created_on)
+                    : existingOrder?.registrationDate || null,
+
+
+
+                originalRegistrar:
+                  zone.original_registrar || "",
+
+
+
+                expiryDate,
+
+
+                managedBy:
+                  "Signroots",
+
+
+
+                customer:
+                  defaultCustomer._id,
+
+
+
+                // IMPORTANT PART
+                domainSource:
+                  registrarInfo
+                    ? cloudflareSource._id
+                    : dnsCloudflareSource._id,
+
+
+
+                cloudflareRegistered:
+                  true,
+
+
+
+                provider,
+
+
+
+                google_email:
+                  existingOrder?.google_email ||
+                  providerLower.includes(
+                    "google workspace"
+                  ),
+
+
+
+                microsoft_email:
+                  existingOrder?.microsoft_email ||
+                  providerLower.includes(
+                    "microsoft 365"
+                  ),
+
+
+
+                email_flag:
+                  existingOrder?.email_flag || false,
+
+
+
+                email_customer:
+                  existingOrder?.email_customer || "",
+
+
+
+                users:
+                  existingOrder?.users || 0,
+
+
+              }
+
+            },
+
+
+            upsert: true
+
+          }
+
+        });
+
+
+      }
 
       // =====================================
       // BULK UPDATE DATABASE
@@ -472,10 +471,10 @@ for (const zone of allDomains) {
     } while (
       zonePage <= zoneTotalPages
     );
-console.log(
-  "REGISTRAR MAP CHECK:",
-  registrarDomainMap["alfaaconnect.org"]
-);
+    console.log(
+      "REGISTRAR MAP CHECK:",
+      registrarDomainMap["alfaaconnect.org"]
+    );
 
     console.log(
       "✅ Cloudflare Sync Completed"
