@@ -94,6 +94,15 @@ console.log(
    registrarPage,
    registrarResponse.data.result.length
  );
+ console.log(
+  "REGISTRAR RESULT:",
+  registrarResponse.data.result
+);
+
+console.log(
+  "IS ARRAY:",
+  Array.isArray(registrarResponse.data.result)
+);
 
 registrarResponse.data.result.forEach((domain:any)=>{
 
