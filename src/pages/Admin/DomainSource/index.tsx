@@ -9,90 +9,90 @@ import {
 
 interface Source {
 
-  _id:string;
-  name:string;
-  code:string;
-  image?:string;
-  is_active?:boolean;
+  _id: string;
+  name: string;
+  code: string;
+  image?: string;
+  is_active?: boolean;
 
 }
 
 
 
-export default function DomainSource(){
+export default function DomainSource() {
 
 
-const [sources,setSources] = useState<Source[]>([]);
+  const [sources, setSources] = useState<Source[]>([]);
 
 
-const [editing,setEditing] = useState<string | null>(null);
+  const [editing, setEditing] = useState<string | null>(null);
 
 
-const [form,setForm] = useState({
+  const [form, setForm] = useState({
 
- name:"",
- code:""
+    name: "",
+    code: ""
 
-});
+  });
 
 
-const [image,setImage] = useState<File | null>(null);
+  const [image, setImage] = useState<File | null>(null);
 
 
-const [loading,setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
 
 
 
 
-// ================= LOAD =================
+  // ================= LOAD =================
 
-const loadSources = async()=>{
+  const loadSources = async () => {
 
-try{
+    try {
 
-setLoading(true);
+      setLoading(true);
 
 
-const data = await fetchDomainSources();
+      const data = await fetchDomainSources();
 
 
-setSources(
- Array.isArray(data)
- ? data
- : []
-);
+      setSources(
+        Array.isArray(data)
+          ? data
+          : []
+      );
 
 
-}catch(error){
+    } catch (error) {
 
-console.error(
- "Domain Source Load Error",
- error
-);
+      console.error(
+        "Domain Source Load Error",
+        error
+      );
 
 
-setSources([]);
+      setSources([]);
 
 
-}
-finally{
+    }
+    finally {
 
-setLoading(false);
+      setLoading(false);
 
-}
+    }
 
-};
+  };
 
 
 
 
 
-useEffect(()=>{
+  useEffect(() => {
 
-loadSources();
+    loadSources();
 
-},[]);
+  }, []);
 
 
 
@@ -100,128 +100,128 @@ loadSources();
 
 
 
-// ================= SAVE =================
+  // ================= SAVE =================
 
 
-const submit = async()=>{
+  const submit = async () => {
 
 
-if(!form.name || !form.code){
+    if (!form.name || !form.code) {
 
-alert("Name and Code required");
+      alert("Name and Code required");
 
-return;
+      return;
 
-}
+    }
 
 
 
-try{
+    try {
 
 
-const formData = new FormData();
+      const formData = new FormData();
 
 
 
-formData.append(
-"name",
-form.name
-);
+      formData.append(
+        "name",
+        form.name
+      );
 
 
 
-formData.append(
-"code",
-form.code.toUpperCase()
-);
+      formData.append(
+        "code",
+        form.code.toUpperCase()
+      );
 
 
 
 
 
-if(image){
+      if (image) {
 
-formData.append(
-"image",
-image
-);
+        formData.append(
+          "image",
+          image
+        );
 
-}
+      }
 
 
 
 
 
-if(editing){
+      if (editing) {
 
 
-await updateDomainSource(
+        await updateDomainSource(
 
-editing,
+          editing,
 
-formData
+          formData
 
-);
+        );
 
 
 
-}
-else{
+      }
+      else {
 
 
-await createDomainSource(
+        await createDomainSource(
 
-formData
+          formData
 
-);
+        );
 
 
-}
+      }
 
 
 
 
 
 
-setForm({
+      setForm({
 
-name:"",
-code:""
+        name: "",
+        code: ""
 
-});
+      });
 
 
-setImage(null);
+      setImage(null);
 
 
-setEditing(null);
+      setEditing(null);
 
 
-await loadSources();
+      await loadSources();
 
 
 
 
-}catch(error:any){
+    } catch (error: any) {
 
 
-console.error(
-"Save Error",
-error
-);
+      console.error(
+        "Save Error",
+        error
+      );
 
 
-alert(
-error.response?.data?.message ||
-"Failed to save"
-);
+      alert(
+        error.response?.data?.message ||
+        "Failed to save"
+      );
 
 
-}
+    }
 
 
 
-};
+  };
 
 
 
@@ -229,33 +229,33 @@ error.response?.data?.message ||
 
 
 
-// ================= EDIT =================
+  // ================= EDIT =================
 
 
-const editSource = (source:Source)=>{
+  const editSource = (source: Source) => {
 
 
-setEditing(
-source._id
-);
+    setEditing(
+      source._id
+    );
 
 
 
-setForm({
+    setForm({
 
-name:source.name,
+      name: source.name,
 
-code:source.code
+      code: source.code
 
-});
+    });
 
 
 
-setImage(null);
+    setImage(null);
 
 
 
-};
+  };
 
 
 
@@ -264,133 +264,133 @@ setImage(null);
 
 
 
-return (
+  return (
 
-<div className="p-6">
+    <div className="p-6">
 
 
-<h1 className="text-2xl font-bold mb-5">
-Domain Source Management
-</h1>
+      <h1 className="text-2xl font-bold mb-5">
+        Domain Source Management
+      </h1>
 
 
 
 
 
-{/* FORM */}
+      {/* FORM */}
 
-<div className="bg-white shadow rounded p-5 mb-6">
+      <div className="bg-white shadow rounded p-5 mb-6">
 
 
-<div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-4 gap-3">
 
 
 
-<input
+          <input
 
-className="border p-2 rounded"
+            className="border p-2 rounded"
 
-placeholder="Source Name"
+            placeholder="Source Name"
 
-value={form.name}
+            value={form.name}
 
-onChange={(e)=>
+            onChange={(e) =>
 
-setForm({
+              setForm({
 
-...form,
+                ...form,
 
-name:e.target.value
+                name: e.target.value
 
-})
+              })
 
-}
+            }
 
-/>
+          />
 
 
 
 
 
-<input
+          <input
 
-className="border p-2 rounded"
+            className="border p-2 rounded"
 
-placeholder="Code"
+            placeholder="Code"
 
-value={form.code}
+            value={form.code}
 
-onChange={(e)=>
+            onChange={(e) =>
 
-setForm({
+              setForm({
 
-...form,
+                ...form,
 
-code:e.target.value.toUpperCase()
+                code: e.target.value.toUpperCase()
 
-})
+              })
 
-}
+            }
 
-/>
+          />
 
 
 
 
 
-<input
+          <input
 
-type="file"
+            type="file"
 
-accept="image/*"
+            accept="image/*"
 
-className="border p-2 rounded"
+            className="border p-2 rounded"
 
-onChange={(e)=>{
+            onChange={(e) => {
 
-setImage(
-e.target.files?.[0] || null
-);
+              setImage(
+                e.target.files?.[0] || null
+              );
 
-}}
+            }}
 
-/>
+          />
 
 
 
 
 
-<button
+          <button
 
-onClick={submit}
+            onClick={submit}
 
-className="bg-blue-600 text-white rounded px-5"
+            className="bg-blue-600 text-white rounded px-5"
 
->
+          >
 
-{
+            {
 
-editing
+              editing
 
-?
+                ?
 
-"Update"
+                "Update"
 
-:
+                :
 
-"Add"
+                "Add"
 
-}
+            }
 
 
-</button>
+          </button>
 
 
 
-</div>
+        </div>
 
 
-</div>
+      </div>
 
 
 
@@ -400,252 +400,252 @@ editing
 
 
 
-{/* TABLE */}
+      {/* TABLE */}
 
 
-<div className="bg-white shadow rounded">
+      <div className="bg-white shadow rounded">
 
 
-<table className="w-full">
+        <table className="w-full">
 
 
-<thead>
+          <thead>
 
 
-<tr className="border-b bg-gray-100">
+            <tr className="border-b bg-gray-100">
 
 
-<th className="p-3">
-Image
-</th>
+              <th className="p-3">
+                Image
+              </th>
 
 
-<th className="p-3 text-left">
-Name
-</th>
+              <th className="p-3 text-left">
+                Name
+              </th>
 
 
-<th className="p-3 text-left">
-Code
-</th>
+              <th className="p-3 text-left">
+                Code
+              </th>
 
 
-<th className="p-3">
-Status
-</th>
+              <th className="p-3">
+                Status
+              </th>
 
 
-<th className="p-3">
-Action
-</th>
+              <th className="p-3">
+                Action
+              </th>
 
 
-</tr>
+            </tr>
 
 
-</thead>
+          </thead>
 
 
 
 
 
-<tbody>
+          <tbody>
 
 
 
-{
-loading ?
+            {
+              loading ?
 
-<tr>
+                <tr>
 
-<td
-colSpan={5}
-className="text-center p-5"
->
+                  <td
+                    colSpan={5}
+                    className="text-center p-5"
+                  >
 
-Loading...
+                    Loading...
 
-</td>
+                  </td>
 
-</tr>
+                </tr>
 
 
-:
+                :
 
 
-sources.length===0 ?
+                sources.length === 0 ?
 
 
-<tr>
+                  <tr>
 
-<td
-colSpan={5}
-className="text-center p-5"
->
+                    <td
+                      colSpan={5}
+                      className="text-center p-5"
+                    >
 
-No Domain Source Found
+                      No Domain Source Found
 
-</td>
+                    </td>
 
-</tr>
+                  </tr>
 
 
 
-:
+                  :
 
 
-sources.map((source)=>(
+                  sources.map((source) => (
 
 
-<tr
+                    <tr
 
-key={source._id}
+                      key={source._id}
 
-className="border-b"
+                      className="border-b"
 
->
+                    >
 
 
-<td className="p-3">
+                      <td className="p-3">
 
 
-{
+                        {
 
-source.image ?
-
+                          source.image ?
 
 <img
- src={`/images/${source.image}`}
- className="w-10 h-10 object-contain"
+  src={`${import.meta.env.VITE_API_BASE_URL}${source.image}`}
+  className="w-10 h-10 object-contain"
+  alt={source.name}
 />
 
 
-:
+                            :
 
-"-"
+                            "-"
 
 
-}
+                        }
 
 
-</td>
+                      </td>
 
 
 
 
 
 
-<td className="p-3">
+                      <td className="p-3">
 
-{source.name}
+                        {source.name}
 
-</td>
+                      </td>
 
 
 
 
 
-<td className="p-3">
+                      <td className="p-3">
 
-{source.code}
+                        {source.code}
 
-</td>
+                      </td>
 
 
 
 
 
-<td className="p-3">
+                      <td className="p-3">
 
 
-<span
+                        <span
 
-className={
+                          className={
 
-source.is_active !== false
+                            source.is_active !== false
 
-?
+                              ?
 
-"bg-green-100 text-green-700 px-3 py-1 rounded"
+                              "bg-green-100 text-green-700 px-3 py-1 rounded"
 
-:
+                              :
 
-"bg-red-100 text-red-700 px-3 py-1 rounded"
+                              "bg-red-100 text-red-700 px-3 py-1 rounded"
 
-}
+                          }
 
->
+                        >
 
 
-{
+                          {
 
-source.is_active !== false
+                            source.is_active !== false
 
-?
+                              ?
 
-"Active"
+                              "Active"
 
-:
+                              :
 
-"Inactive"
+                              "Inactive"
 
-}
+                          }
 
 
-</span>
+                        </span>
 
 
-</td>
+                      </td>
 
 
 
 
 
 
-<td className="p-3">
+                      <td className="p-3">
 
 
-<button
+                        <button
 
-onClick={()=>editSource(source)}
+                          onClick={() => editSource(source)}
 
-className="bg-yellow-500 text-white px-4 py-1 rounded"
+                          className="bg-yellow-500 text-white px-4 py-1 rounded"
 
->
+                        >
 
-Edit
+                          Edit
 
-</button>
+                        </button>
 
 
-</td>
+                      </td>
 
 
 
-</tr>
+                    </tr>
 
 
-))
+                  ))
 
 
-}
+            }
 
 
 
-</tbody>
+          </tbody>
 
 
 
-</table>
+        </table>
 
 
-</div>
+      </div>
 
 
 
-</div>
+    </div>
 
-);
+  );
 
 
 }
