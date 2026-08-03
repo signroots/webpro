@@ -28,10 +28,15 @@ router.post(
 
   try {
 
+    console.log("CREATE BODY:", req.body);
+    console.log("CREATE FILE:", req.file);
+
+
     const {
       name,
       code
     } = req.body;
+
 
 
     if (!name || !code) {
@@ -44,10 +49,12 @@ router.post(
     }
 
 
+
     const existing =
       await DomainSource.findOne({
         code: code.toUpperCase()
       });
+
 
 
     if(existing){
@@ -60,21 +67,27 @@ router.post(
     }
 
 
+
+    const imageName =
+      req.file
+      ? req.file.filename
+      : "";
+
+
+
     const source =
       await DomainSource.create({
 
-        name:name.trim(),
+        name,
 
         code:code.toUpperCase(),
 
-        image:req.file
-          ? req.file.filename
-          : "",
+        image:imageName,
 
-        // Always active when creating
         is_active:true
 
       });
+
 
 
     return res.status(201).json({
@@ -84,6 +97,7 @@ router.post(
       data:source
 
     });
+
 
 
   } catch(error:any){
