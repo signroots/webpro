@@ -928,17 +928,17 @@ if(search){
           success:true,
 
 
-          client:{
+          // client:{
 
-            _id:client._id,
+          //   _id:client._id,
 
-            c_name:client.c_name,
+          //   c_name:client.c_name,
 
-            c_email:client.c_email,
+          //   c_email:client.c_email,
 
-            c_company:client.c_company
+          //   c_company:client.c_company
 
-          },
+          // },
 
 
 
@@ -1564,23 +1564,24 @@ const finalFilter = {
 
 
 
-      let orders:any =
-
-        await Order.find(
-          finalFilter
-        )
-        .select(orderFields)
-        .skip(skip)
-        .limit(limit)
-        .populate(
-          "client",
-          "_id c_name c_company"
-        )
-        .populate(
+     let orderQuery = Order.find(finalFilter)
+  .select(orderFields)
+  .populate(
+    "client",
+    "_id c_name c_company"
+  )
+  .populate(
     "domainSource",
     "name code image"
-        )
-        .lean();
+  );
+
+if(!emailType){
+  orderQuery = orderQuery
+    .skip(skip)
+    .limit(limit);
+}
+
+let orders:any = await orderQuery.lean();
 
 
 
@@ -1603,27 +1604,22 @@ const finalFilter = {
 
       return res.status(200).json({
 
-        success:true,
+  success:true,
 
-        data:orders,
+  data:orders,
 
+  ...(emailType ? {} : {
 
-        pagination:{
+    pagination:{
+      page,
+      limit,
+      total,
+      totalPages:Math.ceil(total/limit)
+    }
 
-          page,
+  })
 
-          limit,
-
-          total,
-
-          totalPages:
-            Math.ceil(
-              total/limit
-            )
-
-        }
-
-      });
+});
 
 
     }
@@ -1694,24 +1690,24 @@ const finalFilter = {
 
 
 
+let orderQuery = Order.find(finalFilter)
+  .select(orderFields)
+  .populate(
+    "client",
+    "_id c_name c_company"
+  )
+  .populate(
+    "domainSource",
+    "name code image"
+  );
 
-      let orders:any =
+if(!emailType){
+  orderQuery = orderQuery
+    .skip(skip)
+    .limit(limit);
+}
 
-        await Order.find(
-          finalFilter
-        )
-        .select(orderFields)
-        .skip(skip)
-        .limit(limit)
-        .populate(
-          "client",
-          "_id c_name c_company"
-        )
-        .populate(
-        "domainSource",
-        "name code image"
-        )
-        .lean();
+let orders:any = await orderQuery.lean();
 
 
 
@@ -1728,44 +1724,24 @@ const finalFilter = {
 
 
 
-      return res.status(200).json({
+ return res.status(200).json({
 
-        success:true,
+  success:true,
 
+  data:orders,
 
-        client:{
+  ...(emailType ? {} : {
 
-          _id:client._id,
+    pagination:{
+      page,
+      limit,
+      total,
+      totalPages:Math.ceil(total/limit)
+    }
 
-          c_name:client.c_name,
+  })
 
-          c_email:client.c_email,
-
-          c_company:client.c_company
-
-        },
-
-
-        data:orders,
-
-
-        pagination:{
-
-          page,
-
-          limit,
-
-          total,
-
-          totalPages:
-            Math.ceil(
-              total/limit
-            )
-
-        }
-
-
-      });
+});
 
 
     }
