@@ -40,7 +40,20 @@ export async function syncCloudflareDomains() {
     }
 
     console.log("☁️ Cloudflare Sync Started");
+console.log(
+  "ACCOUNT ID:",
+  CLOUDFLARE_ACCOUNT_ID
+);
 
+console.log(
+  "EMAIL:",
+  CLOUDFLARE_EMAIL_ID
+);
+
+console.log(
+  "HAS API KEY:",
+  !!CLOUDFLARE_GLOBAL_KEY
+);
     // =====================================
     // FETCH ALL REGISTRAR DOMAINS
     // =====================================
@@ -62,11 +75,19 @@ do {
     },
     params:{
       page: registrarPage,
-      per_page: 20
+      per_page: 100
     }
   }
  );
+console.log(
+ "REGISTRAR RESPONSE COUNT:",
+ registrarResponse.data.result.length
+);
 
+console.log(
+ "FIRST REGISTRAR DOMAIN:",
+ registrarResponse.data.result[0]
+);
 
  console.log(
    "Registrar page",
@@ -74,24 +95,28 @@ do {
    registrarResponse.data.result.length
  );
 
+registrarResponse.data.result.forEach((domain:any)=>{
 
- registrarResponse.data.result.forEach((domain:any)=>{
+  const key = domain.name
+    .toLowerCase()
+    .trim();
 
-   console.log(
-    "Registrar domain:",
-    domain.name,
-    domain.expires_at
-   );
+  console.log(
+    "ADDING REGISTRAR KEY:",
+    key
+  );
 
-   registrarDomainMap[
-     domain.name.toLowerCase().trim()
-   ] = domain;
+  registrarDomainMap[key] = domain;
 
- });
-
+});
+console.log(
+ "HAS ALFAA:",
+ Object.keys(registrarDomainMap)
+   .includes("alfaaconnect.org")
+);
 
 registrarTotalPages =
- registrarResponse.data.result_info?.total_pages || 1;
+ registrarResponse.data.result_info?.total_pages || registrarPage;
 
 
  registrarPage++;
