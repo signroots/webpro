@@ -652,18 +652,15 @@ storageId
 
 // ================= CLOUDFLARE =================
 
-const cloudflareSource =
+const dnscloudflareSource =
   await DomainSource.findOne({
-    name:{
-      $regex:"Cloudflare",
-      $options:"i"
-    }
+    code:"DNS-CLOUDFLARE"
   });
 
 
 console.log(
   "cloudflareSource",
-  cloudflareSource
+  dnscloudflareSource
 );
 const filters:any[]=[
 
@@ -672,7 +669,7 @@ const filters:any[]=[
   },
 
   {
-    domainSource: cloudflareSource?._id
+    domainSource: dnscloudflareSource?._id
   }
 
 ];
