@@ -655,18 +655,30 @@ const handleSubmit = async (e: React.FormEvent) => {
                     {order.domainName}
                   </td>
 
-                  {/* Customer */}
-                <td className="px-4 py-2 text-black">
+{/* Customer */}
+<td className="px-4 py-2 text-black">
   {order.client ? (
     <Link
       to={`/customer/${order.client._id}/orders`}
       className="text-blue-600 hover:underline"
+      title={order.client.c_company}
     >
-      {order.client.c_company?.trim()
-        ? order.client.c_company
-        : order.client.c_company?.trim()
-        ? order.client.c_company
-        : "N/A"}
+      {(() => {
+        const companyName = order.client.c_company?.trim() || "";
+
+        if (!companyName) {
+          return "N/A";
+        }
+
+        const words = companyName.split(/\s+/);
+
+        if (words.length <= 4) {
+          return companyName;
+        }
+
+        return words.slice(0, 5).join(" ") + " ...";
+
+      })()}
     </Link>
   ) : (
     <button
@@ -680,7 +692,6 @@ const handleSubmit = async (e: React.FormEvent) => {
     </button>
   )}
 </td>
-
               {/* Services */}
 <td className="px-6 py-4 flex items-center gap-2">
 
