@@ -139,6 +139,33 @@ console.log(
  "VOLTOPAINTS:",
  registrarDomainMap["voltopaints.com"]
 );
+// =====================================
+// MOVE OLD NON-REGISTRAR CLOUDFLARE DOMAINS
+// TO DNS-CLOUDFLARE
+// =====================================
+
+const registrarDomainNames =
+  Object.keys(registrarDomainMap);
+
+
+await Order.updateMany(
+  {
+    domainSource: cloudflareSource._id,
+    domainName: {
+      $nin: registrarDomainNames
+    }
+  },
+  {
+    $set: {
+      domainSource: dnsCloudflareSource._id
+    }
+  }
+);
+
+
+console.log(
+  "✅ Non registrar Cloudflare domains moved to DNS-CLOUDFLARE"
+);
     // =====================================
     // FETCH DEFAULT CUSTOMER
     // =====================================
