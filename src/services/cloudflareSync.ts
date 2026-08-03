@@ -47,7 +47,7 @@ export async function syncCloudflareDomains() {
 
     const registrarDomainMap: Record<string, any> = {};
 
-   let registrarPage = 1;
+  let registrarPage = 0;
 let registrarTotalPages = 1;
 const dnsCloudflareSource =
  await DomainSource.findOne({
@@ -82,7 +82,10 @@ const registrarResponse = await axios.get(
 //   "X-Auth-Key": CLOUDFLARE_GLOBAL_KEY,
 //   "Content-Type":"application/json"
 // },
-
+ params: {
+            page: registrarPage,
+            per_page: 30
+         }
   }
 );
 
@@ -118,7 +121,7 @@ console.log(
 
 
 registrarTotalPages =
- registrarResponse.data.result_info?.total_pages || 1;
+ registrarResponse.data.result_info?.total_pages;
 
 
  registrarPage++;
