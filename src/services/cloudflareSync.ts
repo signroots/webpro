@@ -394,7 +394,10 @@ domainSource:
     } while (
       zonePage <= zoneTotalPages
     );
-
+console.log(
+  "REGISTRAR MAP CHECK:",
+  registrarDomainMap["alfaaconnect.org"]
+);
 
     console.log(
       "✅ Cloudflare Sync Completed"
