@@ -201,6 +201,43 @@ const cloudflareSource =
 
       const bulkOps: any[] = [];
 
+for (const zone of zones) {
+
+  const domainKey = zone.name
+    .toLowerCase()
+    .trim();
+
+  const registrarInfo =
+    registrarDomainMap[domainKey];
+
+  console.log(
+    "DOMAIN CHECK:",
+    domainKey,
+    !!registrarInfo
+  );
+
+
+  if (registrarInfo) {
+    console.log(
+      "✅ Registrar found:",
+      zone.name,
+      registrarInfo.expires_at
+    );
+  } else {
+    console.log(
+      "ℹ️ DNS only:",
+      zone.name
+    );
+  }
+
+
+  const existingOrder =
+    await Order.findOne({
+      domainName: zone.name,
+    });
+
+  // ബാക്കി code ഇവിടെ continue ചെയ്യുക
+}
       for (const zone of zones) {
 
         const registrarInfo =
@@ -338,11 +375,11 @@ else {
                   defaultCustomer._id,
 
 domainSource:
- registrarInfo
+ registrarInfo?.cloudflare_registration === true
  ?
- cloudflareSource?._id
+ cloudflareSource._id
  :
- dnsCloudflareSource?._id,
+ dnsCloudflareSource._id,
  
 
 
