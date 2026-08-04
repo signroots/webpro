@@ -10,7 +10,8 @@ import {
 } from "react-icons/fa";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 import { SiHostinger } from "react-icons/si";
-
+import { Import } from "lucide-react";
+import ServiceIcons from "../Order/ServiceIcons";
 const CustomerOrders: React.FC = () => {
 
   console.log("🔥 CustomerOrders COMPONENT LOADED");
@@ -349,279 +350,183 @@ const CustomerOrders: React.FC = () => {
 
 </td>
 {/* SERVICES */}
-<td className="px-4 py-4">
-
-  <div className="flex items-center justify-center gap-3 flex-wrap">
-
-
-    {/* ================= DOMAIN SOURCE ================= */}
-
-    {order.domainSource && order.domainSource.image ? (
-
-      <img
-        src={`${API_BASE_URL}${order.domainSource.image}`}
-        className="w-6 h-6 object-contain flex-shrink-0"
-        title={order.domainSource.name}
-        alt={order.domainSource.name}
-      />
-
-    ) : (
-
-      <FaGlobe
-        className="w-6 h-6 text-gray-300 flex-shrink-0"
-        title="Domain"
-      />
-
-    )}
-
-
-
-    {/* ================= PLANS SERVICES ================= */}
-
-    {order.Plans?.map(
-      (plan:any, index:number) => (
-
-        <div
-          key={index}
-          className="flex items-center justify-center gap-2"
-        >
-
-
-          {/* EMAIL TYPE IMAGE */}
-
-          {plan.type === "email" && plan.emailTypeImage && (
-
-            <img
-              src={`${API_BASE_URL}${plan.emailTypeImage}`}
-              className="w-5 h-5 object-contain flex-shrink-0"
-              title={plan.emailType}
-              alt={plan.emailType || "Email"}
-            />
-
-          )}
-
-
-
-          {/* HOSTING */}
-
-          {plan.type === "hosting" && (
-
-            <FaServer
-              className="w-5 h-5 text-purple-500 flex-shrink-0"
-              title="Hosting"
-            />
-
-          )}
-
-
-
-          {/* WEBSITE */}
-
-          {plan.type === "website" && (
-
-            <FaLaptopCode
-              className="w-5 h-5 text-pink-500 flex-shrink-0"
-              title="Website"
-            />
-
-          )}
-
-
-
-          {/* SSL */}
-
-          {plan.type === "ssl" && (
-
-            <FaLock
-              className="w-5 h-5 text-yellow-500 flex-shrink-0"
-              title="SSL"
-            />
-
-          )}
-
-
-        </div>
-
-      )
-
-    )}
-
-
+<td className="px-4 py-2 text-center">
+  <div className="flex justify-center items-center">
+    <ServiceIcons order={order} />
   </div>
-
 </td>
+<td className="px-1 py-2 text-center font-medium">
 
-<td className="px-1 py-2 font-medium">
-  {(() => {
+  <div className="flex justify-center">
 
-    const formatDate = (date?: string): string | null => {
+    {(() => {
 
-      if (!date) return null;
+      const formatDate = (date?: string): string | null => {
 
-      const d = new Date(date);
+        if (!date) return null;
 
-      const day = d.getUTCDate()
-        .toString()
-        .padStart(2, "0");
+        const d = new Date(date);
 
-      const month = (d.getUTCMonth() + 1)
-        .toString()
-        .padStart(2, "0");
+        const day = d.getUTCDate()
+          .toString()
+          .padStart(2, "0");
 
-      const year = d.getUTCFullYear();
+        const month = (d.getUTCMonth() + 1)
+          .toString()
+          .padStart(2, "0");
 
-      return `${day}/${month}/${year}`;
+        const year = d.getUTCFullYear();
 
-    };
+        return `${day}/${month}/${year}`;
 
-
-
-    const domainDate: string | null = formatDate(
-      order.domainExpiryDate
-    );
+      };
 
 
 
-    const emailDates: string[] = (order.emailExpiryDate || [])
-
-      .map((date: string) => formatDate(date))
-
-      .filter(
-        (d: string | null): d is string => Boolean(d)
+      const domainDate: string | null = formatDate(
+        order.domainExpiryDate
       );
 
 
 
+      const emailDates: string[] = (order.emailExpiryDate || [])
 
-    const isSameExpiry =
-      Boolean(domainDate) &&
-      emailDates.length > 0 &&
-      emailDates.every(
-        (date: string) => date === domainDate
-      );
+        .map((date: string) => formatDate(date))
 
-
-
-
-    const badgeBase =
-      "inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium w-fit";
-
-
-
-    const iconBase =
-      "w-4 h-4 flex justify-center items-center rounded-full bg-white text-black text-[9px]";
+        .filter(
+          (d: string | null): d is string => Boolean(d)
+        );
 
 
 
 
-    return (
-
-      <div className="flex flex-col gap-1">
-
-
-
-        {/* 🟢 ED - Email + Domain Same Expiry */}
-
-        {isSameExpiry && domainDate && (
-
-          <div
-            className={`${badgeBase} bg-green-100 text-green-800`}
-          >
-
-            <span className={iconBase}>
-              ED
-            </span>
-
-            {domainDate}
-
-          </div>
-
-        )}
+      const isSameExpiry =
+        Boolean(domainDate) &&
+        emailDates.length > 0 &&
+        emailDates.every(
+          (date: string) => date === domainDate
+        );
 
 
 
 
+      const badgeBase =
+        "inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium w-fit";
 
 
-        {/* 🔵 EE - Email Expiry */}
 
-        {!isSameExpiry &&
+      const iconBase =
+        "w-4 h-4 flex justify-center items-center rounded-full bg-white text-black text-[9px]";
 
-          emailDates.map(
-            (date: string, index: number) => (
+
+
+
+      return (
+
+        <div className="flex flex-col gap-1 items-center">
+
+
+          {/* 🟢 ED - Email + Domain Same Expiry */}
+
+          {
+            isSameExpiry && domainDate && (
 
               <div
-                key={index}
-                className={`${badgeBase} bg-blue-100 text-blue-800`}
+                className={`${badgeBase} bg-green-100 text-green-800`}
               >
 
                 <span className={iconBase}>
-                  EE
+                  ED
                 </span>
 
-                {date}
+                {domainDate}
 
               </div>
 
             )
-
-          )
-
-        }
+          }
 
 
 
 
+          {/* 🔵 EE - Email Expiry */}
 
+          {
+            !isSameExpiry &&
 
-        {/* 🟣 DE - Domain Expiry */}
+            emailDates.map(
+              (date: string, index: number) => (
 
-        {!isSameExpiry && domainDate && (
+                <div
+                  key={index}
+                  className={`${badgeBase} bg-blue-100 text-blue-800`}
+                >
 
-          <div
-            className={`${badgeBase} bg-purple-100 text-purple-800`}
-          >
+                  <span className={iconBase}>
+                    EE
+                  </span>
 
-            <span className={iconBase}>
-              DE
-            </span>
+                  {date}
 
-            {domainDate}
+                </div>
 
-          </div>
+              )
 
-        )}
-
-
-
-
-
-
-        {/* ⚪ No Expiry */}
-
-        {
-          !domainDate &&
-          emailDates.length === 0 &&
-          (
-
-            <span className="text-gray-400 text-xs">
-              N/A
-            </span>
-
-          )
-        }
+            )
+          }
 
 
 
 
-      </div>
 
-    );
+          {/* 🟣 DE - Domain Expiry */}
+
+          {
+            !isSameExpiry && domainDate && (
+
+              <div
+                className={`${badgeBase} bg-purple-100 text-purple-800`}
+              >
+
+                <span className={iconBase}>
+                  DE
+                </span>
+
+                {domainDate}
+
+              </div>
+
+            )
+          }
 
 
-  })()}
+
+
+
+          {/* ⚪ No Expiry */}
+
+          {
+            !domainDate &&
+            emailDates.length === 0 && (
+
+              <span className="text-gray-400 text-xs">
+                N/A
+              </span>
+
+            )
+          }
+
+
+        </div>
+
+      );
+
+
+    })()}
+
+  </div>
+
 </td>
-
 
 
                     <td className="px-4 py-4 text-center">

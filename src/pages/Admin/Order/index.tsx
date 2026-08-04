@@ -23,7 +23,7 @@ import { Select } from "antd";
 import { fetchCountryCodes } from "../Customer/api";
 import { toast } from "react-toastify";
 
-
+import ServiceIcons from "../Order/ServiceIcons";
 // -------------------- Types --------------------
 interface Customer {
   _id: string;
@@ -1003,273 +1003,35 @@ const getStatusClass = (status?: string) => {
 
 
                 {/* CUSTOMER */}
-              <td className="px-2 py-4 min-w-[300px]">
-                  {order.client ? (
-                    <Link
-                        to={`/admin/orders/customer/${order.client?._id}`}
-                      className="text-blue-600 hover:underline"
-                      title={order.client.c_company} // Full name on hover tooltip
-                    >
-                      {(() => {
-                        const words = order.client.c_company?.trim().split(/\s+/) || [];
-                        if (words.length <= 4) {
-                          return order.client.c_company;
-                        }
-                        // Join first 3 words + "..."
-                        return words.slice(0, 5).join(" ") + " ...";
-                      })()}
-                    </Link>
-                  ) : (
-                    <button
-                      className="text-red-600 hover:underline font-medium"
-                      onClick={() => {
-                        setSelectedOrder(order);
-                        setModalType("addCustomer");
-                      }}
-                    >
-                      Add Customer
-                    </button>
-                  )}
-                </td>
-
-                {/* SERVICES */}
-                <td className="px-1 py-2">
-                  <div className="flex items-center gap-3">
-                    
-
-                    {/* Domain Source */}
-                    {/* Domain Source */}
-
-{
-  order.domainSource && order.domainSource.image ? (
-
-    <img
-      src={
-        order.domainSource.image.startsWith("/uploads")
-          ? `${import.meta.env.VITE_API_BASE_URL}${order.domainSource.image}`
-          : `/images/${order.domainSource.image}`
-      }
-      className="w-7 h-7 object-contain"
-      title={order.domainSource.name}
-      onError={(e)=>{
-        e.currentTarget.src="/images/default-domain.png";
-      }}
-    />
-
+              {/* CUSTOMER */}
+<td className="px-2 py-4 min-w-[300px]">
+  {order.client ? (
+    <Link
+      to={`/admin/orders/customer/${order.client?._id}`}
+      className="text-blue-600 hover:underline"
+      title={order.client.c_company}
+    >
+      {order.client.c_company}
+    </Link>
   ) : (
+    <button
+      className="text-red-600 hover:underline font-medium"
+      onClick={() => {
+        setSelectedOrder(order);
+        setModalType("addCustomer");
+      }}
+    >
+      Add Customer
+    </button>
+  )}
+</td>
 
-    <FaGlobe
-      className="w-6 h-6 text-gray-400"
-      title="No Domain Source"
-    />
-
-  )
-}
-
-                    {/* EMAIL PLANS */}
-
-{order.Plans?.filter(
-(plan)=>plan.type==="email"
-)
-.map((plan,index)=>(
-
-<div
-key={index}
-className="relative group"
->
-<img
-  src={`${import.meta.env.VITE_API_BASE_URL}${plan.emailTypeImage}`}
-  className="w-5 h-5 cursor-pointer"
-  title={plan.emailType}
-/>
-<div
-className="
-hidden group-hover:block
-absolute left-0 top-full mt-2
-bg-gray-900 text-white
-text-xs
-p-3
-rounded-lg
-w-64
-shadow-xl
-z-50
-"
->
-
-<p>
-<b>Email:</b> {plan.emailType}
-</p>
-
-
-<p>
-<b>Expiry:</b>{" "}
-{new Date(plan.expiryDate)
-.toLocaleDateString()}
-</p>
-
-
-<p>
-<b>Plan ID:</b> {plan.planId}
-</p>
-
-
-</div>
-
-</div>
-
-))}
-
-
-                    {/* MS OFFICE */}
-                    {/* MS OFFICE */}
-                    {order.msoffice_services_flag && (
-                      <div
-                        className="relative"
-                        onMouseEnter={async () => {
-                          setSelectedOrderId(order._id); // track which row is hovered
-                          setIsHovering(true);
-
-                          // Only fetch if this order's data hasn't been fetched yet
-                          if (msofficeCache[order._id]) return;
-
-                          try {
-                            const fullOrder = await fetchOrderById(order._id);
-                            const plans = fullOrder?.data?.plans || [];
-
-                            const msofficePlans = plans.filter(
-                              (p) =>
-                                p?.serviceType?.toLowerCase() === "msoffice" ||
-                                p?.type?.toLowerCase() === "msoffice"
-                            );
-
-                            // Save in cache keyed by order ID
-                            setMsofficeCache((prev) => ({ ...prev, [order._id]: msofficePlans }));
-                          } catch (err) {
-                            console.error("Error fetching MS Office details:", err);
-                          }
-                        }}
-                        onMouseLeave={() => setIsHovering(false)}
-                      >
-                        <img
-                          src="/MSOffice.png"
-                          className="w-5 h-5 cursor-pointer"
-                          title="MS Office Services"
-                        />
-
-                        {/* POPUP */}
-                        {isHovering &&
-                          selectedOrderId === order._id &&
-                          msofficeCache[order._id]?.length > 0 && (
-                            <div className="
-          absolute left-0 top-full mt-2
-          bg-gray-900 text-white text-xs
-          p-3 w-64 max-h-64 overflow-y-auto
-          rounded-lg shadow-xl z-50
-        ">
-                              {msofficeCache[order._id].map((plan, idx) => (
-                                <div
-                                  key={idx}
-                                  className="mb-2 pb-2 border-b border-gray-700 last:border-0"
-                                >
-                                  <p><b>Plan:</b> {plan.planName}</p>
-                                  <p><b>Users:</b> {plan.noOfUsers}</p>
-                                  <p><b>Type:</b> {plan.emailType}</p>
-                                  <p>
-                                    <b>Registered:</b>{" "}
-                                    {plan.registrationDate
-                                      ? new Date(plan.registrationDate).toLocaleDateString()
-                                      : "-"}
-                                  </p>
-                                  <p>
-                                    <b>Expires:</b>{" "}
-                                    {plan.expiryDate
-                                      ? new Date(plan.expiryDate).toLocaleDateString()
-                                      : "-"}
-                                  </p>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                      </div>
-                    )}
-
-
-
-                    {/* Hosting */}
-                    {/* <FaServer
-                      className={`w-5 h-5 ${order.hosting ? "text-purple-500" : "text-gray-400 opacity-40"
-                        }`}
-                      title="Hosting"
-                    /> */}
-                 {/* ================= HOSTING ================= */}
-
-{order.Plans?.some(
-  (plan) => plan.type === "hosting"
-) ? (
-
-  <FaServer
-    className="w-5 h-5 text-purple-500"
-    title="Hosting"
-  />
-
-) : (
-
-  <FaServer
-    className="w-5 h-5 text-gray-300 opacity-40"
-    title="No Hosting"
-  />
-
-)}
-
-
-
-{/* ================= WEBSITE ================= */}
-
-{order.Plans?.some(
-  (plan) => plan.type === "website"
-) ? (
-
-  <FaLaptopCode
-    className="w-5 h-5 text-blue-500"
-    title="Website"
-  />
-
-) : (
-
-  <FaLaptopCode
-    className="w-5 h-5 text-gray-300 opacity-40"
-    title="No Website"
-  />
-
-)}
-
-
-
-{/* ================= SSL ================= */}
-
-{/* ================= SSL ================= */}
-
-{order.Plans?.some(
-  (plan) => plan.type === "ssl"
-) ? (
-
-  <img
-    src="/ssl.jpg"
-    className="w-5 h-5 object-contain"
-    title="SSL"
-  />
-
-) : (
-
-  <img
-    src="/ssl.jpg"
-    className="w-5 h-5 object-contain opacity-30 grayscale"
-    title="No SSL"
-  />
-
-)}
-                  </div>
-                </td>
+    <td className="px-6 py-4 flex items-center gap-2">
+    
+      <ServiceIcons order={order} />
+    
+    </td>
+      
 
                <td className="px-1 py-2 font-medium">
   {(() => {

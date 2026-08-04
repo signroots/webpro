@@ -3,7 +3,7 @@
 // ===============================
 
 import React, { useEffect, useState } from "react";
-
+import ServiceIcons from "../Order/ServiceIcons";
 import {
   FaEye,
   FaEdit,
@@ -1024,12 +1024,24 @@ text-gray-900
 
 
 
-                 <td className="px-6 py-4">
+             <td className="px-6 py-4">
   {
     order.client?.c_company
       ?
-      <span className="text-gray-800">
-        {order.client.c_company}
+      <span
+        className="text-gray-800"
+        title={order.client.c_company}
+      >
+        {(() => {
+          const words = order.client.c_company.trim().split(/\s+/);
+
+          if (words.length <= 4) {
+            return order.client.c_company;
+          }
+
+          return words.slice(0, 5).join(" ") + " ...";
+
+        })()}
       </span>
       :
       order.client?.c_name
@@ -1044,197 +1056,12 @@ text-gray-900
   }
 </td>
 
-
-
-
 {/* ================= SERVICES ================= */}
 
-<td className="px-6 py-4">
-
-  <div className="flex items-center gap-3">
-
-
-    {/* ================= DOMAIN SOURCE ================= */}
-
-    {
-      order.domainSource?.image
-      ?
-
-      <img
-        src={
-          order.domainSource.image.startsWith("/uploads")
-          ?
-          `${import.meta.env.VITE_API_BASE_URL}${order.domainSource.image}`
-          :
-          `/images/${order.domainSource.image}`
-        }
-        className="w-7 h-7 object-contain"
-        title={order.domainSource.name}
-
-        onError={(e)=>{
-
-          e.currentTarget.src =
-          "/images/default-domain.png";
-
-        }}
-      />
-
-      :
-
-      <FaGlobe
-        className="
-        w-6
-        h-6
-        text-gray-300
-        "
-        title="No Registrar"
-      />
-
-    }
-
-
-
-
-    {/* ================= EMAIL ================= */}
-
-
-    {
-      order.Plans
-      ?.filter(
-        plan=>plan.type==="email"
-      )
-      .map(
-        (plan,index)=>(
-
-
-        <div
-          key={index}
-          className="relative group"
-        >
-
-
-          <img
-
-            src={
-              plan.emailTypeImage
-              ?
-              `${import.meta.env.VITE_API_BASE_URL}${plan.emailTypeImage}`
-              :
-              "/images/default-email.png"
-            }
-
-            className="
-            w-5
-            h-5
-            cursor-pointer
-            "
-
-            title={
-              plan.emailType
-            }
-
-          />
-
-
-
-          {/* EMAIL TOOLTIP */}
-
-          <div
-          className="
-          hidden
-          group-hover:block
-          absolute
-          top-full
-          left-0
-          mt-2
-          bg-gray-900
-          text-white
-          text-xs
-          p-2
-          rounded
-          w-48
-          z-50
-          "
-          >
-
-          <p>
-          {plan.emailType}
-          </p>
-
-          {
-            plan.expiryDate &&
-            <p>
-            Exp:
-            {" "}
-            {
-            new Date(
-              plan.expiryDate
-            )
-            .toLocaleDateString()
-            }
-            </p>
-          }
-
-
-          </div>
-
-
-        </div>
-
-
-      ))
-    }
-
-
-
-{/* ================= HOSTING ================= */}
-
-<FaServer
-  className={
-    order.hosting
-      ? "w-5 h-5 text-purple-500"
-      : "w-5 h-5 text-gray-300 opacity-40"
-  }
-  title="Hosting"
-/>
-
-   {/* ================= WEBSITE ================= */}
-
-<FaLaptopCode
-  className={
-    order.website_flag
-      ? "w-5 h-5 text-pink-500"
-      : "w-5 h-5 text-gray-300 opacity-40"
-  }
-  title="Website"
-/>
-
-
-{/* ================= SSL ================= */}
-
-<img
-  src="/ssl.jpg"
-  className={
-    order.ssl_flag
-      ? "w-5 h-5"
-      : "w-5 h-5 opacity-30 grayscale"
-  }
-  title="SSL"
-  onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-    e.currentTarget.style.display = "none";
-  }}
-/>
-
-  </div>
-
+{/* SERVICES */}
+<td className="px-1 py-2">
+  <ServiceIcons order={order} />
 </td>
-
-
-
-
-
-
-
 
                   <td className="
 px-6

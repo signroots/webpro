@@ -250,21 +250,52 @@ const UpdateOrder: React.FC = () => {
   const [sslChecked, setSslChecked] = useState(false);
 
   // ------------------- FETCH EMAIL TYPES -------------------
-  const fetchPlansByEmailType = async (typeId: string, index: number) => {
-    try {
-      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/plans/planlist/${typeId}`);
-      if (res.data.success) {
-        setMsofficePlans((prev) => {
-          const updated = [...prev];
-          // updated[index].plans = res.data.data.filter((p: any) => p.isActive);
-          // updated[index].msoffice_plan = "";  // reset plan
-          return updated;
-        });
-      }
-    } catch (err) {
-      console.error("Failed to fetch plans", err);
-    }
-  };
+  const fetchPlansByEmailType = async (
+  typeId: string,
+  index: number
+) => {
+  try {
+    const res = await axios.get(
+      `${import.meta.env.VITE_API_BASE_URL}/api/plans/planlist/${typeId}`
+    );
+
+    const plans = res.data.data
+      .filter((p: any) => p.isActive)
+      .map((p: any) => ({
+        _id: p._id,
+        plan: p.plan,
+      }));
+
+    setMsofficePlans((prev) =>
+      prev.map((item, i) =>
+        i === index
+          ? {
+              ...item,
+              plans: plans,
+            }
+          : item
+      )
+    );
+
+  } catch (err) {
+    console.error("Failed to fetch plans", err);
+  }
+};
+  // const fetchPlansByEmailType = async (typeId: string, index: number) => {
+  //   try {
+  //     const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/plans/planlist/${typeId}`);
+  //     if (res.data.success) {
+  //       setMsofficePlans((prev) => {
+  //         const updated = [...prev];
+  //         // updated[index].plans = res.data.data.filter((p: any) => p.isActive);
+  //         // updated[index].msoffice_plan = "";  // reset plan
+  //         return updated;
+  //       });
+  //     }
+  //   } catch (err) {
+  //     console.error("Failed to fetch plans", err);
+  //   }
+  // };
   useEffect(() => {
     if (highlightedOrderId) {
       const timer = setTimeout(() => setHighlightedOrderId(null), 5000);
@@ -961,7 +992,10 @@ const UpdateOrder: React.FC = () => {
           // ssl_flag: !!order.ssl_flag,
           // host_flag: !!order.host_flag,
 
-          domainSource: order.domainSource || "",
+          domainSource:
+  order.domainSource?._id ||
+  order.domainSource ||
+  "",
           email_expiryDate: order.email_expiryDate?.slice(0, 10) || "",
           users: order.users || 1,
           plans: order.plans || [],
@@ -1481,14 +1515,14 @@ const UpdateOrder: React.FC = () => {
     setConfirmRemove(null);
   };
 
-  useEffect(() => {
-    if (formData.domainSource === "Hostinger") {
-      setFormData((prev) => ({
-        ...prev,
-        dns_flag: true,
-      }));
-    }
-  }, [formData.domainSource]);
+  // useEffect(() => {
+  //   if (formData.domainSource === "Hostinger") {
+  //     setFormData((prev) => ({
+  //       ...prev,
+  //       dns_flag: true,
+  //     }));
+  //   }
+  // }, [formData.domainSource]);
 
 
   if (loadingOrder) return <p>Loading order data...</p>;
@@ -1826,13 +1860,11 @@ const UpdateOrder: React.FC = () => {
                   >
                     <option value="">-- Select Registrar --</option>
 
-                    {domainSources
-                      .filter((source) => source.is_active)
-                      .map((source) => (
-                        <option key={source._id} value={source._id}>
-                          {source.name}
-                        </option>
-                      ))}
+{domainSources.map((source) => (
+  <option key={source._id} value={source._id}>
+    {source.name}
+  </option>
+))}
                   </select>
 
 
@@ -2059,7 +2091,7 @@ const UpdateOrder: React.FC = () => {
                     </div>
 
                     {/* Storage Plan */}
-                    {plan.plans && plan.plans.length > 0 && (
+                    {/* {plan.plans && plan.plans.length > 0 && ( */}
                       <div>
                         <label className="block mb-1 text-gray-700">Select Plan</label>
                         <select
@@ -2075,7 +2107,7 @@ const UpdateOrder: React.FC = () => {
                           ))}
                         </select>
                       </div>
-                    )}
+                    {/* )} */}
 
                     {/* Users */}
                     <div>
@@ -2164,13 +2196,25 @@ const UpdateOrder: React.FC = () => {
                           const selectedId = e.target.value;
                           const typeObj = emailTypes.find((t) => t._id === selectedId);
                           if (typeObj) {
-                            // update state properly
-                            handleMsofficePlanChange(idx, "email_service_id", typeObj._id);
-                            handleMsofficePlanChange(idx, "email_service", typeObj.name);
+  handleMsofficePlanChange(
+    idx,
+    "email_service_id",
+    typeObj._id
+  );
 
-                            // fetch plans for this type
-                            fetchPlansByEmailType(typeObj._id, idx);
-                          }
+  fetchPlansByEmailType(
+    typeObj._id,
+    idx
+  );
+}
+                          // if (typeObj) {
+                          //   // update state properly
+                          //   handleMsofficePlanChange(idx, "email_service_id", typeObj._id);
+                          //   handleMsofficePlanChange(idx, "email_service", typeObj.name);
+
+                          //   // fetch plans for this type
+                          //   fetchPlansByEmailType(typeObj._id, idx);
+                          // }
                         }}
                         className="w-full border rounded px-2 py-1"
                       >

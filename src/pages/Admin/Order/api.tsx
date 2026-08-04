@@ -125,7 +125,7 @@ export const fetchOrders = async (
 // api.tsx
 export const fetchDNSOrders = async () => {
   const token = localStorage.getItem("token"); 
-  const response = await axios.get(`${API_BASE_URL}/api/orders/dnsorders?filter=Cloudflare`,{
+  const response = await axios.get(`${API_BASE_URL}/api/orders/dnsorders?filter=DNS-Cloudflare`,{
     headers: {
       Authorization: `Bearer ${token}`,
     },
