@@ -1,459 +1,459 @@
-import axios from "axios";
-import dotenv from "dotenv";
+// import axios from "axios";
+// import dotenv from "dotenv";
 
-import Order from "../models/Order";
-import Customer from "../models/Customer";
-import mongoose from "mongoose";
-import DomainSource from "../models/DomainSource";
-dotenv.config();
+// import Order from "../models/Order";
+// import Customer from "../models/Customer";
+// import mongoose from "mongoose";
+// import DomainSource from "../models/DomainSource";
+// dotenv.config();
 
-let cloudflareSyncRunning = false;
+// let cloudflareSyncRunning = false;
 
-export async function syncCloudflareDomains() {
+// export async function syncCloudflareDomains() {
 
-  if (cloudflareSyncRunning) {
-    console.log("⚠️ Previous sync still running...");
-    return;
-  }
+//   if (cloudflareSyncRunning) {
+//     console.log("⚠️ Previous sync still running...");
+//     return;
+//   }
 
-  cloudflareSyncRunning = true;
+//   cloudflareSyncRunning = true;
 
-  try {
+//   try {
 
-    const CLOUDFLARE_TOKEN =
-      process.env.CLOUDFLARE_TOKEN?.trim();
+//     const CLOUDFLARE_TOKEN =
+//       process.env.CLOUDFLARE_TOKEN?.trim();
 
-    const CLOUDFLARE_ACCOUNT_ID =
-      process.env.CLOUDFLARE_ACCOUNT_ID?.trim();
+//     const CLOUDFLARE_ACCOUNT_ID =
+//       process.env.CLOUDFLARE_ACCOUNT_ID?.trim();
 
-    const CLOUDFLARE_GLOBAL_KEY =
-      process.env.CLOUDFLARE_API_KEY?.trim();
+//     const CLOUDFLARE_GLOBAL_KEY =
+//       process.env.CLOUDFLARE_API_KEY?.trim();
 
-    const CLOUDFLARE_EMAIL_ID =
-      process.env.CLOUDFLARE_EMAIL?.trim();
+//     const CLOUDFLARE_EMAIL_ID =
+//       process.env.CLOUDFLARE_EMAIL?.trim();
 
-    if (
-      !CLOUDFLARE_TOKEN ||
-      !CLOUDFLARE_ACCOUNT_ID
-    ) {
-      throw new Error("Missing Cloudflare credentials");
-    }
+//     if (
+//       !CLOUDFLARE_TOKEN ||
+//       !CLOUDFLARE_ACCOUNT_ID
+//     ) {
+//       throw new Error("Missing Cloudflare credentials");
+//     }
 
-    console.log("☁️ Cloudflare Sync Started");
+//     console.log("☁️ Cloudflare Sync Started");
 
-    // =====================================
-    // FETCH ALL REGISTRAR DOMAINS
-    // =====================================
+//     // =====================================
+//     // FETCH ALL REGISTRAR DOMAINS
+//     // =====================================
 
-    const registrarDomainMap: Record<string, any> = {};
+//     const registrarDomainMap: Record<string, any> = {};
 
-  let registrarPage = 0;
-let registrarTotalPages = 1;
-const dnsCloudflareSource =
- await DomainSource.findOne({
-   code:"DNS-CLOUDFLARE"
- });
-
-
-const cloudflareSource =
- await DomainSource.findOne({
-   code:"CLOUDFLARE"
- });
+//   let registrarPage = 0;
+// let registrarTotalPages = 1;
+// const dnsCloudflareSource =
+//  await DomainSource.findOne({
+//    code:"DNS-CLOUDFLARE"
+//  });
 
 
-if(!dnsCloudflareSource || !cloudflareSource){
- throw new Error("Cloudflare domain sources missing");
-}
+// const cloudflareSource =
+//  await DomainSource.findOne({
+//    code:"CLOUDFLARE"
+//  });
 
-do {
 
-const registrarResponse = await axios.get(
-  `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/registrar/domains`,
- {
+// if(!dnsCloudflareSource || !cloudflareSource){
+//  throw new Error("Cloudflare domain sources missing");
+// }
+
+// do {
+
+// const registrarResponse = await axios.get(
+//   `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/registrar/domains`,
+//  {
 
   
-      headers: {
-      Authorization: `Bearer ${CLOUDFLARE_TOKEN}`,
-      "Content-Type": "application/json"
-    },
+//       headers: {
+//       Authorization: `Bearer ${CLOUDFLARE_TOKEN}`,
+//       "Content-Type": "application/json"
+//     },
     
-//    headers:{
-//   "X-Auth-Email": CLOUDFLARE_EMAIL_ID,
-//   "X-Auth-Key": CLOUDFLARE_GLOBAL_KEY,
-//   "Content-Type":"application/json"
-// },
- params: {
-            page: registrarPage,
-            per_page: 30
-         }
-  }
-);
-
-console.log(
-  "REGISTRAR API SUCCESS:",
-  registrarResponse.data.success
-);
-
-console.log(
-  "REGISTRAR RESULT COUNT:",
-  registrarResponse.data.result?.length
-);
- console.log(
-   "Registrar page",
-   registrarPage,
-   registrarResponse.data.result.length
- );
-
-
- registrarResponse.data.result.forEach((domain:any)=>{
-
-   console.log(
-    "Registrar domain:",
-    domain.name,
-    domain.expires_at
-   );
-
-   registrarDomainMap[
-     domain.name.toLowerCase().trim()
-   ] = domain;
-
- });
-
-
-registrarTotalPages =
- registrarResponse.data.result_info?.total_pages;
-
-
- registrarPage++;
-
-
-} while(
- registrarPage <= registrarTotalPages
-);
-console.log(
- "TOTAL REGISTRAR DOMAINS:",
- Object.keys(registrarDomainMap).length
-);
-
-console.log(
- "VOLTOPAINTS:",
- registrarDomainMap["voltopaints.com"]
-);
-// =====================================
-// MOVE OLD NON-REGISTRAR CLOUDFLARE DOMAINS
-// TO DNS-CLOUDFLARE
-// =====================================
-
-const registrarDomainNames =
-  Object.keys(registrarDomainMap);
-
-
-await Order.updateMany(
-  {
-    domainSource: cloudflareSource._id,
-    domainName: {
-      $nin: registrarDomainNames
-    }
-  },
-  {
-    $set: {
-      domainSource: dnsCloudflareSource._id
-    }
-  }
-);
-
-
-console.log(
-  "✅ Non registrar Cloudflare domains moved to DNS-CLOUDFLARE"
-);
-    // =====================================
-    // FETCH DEFAULT CUSTOMER
-    // =====================================
-
-    const defaultCustomer =
-      await Customer.findOneAndUpdate(
-        {
-          email: "cloudflare@signroots.com",
-        },
-        {
-          name: "Cloudflare Client",
-          phone: "0000000000",
-        },
-        {
-          upsert: true,
-          new: true,
-        }
-      );
-    // =====================================
-    // FETCH & SYNC CLOUDFLARE ZONES
-    // =====================================
-
-    let zonePage = 1;
-    let zoneTotalPages = 1;
-
-    do {
+// //    headers:{
+// //   "X-Auth-Email": CLOUDFLARE_EMAIL_ID,
+// //   "X-Auth-Key": CLOUDFLARE_GLOBAL_KEY,
+// //   "Content-Type":"application/json"
+// // },
+//  params: {
+//             page: registrarPage,
+//             per_page: 30
+//          }
+//   }
+// );
+
+// console.log(
+//   "REGISTRAR API SUCCESS:",
+//   registrarResponse.data.success
+// );
+
+// console.log(
+//   "REGISTRAR RESULT COUNT:",
+//   registrarResponse.data.result?.length
+// );
+//  console.log(
+//    "Registrar page",
+//    registrarPage,
+//    registrarResponse.data.result.length
+//  );
+
+
+//  registrarResponse.data.result.forEach((domain:any)=>{
+
+//    console.log(
+//     "Registrar domain:",
+//     domain.name,
+//     domain.expires_at
+//    );
+
+//    registrarDomainMap[
+//      domain.name.toLowerCase().trim()
+//    ] = domain;
+
+//  });
+
+
+// registrarTotalPages =
+//  registrarResponse.data.result_info?.total_pages;
+
+
+//  registrarPage++;
+
+
+// } while(
+//  registrarPage <= registrarTotalPages
+// );
+// console.log(
+//  "TOTAL REGISTRAR DOMAINS:",
+//  Object.keys(registrarDomainMap).length
+// );
+
+// console.log(
+//  "VOLTOPAINTS:",
+//  registrarDomainMap["voltopaints.com"]
+// );
+// // =====================================
+// // MOVE OLD NON-REGISTRAR CLOUDFLARE DOMAINS
+// // TO DNS-CLOUDFLARE
+// // =====================================
+
+// const registrarDomainNames =
+//   Object.keys(registrarDomainMap);
+
+
+// await Order.updateMany(
+//   {
+//     domainSource: cloudflareSource._id,
+//     domainName: {
+//       $nin: registrarDomainNames
+//     }
+//   },
+//   {
+//     $set: {
+//       domainSource: dnsCloudflareSource._id
+//     }
+//   }
+// );
+
+
+// console.log(
+//   "✅ Non registrar Cloudflare domains moved to DNS-CLOUDFLARE"
+// );
+//     // =====================================
+//     // FETCH DEFAULT CUSTOMER
+//     // =====================================
+
+//     const defaultCustomer =
+//       await Customer.findOneAndUpdate(
+//         {
+//           email: "cloudflare@signroots.com",
+//         },
+//         {
+//           name: "Cloudflare Client",
+//           phone: "0000000000",
+//         },
+//         {
+//           upsert: true,
+//           new: true,
+//         }
+//       );
+//     // =====================================
+//     // FETCH & SYNC CLOUDFLARE ZONES
+//     // =====================================
+
+//     let zonePage = 1;
+//     let zoneTotalPages = 1;
+
+//     do {
 
-      const zoneResponse = await axios.get(
-        "https://api.cloudflare.com/client/v4/zones",
-        {
-          headers: {
-            Authorization: `Bearer ${CLOUDFLARE_TOKEN}`,
-            "Content-Type": "application/json",
-          },
-          params: {
-            page: zonePage,
-            per_page: 100,
-          },
-        }
-      );
+//       const zoneResponse = await axios.get(
+//         "https://api.cloudflare.com/client/v4/zones",
+//         {
+//           headers: {
+//             Authorization: `Bearer ${CLOUDFLARE_TOKEN}`,
+//             "Content-Type": "application/json",
+//           },
+//           params: {
+//             page: zonePage,
+//             per_page: 100,
+//           },
+//         }
+//       );
 
-      const zones = zoneResponse.data.result;
+//       const zones = zoneResponse.data.result;
 
-      zoneTotalPages =
-        zoneResponse.data.result_info.total_pages || 1;
+//       zoneTotalPages =
+//         zoneResponse.data.result_info.total_pages || 1;
 
-      console.log(
-        `🌐 Processing Zones Page ${zonePage}/${zoneTotalPages}`
-      );
+//       console.log(
+//         `🌐 Processing Zones Page ${zonePage}/${zoneTotalPages}`
+//       );
 
-      const bulkOps: any[] = [];
+//       const bulkOps: any[] = [];
 
-      for (const zone of zones) {
+//       for (const zone of zones) {
 
-        const registrarInfo =
-  registrarDomainMap[zone.name.toLowerCase().trim()];
+//         const registrarInfo =
+//   registrarDomainMap[zone.name.toLowerCase().trim()];
 
-        if (!registrarInfo) {
+//         if (!registrarInfo) {
 
-  console.log(
-    `ℹ️ ${zone.name} DNS only - no registrar expiry`
-  );
+//   console.log(
+//     `ℹ️ ${zone.name} DNS only - no registrar expiry`
+//   );
 
-}
-else {
+// }
+// else {
 
-  console.log(
-    `✅ Registrar found: ${zone.name} expiry ${registrarInfo.expires_at}`
-  );
+//   console.log(
+//     `✅ Registrar found: ${zone.name} expiry ${registrarInfo.expires_at}`
+//   );
 
-}
-        const existingOrder =
-          await Order.findOne({
-            domainName: zone.name,
-          });
+// }
+//         const existingOrder =
+//           await Order.findOne({
+//             domainName: zone.name,
+//           });
 
-        const expiryDate =
-          registrarInfo?.expires_at
-            ? new Date(registrarInfo.expires_at)
-            : existingOrder?.expiryDate
-              ? new Date(existingOrder.expiryDate)
-              : null;
-        const provider =
-          existingOrder?.provider || "";
+//         const expiryDate =
+//           registrarInfo?.expires_at
+//             ? new Date(registrarInfo.expires_at)
+//             : existingOrder?.expiryDate
+//               ? new Date(existingOrder.expiryDate)
+//               : null;
+//         const provider =
+//           existingOrder?.provider || "";
 
-        const providerLower =
-          provider.toLowerCase();
-        // =====================================
-        // CHECK EXPIRY MORE THAN 65 DAYS
-        // =====================================
+//         const providerLower =
+//           provider.toLowerCase();
+//         // =====================================
+//         // CHECK EXPIRY MORE THAN 65 DAYS
+//         // =====================================
 
-        let isActive = true;
-        let domainStatus = zone.status;
+//         let isActive = true;
+//         let domainStatus = zone.status;
 
 
-        if (expiryDate) {
+//         if (expiryDate) {
 
-          const diffDays =
-            (
-              Date.now() -
-              expiryDate.getTime()
-            )
-            /
-            (
-              1000 *
-              60 *
-              60 *
-              24
-            );
+//           const diffDays =
+//             (
+//               Date.now() -
+//               expiryDate.getTime()
+//             )
+//             /
+//             (
+//               1000 *
+//               60 *
+//               60 *
+//               24
+//             );
 
 
-          if (diffDays > 65) {
+//           if (diffDays > 65) {
 
-            console.log(
-              `⚠️ Expired more than 65 days: ${zone.name}`
-            );
+//             console.log(
+//               `⚠️ Expired more than 65 days: ${zone.name}`
+//             );
 
 
-            isActive = false;
+//             isActive = false;
 
-            domainStatus = "EXPIRED";
+//             domainStatus = "EXPIRED";
 
-          }
+//           }
 
-        }
+//         }
 
 
 
-        // =====================================
-        // ADD / UPDATE ORDER
-        // =====================================
+//         // =====================================
+//         // ADD / UPDATE ORDER
+//         // =====================================
 
 
-        bulkOps.push({
+//         bulkOps.push({
 
-          updateOne: {
+//           updateOne: {
 
-            filter: {
+//             filter: {
 
-              domainName:
-                zone.name
+//               domainName:
+//                 zone.name
 
-            },
+//             },
 
 
-            update: {
+//             update: {
 
-              $set: {
+//               $set: {
 
 
-                domainName:
-                  zone.name,
+//                 domainName:
+//                   zone.name,
 
 
-                status:
-                  domainStatus,
+//                 status:
+//                   domainStatus,
 
 
-                is_active:
-                  isActive,
+//                 is_active:
+//                   isActive,
 
 
-                nameServers:
-                  zone.name_servers,
+//                 nameServers:
+//                   zone.name_servers,
 
 
-                registrationDate:
-                  zone.created_on
-                    ?
-                    new Date(zone.created_on)
-                    :
-                    existingOrder?.registrationDate || null,
+//                 registrationDate:
+//                   zone.created_on
+//                     ?
+//                     new Date(zone.created_on)
+//                     :
+//                     existingOrder?.registrationDate || null,
 
 
-                originalRegistrar:
-                  zone.original_registrar,
+//                 originalRegistrar:
+//                   zone.original_registrar,
 
 
-                expiryDate,
+//                 expiryDate,
 
 
-                managedBy:
-                  "Signroots",
+//                 managedBy:
+//                   "Signroots",
 
 
-                customer:
-                  defaultCustomer._id,
+//                 customer:
+//                   defaultCustomer._id,
 
-domainSource:
- registrarInfo
- ? cloudflareSource._id
- : dnsCloudflareSource._id,
+// domainSource:
+//  registrarInfo
+//  ? cloudflareSource._id
+//  : dnsCloudflareSource._id,
 
 
-                cloudflareRegistered:
-                  true,
+//                 cloudflareRegistered:
+//                   true,
 
 
-                provider,
+//                 provider,
 
 
-                google_email:
-                  existingOrder?.google_email ||
-                  providerLower.includes(
-                    "google workspace"
-                  ),
+//                 google_email:
+//                   existingOrder?.google_email ||
+//                   providerLower.includes(
+//                     "google workspace"
+//                   ),
 
 
-                microsoft_email:
-                  existingOrder?.microsoft_email ||
-                  providerLower.includes(
-                    "microsoft 365"
-                  ),
+//                 microsoft_email:
+//                   existingOrder?.microsoft_email ||
+//                   providerLower.includes(
+//                     "microsoft 365"
+//                   ),
 
 
-                email_flag:
-                  existingOrder?.email_flag ||
-                  false,
+//                 email_flag:
+//                   existingOrder?.email_flag ||
+//                   false,
 
 
-                email_customer:
-                  existingOrder?.email_customer ||
-                  "",
+//                 email_customer:
+//                   existingOrder?.email_customer ||
+//                   "",
 
 
-                users:
-                  existingOrder?.users ||
-                  0,
+//                 users:
+//                   existingOrder?.users ||
+//                   0,
 
 
-              }
+//               }
 
-            },
+//             },
 
 
-            upsert: true
+//             upsert: true
 
-          }
+//           }
 
 
-        });
-      } // close for (const zone of zones)
+//         });
+//       } // close for (const zone of zones)
 
 
-      // =====================================
-      // BULK UPDATE DATABASE
-      // =====================================
+//       // =====================================
+//       // BULK UPDATE DATABASE
+//       // =====================================
 
-      if (bulkOps.length) {
+//       if (bulkOps.length) {
 
-        await Order.bulkWrite(
-          bulkOps
-        );
+//         await Order.bulkWrite(
+//           bulkOps
+//         );
 
-        console.log(
-          `✅ Updated ${bulkOps.length} domains`
-        );
+//         console.log(
+//           `✅ Updated ${bulkOps.length} domains`
+//         );
 
-      }
+//       }
 
 
-      zonePage++;
+//       zonePage++;
 
 
-    } while (
-      zonePage <= zoneTotalPages
-    );
+//     } while (
+//       zonePage <= zoneTotalPages
+//     );
 
 
-    console.log(
-      "✅ Cloudflare Sync Completed"
-    );
+//     console.log(
+//       "✅ Cloudflare Sync Completed"
+//     );
 
 
-  }
-  catch (error: any) {
+//   }
+//   catch (error: any) {
 
-    console.error(
-      "❌ Cloudflare Sync Failed:",
-      error.message || error
-    );
+//     console.error(
+//       "❌ Cloudflare Sync Failed:",
+//       error.message || error
+//     );
 
-  }
-  finally {
+//   }
+//   finally {
 
-    cloudflareSyncRunning = false;
+//     cloudflareSyncRunning = false;
 
-  }
+//   }
 
 
-}
+// }

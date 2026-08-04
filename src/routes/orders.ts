@@ -1822,7 +1822,7 @@ router.get(
    .populate({
     path: "domainSource",
     model: "DomainSource",
-    select: "name"
+    select: "name code image"
   })
   .populate("hosttypeid")
   .populate("subHostTypeId")
@@ -1953,7 +1953,14 @@ router.get(
     domainName: orderObj.domainName,
     status: orderObj.status,
     managedBy: orderObj.managedBy,
-    domainSource: orderObj.domainSource,
+    domainSource: orderObj.domainSource
+  ? {
+      ...orderObj.domainSource,
+      image: orderObj.domainSource.image
+        ? `/uploads/domainsources/${orderObj.domainSource.image}`
+        : null
+    }
+  : null,
     registrationDate: orderObj.registrationDate,
     expiryDate: orderObj.expiryDate,
     lockStatus: orderObj.lockStatus,
