@@ -22,34 +22,23 @@ interface IOrderPlanResponse {
   expiryDate: Date;
   noOfUsers: number;
 }
-
 router.get(
   "/orders-by-month",
   authMiddleware,
   async (_req: AuthRequest, res: Response) => {
+    try {
+      if (_req.user?.role?.toLowerCase() !== "admin") {
+        return res.status(403).json({
+          success: false,
+          error: "Admin access required",
+        });
+      }
 
-  try {
+      const now = new Date();
 
-    if (_req.user?.role?.toLowerCase() !== "admin") {
+      // ================= MONTH RANGE =================
 
-      res.status(403).json({
-        success:false,
-        error:"Admin access required"
-      });
-
-      return;
-    }
-
-
-    const now = new Date();
-
-
-
-    // ================= MONTH RANGE =================
-
-
-    const startOfCurrentMonth =
-      new Date(
+      const startOfCurrentMonth = new Date(
         now.getFullYear(),
         now.getMonth(),
         1,
@@ -58,9 +47,7 @@ router.get(
         0
       );
 
-
-    const endOfCurrentMonth =
-      new Date(
+      const endOfCurrentMonth = new Date(
         now.getFullYear(),
         now.getMonth() + 1,
         0,
@@ -69,10 +56,7 @@ router.get(
         59
       );
 
-
-
-    const startOfPrevMonth =
-      new Date(
+      const startOfPrevMonth = new Date(
         now.getFullYear(),
         now.getMonth() - 1,
         1,
@@ -81,9 +65,7 @@ router.get(
         0
       );
 
-
-    const endOfPrevMonth =
-      new Date(
+      const endOfPrevMonth = new Date(
         now.getFullYear(),
         now.getMonth(),
         0,
@@ -92,10 +74,7 @@ router.get(
         59
       );
 
-
-
-    const startOfNextMonth =
-      new Date(
+      const startOfNextMonth = new Date(
         now.getFullYear(),
         now.getMonth() + 1,
         1,
@@ -104,9 +83,7 @@ router.get(
         0
       );
 
-
-    const endOfNextMonth =
-      new Date(
+      const endOfNextMonth = new Date(
         now.getFullYear(),
         now.getMonth() + 2,
         0,
@@ -115,247 +92,129 @@ router.get(
         59
       );
 
+      // ================= GET MONTH PARAM =================
 
+      const month = (_req.query.month as string) || "current";
 
+      let startDate: Date;
+      let endDate: Date;
 
-    // ================= GET ORDERS =================
+      switch (month) {
+        case "previous":
+          startDate = startOfPrevMonth;
+          endDate = endOfPrevMonth;
+          break;
 
+        case "next":
+          startDate = startOfNextMonth;
+          endDate = endOfNextMonth;
+          break;
 
-    const orders:any[] = await Order.find({
-
-      expiryDate:{
-        $gte:startOfPrevMonth,
-        $lte:endOfNextMonth
+        default:
+          startDate = startOfCurrentMonth;
+          endDate = endOfCurrentMonth;
       }
 
-    })
-    .populate({
-
-      path:"customer",
-
-      select:"name email mobile"
-
-    })
-    .populate({
-
-      path:"client",
-
-      select:"_id c_name c_company c_email c_phone"
-
-    })
-      .populate({
-    path:"domainSource",
-    select:"name code image"
-  })
-    .sort({
-
-      expiryDate:1
-
-    })
-    .lean();
-
-
-
-
-
-    // ================= GET PLANS =================
-
-
-    const orderIds = orders.map(
-      order => order._id
-    );
-
-
-
-    const plans:any[] = await OrderPlan.find({
-
-      orderId:{
-        $in:orderIds
-      }
-
-    })
-    .populate({
-
-      path:"emailTypeId",
-
-      select:"name image"
-
-    })
-    .select(
-      "orderId type expiryDate emailTypeId planId"
-    )
-    .lean();
-
-
-
-
-
-    // ================= MAP PLANS =================
-
-
-    const planMap = new Map();
-
-
-
-
-    plans.forEach(plan=>{
-
-
-      const key =
-        String(plan.orderId);
-
-
-
-      if(!planMap.has(key)){
-
-
-        planMap.set(
-          key,
-          []
-        );
-
-
-      }
-
-
-
-      planMap.get(key).push({
-
-
-        type:
-          plan.type,
-
-
-
-        expiryDate:
-          plan.expiryDate,
-
-
-
-        emailType:
-          plan.emailTypeId?.name || null,
-
-
-
-        emailTypeImage:
-          plan.emailTypeId?.image || null,
-
-
-
-        planId:
-          plan.planId
-
-
-      });
-
-
-
-    });
-
-
-
-
-
-
-    // ================= FINAL DATA =================
-
-
-
-    const finalOrders = orders.map(order=>({
-
-
-      ...order,
-
-
-      Plans:
-
-        planMap.get(
-          String(order._id)
-        )
-        ||
-        []
-
-
-    }));
-
-
-
-
-
-
-    return res.status(200).json({
-
-      success:true,
-
-
-      counts:{
-
-
-        total:
-          finalOrders.length,
-
-
-        previousMonthRange:{
-
-          startOfPrevMonth,
-
-          endOfPrevMonth
-
+      // ================= GET ORDERS =================
+
+      const orders: any[] = await Order.find({
+        expiryDate: {
+          $gte: startDate,
+          $lte: endDate,
         },
+      })
+        .populate({
+          path: "customer",
+          select: "name email mobile",
+        })
+        .populate({
+          path: "client",
+          select: "_id c_name c_company c_email c_phone",
+        })
+        .populate({
+          path: "domainSource",
+          select: "name code image",
+        })
+        .sort({
+          expiryDate: 1,
+        })
+        .lean();
 
+      // ================= GET PLANS =================
 
-        currentMonthRange:{
+      const orderIds = orders.map((order) => order._id);
 
-          startOfCurrentMonth,
-
-          endOfCurrentMonth
-
+      const plans: any[] = await OrderPlan.find({
+        orderId: {
+          $in: orderIds,
         },
+      })
+        .populate({
+          path: "emailTypeId",
+          select: "name image",
+        })
+        .select("orderId type expiryDate emailTypeId planId")
+        .lean();
 
+      // ================= MAP PLANS =================
 
-        nextMonthRange:{
+      const planMap = new Map();
 
-          startOfNextMonth,
+      plans.forEach((plan) => {
+        const key = String(plan.orderId);
 
-          endOfNextMonth
-
+        if (!planMap.has(key)) {
+          planMap.set(key, []);
         }
 
+        planMap.get(key).push({
+          type: plan.type,
+          expiryDate: plan.expiryDate,
+          emailType: plan.emailTypeId?.name || null,
+          emailTypeImage: plan.emailTypeId?.image || null,
+          planId: plan.planId,
+        });
+      });
 
-      },
+      // ================= FINAL DATA =================
 
+      const finalOrders = orders.map((order) => ({
+        ...order,
+        Plans: planMap.get(String(order._id)) || [],
+      }));
 
-      data:finalOrders
+      return res.status(200).json({
+        success: true,
+        counts: {
+          total: finalOrders.length,
+          month,
+          startDate,
+          endDate,
+          previousMonthRange: {
+            startOfPrevMonth,
+            endOfPrevMonth,
+          },
+          currentMonthRange: {
+            startOfCurrentMonth,
+            endOfCurrentMonth,
+          },
+          nextMonthRange: {
+            startOfNextMonth,
+            endOfNextMonth,
+          },
+        },
+        data: finalOrders,
+      });
+    } catch (error) {
+      console.error("Error fetching orders by month:", error);
 
-
-    });
-
-
-
-
+      return res.status(500).json({
+        success: false,
+        message: "Server Error",
+      });
+    }
   }
-  catch(error){
-
-
-    console.error(
-      "Error fetching orders by month:",
-      error
-    );
-
-
-    return res.status(500).json({
-
-      success:false,
-
-      message:"Server Error"
-
-    });
-
-
-  }
-
-});
-
+);
 router.get(
   "/existing_customers",
   authMiddleware,
