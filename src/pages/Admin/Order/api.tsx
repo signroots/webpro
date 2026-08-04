@@ -132,11 +132,13 @@ export const fetchDNSOrders = async () => {
   });
   return response?.data?.data || [];
 };
-export const fetchRenewListOrders = async () => {
+export const fetchRenewListOrders = async (
+  month: "previous" | "current" | "next" = "current"
+) => {
   const token = localStorage.getItem("token");
 
   return axios.get(
-    `${import.meta.env.VITE_API_BASE_URL}/api/orders/orders-by-month`,
+    `${import.meta.env.VITE_API_BASE_URL}/api/orders/orders-by-month?month=${month}`,
     {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -144,7 +146,6 @@ export const fetchRenewListOrders = async () => {
     }
   );
 };
-
 
 
 // ✅ Create a new order (POST)

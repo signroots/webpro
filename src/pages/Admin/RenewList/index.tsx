@@ -326,71 +326,38 @@ const RenewList = () => {
   // ===============================
 
 
-  useEffect(() => {
+ useEffect(() => {
 
+  const loadOrders = async () => {
 
-    const loadOrders = async () => {
+    setLoading(true);
 
+    try {
 
-      try {
+      const response =
+        await fetchRenewListOrders(selectedTab);
 
+      setOrders(response.data.data);
 
-        const response =
-          await fetchRenewListOrders();
+      setCurrentPage(1);
 
+    } catch (error) {
 
+      console.error(error);
 
-        const ordersArray =
-          response.data.data;
+      setOrders([]);
 
+    } finally {
 
+      setLoading(false);
 
-        console.log(
-          "Renew Orders",
-          ordersArray
-        );
+    }
 
+  };
 
+  loadOrders();
 
-        setOrders(
-          ordersArray
-        );
-
-
-
-      }
-      catch (error) {
-
-
-        console.error(
-          "Renew list loading failed",
-          error
-        );
-
-
-        setOrders([]);
-
-
-      }
-      finally {
-
-
-        setLoading(false);
-
-
-      }
-
-
-    };
-
-
-
-    loadOrders();
-
-
-  }, []);
-
-
+}, [selectedTab]);
 
 
   // ===============================
@@ -398,118 +365,118 @@ const RenewList = () => {
   // ===============================
 
 
-  const today =
-    new Date();
+  // const today =
+  //   new Date();
 
 
-  const currentMonth =
-    today.getMonth();
+  // const currentMonth =
+  //   today.getMonth();
 
 
-  const currentYear =
-    today.getFullYear();
-
-
-
-  const filteredOrders =
-    orders.filter((order) => {
-
-
-      if (!order.expiryDate)
-        return false;
+  // const currentYear =
+  //   today.getFullYear();
 
 
 
-      const expiry =
-        new Date(
-          order.expiryDate
-        );
+  // const filteredOrders =
+  //   orders.filter((order) => {
+
+
+  //     if (!order.expiryDate)
+  //       return false;
 
 
 
-      let month =
-        currentMonth;
-
-
-      let year =
-        currentYear;
-
-
-
-      if (selectedTab === "previous") {
-
-
-        month--;
+  //     const expiry =
+  //       new Date(
+  //         order.expiryDate
+  //       );
 
 
 
-        if (month < 0) {
-
-          month = 11;
-
-          year--;
-
-        }
+  //     let month =
+  //       currentMonth;
 
 
-      }
+  //     let year =
+  //       currentYear;
 
 
 
-      if (selectedTab === "next") {
+  //     if (selectedTab === "previous") {
 
 
-        month++;
-
-
-
-        if (month > 11) {
-
-
-          month = 0;
-
-          year++;
-
-
-        }
-
-
-      }
+  //       month--;
 
 
 
-      const monthMatch =
-        expiry.getMonth()
-        ===
-        month;
+  //       if (month < 0) {
+
+  //         month = 11;
+
+  //         year--;
+
+  //       }
+
+
+  //     }
 
 
 
-      const yearMatch =
-        expiry.getFullYear()
-        ===
-        year;
+  //     if (selectedTab === "next") {
+
+
+  //       month++;
 
 
 
-      const searchMatch =
-        order.domainName
-          .toLowerCase()
-          .includes(
-            search.toLowerCase()
-          );
+  //       if (month > 11) {
+
+
+  //         month = 0;
+
+  //         year++;
+
+
+  //       }
+
+
+  //     }
 
 
 
-      return (
-        monthMatch &&
-        yearMatch &&
-        searchMatch
-      );
+    //   const monthMatch =
+    //     expiry.getMonth()
+    //     ===
+    //     month;
 
 
 
-    });
+    //   const yearMatch =
+    //     expiry.getFullYear()
+    //     ===
+    //     year;
+
+
+
+    //   const searchMatch =
+    //     order.domainName
+    //       .toLowerCase()
+    //       .includes(
+    //         search.toLowerCase()
+    //       );
+
+
+
+    //   return (
+    //     monthMatch &&
+    //     yearMatch &&
+    //     searchMatch
+    //   );
+
+
+
+    // });
 
 
 
@@ -550,7 +517,11 @@ const RenewList = () => {
   // ===============================
   // PAGINATION
   // ===============================
-
+const filteredOrders = orders.filter((order) =>
+  order.domainName
+    .toLowerCase()
+    .includes(search.toLowerCase())
+);
 
   const totalPages =
     Math.ceil(
