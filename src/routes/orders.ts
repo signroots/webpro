@@ -1819,6 +1819,11 @@ router.get(
       }
     ]
   })
+   .populate({
+    path: "domainSource",
+    model: "DomainSource",
+    select: "name"
+  })
   .populate("hosttypeid")
   .populate("subHostTypeId")
   .populate("hoststorageId")
