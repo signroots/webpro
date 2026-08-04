@@ -26,20 +26,25 @@ router.get(
   "/orders-by-month",
   authMiddleware,
   async (_req: AuthRequest, res: Response) => {
+
     try {
 
       if (_req.user?.role?.toLowerCase() !== "admin") {
+
         return res.status(403).json({
           success:false,
           error:"Admin access required",
         });
+
       }
 
 
       const now = new Date();
 
 
+
       // ================= MONTH RANGE =================
+
 
       const startOfCurrentMonth = new Date(
         now.getFullYear(),
@@ -57,6 +62,7 @@ router.get(
       );
 
 
+
       const startOfPrevMonth = new Date(
         now.getFullYear(),
         now.getMonth()-1,
@@ -71,6 +77,7 @@ router.get(
         0,
         23,59,59
       );
+
 
 
       const startOfNextMonth = new Date(
@@ -90,44 +97,56 @@ router.get(
 
 
 
+
+
       // ================= MONTH PARAM =================
+
 
       const month =
         (_req.query.month as string) || "current";
+
 
 
       let startDate:Date;
       let endDate:Date;
 
 
+
       switch(month){
+
 
         case "previous":
 
-          startDate = startOfPrevMonth;
-          endDate = endOfPrevMonth;
+          startDate=startOfPrevMonth;
+          endDate=endOfPrevMonth;
 
           break;
+
 
 
         case "next":
 
-          startDate = startOfNextMonth;
-          endDate = endOfNextMonth;
+          startDate=startOfNextMonth;
+          endDate=endOfNextMonth;
 
           break;
 
 
+
         default:
 
-          startDate = startOfCurrentMonth;
-          endDate = endOfCurrentMonth;
+          startDate=startOfCurrentMonth;
+          endDate=endOfCurrentMonth;
 
       }
 
 
 
-      // ================= GET PLANS =================
+
+
+      // =================================================
+      // GET PLANS WHICH EXPIRE IN SELECTED MONTH
+      // =================================================
 
 
       const plans:any[] = await OrderPlan.find({
@@ -152,45 +171,77 @@ router.get(
 
 
 
-      // ================= PLAN ORDER IDS =================
-
-
-      const planOrderIds =
-        plans.map(
-          plan => plan.orderId
-        );
 
 
 
 
-      // ================= GET ORDERS =================
+      // =================================================
+      // PLAN ORDER IDS
+      // =================================================
+
+
+      const planOrderIds = [
+
+        ...new Set(
+
+          plans.map(
+            plan=>String(plan.orderId)
+          )
+
+        )
+
+      ];
+
+
+
+
+
+
+
+      // =================================================
+      // GET ORDERS
+      // Domain expiry OR Plan expiry
+      // =================================================
 
 
       const orders:any[] = await Order.find({
 
         $or:[
 
+
           // Domain expiry
 
           {
+
             expiryDate:{
+
               $gte:startDate,
+
               $lte:endDate
+
             }
+
           },
 
 
-          // Service expiry
+
+          // Email / Hosting / SSL plan expiry
 
           {
+
             _id:{
+
               $in:planOrderIds
+
             }
+
           }
+
 
         ]
 
       })
+
       .populate({
 
         path:"customer",
@@ -198,6 +249,7 @@ router.get(
         select:"name email mobile"
 
       })
+
       .populate({
 
         path:"client",
@@ -205,6 +257,7 @@ router.get(
         select:"_id c_name c_company c_email c_phone"
 
       })
+
       .populate({
 
         path:"domainSource",
@@ -212,13 +265,19 @@ router.get(
         select:"name code image"
 
       })
+
       .lean();
 
 
 
 
 
-      // ================= MAP PLANS =================
+
+
+
+      // =================================================
+      // MAP PLANS WITH ORDER
+      // =================================================
 
 
       const planMap = new Map();
@@ -235,10 +294,12 @@ router.get(
 
         if(!planMap.has(key)){
 
+
           planMap.set(
             key,
             []
           );
+
 
         }
 
@@ -246,9 +307,12 @@ router.get(
 
         planMap.get(key).push({
 
+
           type:plan.type,
 
+
           expiryDate:plan.expiryDate,
+
 
           emailType:
             plan.emailTypeId?.name || null,
@@ -260,7 +324,9 @@ router.get(
 
           planId:plan.planId
 
+
         });
+
 
 
       });
@@ -269,7 +335,12 @@ router.get(
 
 
 
-      // ================= FINAL DATA =================
+
+
+
+      // =================================================
+      // FINAL RESPONSE DATA
+      // =================================================
 
 
       const finalOrders = orders.map(order=>{
@@ -282,9 +353,12 @@ router.get(
 
 
 
-        const expiryDates:any[] = [];
+
+        const expiryDates:any[]=[];
 
 
+
+        // Domain expiry
 
         if(order.expiryDate){
 
@@ -297,14 +371,18 @@ router.get(
 
 
 
+        // Plan expiry
+
         orderPlans.forEach((plan:any)=>{
 
 
           if(plan.expiryDate){
 
+
             expiryDates.push(
               new Date(plan.expiryDate)
             );
+
 
           }
 
@@ -322,11 +400,15 @@ router.get(
           ?
 
           new Date(
+
             Math.min(
+
               ...expiryDates.map(
                 d=>d.getTime()
               )
+
             )
+
           )
 
           :
@@ -355,7 +437,10 @@ router.get(
 
 
 
-      // ================= SORT =================
+
+      // =================================================
+      // SORT BY NEAREST EXPIRY
+      // =================================================
 
 
       finalOrders.sort((a,b)=>{
@@ -396,13 +481,18 @@ router.get(
 
         counts:{
 
+
           total:finalOrders.length,
+
 
           month,
 
+
           startDate,
 
+
           endDate
+
 
         },
 
@@ -415,12 +505,16 @@ router.get(
 
 
     }
+
+
     catch(error){
+
 
       console.error(
         "Error fetching orders by month:",
         error
       );
+
 
 
       return res.status(500).json({
@@ -431,7 +525,9 @@ router.get(
 
       });
 
+
     }
+
 
   }
 );
