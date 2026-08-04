@@ -115,73 +115,228 @@ router.get(
           endDate = endOfCurrentMonth;
       }
 
-      // ================= GET ORDERS =================
+// ================= GET PLANS FIRST =================
 
-      const orders: any[] = await Order.find({
-        expiryDate: {
-          $gte: startDate,
-          $lte: endDate,
-        },
-      })
-        .populate({
-          path: "customer",
-          select: "name email mobile",
-        })
-        .populate({
-          path: "client",
-          select: "_id c_name c_company c_email c_phone",
-        })
-        .populate({
-          path: "domainSource",
-          select: "name code image",
-        })
-        .sort({
-          expiryDate: 1,
-        })
-        .lean();
+const plans:any[] = await OrderPlan.find({
 
-      // ================= GET PLANS =================
+  expiryDate:{
+    $gte:startOfPrevMonth,
+    $lte:endOfNextMonth
+  }
 
-      const orderIds = orders.map((order) => order._id);
+})
+.select(
+  "orderId type expiryDate emailTypeId planId"
+)
+.populate({
 
-      const plans: any[] = await OrderPlan.find({
-        orderId: {
-          $in: orderIds,
-        },
-      })
-        .populate({
-          path: "emailTypeId",
-          select: "name image",
-        })
-        .select("orderId type expiryDate emailTypeId planId")
-        .lean();
+  path:"emailTypeId",
 
-      // ================= MAP PLANS =================
+  select:"name image"
 
-      const planMap = new Map();
+})
+.lean();
 
-      plans.forEach((plan) => {
-        const key = String(plan.orderId);
 
-        if (!planMap.has(key)) {
-          planMap.set(key, []);
-        }
 
-        planMap.get(key).push({
-          type: plan.type,
-          expiryDate: plan.expiryDate,
-          emailType: plan.emailTypeId?.name || null,
-          emailTypeImage: plan.emailTypeId?.image || null,
-          planId: plan.planId,
-        });
-      });
+// ================= PLAN ORDER IDS =================
 
-      // ================= FINAL DATA =================
+const planOrderIds = plans.map(
+  plan => plan.orderId
+);
 
-      const finalOrders = orders.map((order) => ({
-        ...order,
-        Plans: planMap.get(String(order._id)) || [],
-      }));
+
+
+
+// ================= GET ORDERS =================
+
+const orders:any[] = await Order.find({
+
+  $or:[
+
+    // Domain expiry
+    {
+      expiryDate:{
+        $gte:startOfPrevMonth,
+        $lte:endOfNextMonth
+      }
+    },
+
+
+    // Service expiry (Google, Microsoft, Hosting etc)
+    {
+      _id:{
+        $in:planOrderIds
+      }
+    }
+
+  ]
+
+})
+.populate({
+
+  path:"customer",
+
+  select:"name email mobile"
+
+})
+.populate({
+
+  path:"client",
+
+  select:"_id c_name c_company c_email c_phone"
+
+})
+.populate({
+
+  path:"domainSource",
+
+  select:"name code image"
+
+})
+.sort({
+
+  expiryDate:1
+
+})
+.lean();
+
+
+
+
+// ================= MAP PLANS =================
+
+
+const planMap = new Map();
+
+
+
+plans.forEach(plan=>{
+
+
+  const key =
+    String(plan.orderId);
+
+
+
+  if(!planMap.has(key)){
+
+
+    planMap.set(
+      key,
+      []
+    );
+
+
+  }
+
+
+
+  planMap.get(key).push({
+
+
+    type:
+      plan.type,
+
+
+    expiryDate:
+      plan.expiryDate,
+
+
+    emailType:
+      plan.emailTypeId?.name || null,
+
+
+    emailTypeImage:
+      plan.emailTypeId?.image || null,
+
+
+    planId:
+      plan.planId
+
+
+  });
+
+
+
+});
+
+
+
+
+// ================= FINAL DATA =================
+
+
+const finalOrders = orders.map(order=>{
+
+
+  const orderPlans =
+    planMap.get(
+      String(order._id)
+    ) || [];
+
+
+
+  // Domain + Plans expiry combine
+
+  const expiryDates = [];
+
+
+  if(order.expiryDate){
+
+    expiryDates.push(
+      new Date(order.expiryDate)
+    );
+
+  }
+
+
+
+  orderPlans.forEach((plan:any)=>{
+
+
+    if(plan.expiryDate){
+
+      expiryDates.push(
+        new Date(plan.expiryDate)
+      );
+
+    }
+
+
+  });
+
+
+
+  const nearestExpiryDate =
+    expiryDates.length
+      ? new Date(
+          Math.min(
+            ...expiryDates.map(
+              d=>d.getTime()
+            )
+          )
+        )
+      : null;
+
+
+
+  return {
+
+
+    ...order,
+
+
+    nearestExpiryDate,
+
+
+    Plans:orderPlans
+
+
+  };
+
+
+});
 
       return res.status(200).json({
         success: true,
