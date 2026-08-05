@@ -154,7 +154,70 @@ await DomainSource.create({
 
 });
 
+/*
+======================================================
+ GET DOMAIN SOURCE BY ID
+======================================================
+*/
 
+router.get(
+  "/:id",
+  async (req: Request, res: Response) => {
+
+    try {
+
+      const source =
+        await DomainSource.findById(
+          req.params.id
+        );
+
+
+      if(!source){
+
+        return res.status(404).json({
+
+          success:false,
+
+          message:"Domain source not found"
+
+        });
+
+      }
+
+
+
+      return res.json({
+
+        success:true,
+
+        data:source
+
+      });
+
+
+
+    } catch(error:any){
+
+
+      console.error(
+        "GET DOMAIN SOURCE ERROR:",
+        error
+      );
+
+
+      return res.status(500).json({
+
+        success:false,
+
+        message:"Server error"
+
+      });
+
+
+    }
+
+  }
+);
 
 /*
 ======================================================
