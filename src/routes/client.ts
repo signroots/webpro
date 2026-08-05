@@ -24,7 +24,7 @@ interface UpdateClientBody {
   c_state?: string;
   c_country?: string;
   c_zipCode?: string;
-  password?:string;
+  password?: string;
   resellerCustomerId?: string;
 }
 const router = express.Router();
@@ -113,25 +113,93 @@ router.post("/", async (req: Request, res: Response): Promise<any> => {
     // 4️⃣ Prepare customer data
     // -------------------------------
     const customerData: any = {
-      c_name: c_name.trim(),
-      c_email: emailArray,
-      c_phone: c_phone.trim(),
-      c_country: c_country || null,
-      c_state: c_state || null,
-      c_countryCode: req.body.c_countryCode?.trim() || "",
-      c_zipCode: req.body.c_zipCode?.trim() || "",
-      c_company: req.body.c_company?.trim() || "",
-      c_address: req.body.c_address?.trim() || "",
-      c_address2: req.body.c_address2?.trim() || "",
-      c_city: req.body.c_city?.trim() || "",
-      c_gst: req.body.c_gst?.trim() || "",
-      c_mobilePhone:req.body.c_mobilePhone?.trim() || "",
-      encryptedPassword,
-      is_customer: true,
-      resellerCustomerId: req.body.resellerCustomerId || uuidv4(),
-      userType: new mongoose.Types.ObjectId(req.body.userType || "6900a4ef87b9fe9ff304e91e"),
-    };
 
+      c_salutation:
+        req.body.c_salutation?.trim() || "",
+
+      c_firstName:
+        req.body.c_firstName?.trim() || "",
+
+      c_lastName:
+        req.body.c_lastName?.trim() || "",
+
+
+      c_name: c_name.trim(),
+
+      c_email: emailArray,
+
+      c_phone: c_phone.trim(),
+
+      c_mobilePhone:
+        req.body.c_mobilePhone?.trim() || "",
+
+
+      c_countryCode:
+        req.body.c_countryCode?.trim() || "",
+
+
+      c_country:
+        c_country || null,
+
+      c_state:
+        c_state || null,
+
+
+      c_zipCode:
+        req.body.c_zipCode?.trim() || "",
+
+
+      c_company:
+        req.body.c_company?.trim() || "",
+
+
+      c_address:
+        req.body.c_address?.trim() || "",
+
+
+      c_address2:
+        req.body.c_address2?.trim() || "",
+
+
+      c_city:
+        req.body.c_city?.trim() || "",
+
+
+      c_gst:
+        req.body.c_gst?.trim() || "",
+
+
+      c_bankAccountPayment:
+        req.body.c_bankAccountPayment?.trim() || "",
+
+
+      c_portalEnabled:
+        req.body.c_portalEnabled === true ||
+        req.body.c_portalEnabled === "true",
+
+
+      c_placeOfContact:
+        req.body.c_placeOfContact?.trim() || "",
+
+
+      c_placeOfContactWithStateCode:
+        req.body.c_placeOfContactWithStateCode?.trim() || "",
+
+
+      encryptedPassword,
+
+      is_customer: true,
+
+      resellerCustomerId:
+        req.body.resellerCustomerId || uuidv4(),
+
+
+      userType:
+        new mongoose.Types.ObjectId(
+          req.body.userType || "6900a4ef87b9fe9ff304e91e"
+        )
+
+    };
     // Never store plain password
     delete customerData.password;
     delete customerData.c_password;
@@ -235,10 +303,10 @@ router.put("/:id", async (req: Request, res: Response): Promise<any> => {
         updateData.encryptedPassword = iv.toString("hex") + ":" + encrypted;
       }
     }
-      if (req.body.c_country_code !== undefined) {
-            updateData.c_countryCode = req.body.c_country_code;
-          }
-
+   if (req.body.c_countryCode !== undefined) {
+  updateData.c_countryCode =
+    req.body.c_countryCode;
+}
     /* =======================
        ALL OTHER FIELDS
     ======================= */
@@ -401,8 +469,8 @@ router.delete("/:id", async (req: Request, res: Response) => {
     console.error("Delete client error:", error);
 
     res.status(500).json({
-      success:false,
-      message:"Failed to delete client"
+      success: false,
+      message: "Failed to delete client"
     });
 
   }
