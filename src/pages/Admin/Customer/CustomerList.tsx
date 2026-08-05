@@ -290,12 +290,12 @@ const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
   </td>
 
   {/* Phone */}
-  <td className="border p-2 text-center">
-    {c.c_countryCode && c.c_mobilePhone
-  ? `${c.c_countryCode} ${c.c_mobilePhone}`
-  : c.c_mobilePhone || "-"}
-
-  </td>
+{/* Phone */}
+<td className="border p-2 text-center">
+  {c.c_countryCode
+    ? `${c.c_countryCode} ${c.c_mobilePhone || c.c_phone || ""}`
+    : c.c_mobilePhone || c.c_phone || "-"}
+</td>
 
   {/* Actions */}
   <td className="border p-2 text-center">
