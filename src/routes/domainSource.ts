@@ -305,9 +305,8 @@ router.put(
 
       }
 
+let imagePath;
 
-
-      let imagePath = "";
 
 if(req.file){
 
@@ -316,37 +315,36 @@ if(req.file){
 }
 else {
 
-  imagePath = req.body.image || "";
+  const oldSource =
+    await DomainSource.findById(req.params.id);
+
+
+  imagePath = oldSource?.image || "";
 
 }
 
-
-
       const source =
-      await DomainSource.findByIdAndUpdate(
+     await DomainSource.findByIdAndUpdate(
 
-        req.params.id,
+req.params.id,
 
-        {
+{
+  name,
 
-          name,
+  code:code.toUpperCase(),
 
-          code:code.toUpperCase(),
+  image:imagePath,
 
-          image:imagePath,
+  is_active:
+    String(is_active) === "true"
+},
 
-          is_active:
-            is_active === "true" ||
-            is_active === true
+{
+  new:true,
+  runValidators:true
+}
 
-        },
-
-        {
-          new:true,
-          runValidators:true
-        }
-
-      );
+);
 
 
 
