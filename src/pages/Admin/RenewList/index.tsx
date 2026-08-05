@@ -21,7 +21,7 @@ import {
 } from "react-icons/si";
 
 import { Link } from "react-router-dom";
-
+import ExpiryBadge from "../Order/ExpiryBadge";
 import {
   fetchRenewListOrders
 } from "../Order/api";
@@ -833,456 +833,218 @@ overflow-hidden
 
 
 
-        <table className="
-min-w-full
-text-sm
-">
+<div className="bg-white shadow rounded-lg overflow-x-auto">
 
+<table className="w-full table-fixed text-sm">
 
+<thead className="bg-gray-50">
+<tr>
 
-          <thead className="bg-gray-50">
+<th className="w-[60px] px-4 py-4 text-center text-xs font-semibold text-gray-500 uppercase">
+  SL No
+</th>
 
+<th className="w-[250px] px-4 py-4 text-left text-xs font-semibold text-gray-500 uppercase">
+  Domain Name
+</th>
 
-            <tr>
+<th className="w-[250px] px-4 py-4 text-left text-xs font-semibold text-gray-500 uppercase">
+  Customer
+</th>
 
+<th className="w-[180px] px-4 py-4 text-center text-xs font-semibold text-gray-500 uppercase">
+  Services
+</th>
 
-              {
+<th className="w-[130px] px-4 py-4 text-center text-xs font-semibold text-gray-500 uppercase">
+  Expiry Date
+</th>
 
-                [
+<th className="w-[120px] px-4 py-4 text-center text-xs font-semibold text-gray-500 uppercase">
+  Status
+</th>
 
-                  "SL No",
+<th className="w-[180px] px-4 py-4 text-center text-xs font-semibold text-gray-500 uppercase">
+  Actions
+</th>
 
-                  "Domain Name",
+</tr>
+</thead>
 
-                  "Customer",
 
-                  "Services",
+<tbody>
 
-                  "Expiry Date",
+{paginatedOrders.map((order,index)=>(
 
-                  "Status",
+<tr
+key={order._id}
+className="hover:bg-gray-50 transition border-b"
+>
 
-                  "Actions"
 
-                ]
-
-                  .map((col) => (
-
-
-                    <th
-
-                      key={col}
-
-                      className="
-px-6
-py-4
-text-left
-text-xs
-font-semibold
-text-gray-500
-uppercase
-tracking-wide
-"
-
-                    >
-
-                      {col}
-
-                    </th>
-
-
-                  ))
-
-              }
-
-
-
-            </tr>
-
-
-          </thead>
-
-
-
-
-
-          <tbody>
-
-
-            {
-
-              paginatedOrders.map((order, index) => (
-
-
-                <tr
-
-                  key={order._id}
-
-                  className="
-hover:bg-gray-50
-transition
-border-b
-last:border-b-0
-"
-
-                >
-
-
-                  <td className="
-px-6
-py-4
-text-gray-600
-">
-
-                    {
-                      (currentPage - 1)
-                      *
-                      itemsPerPage
-                      +
-                      index
-                      +
-                      1
-                    }
-
-                  </td>
-
-
-
-
-
-                  <td className="
-px-6
-py-4
-font-medium
-text-gray-900
-">
-
-
-                    <div className="flex items-center gap-2">
-
-
-                      {
-
-                        order.lockStatus === "Locked"
-
-                          ?
-
-                          <FaLock className="text-red-500" />
-
-                          :
-
-                          <FaLock className="text-green-500" />
-
-                      }
-
-
-
-                      <span>
-
-                        {order.domainName}
-
-                      </span>
-
-
-
-                    </div>
-
-
-                  </td>
-
-
-
-
-
-
-             <td className="px-6 py-4">
-  {
-    order.client?.c_company
-      ?
-      <span
-        className="text-gray-800"
-        title={order.client.c_company}
-      >
-        {(() => {
-          const words = order.client.c_company.trim().split(/\s+/);
-
-          if (words.length <= 4) {
-            return order.client.c_company;
-          }
-
-          return words.slice(0, 5).join(" ") + " ...";
-
-        })()}
-      </span>
-      :
-      order.client?.c_name
-        ?
-        <span className="text-gray-800">
-          {order.client.c_name}
-        </span>
-        :
-        <span className="text-gray-400">
-          N/A
-        </span>
-  }
+{/* SL NO */}
+<td className="px-4 py-4 text-center text-gray-600">
+{(currentPage - 1) * itemsPerPage + index + 1}
 </td>
 
-{/* ================= SERVICES ================= */}
+
+{/* DOMAIN */}
+<td className="px-4 py-4">
+
+<div className="flex items-center gap-2">
+
+{
+order.lockStatus === "Locked"
+?
+<FaLock className="text-red-500 shrink-0"/>
+:
+<FaLock className="text-green-500 shrink-0"/>
+}
+
+<span className="truncate">
+{order.domainName || "-"}
+</span>
+
+</div>
+
+</td>
+
+
+
+{/* CUSTOMER */}
+<td className="px-4 py-4">
+
+<span className="text-gray-800 truncate block">
+
+{
+order.client?.c_company
+?
+order.client.c_company
+:
+order.client?.c_name
+?
+order.client.c_name
+:
+"N/A"
+}
+
+</span>
+
+</td>
+
+
+
 
 {/* SERVICES */}
-<td className="px-1 py-2">
-  <ServiceIcons order={order} />
+<td className="px-4 py-4 text-center">
+
+<div className="flex justify-center items-center gap-2 whitespace-nowrap">
+
+<ServiceIcons order={order}/>
+
+</div>
+
 </td>
 
-                  <td className="
-px-6
-py-4
-">
 
 
-                    {
 
-                      order.expiryDate
+{/* EXPIRY */}
+<td className="px-4 py-4 text-center">
 
+<ExpiryBadge order={order}/>
 
-                        ?
+</td>
 
-                        <span className="
-font-medium
-text-gray-700
-">
 
 
-                          {
 
-                            new Date(order.expiryDate)
+{/* STATUS */}
+<td className="px-4 py-4 text-center">
 
-                              .toLocaleDateString("en-GB")
 
-                              .replace(/\//g, "-")
+{
+getExpiryStatus(order)==="expired"
 
-                          }
+?
 
+<span className="px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+Expired
+</span>
 
-                        </span>
+:
 
+getExpiryStatus(order)==="warning"
 
-                        :
+?
 
-                        "N/A"
+<span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">
+15 Days Left
+</span>
 
+:
 
-                    }
+<span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+Active
+</span>
 
+}
 
-                  </td>
 
+</td>
 
 
 
 
+{/* ACTIONS */}
+<td className="px-4 py-4">
 
+<div className="flex items-center justify-center gap-3">
 
 
+<button
+title="View"
+className="text-blue-500 hover:text-blue-700"
+>
+<FaEye/>
+</button>
 
-                  <td className="
-px-6
-py-4
-">
 
+<Link
+to={`/admin/orders/update/${order._id}`}
+title="Edit"
+className="text-yellow-500 hover:text-yellow-700"
+>
+<FaEdit/>
+</Link>
 
-                    {
 
-                    getExpiryStatus(order)
-                        === "expired"
+<Link
+to={`/admin/orders/renew/${order._id}`}
+title="Renew"
+className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs"
+>
 
+<FaSyncAlt/>
+Renew
 
-                        ?
+</Link>
 
 
-                        <span className="
-px-3
-py-1
-rounded-full
-text-xs
-font-semibold
-bg-red-100
-text-red-700
-">
+</div>
 
-                          Expired
+</td>
 
-                        </span>
 
+</tr>
 
+))}
 
-                        :
+</tbody>
 
+</table>
 
-                getExpiryStatus(order)
-                          === "warning"
-
-
-                          ?
-
-
-                          <span className="
-px-3
-py-1
-rounded-full
-text-xs
-font-semibold
-bg-orange-100
-text-orange-700
-">
-
-                            15 Days Left
-
-                          </span>
-
-
-
-                          :
-
-
-                          <span className="
-px-3
-py-1
-rounded-full
-text-xs
-font-semibold
-bg-green-100
-text-green-700
-">
-
-                            Active
-
-                          </span>
-
-
-                    }
-
-
-
-                  </td>
-
-
-
-
-
-
-
-
-
-                  <td className="
-px-6
-py-4
-">
-
-
-                    <div className="
-flex
-items-center
-gap-3
-">
-
-
-                      <button
-
-                        title="View"
-
-                        className="
-text-blue-500
-hover:text-blue-700
-"
-
-                      >
-
-                        <FaEye />
-
-                      </button>
-
-
-
-
-
-                      <Link
-
-                        to={`/admin/orders/update/${order._id}`}
-
-                        title="Edit"
-
-                        className="
-text-yellow-500
-hover:text-yellow-700
-"
-
-                      >
-
-                        <FaEdit />
-
-                      </Link>
-
-
-
-
-
-
-                      <Link
-
-                        to={`/admin/orders/renew/${order._id}`}
-
-                        title="Renew"
-
-                        className="
-flex
-items-center
-gap-1
-bg-green-600
-hover:bg-green-700
-text-white
-px-3
-py-1.5
-rounded-lg
-text-xs
-"
-
-                      >
-
-
-                        <FaSyncAlt />
-
-                        Renew
-
-
-                      </Link>
-
-
-
-
-                    </div>
-
-
-                  </td>
-
-
-
-
-
-                </tr>
-
-
-              ))
-
-
-            }
-
-
-
-          </tbody>
-
-
-        </table>
+</div>
 
 
       </div>

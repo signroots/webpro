@@ -46,7 +46,26 @@ export const createDomainSource = async (
 };
 
 
+export const fetchDomainSourceById = async (
+  id:string
+) => {
 
+  const response = await axios.get(
+
+    `${API_URL}/api/domain-sources/${id}`,
+
+    {
+      headers:{
+        Authorization:`Bearer ${getToken()}`
+      }
+    }
+
+  );
+
+
+  return response.data?.data || null;
+
+};
 
 
 export const updateDomainSource = async(

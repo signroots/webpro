@@ -22,7 +22,7 @@ import { notify } from "../../../Common/Toastify";
 import { Select } from "antd";
 import { fetchCountryCodes } from "../Customer/api";
 import { toast } from "react-toastify";
-
+import ExpiryBadge from "./ExpiryBadge";
 import ServiceIcons from "../Order/ServiceIcons";
 // -------------------- Types --------------------
 interface Customer {
@@ -952,203 +952,243 @@ const getStatusClass = (status?: string) => {
   </div>
 )}
       {/* Orders Table */}
-      <div className="bg-white shadow rounded-lg overflow-auto">
-        <table className="min-w-full divide-y divide-gray-200 text-sm table-fixed">
+ {/* Orders Table */}
+<div className="bg-white shadow rounded-lg overflow-x-auto">
+
+<table className="w-full table-fixed divide-y divide-gray-200 text-sm">
+
+<thead className="bg-gray-100 text-gray-600 uppercase text-xs tracking-wider">
+
+<tr>
+
+<th className="w-[60px] px-3 py-3 text-center">
+SL No
+</th>
+
+<th className="w-[350px] px-3 py-3 text-left">
+Domain Name
+</th>
+
+<th className="w-[200px] px-3 py-3 text-center">
+Services
+</th>
+
+<th className="w-[140px] px-3 py-3 text-center">
+Expiry Date
+</th>
+
+<th className="w-[120px] px-3 py-3 text-center">
+Status
+</th>
+
+<th className="w-[120px] px-3 py-3 text-center">
+Actions
+</th>
+
+</tr>
+
+</thead>
 
 
-          {/* ================= HEADER ================== */}
-          <thead className="bg-gray-100 text-gray-600 uppercase text-xs tracking-wider">
-            <tr>
-              {["SL No", "Domain Name", "Customer", "Services", "Expiry Date", "Status", "Actions"].map(
-                (col) => (
-                  <th key={col} className="px-1 py-2 text-left font-medium">
-                    {col}
-                  </th>
-                )
-              )}
-            </tr>
-          </thead>
+<tbody className="divide-y divide-gray-100 text-gray-900">
 
 
-          {/* ================= BODY ================== */}
-          <tbody className="divide-y divide-gray-100 text-gray-900">
-            {paginatedOrders.map((order, idx) => (
-              <tr
-                key={order._id}                     // ✅ ADD THIS
-                id={`order-row-${order._id}`}
-                className={`transition-all duration-500 ${highlightedOrderId === order._id
-                    ? "bg-blue-50 border-l-4 border-blue-500"
-                    : "hover:bg-gray-50"
-                  }`}
-              >
-
-                {/* SL NO */}
-                <td className="px-6 py-4">
-                  {(currentPage - 1) * itemsPerPage + idx + 1}
-                </td>
-
-                {/* DOMAIN + LOCK */}
-                <td className="px-2 py-4 flex items-center gap-2 min-w-[250px]">
-                  <span className="flex items-center justify-center w-5 h-5 shrink-0">
-                    {order.lockStatus === "Locked" ? (
-                      <FaLock className="text-red-500 w-4 h-4" />
-                    ) : (
-                      <FaLock className="text-green-500 w-4 h-4" />
-                    )}
-                  </span>
-                  <span className="font-medium truncate">
-                    {order.domainName}
-                  </span>
-                </td>
+{paginatedOrders.map((order,idx)=>(
 
 
-                {/* CUSTOMER */}
-              {/* CUSTOMER */}
-<td className="px-2 py-4 min-w-[300px]">
-  {order.client ? (
-    <Link
-      to={`/admin/orders/customer/${order.client?._id}`}
-      className="text-blue-600 hover:underline"
-      title={order.client.c_company}
-    >
-      {order.client.c_company}
-    </Link>
-  ) : (
-    <button
-      className="text-red-600 hover:underline font-medium"
-      onClick={() => {
-        setSelectedOrder(order);
-        setModalType("addCustomer");
-      }}
-    >
-      Add Customer
-    </button>
-  )}
-</td>
+<tr
+key={order._id}
+className={`transition-all duration-500 ${
+highlightedOrderId === order._id
+? "bg-blue-50 border-l-4 border-blue-500"
+: "hover:bg-gray-50"
+}`}
+>
 
-    <td className="px-6 py-4 flex items-center gap-2">
-    
-      <ServiceIcons order={order} />
-    
-    </td>
-      
 
-               <td className="px-1 py-2 font-medium">
-  {(() => {
-    const formatDate = (date?: string) => {
-      if (!date) return null;
-      const d = new Date(date);
-      const day = d.getUTCDate().toString().padStart(2, "0");
-      const month = (d.getUTCMonth() + 1).toString().padStart(2, "0");
-      const year = d.getUTCFullYear();
-      return `${day}/${month}/${year}`;
-    };
 
-    const domainDate = formatDate(order.expiryDate);
+{/* SL NO */}
 
-const emailDates = (order.Plans || [])
-  .filter(plan => plan.type === "email") // only email expiry
-  .map(plan => formatDate(plan.expiryDate))
-  .filter((d): d is string => Boolean(d));
+<td className="px-3 py-4 text-center">
 
-const isSameExpiry =
-  !!domainDate &&
-  emailDates.length > 0 &&
-  emailDates.every(d => d === domainDate);
-    const badgeBase =
-      "inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium w-fit";
+{(currentPage-1)*itemsPerPage+idx+1}
 
-    const iconBase =
-      "w-4 h-4 flex justify-center items-center rounded-full bg-white text-black text-[9px]";
-
-    return (
-      <div className="flex flex-col gap-1">
-        {/* 🟢 ED – Same Email & Domain Expiry */}
-        {isSameExpiry && domainDate && (
-          <div className={`${badgeBase} bg-green-100 text-green-800`}>
-            <span className={iconBase}>ED</span>
-            {domainDate}
-          </div>
-        )}
-
-        {/* 🔵 EE – Email Expiry */}
-        {!isSameExpiry &&
-          emailDates.map((date, idx) => (
-            <div
-              key={idx}
-              className={`${badgeBase} bg-blue-100 text-blue-800`}
-            >
-              <span className={iconBase}>EE</span>
-              {date}
-            </div>
-          ))}
-
-        {/* 🟣 DE – Domain Expiry */}
-        {!isSameExpiry && domainDate && (
-          <div className={`${badgeBase} bg-purple-100 text-purple-800`}>
-            <span className={iconBase}>DE</span>
-            {domainDate}
-          </div>
-        )}
-
-        {/* ⚪ No Data */}
-        {!domainDate && emailDates.length === 0 && (
-          <span className="text-gray-400 text-xs">N/A</span>
-        )}
-      </div>
-    );
-  })()}
 </td>
 
 
 
-<td className="px-2 py-4">
-  <span
-    className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium
-      ${getStatusClass(order.order_status)}`}
-  >
-    <span className="w-4 h-4 flex justify-center items-center rounded-full bg-white text-black text-[9px]">
-      D
-    </span>
 
-    {order.order_status || "N/A"}
 
-  </span>
+{/* DOMAIN + CUSTOMER */}
+
+<td className="px-3 py-4">
+
+<div className="flex items-start gap-3">
+
+
+<FaLock
+className={`w-4 h-4 mt-1 shrink-0 ${
+order.lockStatus==="Locked"
+?"text-red-500"
+:"text-green-500"
+}`}
+/>
+
+
+<div className="min-w-0">
+
+
+<p className="font-semibold text-gray-800 truncate">
+{order.domainName || "-"}
+</p>
+
+
+{
+order.client
+?
+<Link
+to={`/admin/orders/customer/${order.client._id}`}
+className="text-blue-600 hover:underline text-xs truncate block"
+>
+
+{order.client.c_company || order.client.c_name}
+
+</Link>
+
+:
+
+<button
+className="text-red-600 text-xs"
+onClick={()=>{
+setSelectedOrder(order);
+setModalType("addCustomer");
+}}
+>
+
+Add Customer
+
+</button>
+
+}
+
+
+</div>
+
+
+</div>
+
 </td>
 
 
 
-                {/* ACTIONS */}
-                <td className="px-2 py-4 flex gap-3 text-gray-500">
-                  <button
-                    className="hover:text-blue-600"
-                    title="View"
-                    onClick={() =>
-                      navigate(`/admin/orders/order-details/${order._id}`, {
-                        state: {
-                          fromPage: currentPage,
-                        },
-                      })
-                    }
-                  >
-                    <FaEye />
-                  </button>
-                  <button
-                    onClick={() => handleEdit(order._id)}
-                    className="hover:text-yellow-600"
-                    title="Edit"
-                  >
-                    <FaEdit />
-                  </button>
 
 
-                </td>
 
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+{/* SERVICES */}
+
+<td className="px-3 py-4 text-center">
+
+<div className="flex justify-center items-center gap-2 whitespace-nowrap">
+
+<ServiceIcons order={order}/>
+
+</div>
+
+</td>
+
+
+
+
+
+
+{/* EXPIRY */}
+
+<td className="px-3 py-4 text-center">
+
+<ExpiryBadge order={order}/>
+
+</td>
+
+
+
+
+
+
+{/* STATUS */}
+
+<td className="px-3 py-4 text-center">
+
+<span
+className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${getStatusClass(order.order_status)}`}
+>
+
+<span className="w-4 h-4 flex justify-center items-center rounded-full bg-white text-black text-[9px]">
+D
+</span>
+
+{order.order_status || "N/A"}
+
+</span>
+
+
+</td>
+
+
+
+
+
+
+{/* ACTIONS */}
+
+<td className="px-3 py-4">
+
+<div className="flex justify-center gap-3 text-gray-500">
+
+
+<button
+className="hover:text-blue-600"
+title="View"
+onClick={()=>
+navigate(`/admin/orders/order-details/${order._id}`,{
+state:{fromPage:currentPage}
+})
+}
+>
+
+<FaEye/>
+
+</button>
+
+
+
+<button
+onClick={()=>handleEdit(order._id)}
+className="hover:text-yellow-600"
+title="Edit"
+>
+
+<FaEdit/>
+
+</button>
+
+
+</div>
+
+</td>
+
+
+
+</tr>
+
+
+))}
+
+
+</tbody>
+
+</table>
+
+</div>
 
       {/* Pagination */}
       {!emailType && (

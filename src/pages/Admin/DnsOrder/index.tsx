@@ -18,6 +18,7 @@ import axios from "axios";
 // import { updateOrder } from "./update/api";
 import { fetchCountries, fetchStatesByCountry } from "../Customer/api";
 import ServiceIcons from "../Order/ServiceIcons";
+import ExpiryBadge from "../Order/ExpiryBadge";
 // -------------------- Types --------------------
 
 interface Customer {
@@ -699,21 +700,10 @@ const handleSubmit = async (e: React.FormEvent) => {
 
 </td>
 {/* Expiry Date */}
-<td className="px-6 py-4">
-  {(() => {
-    const formatDate = (dateStr: string | null | undefined) => {
-      if (!dateStr) return null;
-      const date = new Date(dateStr);
-      const day = String(date.getDate()).padStart(2, "0");
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const year = date.getFullYear();
-      return `${day}-${month}-${year}`;
-    };
+   <td className="px-1 py-2 font-medium">
 
-    const domainExpiry = formatDate(order.expiryDate);
+  <ExpiryBadge order={order} />
 
-    return domainExpiry || "N/A";
-  })()}
 </td>
 
 

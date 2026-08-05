@@ -12,6 +12,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 import { SiHostinger } from "react-icons/si";
 import { Import } from "lucide-react";
 import ServiceIcons from "../Order/ServiceIcons";
+import ExpiryBadge from "../Order/ExpiryBadge";
 const CustomerOrders: React.FC = () => {
 
   console.log("🔥 CustomerOrders COMPONENT LOADED");
@@ -222,354 +223,185 @@ const CustomerOrders: React.FC = () => {
 
         <div className="overflow-x-auto">
 
+<table className="w-full table-fixed text-sm">
 
-          <table className="w-full text-sm">
+<thead className="bg-gray-50 border-b">
+<tr>
 
+<th className="w-[60px] px-4 py-3 text-center">
+#
+</th>
 
-            <thead className="bg-gray-50 border-b">
+<th className="w-[350px] px-4 py-3 text-left">
+Domain
+</th>
 
+<th className="w-[200px] px-4 py-3 text-center">
+Services
+</th>
 
-              <tr>
+<th className="w-[150px] px-4 py-3 text-center">
+Expiry
+</th>
 
+<th className="w-[120px] px-4 py-3 text-center">
+Status
+</th>
 
-                <th className="px-4 py-3 text-left">
-                  #
-                </th>
+</tr>
+</thead>
 
 
-                <th className="px-4 py-3 text-left">
-                  Domain
-                </th>
-                <th className="px-4 py-3 text-center">
-                Services
-                </th>
 
-                <th className="px-4 py-3 text-center">
-                  Expiry
-                </th>
 
 
-                <th className="px-4 py-3 text-center">
-                  Status
-                </th>
+       <tbody>
 
+{
+  orders.length === 0 ? (
 
+    <tr>
+      <td
+        colSpan={5}
+        className="text-center py-6 text-gray-500"
+      >
+        No orders found
+      </td>
+    </tr>
 
+  ) : (
 
-              </tr>
+    orders.map((order,index)=>(
 
+      <tr
+        key={order._id}
+        className="border-b hover:bg-gray-50 transition"
+      >
 
-            </thead>
 
-
-
-
-
-            <tbody>
-
-
-            {
-
-              orders.length === 0 ? (
-
-
-                <tr>
-
-
-                  <td
-                    colSpan={5}
-                    className="text-center py-6 text-gray-500"
-                  >
-
-                    No orders found
-
-                  </td>
-
-
-                </tr>
-
-
-
-              ) : (
-
-
-
-                orders.map((order,index)=>(
-
-
-                  <tr
-                    key={order._id}
-                    className="border-b hover:bg-gray-50 transition"
-                  >
-
-
-
-                    <td className="px-4 py-4 text-center">
-
-                      {index + 1}
-
-                    </td>
-
-
-
-
-
-                    <td className="px-4 py-4">
-
-  <div className="flex items-center gap-3">
-
-    <div
-      className="
-      bg-green-100
-      flex
-      items-center
-      justify-center
-      "
-    >
-
-      <FaLock className="w-4 h-4 text-green-600" />
-
-    </div>
-
-
-    <div>
-
-      <p className="font-semibold text-gray-800">
-        {order.domainName || "-"}
-      </p>
-
-
-      <p className="text-xs text-gray-500">
-        Domain
-      </p>
-
-    </div>
-
-
-  </div>
-
-</td>
-{/* SERVICES */}
-<td className="px-4 py-2 text-center">
-  <div className="flex justify-center items-center">
-    <ServiceIcons order={order} />
-  </div>
-</td>
-<td className="px-1 py-2 text-center font-medium">
-
-  <div className="flex justify-center">
-
-    {(() => {
-
-      const formatDate = (date?: string): string | null => {
-
-        if (!date) return null;
-
-        const d = new Date(date);
-
-        const day = d.getUTCDate()
-          .toString()
-          .padStart(2, "0");
-
-        const month = (d.getUTCMonth() + 1)
-          .toString()
-          .padStart(2, "0");
-
-        const year = d.getUTCFullYear();
-
-        return `${day}/${month}/${year}`;
-
-      };
-
-
-
-      const domainDate: string | null = formatDate(
-        order.domainExpiryDate
-      );
-
-
-
-      const emailDates: string[] = (order.emailExpiryDate || [])
-
-        .map((date: string) => formatDate(date))
-
-        .filter(
-          (d: string | null): d is string => Boolean(d)
-        );
-
-
-
-
-      const isSameExpiry =
-        Boolean(domainDate) &&
-        emailDates.length > 0 &&
-        emailDates.every(
-          (date: string) => date === domainDate
-        );
-
-
-
-
-      const badgeBase =
-        "inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium w-fit";
-
-
-
-      const iconBase =
-        "w-4 h-4 flex justify-center items-center rounded-full bg-white text-black text-[9px]";
-
-
-
-
-      return (
-
-        <div className="flex flex-col gap-1 items-center">
-
-
-          {/* 🟢 ED - Email + Domain Same Expiry */}
-
-          {
-            isSameExpiry && domainDate && (
-
-              <div
-                className={`${badgeBase} bg-green-100 text-green-800`}
-              >
-
-                <span className={iconBase}>
-                  ED
-                </span>
-
-                {domainDate}
-
-              </div>
-
-            )
-          }
-
-
-
-
-          {/* 🔵 EE - Email Expiry */}
-
-          {
-            !isSameExpiry &&
-
-            emailDates.map(
-              (date: string, index: number) => (
-
-                <div
-                  key={index}
-                  className={`${badgeBase} bg-blue-100 text-blue-800`}
-                >
-
-                  <span className={iconBase}>
-                    EE
-                  </span>
-
-                  {date}
-
-                </div>
-
-              )
-
-            )
-          }
-
-
-
-
-
-          {/* 🟣 DE - Domain Expiry */}
-
-          {
-            !isSameExpiry && domainDate && (
-
-              <div
-                className={`${badgeBase} bg-purple-100 text-purple-800`}
-              >
-
-                <span className={iconBase}>
-                  DE
-                </span>
-
-                {domainDate}
-
-              </div>
-
-            )
-          }
-
-
-
-
-
-          {/* ⚪ No Expiry */}
-
-          {
-            !domainDate &&
-            emailDates.length === 0 && (
-
-              <span className="text-gray-400 text-xs">
-                N/A
-              </span>
-
-            )
-          }
-
-
-        </div>
-
-      );
-
-
-    })()}
-
-  </div>
-
+        {/* NUMBER */}
+      <td className="w-[60px] px-4 py-4 text-center">
+  {index + 1}
 </td>
 
 
-                    <td className="px-4 py-4 text-center">
+        {/* DOMAIN + CUSTOMER */}
+        <td className="px-4 py-4">
+
+          <div className="flex items-center gap-3">
 
 
-                      <span
-                        className="
-                        px-3
-                        py-1
-                        rounded-full
-                        bg-green-100
-                        text-green-700
-                        text-xs
-                        font-medium
-                        "
-                      >
+            <div
+              className="
+              bg-green-100
+              flex
+              items-center
+              justify-center
+              w-8
+              h-8
+              rounded
+              "
+            >
 
-                        {order.status || "ACTIVE"}
+              <FaLock className="w-4 h-4 text-green-600" />
 
-                      </span>
-
-
-                    </td>
-
-
+            </div>
 
 
 
-                   
+         <div className="min-w-0">
+
+<p className="font-semibold text-gray-800 truncate">
+                {order.domainName || "-"}
+              </p>
 
 
-                  </tr>
+              <p className="text-xs text-gray-500">
+                {order.client?.c_company || "-"}
+              </p>
+
+            </div>
 
 
-                ))
-
-              )
+          </div>
 
 
-            }
+        </td>
 
 
-            </tbody>
+
+
+
+        {/* SERVICES */}
+        <td className="px-4 py-4 text-center">
+
+          <div className="flex justify-center items-center">
+
+            <ServiceIcons order={order} />
+
+          </div>
+
+        </td>
+
+
+
+
+
+
+        {/* EXPIRY DATE */}
+        <td className="px-1 py-4 font-medium text-center">
+
+          <div className="flex justify-center">
+
+            <ExpiryBadge order={order} />
+
+          </div>
+
+        </td>
+
+
+
+
+
+
+
+        {/* STATUS */}
+        <td className="px-4 py-4 text-center">
+
+
+          <span
+            className="
+            px-3
+            py-1
+            rounded-full
+            bg-green-100
+            text-green-700
+            text-xs
+            font-medium
+            "
+          >
+
+            {order.status || "ACTIVE"}
+
+          </span>
+
+
+        </td>
+
+
+
+
+
+      </tr>
+
+
+    ))
+
+  )
+}
+
+
+</tbody>
 
 
           </table>

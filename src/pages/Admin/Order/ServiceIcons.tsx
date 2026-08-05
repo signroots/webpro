@@ -20,7 +20,11 @@ export default function ServiceIcons({
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [isHovering, setIsHovering] = useState(false);
   const [msofficeCache, setMsofficeCache] = useState<any>({});
+const formatDate = (date:any) => {
+  if(!date) return "-";
 
+  return new Date(date).toLocaleDateString();
+};
 
   const handleMsofficeHover = async () => {
 
@@ -63,8 +67,7 @@ export default function ServiceIcons({
 
 
   return (
-
-<div className="flex items-center gap-3">
+<div className="flex items-center justify-center gap-2 whitespace-nowrap">
 
 
 {/* ================= DOMAIN SOURCE ================= */}
@@ -197,57 +200,7 @@ title="No Domain Source"
 
 
 
-{/* ================= MS OFFICE ================= */}
 
-{
-order.Plans?.some(
-  (plan:any)=>plan.type?.toLowerCase()==="msoffice"
-)
-
-?
-
-order.Plans
-.filter(
-  (plan:any)=>plan.type?.toLowerCase()==="msoffice"
-)
-.map(
-(plan:any,index:number)=>(
-
-<img
-key={index}
-
-src={
-  plan.emailTypeImage
-  ?
-  `${API_BASE_URL}${plan.emailTypeImage}`
-  :
-  ""
-}
-
-className="w-5 h-5 object-contain"
-
-title={plan.emailType}
-
-/>
-
-)
-
-)
-
-
-:
-
-<img
-
-src="/MSOffice.png"
-
-className="w-5 h-5 object-contain opacity-30 grayscale"
-
-title="No MS Office"
-
-/>
-
-}
 {/* ================= HOSTING ================= */}
 
 
@@ -299,31 +252,43 @@ title="Website"
 />
 
 
+{/* ================= MS OFFICE ================= */}
 
+{
+  order.Plans?.some(
+    (plan: any) => plan.type?.toLowerCase() === "msoffice"
+  ) &&
+    order.Plans
+      .filter(
+        (plan: any) => plan.type?.toLowerCase() === "msoffice"
+      )
+      .map((plan: any, index: number) => (
+        <img
+          key={index}
+          src={
+            plan.emailTypeImage
+              ? `${API_BASE_URL}${plan.emailTypeImage}`
+              : "/MSOffice.png"
+          }
+          className="w-5 h-5 object-contain"
+          title={plan.emailType}
+        />
+      ))
+}
 
 {/* ================= SSL ================= */}
 
 
-<FaLock
-
-className={
-order.Plans?.some(
-(plan:any)=>plan.type==="ssl"
-)
-
-?
-
-"w-5 h-5 text-yellow-500"
-
-:
-
-"w-5 h-5 text-gray-300"
-
+{
+  order.Plans?.some(
+    (plan: any) => plan.type?.toLowerCase() === "ssl"
+  ) && (
+    <FaLock
+      className="w-5 h-5 text-yellow-500"
+      title="SSL"
+    />
+  )
 }
-
-title="SSL"
-
-/>
 
 
 
