@@ -3502,13 +3502,13 @@ orders = orders.map((order:any)=>({
 
 
 
-orders = orders.map((order:any)=>({
+// orders = orders.map((order:any)=>({
 
-  ...order,
+//   ...order,
 
-  client: clientData
+//   client: clientData
 
-}));
+// }));
 
     // ================= RESPONSE =================
 
@@ -3516,7 +3516,7 @@ orders = orders.map((order:any)=>({
     return res.json({
 
       status:"SUCCESS",
-
+      client: clientData,
       orders
 
 
