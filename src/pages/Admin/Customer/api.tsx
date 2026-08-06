@@ -87,12 +87,35 @@ export interface IState {
 
 // ---------------- Customer APIs ----------------
 
-// Fetch all customers
-export const fetchCustomers = async (): Promise<ICustomer[]> => {
-  const res = await axios.get<ICustomer[]>(`${API_BASE_URL}/api/client`);
+export interface CustomerListResponse {
+  success: boolean;
+  data: ICustomer[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export const fetchCustomers = async (
+  page = 1,
+  limit = 10,
+  search = ""
+): Promise<CustomerListResponse> => {
+  const res = await axios.get<CustomerListResponse>(
+    `${API_BASE_URL}/api/client`,
+    {
+      params: {
+        page,
+        limit,
+        search,
+      },
+    }
+  );
+
   return res.data;
 };
-
 // ✅ Create customer (correct response type)
 // ✅ Create customer (handles both success and error responses)
 export const createCustomer = async (

@@ -4,20 +4,38 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { FaTrash } from "react-icons/fa";
 interface Props {
-  customers: ICustomer[];
-  currentPage: number;
-  itemsPerPage: number;
-  onPageChange: (page: number) => void;
-  onView: (customer: ICustomer) => void;
-  onEdit: (customer: ICustomer) => void;
-  onDelete: (customerId: string) => void;
-  highlightCustomerId: string | null;
-}
 
+  customers: ICustomer[];
+
+  currentPage:number;
+
+  itemsPerPage:number;
+
+  totalPages:number;
+
+  searchTerm:string;
+
+  setSearchTerm:
+  React.Dispatch<React.SetStateAction<string>>;
+
+  onPageChange:(page:number)=>void;
+
+  onView:(customer:ICustomer)=>void;
+
+  onEdit:(customer:ICustomer)=>void;
+
+  onDelete:(id:string)=>void;
+
+  highlightCustomerId:string|null;
+
+}
 const CustomerList: React.FC<Props> = ({
   customers,
   currentPage,
   itemsPerPage,
+  totalPages,
+  searchTerm,
+  setSearchTerm,
   onPageChange,
   onView,
   onEdit,
@@ -41,7 +59,7 @@ const CustomerList: React.FC<Props> = ({
   const [deleteModal, setDeleteModal] = useState(false);
 const [customerToDelete, setCustomerToDelete] = useState<any>(null);
 
-const [searchTerm, setSearchTerm] = useState("");
+
   const onAddPassword = (customer: ICustomer) => {
     setSelectedCustomer(customer);
     setShowModal(true);
@@ -121,20 +139,10 @@ const confirmDelete = () => {
       setIsSaving(false);
     }
   };
-const filteredCustomers = customers.filter((c) =>
-  `${c.c_company ?? ""} ${c.c_name ?? ""} ${
-    Array.isArray(c.c_email) ? c.c_email.join(" ") : c.c_email ?? ""
-  }`
-    .toLowerCase()
-    .includes(searchTerm.toLowerCase())
-);
+  const paginated = customers;
 
 const startIndex = (currentPage - 1) * itemsPerPage;
-const paginated = filteredCustomers.slice(
-  startIndex,
-  startIndex + itemsPerPage
-);
-const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
+
 
   // ✅ Copy password helper
   const handleCopyPassword = async (id: string) => {
@@ -217,7 +225,6 @@ const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
     value={searchTerm}
     onChange={(e) => {
       setSearchTerm(e.target.value);
-      onPageChange(1); // reset page when searching
     }}
     className="w-80 px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
   />

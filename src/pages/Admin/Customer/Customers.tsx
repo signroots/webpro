@@ -133,8 +133,9 @@ const Customers: React.FC = () => {
   const [customers, setCustomers] = useState<ICustomer[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 50;
-
+  const [itemsPerPage] = useState(50);
+const [totalPages, setTotalPages] = useState(1);
+const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
@@ -170,28 +171,83 @@ const Customers: React.FC = () => {
   });
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        const customerList = await fetchCustomers();
-        setCustomers(customerList);
 
-        const countryList = await fetchCountries();
-        setCountries(countryList);
-      } catch (err) {
-        console.error("Error loading customers:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const loadData = async () => {
+    setLoading(true);
+
+    try {
+
+      const res = await fetchCustomers(
+        currentPage,
+        itemsPerPage,
+        searchTerm
+      );
+
+      setCustomers(res.data || []);
+
+      setTotalPages(
+        res.pagination?.totalPages || 1
+      );
+
+    } catch(error) {
+
+      console.error(
+        "Error loading customers:",
+        error
+      );
+
+    } finally {
+
+      setLoading(false);
+
+    }
+  };
+
+
+  const timer = setTimeout(() => {
     loadData();
-  }, []);
+  }, 700);
 
+
+  return () => {
+    clearTimeout(timer);
+  };
+
+
+}, [currentPage, searchTerm]);
+useEffect(() => {
+
+  const loadCountries = async () => {
+
+    try {
+
+      const countryList = await fetchCountries();
+
+      setCountries(countryList);
+
+    } catch(error){
+
+      console.error(error);
+
+    }
+
+  };
+
+
+  loadCountries();
+
+}, []);
   const refreshCustomers = async () => {
     setLoading(true);
     try {
-      const customerList = await fetchCustomers();
-      setCustomers(customerList);
+   const res = await fetchCustomers(
+  currentPage,
+  itemsPerPage,
+  searchTerm
+);
+
+setCustomers(res.data);
+setTotalPages(res.pagination.totalPages);
     } catch (err) {
       console.error("Error refreshing customers:", err);
     } finally {
@@ -388,20 +444,21 @@ useEffect(() => {
         </button>
       </div>
 
-      {loading ? (
-        <p>Loading...</p>
-      ) : (
-        <CustomerList
-          customers={customers}
-          currentPage={currentPage}
-          itemsPerPage={itemsPerPage}
-          onPageChange={setCurrentPage}
-          onView={handleView}
-          onEdit={handleEdit}
-          onDelete={handleDeleteCustomer}
-          highlightCustomerId={highlightCustomerId}
-        />
-      )}
+     <CustomerList
+  customers={customers}
+  currentPage={currentPage}
+  itemsPerPage={itemsPerPage}
+  totalPages={totalPages}
+  searchTerm={searchTerm}
+  setSearchTerm={setSearchTerm}
+  onPageChange={setCurrentPage}
+  onView={handleView}
+  onEdit={handleEdit}
+  onDelete={handleDeleteCustomer}
+  highlightCustomerId={highlightCustomerId}
+/>
+
+
 
       {isModalOpen && (
         <CustomerModal

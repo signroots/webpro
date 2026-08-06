@@ -309,18 +309,17 @@ Status
 
 
 
-         <div className="min-w-0">
+       <div className="min-w-0">
 
-<p className="font-semibold text-gray-800 truncate">
-                {order.domainName || "-"}
-              </p>
+  <p className="font-semibold text-gray-800 truncate">
+    {order?.domainName || "-"}
+  </p>
 
+  <p className="text-xs text-gray-500">
+    {customer?.c_company || "-"}
+  </p>
 
-              <p className="text-xs text-gray-500">
-                {order.client?.c_company || "-"}
-              </p>
-
-            </div>
+</div>
 
 
           </div>
