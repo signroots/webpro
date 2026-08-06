@@ -49,33 +49,41 @@ router.get('/', async (req, res) => {
     const filter: any = {};
 
     if (search) {
-      filter.$or = [
-        {
-          c_name: {
-            $regex: search,
-            $options: 'i'
-          }
-        },
-        {
-          c_company: {
-            $regex: search,
-            $options: 'i'
-          }
-        },
-        {
-          c_phone: {
-            $regex: search,
-            $options: 'i'
-          }
-        },
-        {
-          c_email: {
-            $regex: search,
-            $options: 'i'
-          }
+
+  const searchWords = search
+    .trim()
+    .split(/\s+/);
+
+  filter.$and = searchWords.map((word)=>({
+    $or:[
+      {
+        c_name:{
+          $regex:word,
+          $options:"i"
         }
-      ];
-    }
+      },
+      {
+        c_company:{
+          $regex:word,
+          $options:"i"
+        }
+      },
+      {
+        c_phone:{
+          $regex:word,
+          $options:"i"
+        }
+      },
+      {
+        c_email:{
+          $regex:word,
+          $options:"i"
+        }
+      }
+    ]
+  }));
+
+}
 
     const [customers, total] = await Promise.all([
       Client.find(filter)
