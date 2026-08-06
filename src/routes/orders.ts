@@ -3363,6 +3363,18 @@ orders = orders.map((order:any)=>({
     ) || []
 
 }));
+// Remove orders without domainSource and Plans
+orders = orders.filter((order:any) => {
+
+  const hasDomainSource = !!order.domainSource;
+
+  const hasPlans =
+    order.Plans &&
+    order.Plans.length > 0;
+
+  return hasDomainSource || hasPlans;
+
+});
     // ================= EMAIL EXPIRY =================
 
 

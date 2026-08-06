@@ -38,21 +38,77 @@ const router = express.Router();
 //     }
 //   });
 
-router.get('/', async (_req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const customers = await Client.find()
-      .sort({ createdAt: -1 })
-      .populate('c_country', 'name code')
-      .populate('c_state', 'name code country')
-      .lean();
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const search = (req.query.search as string) || '';
 
-    res.status(200).json(customers);
+    const skip = (page - 1) * limit;
+
+    const filter: any = {};
+
+    if (search) {
+      filter.$or = [
+        {
+          c_name: {
+            $regex: search,
+            $options: 'i'
+          }
+        },
+        {
+          c_company: {
+            $regex: search,
+            $options: 'i'
+          }
+        },
+        {
+          c_phone: {
+            $regex: search,
+            $options: 'i'
+          }
+        },
+        {
+          c_email: {
+            $regex: search,
+            $options: 'i'
+          }
+        }
+      ];
+    }
+
+    const [customers, total] = await Promise.all([
+      Client.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('c_country', 'name code')
+        .populate('c_state', 'name code country')
+        .lean(),
+
+      Client.countDocuments(filter)
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: customers,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+
   } catch (err: any) {
     console.error('Error fetching customers:', err.message);
-    res.status(500).json({ error: 'Failed to fetch customers' });
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch customers'
+    });
   }
 });
-
 
 
 router.post("/", async (req: Request, res: Response): Promise<any> => {
