@@ -1273,6 +1273,7 @@ const emailType =
     hostTypeId
     hostSubTypeId
     storageId
+    noOfUsers
     `
   )
   .lean();
