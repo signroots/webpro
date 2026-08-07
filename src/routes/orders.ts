@@ -158,7 +158,7 @@ router.get(
 
       })
       .select(
-        "orderId type expiryDate emailTypeId planId"
+        "orderId type expiryDate emailTypeId planId noOfUsers"
       )
       .populate({
 
@@ -3287,6 +3287,8 @@ plans.forEach((plan:any)=>{
 
     expiryDate:
       plan.expiryDate || null,
+    noOfUsers:
+      plan.noOfUsers || 0,
 
 
     emailType:
