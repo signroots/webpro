@@ -1042,7 +1042,7 @@ highlightedOrderId === order._id
   {/* Customer */}
   {order.client ? (
     <Link
-      to={`/admin/customers/${order.client._id}`}
+      to={`/admin/orders/customer/${order.client._id}`}
       className="text-sm text-blue-600 hover:underline"
     >
       {order.client.c_company || order.client.c_name}
