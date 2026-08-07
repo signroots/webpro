@@ -1,12 +1,12 @@
 import express, { Request, Response } from "express";
-import { IOrder,Order } from "../models/Order";
+import { IOrder, Order } from "../models/Order";
 import mongoose from "mongoose";
-import { authMiddleware,AuthRequest  } from "../middleware/auth"; 
+import { authMiddleware, AuthRequest } from "../middleware/auth";
 import User from "../models/User";
-import  { IUserType } from "../models/UserType"
+import { IUserType } from "../models/UserType"
 import DomainSource from "../models/DomainSource";
 import Client from "../models/Client";
-import  {OrderPlan } from "../models/OrderPlan";
+import { OrderPlan } from "../models/OrderPlan";
 import { PlanEmail } from "../models/PlanEmail";
 import { TypeEmail } from "../models/TypeEmail";
 import State from "../models/State";
@@ -32,8 +32,8 @@ router.get(
       if (_req.user?.role?.toLowerCase() !== "admin") {
 
         return res.status(403).json({
-          success:false,
-          error:"Admin access required",
+          success: false,
+          error: "Admin access required",
         });
 
       }
@@ -50,24 +50,24 @@ router.get(
         now.getFullYear(),
         now.getMonth(),
         1,
-        0,0,0
+        0, 0, 0
       );
 
 
       const endOfCurrentMonth = new Date(
         now.getFullYear(),
-        now.getMonth()+1,
+        now.getMonth() + 1,
         0,
-        23,59,59
+        23, 59, 59
       );
 
 
 
       const startOfPrevMonth = new Date(
         now.getFullYear(),
-        now.getMonth()-1,
+        now.getMonth() - 1,
         1,
-        0,0,0
+        0, 0, 0
       );
 
 
@@ -75,24 +75,24 @@ router.get(
         now.getFullYear(),
         now.getMonth(),
         0,
-        23,59,59
+        23, 59, 59
       );
 
 
 
       const startOfNextMonth = new Date(
         now.getFullYear(),
-        now.getMonth()+1,
+        now.getMonth() + 1,
         1,
-        0,0,0
+        0, 0, 0
       );
 
 
       const endOfNextMonth = new Date(
         now.getFullYear(),
-        now.getMonth()+2,
+        now.getMonth() + 2,
         0,
-        23,59,59
+        23, 59, 59
       );
 
 
@@ -107,18 +107,18 @@ router.get(
 
 
 
-      let startDate:Date;
-      let endDate:Date;
+      let startDate: Date;
+      let endDate: Date;
 
 
 
-      switch(month){
+      switch (month) {
 
 
         case "previous":
 
-          startDate=startOfPrevMonth;
-          endDate=endOfPrevMonth;
+          startDate = startOfPrevMonth;
+          endDate = endOfPrevMonth;
 
           break;
 
@@ -126,8 +126,8 @@ router.get(
 
         case "next":
 
-          startDate=startOfNextMonth;
-          endDate=endOfNextMonth;
+          startDate = startOfNextMonth;
+          endDate = endOfNextMonth;
 
           break;
 
@@ -135,8 +135,8 @@ router.get(
 
         default:
 
-          startDate=startOfCurrentMonth;
-          endDate=endOfCurrentMonth;
+          startDate = startOfCurrentMonth;
+          endDate = endOfCurrentMonth;
 
       }
 
@@ -149,25 +149,25 @@ router.get(
       // =================================================
 
 
-      const plans:any[] = await OrderPlan.find({
+      const plans: any[] = await OrderPlan.find({
 
-        expiryDate:{
-          $gte:startDate,
-          $lte:endDate
+        expiryDate: {
+          $gte: startDate,
+          $lte: endDate
         }
 
       })
-      .select(
-        "orderId type expiryDate emailTypeId planId noOfUsers"
-      )
-      .populate({
+        .select(
+          "orderId type expiryDate emailTypeId planId noOfUsers"
+        )
+        .populate({
 
-        path:"emailTypeId",
+          path: "emailTypeId",
 
-        select:"name image"
+          select: "name image"
 
-      })
-      .lean();
+        })
+        .lean();
 
 
 
@@ -185,7 +185,7 @@ router.get(
         ...new Set(
 
           plans.map(
-            plan=>String(plan.orderId)
+            plan => String(plan.orderId)
           )
 
         )
@@ -204,20 +204,20 @@ router.get(
       // =================================================
 
 
-      const orders:any[] = await Order.find({
+      const orders: any[] = await Order.find({
 
-        $or:[
+        $or: [
 
 
           // Domain expiry
 
           {
 
-            expiryDate:{
+            expiryDate: {
 
-              $gte:startDate,
+              $gte: startDate,
 
-              $lte:endDate
+              $lte: endDate
 
             }
 
@@ -229,9 +229,9 @@ router.get(
 
           {
 
-            _id:{
+            _id: {
 
-              $in:planOrderIds
+              $in: planOrderIds
 
             }
 
@@ -242,31 +242,31 @@ router.get(
 
       })
 
-      .populate({
+        .populate({
 
-        path:"customer",
+          path: "customer",
 
-        select:"name email mobile"
+          select: "name email mobile"
 
-      })
+        })
 
-      .populate({
+        .populate({
 
-        path:"client",
+          path: "client",
 
-        select:"_id c_name c_company c_email c_phone"
+          select: "_id c_name c_company c_email c_phone"
 
-      })
+        })
 
-      .populate({
+        .populate({
 
-        path:"domainSource",
+          path: "domainSource",
 
-        select:"name code image"
+          select: "name code image"
 
-      })
+        })
 
-      .lean();
+        .lean();
 
 
 
@@ -284,7 +284,7 @@ router.get(
 
 
 
-      plans.forEach(plan=>{
+      plans.forEach(plan => {
 
 
         const key =
@@ -292,7 +292,7 @@ router.get(
 
 
 
-        if(!planMap.has(key)){
+        if (!planMap.has(key)) {
 
 
           planMap.set(
@@ -308,10 +308,10 @@ router.get(
         planMap.get(key).push({
 
 
-          type:plan.type,
+          type: plan.type,
 
 
-          expiryDate:plan.expiryDate,
+          expiryDate: plan.expiryDate,
           noOfUsers: plan.noOfUsers || 0,
 
 
@@ -323,7 +323,7 @@ router.get(
             plan.emailTypeId?.image || null,
 
 
-          planId:plan.planId
+          planId: plan.planId
 
 
         });
@@ -344,7 +344,7 @@ router.get(
       // =================================================
 
 
-      const finalOrders = orders.map(order=>{
+      const finalOrders = orders.map(order => {
 
 
         const orderPlans =
@@ -355,13 +355,13 @@ router.get(
 
 
 
-        const expiryDates:any[]=[];
+        const expiryDates: any[] = [];
 
 
 
         // Domain expiry
 
-        if(order.expiryDate){
+        if (order.expiryDate) {
 
           expiryDates.push(
             new Date(order.expiryDate)
@@ -374,10 +374,10 @@ router.get(
 
         // Plan expiry
 
-        orderPlans.forEach((plan:any)=>{
+        orderPlans.forEach((plan: any) => {
 
 
-          if(plan.expiryDate){
+          if (plan.expiryDate) {
 
 
             expiryDates.push(
@@ -398,23 +398,23 @@ router.get(
 
           expiryDates.length
 
-          ?
+            ?
 
-          new Date(
+            new Date(
 
-            Math.min(
+              Math.min(
 
-              ...expiryDates.map(
-                d=>d.getTime()
+                ...expiryDates.map(
+                  d => d.getTime()
+                )
+
               )
 
             )
 
-          )
+            :
 
-          :
-
-          null;
+            null;
 
 
 
@@ -426,7 +426,7 @@ router.get(
 
           nearestExpiryDate,
 
-          Plans:orderPlans
+          Plans: orderPlans
 
         };
 
@@ -444,14 +444,14 @@ router.get(
       // =================================================
 
 
-      finalOrders.sort((a,b)=>{
+      finalOrders.sort((a, b) => {
 
 
-        if(!a.nearestExpiryDate)
+        if (!a.nearestExpiryDate)
           return 1;
 
 
-        if(!b.nearestExpiryDate)
+        if (!b.nearestExpiryDate)
           return -1;
 
 
@@ -477,13 +477,13 @@ router.get(
 
       return res.status(200).json({
 
-        success:true,
+        success: true,
 
 
-        counts:{
+        counts: {
 
 
-          total:finalOrders.length,
+          total: finalOrders.length,
 
 
           month,
@@ -498,7 +498,7 @@ router.get(
         },
 
 
-        data:finalOrders
+        data: finalOrders
 
 
       });
@@ -508,7 +508,7 @@ router.get(
     }
 
 
-    catch(error){
+    catch (error) {
 
 
       console.error(
@@ -520,9 +520,9 @@ router.get(
 
       return res.status(500).json({
 
-        success:false,
+        success: false,
 
-        message:"Server Error"
+        message: "Server Error"
 
       });
 
@@ -536,22 +536,22 @@ router.get(
   "/existing_customers",
   authMiddleware,
   async (_req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    if (_req.user?.role?.toLowerCase() !== "admin") {
-    res.status(403).json({
-      success:false,
-      error:"Admin access required"
-    });
-    return;
-  }
-    // Only select email, phone, and name
-    const clients = await Client.find({}, 'c_name c_email c_phone c_company').sort({ createdAt: -1 });
-    res.status(200).json({ success: true, data: clients });
-  } catch (err: any) {
-    console.error('Error fetching customers:', err.message);
-    res.status(500).json({ success: false, error: 'Failed to fetch customized customer' });
-  }
-});
+    try {
+      if (_req.user?.role?.toLowerCase() !== "admin") {
+        res.status(403).json({
+          success: false,
+          error: "Admin access required"
+        });
+        return;
+      }
+      // Only select email, phone, and name
+      const clients = await Client.find({}, 'c_name c_email c_phone c_company').sort({ createdAt: -1 });
+      res.status(200).json({ success: true, data: clients });
+    } catch (err: any) {
+      console.error('Error fetching customers:', err.message);
+      res.status(500).json({ success: false, error: 'Failed to fetch customized customer' });
+    }
+  });
 
 
 router.get(
@@ -564,11 +564,11 @@ router.get(
       const loggedInUser = req.user;
 
 
-      if(!loggedInUser?._id){
+      if (!loggedInUser?._id) {
 
         res.status(401).json({
-          success:false,
-          message:"Unauthorized"
+          success: false,
+          message: "Unauthorized"
         });
 
         return;
@@ -603,10 +603,10 @@ router.get(
 
       const search =
         typeof req.query.search === "string"
-        ?
-        req.query.search.trim()
-        :
-        "";
+          ?
+          req.query.search.trim()
+          :
+          "";
 
 
 
@@ -617,18 +617,18 @@ router.get(
         await User.findById(
           loggedInUser._id
         )
-        .populate("userType");
+          .populate("userType");
 
 
 
-      if(
+      if (
         !user ||
         typeof user.userType !== "object"
-      ){
+      ) {
 
         res.status(403).json({
-          success:false,
-          message:"Invalid user"
+          success: false,
+          message: "Invalid user"
         });
 
         return;
@@ -638,8 +638,8 @@ router.get(
 
       const role =
         (user.userType as IUserType)
-        .name
-        .toLowerCase();
+          .name
+          .toLowerCase();
 
 
 
@@ -647,19 +647,19 @@ router.get(
       // ================= PLAN MAPPING =================
 
 
-      const attachPlans = async(
-        orders:any[]
-      )=>{
+      const attachPlans = async (
+        orders: any[]
+      ) => {
 
 
-        if(!orders.length)
+        if (!orders.length)
           return orders;
 
 
 
         const orderIds =
           orders.map(
-            order=>order._id
+            order => order._id
           );
 
 
@@ -667,37 +667,37 @@ router.get(
         const plans =
           await OrderPlan.find({
 
-            orderId:{
-              $in:orderIds
+            orderId: {
+              $in: orderIds
             }
 
           })
-          .populate({
+            .populate({
 
-            path:"emailTypeId",
-            select:"name image"
+              path: "emailTypeId",
+              select: "name image"
 
-          })
-          .populate({
+            })
+            .populate({
 
-            path:"hostTypeId",
-            select:"type"
+              path: "hostTypeId",
+              select: "type"
 
-          })
-          .populate({
+            })
+            .populate({
 
-            path:"hostSubTypeId",
-            select:"name"
+              path: "hostSubTypeId",
+              select: "name"
 
-          })
-          .populate({
+            })
+            .populate({
 
-            path:"storageId",
-            select:"name storage"
+              path: "storageId",
+              select: "name storage"
 
-          })
-          .select(
-`
+            })
+            .select(
+              `
 orderId
 type
 expiryDate
@@ -707,8 +707,8 @@ hostTypeId
 hostSubTypeId
 storageId
 `
-          )
-          .lean();
+            )
+            .lean();
 
 
 
@@ -717,7 +717,7 @@ storageId
 
 
 
-        plans.forEach((plan:any)=>{
+        plans.forEach((plan: any) => {
 
 
           const key =
@@ -725,7 +725,7 @@ storageId
 
 
 
-          if(!planMap.has(key)){
+          if (!planMap.has(key)) {
 
             planMap.set(
               key,
@@ -738,87 +738,87 @@ storageId
 
 
           planMap.get(key)
-          .push({
+            .push({
 
-            type:plan.type,
-
-
-            expiryDate:
-              plan.expiryDate || null,
+              type: plan.type,
 
 
-            emailType:
-              plan.emailTypeId?.name || null,
+              expiryDate:
+                plan.expiryDate || null,
 
 
-            emailTypeImage:
-              plan.emailTypeId?.image || null,
+              emailType:
+                plan.emailTypeId?.name || null,
 
 
-            planId:
-              plan.planId || null,
+              emailTypeImage:
+                plan.emailTypeId?.image || null,
 
 
-
-            hostType:
-              plan.hostTypeId
-              ?
-              {
-                _id:
-                plan.hostTypeId._id,
-
-                type:
-                plan.hostTypeId.type
-              }
-              :
-              null,
+              planId:
+                plan.planId || null,
 
 
 
-            hostSubType:
-              plan.hostSubTypeId
-              ?
-              {
-                _id:
-                plan.hostSubTypeId._id,
+              hostType:
+                plan.hostTypeId
+                  ?
+                  {
+                    _id:
+                      plan.hostTypeId._id,
 
-                name:
-                plan.hostSubTypeId.name
-              }
-              :
-              null,
-
-
-
-            storage:
-              plan.storageId
-              ?
-              {
-                _id:
-                plan.storageId._id,
-
-                name:
-                plan.storageId.name
-              }
-              :
-              null
+                    type:
+                      plan.hostTypeId.type
+                  }
+                  :
+                  null,
 
 
-          });
+
+              hostSubType:
+                plan.hostSubTypeId
+                  ?
+                  {
+                    _id:
+                      plan.hostSubTypeId._id,
+
+                    name:
+                      plan.hostSubTypeId.name
+                  }
+                  :
+                  null,
+
+
+
+              storage:
+                plan.storageId
+                  ?
+                  {
+                    _id:
+                      plan.storageId._id,
+
+                    name:
+                      plan.storageId.name
+                  }
+                  :
+                  null
+
+
+            });
 
 
         });
 
 
 
-        return orders.map(order=>({
+        return orders.map(order => ({
 
           ...order,
 
           Plans:
-          planMap.get(
-            order._id.toString()
-          ) || []
+            planMap.get(
+              order._id.toString()
+            ) || []
 
         }));
 
@@ -826,84 +826,84 @@ storageId
       };
 
 
-// ================= CLOUDFLARE =================
+      // ================= CLOUDFLARE =================
 
-const dnscloudflareSource =
-  await DomainSource.findOne({
-    code:"DNS-CLOUDFLARE"
-  });
-
-
-console.log(
-  "cloudflareSource",
-  dnscloudflareSource
-);
-const filters:any[]=[
-
-  {
-    dns_flag:true
-  },
-
-  {
-    domainSource: dnscloudflareSource?._id
-  }
-
-];
+      const dnscloudflareSource =
+        await DomainSource.findOne({
+          code: "DNS-CLOUDFLARE"
+        });
 
 
-// ================= ONLY DNS ORDERS WITHOUT PLANS =================
+      console.log(
+        "cloudflareSource",
+        dnscloudflareSource
+      );
+      const filters: any[] = [
 
-const planOrderIds =
-  await OrderPlan.distinct("orderId");
+        {
+          dns_flag: true
+        },
 
-
-filters.push({
-
-  _id:{
-    $nin: planOrderIds
-  }
-
-});
-
-
-
-if(search){
-
-  filters.push({
-
-    $or:[
-
-      {
-        domainName:{
-          $regex:search,
-          $options:"i"
+        {
+          domainSource: dnscloudflareSource?._id
         }
-      },
 
-      {
-        managedBy:{
-          $regex:search,
-          $options:"i"
+      ];
+
+
+      // ================= ONLY DNS ORDERS WITHOUT PLANS =================
+
+      const planOrderIds =
+        await OrderPlan.distinct("orderId");
+
+
+      filters.push({
+
+        _id: {
+          $nin: planOrderIds
         }
+
+      });
+
+
+
+      if (search) {
+
+        filters.push({
+
+          $or: [
+
+            {
+              domainName: {
+                $regex: search,
+                $options: "i"
+              }
+            },
+
+            {
+              managedBy: {
+                $regex: search,
+                $options: "i"
+              }
+            }
+
+          ]
+
+        });
+
       }
-
-    ]
-
-  });
-
-}
 
       // ================= ADMIN =================
 
 
 
-      if(role==="admin"){
+      if (role === "admin") {
 
 
 
-        const finalFilter={
+        const finalFilter = {
 
-          $and:filters
+          $and: filters
 
         };
 
@@ -922,30 +922,30 @@ if(search){
           await Order.find(
             finalFilter
           )
-          .select({
-            _id:1,
-            domainName:1,
-            dns_flag:1,
-            order_status:1,
-            client:1,
-            managedBy:1,
-            registrationDate:1,
-            expiryDate:1,
-            domainSource:1,
-            lockStatus:1
+            .select({
+              _id: 1,
+              domainName: 1,
+              dns_flag: 1,
+              order_status: 1,
+              client: 1,
+              managedBy: 1,
+              registrationDate: 1,
+              expiryDate: 1,
+              domainSource: 1,
+              lockStatus: 1
 
-          })
-          .populate(
-            "client",
-            "_id c_name c_company"
-          )
-          .populate(
-            "domainSource",
-            "name image code"
-          )
-          .skip(skip)
-          .limit(limit)
-          .lean();
+            })
+            .populate(
+              "client",
+              "_id c_name c_company"
+            )
+            .populate(
+              "domainSource",
+              "name image code"
+            )
+            .skip(skip)
+            .limit(limit)
+            .lean();
 
 
 
@@ -960,12 +960,12 @@ if(search){
 
         res.status(200).json({
 
-          success:true,
+          success: true,
 
-          data:orders,
+          data: orders,
 
 
-          pagination:{
+          pagination: {
 
             page,
 
@@ -974,9 +974,9 @@ if(search){
             total,
 
             totalPages:
-            Math.ceil(
-              total / limit
-            )
+              Math.ceil(
+                total / limit
+              )
 
           }
 
@@ -995,26 +995,26 @@ if(search){
 
 
 
-      if(role==="customer"){
+      if (role === "customer") {
 
 
 
         const client =
           await Client.findOne({
 
-            userType:user._id
+            userType: user._id
 
           });
 
 
 
-        if(!client){
+        if (!client) {
 
           res.status(404).json({
 
-            success:false,
+            success: false,
 
-            message:"Client not found"
+            message: "Client not found"
 
           });
 
@@ -1028,7 +1028,7 @@ if(search){
 
         filters.push({
 
-          client:client._id
+          client: client._id
 
         });
 
@@ -1036,9 +1036,9 @@ if(search){
 
 
 
-        const finalFilter={
+        const finalFilter = {
 
-          $and:filters
+          $and: filters
 
         };
 
@@ -1059,30 +1059,30 @@ if(search){
           await Order.find(
             finalFilter
           )
-          .select({
-             _id:1,
-            domainName:1,
-            dns_flag:1,
-            order_status:1,
-            client:1,
-            managedBy:1,
-            registrationDate:1,
-            expiryDate:1,
-            domainSource:1,
-            lockStatus:1
+            .select({
+              _id: 1,
+              domainName: 1,
+              dns_flag: 1,
+              order_status: 1,
+              client: 1,
+              managedBy: 1,
+              registrationDate: 1,
+              expiryDate: 1,
+              domainSource: 1,
+              lockStatus: 1
 
-          })
-          .populate(
-            "client",
-            "_id c_name c_company"
-          )
-          .populate(
-            "domainSource",
-            "name image code"
-          )
-          .skip(skip)
-          .limit(limit)
-          .lean();
+            })
+            .populate(
+              "client",
+              "_id c_name c_company"
+            )
+            .populate(
+              "domainSource",
+              "name image code"
+            )
+            .skip(skip)
+            .limit(limit)
+            .lean();
 
 
 
@@ -1098,7 +1098,7 @@ if(search){
 
         res.status(200).json({
 
-          success:true,
+          success: true,
 
 
           // client:{
@@ -1115,11 +1115,11 @@ if(search){
 
 
 
-          data:orders,
+          data: orders,
 
 
 
-          pagination:{
+          pagination: {
 
             page,
 
@@ -1128,9 +1128,9 @@ if(search){
             total,
 
             totalPages:
-            Math.ceil(
-              total / limit
-            )
+              Math.ceil(
+                total / limit
+              )
 
           }
 
@@ -1149,16 +1149,16 @@ if(search){
 
       res.status(403).json({
 
-        success:false,
+        success: false,
 
-        message:"Access denied"
+        message: "Access denied"
 
       });
 
 
 
     }
-    catch(error){
+    catch (error) {
 
 
       console.error(
@@ -1170,9 +1170,9 @@ if(search){
 
       res.status(500).json({
 
-        success:false,
+        success: false,
 
-        message:"Internal server error"
+        message: "Internal server error"
 
       });
 
@@ -1192,8 +1192,8 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
     if (!loggedInUser?._id) {
 
       return res.status(401).json({
-        success:false,
-        message:"Unauthorized"
+        success: false,
+        message: "Unauthorized"
       });
 
     }
@@ -1208,10 +1208,10 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
         ? req.query.search.trim()
         : "";
 
-const emailType =
-  typeof req.query.emailType === "string"
-    ? req.query.emailType.trim()
-    : "";
+    const emailType =
+      typeof req.query.emailType === "string"
+        ? req.query.emailType.trim()
+        : "";
     const page =
       Math.max(Number(req.query.page) || 1, 1);
 
@@ -1230,42 +1230,42 @@ const emailType =
     // ================= ATTACH EMAIL EXPIRY =================
 
 
-   const attachEmailPlans = async (orders:any[]) => {
+    const attachEmailPlans = async (orders: any[]) => {
 
-  if(!orders.length)
-    return orders;
-
-
-  const orderIds = orders.map(
-    order => order._id
-  );
+      if (!orders.length)
+        return orders;
 
 
-  const plans = await OrderPlan.find({
+      const orderIds = orders.map(
+        order => order._id
+      );
 
-    orderId:{
-      $in: orderIds
-    }
 
-  })
-  .populate({
-    path:"emailTypeId",
-    select:"name image"
-  })
-  .populate({
-    path:"hostTypeId",
-    select:"type"
-  })
-  .populate({
-    path:"hostSubTypeId",
-    select:"name"
-  })
-  .populate({
-    path:"storageId",
-    select:"storage"
-  })
-  .select(
-    `
+      const plans = await OrderPlan.find({
+
+        orderId: {
+          $in: orderIds
+        }
+
+      })
+        .populate({
+          path: "emailTypeId",
+          select: "name image"
+        })
+        .populate({
+          path: "hostTypeId",
+          select: "type"
+        })
+        .populate({
+          path: "hostSubTypeId",
+          select: "name"
+        })
+        .populate({
+          path: "storageId",
+          select: "storage"
+        })
+        .select(
+          `
     orderId
     type
     expiryDate
@@ -1276,373 +1276,373 @@ const emailType =
     storageId
     noOfUsers
     `
-  )
-  .lean();
+        )
+        .lean();
 
 
 
-  const planMap = new Map();
+      const planMap = new Map();
 
 
 
-  plans.forEach((plan:any)=>{
+      plans.forEach((plan: any) => {
 
 
-    const key =
-      plan.orderId.toString();
-
-
-
-    if(!planMap.has(key)){
-
-      planMap.set(
-        key,
-        []
-      );
-
-    }
+        const key =
+          plan.orderId.toString();
 
 
 
-    planMap.get(key).push({
+        if (!planMap.has(key)) {
 
-      type:plan.type,
+          planMap.set(
+            key,
+            []
+          );
 
-
-      expiryDate:
-        plan.expiryDate || null,
-
-      noOfUsers: plan.noOfUsers || 0,
-
-
-      emailType:
-        plan.emailTypeId?.name || null,
-
-
-      emailTypeImage:
-        plan.emailTypeId?.image || null,
-
-
-      planId:
-        plan.planId || null,
+        }
 
 
 
-      hostType:
-        plan.hostTypeId
-        ? {
-            _id:plan.hostTypeId._id,
-            type:plan.hostTypeId.type
-          }
-        : null,
+        planMap.get(key).push({
+
+          type: plan.type,
+
+
+          expiryDate:
+            plan.expiryDate || null,
+
+          noOfUsers: plan.noOfUsers || 0,
+
+
+          emailType:
+            plan.emailTypeId?.name || null,
+
+
+          emailTypeImage:
+            plan.emailTypeId?.image || null,
+
+
+          planId:
+            plan.planId || null,
 
 
 
-      hostSubType:
-        plan.hostSubTypeId
-        ? {
-            _id:plan.hostSubTypeId._id,
-            name:plan.hostSubTypeId.name
-          }
-        : null,
+          hostType:
+            plan.hostTypeId
+              ? {
+                _id: plan.hostTypeId._id,
+                type: plan.hostTypeId.type
+              }
+              : null,
 
 
 
-      storage:
-        plan.storageId
-        ? {
-            _id:plan.storageId._id,
-            name:plan.storageId.name
-          }
-        : null
-
-
-    });
-
-
-  });
+          hostSubType:
+            plan.hostSubTypeId
+              ? {
+                _id: plan.hostSubTypeId._id,
+                name: plan.hostSubTypeId.name
+              }
+              : null,
 
 
 
-  return orders.map(order=>({
-
-    ...order,
-
-    Plans:
-      planMap.get(
-        order._id.toString()
-      ) || []
-
-  }));
+          storage:
+            plan.storageId
+              ? {
+                _id: plan.storageId._id,
+                name: plan.storageId.name
+              }
+              : null
 
 
-};
+        });
+
+
+      });
+
+
+
+      return orders.map(order => ({
+
+        ...order,
+
+        Plans:
+          planMap.get(
+            order._id.toString()
+          ) || []
+
+      }));
+
+
+    };
 
 
 
     // ================= STATUS UPDATE =================
 
 
-   const updateOrderStatuses = async (orders:any[]) => {
+    const updateOrderStatuses = async (orders: any[]) => {
 
-  const today = new Date();
+      const today = new Date();
 
-  today.setHours(0,0,0,0);
+      today.setHours(0, 0, 0, 0);
 
-  const bulkOps:any[] = [];
-
-
-  orders.forEach(order => {
-
-    let isExpired = false;
+      const bulkOps: any[] = [];
 
 
-    if(order.expiryDate){
+      orders.forEach(order => {
 
-      const expiry = new Date(order.expiryDate);
-
-      expiry.setHours(0,0,0,0);
-
-      if(expiry < today){
-        isExpired = true;
-      }
-
-    }
+        let isExpired = false;
 
 
-    if(order.Plans && order.Plans.length > 0){
+        if (order.expiryDate) {
 
-      const planExpired = order.Plans.some(
-        (plan:any)=>{
+          const expiry = new Date(order.expiryDate);
 
-          if(!plan.expiryDate)
-            return false;
+          expiry.setHours(0, 0, 0, 0);
 
-
-          const expiry = new Date(plan.expiryDate);
-
-          expiry.setHours(0,0,0,0);
-
-
-          return expiry < today;
+          if (expiry < today) {
+            isExpired = true;
+          }
 
         }
-      );
 
 
-      if(planExpired){
-        isExpired = true;
-      }
+        if (order.Plans && order.Plans.length > 0) {
 
-    }
+          const planExpired = order.Plans.some(
+            (plan: any) => {
 
-
-
-    const newStatus = isExpired
-      ? "EXPIRED"
-      : "ACTIVE";
+              if (!plan.expiryDate)
+                return false;
 
 
-    if(order.order_status !== newStatus){
+              const expiry = new Date(plan.expiryDate);
 
-      bulkOps.push({
+              expiry.setHours(0, 0, 0, 0);
 
-        updateOne:{
 
-          filter:{
-            _id:order._id
-          },
+              return expiry < today;
 
-          update:{
-            $set:{
-              order_status:newStatus
             }
+          );
+
+
+          if (planExpired) {
+            isExpired = true;
           }
+
+        }
+
+
+
+        const newStatus = isExpired
+          ? "EXPIRED"
+          : "ACTIVE";
+
+
+        if (order.order_status !== newStatus) {
+
+          bulkOps.push({
+
+            updateOne: {
+
+              filter: {
+                _id: order._id
+              },
+
+              update: {
+                $set: {
+                  order_status: newStatus
+                }
+              }
+
+            }
+
+          });
+
+
+          order.order_status = newStatus;
 
         }
 
       });
 
 
-      order.order_status=newStatus;
+      if (bulkOps.length) {
 
-    }
+        await Order.bulkWrite(bulkOps);
 
-  });
-
-
-  if(bulkOps.length){
-
-    await Order.bulkWrite(bulkOps);
-
-  }
-
-
-  return orders;
-
-};
-
-// ================= EXPIRY 65 DAYS FILTER =================
-
-const expiryLimitDate = new Date();
-
-expiryLimitDate.setDate(
-  expiryLimitDate.getDate() - 65
-);
-// ================= COMMON EXPIRY FILTER =================
-
-const getExpiryFilter = () => {
-
-  const expiryLimitDate = new Date();
-
-  expiryLimitDate.setDate(
-    expiryLimitDate.getDate() - 65
-  );
-
-
-  return {
-    $or:[
-
-      // Plan ഉള്ള orders എല്ലാം
-      {
-        _id:{
-          $in: planOrderIds
-        }
-      },
-
-
-      // Plan ഇല്ലാത്ത normal domains
-      {
-        dns_flag:false,
-        expiryDate:{
-          $gte:expiryLimitDate
-        }
-      },
-
-
-      // Plan ഇല്ലാത്ത expiryDate ഇല്ലാത്ത domains
-      {
-        dns_flag:false,
-        expiryDate:null
       }
 
-    ]
-  };
 
-};
+      return orders;
+
+    };
+
+    // ================= EXPIRY 65 DAYS FILTER =================
+
+    const expiryLimitDate = new Date();
+
+    expiryLimitDate.setDate(
+      expiryLimitDate.getDate() - 65
+    );
+    // ================= COMMON EXPIRY FILTER =================
+
+    const getExpiryFilter = () => {
+
+      const expiryLimitDate = new Date();
+
+      expiryLimitDate.setDate(
+        expiryLimitDate.getDate() - 65
+      );
+
+
+      return {
+        $or: [
+
+          // Plan ഉള്ള orders എല്ലാം
+          {
+            _id: {
+              $in: planOrderIds
+            }
+          },
+
+
+          // Plan ഇല്ലാത്ത normal domains
+          {
+            dns_flag: false,
+            expiryDate: {
+              $gte: expiryLimitDate
+            }
+          },
+
+
+          // Plan ഇല്ലാത്ത expiryDate ഇല്ലാത്ത domains
+          {
+            dns_flag: false,
+            expiryDate: null
+          }
+
+        ]
+      };
+
+    };
 
     // ================= SEARCH FILTER =================
 
 
 
-    const filters:any[]=[];
+    const filters: any[] = [];
     // ================= ONLY ORDERS HAVING PLANS =================
-const planOrderIds = await OrderPlan.distinct("orderId");
+    const planOrderIds = await OrderPlan.distinct("orderId");
 
-filters.push({
-  $or:[
-    {
-      // Plan ഉള്ള എല്ലാ orders
-      _id:{
-        $in:planOrderIds
-      }
-    },
-    {
-      // Plan ഇല്ലെങ്കിലും normal domain കാണിക്കുക
-      dns_flag:false
-    }
-  ]
-});
+    filters.push({
+      $or: [
+        {
+          // Plan ഉള്ള എല്ലാ orders
+          _id: {
+            $in: planOrderIds
+          }
+        },
+        {
+          // Plan ഇല്ലെങ്കിലും normal domain കാണിക്കുക
+          dns_flag: false
+        }
+      ]
+    });
 
-if(emailType){
+    if (emailType) {
 
-  console.log(
-    "SEARCH EMAIL TYPE:",
-    emailType
-  );
-
-
-  const emailPlans =
-    await OrderPlan.find({
-      type:"email"
-    })
-    .populate({
-      path:"emailTypeId",
-      select:"name"
-    })
-    .select(
-      "orderId emailTypeId"
-    )
-    .lean();
-
-
-
-  const orderIds =
-    emailPlans
-    .filter((plan:any)=>{
-
-      const name =
-        plan.emailTypeId?.name || "";
-
-
-      return (
-        name.trim()
-        .toLowerCase()
-        ===
-        emailType.trim()
-        .toLowerCase()
+      console.log(
+        "SEARCH EMAIL TYPE:",
+        emailType
       );
 
-    })
-    .map(
-      (plan:any)=>plan.orderId
-    )
-    .filter(
-      (id:any)=>
-        mongoose.Types.ObjectId.isValid(id)
-    );
+
+      const emailPlans =
+        await OrderPlan.find({
+          type: "email"
+        })
+          .populate({
+            path: "emailTypeId",
+            select: "name"
+          })
+          .select(
+            "orderId emailTypeId"
+          )
+          .lean();
 
 
 
-  console.log(
-    "FILTER IDS:",
-    orderIds
-  );
+      const orderIds =
+        emailPlans
+          .filter((plan: any) => {
+
+            const name =
+              plan.emailTypeId?.name || "";
+
+
+            return (
+              name.trim()
+                .toLowerCase()
+              ===
+              emailType.trim()
+                .toLowerCase()
+            );
+
+          })
+          .map(
+            (plan: any) => plan.orderId
+          )
+          .filter(
+            (id: any) =>
+              mongoose.Types.ObjectId.isValid(id)
+          );
 
 
 
-  filters.push({
+      console.log(
+        "FILTER IDS:",
+        orderIds
+      );
 
-    _id:{
-      $in:
-        orderIds.length
-        ? orderIds
-        : []
-    }
-
-  });
-
-}
-
-    if(search){
 
 
       filters.push({
 
-        $or:[
+        _id: {
+          $in:
+            orderIds.length
+              ? orderIds
+              : []
+        }
+
+      });
+
+    }
+
+    if (search) {
+
+
+      filters.push({
+
+        $or: [
 
           {
-            domainName:{
-              $regex:search,
-              $options:"i"
+            domainName: {
+              $regex: search,
+              $options: "i"
             }
           },
 
 
           {
-            managedBy:{
-              $regex:search,
-              $options:"i"
+            managedBy: {
+              $regex: search,
+              $options: "i"
             }
           }
 
@@ -1669,7 +1669,7 @@ if(emailType){
       await User.findById(
         loggedInUser._id
       )
-      .populate("userType");
+        .populate("userType");
 
 
 
@@ -1677,26 +1677,26 @@ if(emailType){
 
     const orderFields = {
 
-  domainName:1,
+      domainName: 1,
 
-  order_status:1,
+      order_status: 1,
 
-  is_active:1,
-  dns_flag:1,
+      is_active: 1,
+      dns_flag: 1,
 
-  client:1,
+      client: 1,
 
-  managedBy:1,
+      managedBy: 1,
 
-  registrationDate:1,
+      registrationDate: 1,
 
-  expiryDate:1,
+      expiryDate: 1,
 
-  lockStatus:1,
+      lockStatus: 1,
 
-  domainSource:1
+      domainSource: 1
 
-};
+    };
 
 
 
@@ -1707,26 +1707,26 @@ if(emailType){
 
 
 
-    if(
+    if (
 
       user?.userType &&
 
       (user.userType as IUserType)
-      .name
-      .toLowerCase()
+        .name
+        .toLowerCase()
       === "admin"
 
-    ){
+    ) {
 
-const expiryFilter = getExpiryFilter();
+      const expiryFilter = getExpiryFilter();
 
 
-const finalFilter = {
-  $and: [
-    ...filters,
-    expiryFilter
-  ]
-};
+      const finalFilter = {
+        $and: [
+          ...filters,
+          expiryFilter
+        ]
+      };
 
 
 
@@ -1740,32 +1740,32 @@ const finalFilter = {
 
 
 
-     let orderQuery = Order.find(finalFilter)
-  .select(orderFields)
-  .populate(
-    "client",
-    "_id c_name c_company"
-  )
-  .populate(
-    "domainSource",
-    "name code image"
-  );
+      let orderQuery = Order.find(finalFilter)
+        .select(orderFields)
+        .populate(
+          "client",
+          "_id c_name c_company"
+        )
+        .populate(
+          "domainSource",
+          "name code image"
+        );
 
-if(!emailType){
-  orderQuery = orderQuery
-    .skip(skip)
-    .limit(limit);
-}
+      if (!emailType) {
+        orderQuery = orderQuery
+          .skip(skip)
+          .limit(limit);
+      }
 
-let orders:any = await orderQuery.lean();
+      let orders: any = await orderQuery.lean();
 
 
 
 
       orders =
- await attachEmailPlans(
-   orders
- );
+        await attachEmailPlans(
+          orders
+        );
 
       orders =
         await updateOrderStatuses(
@@ -1780,22 +1780,22 @@ let orders:any = await orderQuery.lean();
 
       return res.status(200).json({
 
-  success:true,
+        success: true,
 
-  data:orders,
+        data: orders,
 
-  ...(emailType ? {} : {
+        ...(emailType ? {} : {
 
-    pagination:{
-      page,
-      limit,
-      total,
-      totalPages:Math.ceil(total/limit)
-    }
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit)
+          }
 
-  })
+        })
 
-});
+      });
 
 
     }
@@ -1816,43 +1816,43 @@ let orders:any = await orderQuery.lean();
       await Client.findById(
         loggedInUser._id
       )
-      .populate("userType");
+        .populate("userType");
 
 
 
 
 
 
-    if(
+    if (
 
       client?.userType &&
 
       (client.userType as IUserType)
-      .name
-      .toLowerCase()
+        .name
+        .toLowerCase()
       === "customer"
 
-    ){
+    ) {
 
 
 
       filters.push({
 
-        client:client._id
+        client: client._id
 
       });
 
 
 
- const expiryFilter = getExpiryFilter();
+      const expiryFilter = getExpiryFilter();
 
 
-const finalFilter = {
-  $and:[
-    ...filters,
-    expiryFilter
-  ]
-};
+      const finalFilter = {
+        $and: [
+          ...filters,
+          expiryFilter
+        ]
+      };
 
 
 
@@ -1866,32 +1866,32 @@ const finalFilter = {
 
 
 
-let orderQuery = Order.find(finalFilter)
-  .select(orderFields)
-  .populate(
-    "client",
-    "_id c_name c_company"
-  )
-  .populate(
-    "domainSource",
-    "name code image"
-  );
+      let orderQuery = Order.find(finalFilter)
+        .select(orderFields)
+        .populate(
+          "client",
+          "_id c_name c_company"
+        )
+        .populate(
+          "domainSource",
+          "name code image"
+        );
 
-if(!emailType){
-  orderQuery = orderQuery
-    .skip(skip)
-    .limit(limit);
-}
+      if (!emailType) {
+        orderQuery = orderQuery
+          .skip(skip)
+          .limit(limit);
+      }
 
-let orders:any = await orderQuery.lean();
+      let orders: any = await orderQuery.lean();
 
 
 
 
       orders =
- await attachEmailPlans(
-   orders
- );
+        await attachEmailPlans(
+          orders
+        );
 
       orders =
         await updateOrderStatuses(
@@ -1900,24 +1900,24 @@ let orders:any = await orderQuery.lean();
 
 
 
- return res.status(200).json({
+      return res.status(200).json({
 
-  success:true,
+        success: true,
 
-  data:orders,
+        data: orders,
 
-  ...(emailType ? {} : {
+        ...(emailType ? {} : {
 
-    pagination:{
-      page,
-      limit,
-      total,
-      totalPages:Math.ceil(total/limit)
-    }
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit)
+          }
 
-  })
+        })
 
-});
+      });
 
 
     }
@@ -1929,16 +1929,16 @@ let orders:any = await orderQuery.lean();
 
     return res.status(403).json({
 
-      success:false,
+      success: false,
 
-      message:"Access denied"
+      message: "Access denied"
 
     });
 
 
 
 
-  } catch(error){
+  } catch (error) {
 
 
     console.error(
@@ -1949,9 +1949,9 @@ let orders:any = await orderQuery.lean();
 
     return res.status(500).json({
 
-      success:false,
+      success: false,
 
-      message:"Internal server error"
+      message: "Internal server error"
 
     });
 
@@ -1977,36 +1977,36 @@ router.get(
 
       // Fetch order
       const order = await Order.findById(id)
-  .populate({
-    path: "customer",
-    select: "name email phone company address city state country zipCode"
-  })
-  .populate({
-    path: "client",
-    select:
-      "c_name c_email c_phone c_company c_address c_city c_state c_country c_zipCode",
-    populate: [
-      {
-        path: "c_country",
-        model: "Country",
-        select: "name code"
-      },
-      {
-        path: "c_state",
-        model: "State",
-        select: "name stateCode"
-      }
-    ]
-  })
-   .populate({
-    path: "domainSource",
-    model: "DomainSource",
-    select: "name code image"
-  })
-  .populate("hosttypeid")
-  .populate("subHostTypeId")
-  .populate("hoststorageId")
-  .exec();
+        .populate({
+          path: "customer",
+          select: "name email phone company address city state country zipCode"
+        })
+        .populate({
+          path: "client",
+          select:
+            "c_name c_email c_phone c_company c_address c_city c_state c_country c_zipCode",
+          populate: [
+            {
+              path: "c_country",
+              model: "Country",
+              select: "name code"
+            },
+            {
+              path: "c_state",
+              model: "State",
+              select: "name stateCode"
+            }
+          ]
+        })
+        .populate({
+          path: "domainSource",
+          model: "DomainSource",
+          select: "name code image"
+        })
+        .populate("hosttypeid")
+        .populate("subHostTypeId")
+        .populate("hoststorageId")
+        .exec();
       if (!order) {
         res.status(404).json({ success: false, message: "Order not found" });
         return;
@@ -2016,107 +2016,107 @@ router.get(
         order.client?._id?.toString() !== req.user?._id
       ) {
         res.status(403).json({
-          success:false,
-          error:"Access denied"
+          success: false,
+          error: "Access denied"
         });
         return;
       }
 
       // Fetch related plans
       const orderPlansRaw = await OrderPlan.find({
-  orderId: order._id
-})
-.populate({
-  path: "planId",
-  model: "PlanEmail"
-})
-.populate({
-  path: "emailTypeId",
-  model: "TypeEmail"
-})
-.populate({
-  path: "hostTypeId",
-  model: "HostType"
-})
-.populate({
-  path: "hostSubTypeId",
-  model: "HostSubType"
-})
-.populate({
-  path: "storageId",
-  model: "Storage"
-})
-.lean();
+        orderId: order._id
+      })
+        .populate({
+          path: "planId",
+          model: "PlanEmail"
+        })
+        .populate({
+          path: "emailTypeId",
+          model: "TypeEmail"
+        })
+        .populate({
+          path: "hostTypeId",
+          model: "HostType"
+        })
+        .populate({
+          path: "hostSubTypeId",
+          model: "HostSubType"
+        })
+        .populate({
+          path: "storageId",
+          model: "Storage"
+        })
+        .lean();
 
-     const orderPlans: IOrderPlanResponse[] = orderPlansRaw.map((p:any) => ({
-  _id: p._id.toString(),
-  orderId: p.orderId.toString(),
+      const orderPlans: IOrderPlanResponse[] = orderPlansRaw.map((p: any) => ({
+        _id: p._id.toString(),
+        orderId: p.orderId.toString(),
 
-  serviceType: p.type,
-  type: p.type,
+        serviceType: p.type,
+        type: p.type,
 
-  planName: p.planId?.plan || "",
-  planId: p.planId?._id?.toString() || "",
+        planName: p.planId?.plan || "",
+        planId: p.planId?._id?.toString() || "",
 
-  emailType: p.emailTypeId?.name || "",
-
-
-  hostType: p.hostTypeId
-    ? {
-        _id: p.hostTypeId._id,
-        name: p.hostTypeId.type,
-      }
-    : null,
+        emailType: p.emailTypeId?.name || "",
 
 
-  hostSubType: p.hostSubTypeId
-    ? {
-        _id: p.hostSubTypeId._id,
-        name: p.hostSubTypeId.name,
-      }
-    : null,
+        hostType: p.hostTypeId
+          ? {
+            _id: p.hostTypeId._id,
+            name: p.hostTypeId.type,
+          }
+          : null,
 
 
-  storage: p.storageId
-    ? {
-        _id: p.storageId._id,
-        name: p.storageId.storage,
-      }
-    : null,
+        hostSubType: p.hostSubTypeId
+          ? {
+            _id: p.hostSubTypeId._id,
+            name: p.hostSubTypeId.name,
+          }
+          : null,
 
 
-  registrationDate: p.registrationDate,
-  expiryDate: p.expiryDate,
-  noOfUsers: p.noOfUsers,
-}));
+        storage: p.storageId
+          ? {
+            _id: p.storageId._id,
+            name: p.storageId.storage,
+          }
+          : null,
+
+
+        registrationDate: p.registrationDate,
+        expiryDate: p.expiryDate,
+        noOfUsers: p.noOfUsers,
+      }));
 
       // Merge client + customer details
       const clientData = order.client
         ? {
-            c_name: (order.client as any).c_name,
-            c_email: (order.client as any).c_email,
-            c_phone: (order.client as any).c_phone,
-            c_company: (order.client as any).c_company,
-            c_address: (order.client as any).c_address,
-            c_city: (order.client as any).c_city,
-            c_state: (order.client as any).c_state,
-            c_country: (order.client as any).c_country,
-            c_zipCode: (order.client as any).c_zipCode,
-          }
+          c_name: (order.client as any).c_name,
+          c_email: (order.client as any).c_email,
+          c_phone: (order.client as any).c_phone,
+          c_company: (order.client as any).c_company,
+          c_address: (order.client as any).c_address,
+          c_city: (order.client as any).c_city,
+          c_state: (order.client as any).c_state,
+          c_country: (order.client as any).c_country,
+          c_zipCode: (order.client as any).c_zipCode,
+        }
         : {};
 
       const customerData = order.customer
         ? {
-            name: (order.customer as any).name,
-            email: (order.customer as any).email,
-            phone: (order.customer as any).phone,
-            company: (order.customer as any).company,
-            address: (order.customer as any).address,
-            city: (order.customer as any).city,
-            state: (order.customer as any).state,
-            country: (order.customer as any).country,
-            zipCode: (order.customer as any).zipCode,
-          }
+          name: (order.customer as any).name,
+          email: (order.customer as any).email,
+          phone: (order.customer as any).phone,
+          company: (order.customer as any).company,
+          address: (order.customer as any).address,
+          city: (order.customer as any).city,
+          state: (order.customer as any).state,
+          country: (order.customer as any).country,
+          zipCode: (order.customer as any).zipCode,
+        }
         : {};
 
       // const mergedCustomerDetails = { ...clientData, ...customerData };
@@ -2126,31 +2126,31 @@ router.get(
 
       // Final response
       res.status(200).json({
-  success: true,
-  data: {
-    _id: orderObj._id,
-    domainName: orderObj.domainName,
-    status: orderObj.status,
-    managedBy: orderObj.managedBy,
-    domainSource: orderObj.domainSource
-  ? {
-      ...orderObj.domainSource,
-      image: orderObj.domainSource.image
-        ? `/uploads/domainsources/${orderObj.domainSource.image}`
-        : null
-    }
-  : null,
-    registrationDate: orderObj.registrationDate,
-    expiryDate: orderObj.expiryDate,
-    lockStatus: orderObj.lockStatus,
-    domain_flag: orderObj.domain_flag,
-    nameServers: orderObj.nameServers,
-    client: orderObj.client,
-    customer: orderObj.customer,
-    plans: orderPlans,
-    __v: orderObj.__v
-  }
-});
+        success: true,
+        data: {
+          _id: orderObj._id,
+          domainName: orderObj.domainName,
+          status: orderObj.status,
+          managedBy: orderObj.managedBy,
+          domainSource: orderObj.domainSource
+            ? {
+              ...orderObj.domainSource,
+              image: orderObj.domainSource.image
+                ? `/uploads/domainsources/${orderObj.domainSource.image}`
+                : null
+            }
+            : null,
+          registrationDate: orderObj.registrationDate,
+          expiryDate: orderObj.expiryDate,
+          lockStatus: orderObj.lockStatus,
+          domain_flag: orderObj.domain_flag,
+          nameServers: orderObj.nameServers,
+          client: orderObj.client,
+          customer: orderObj.customer,
+          plans: orderPlans,
+          __v: orderObj.__v
+        }
+      });
     } catch (err) {
       console.error("❌ Error fetching order:", err);
       res.status(500).json({
@@ -2248,10 +2248,10 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
     if (data.is_customer) {
       if (!data.client || !(await Client.findById(data.client))) {
         res.status(400).json({
-          success:false,
-          error:{
-            code:"INVALID_CLIENT",
-            message:"Invalid client"
+          success: false,
+          error: {
+            code: "INVALID_CLIENT",
+            message: "Invalid client"
           }
         });
         return;
@@ -2288,27 +2288,27 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
     // ===== Domain Validation =====
     if (!data.domainName) {
       res.status(400).json({
-      success:false,
-      error:{
-        code:"DOMAIN_REQUIRED",
-        message:"Domain name is required"
-      }
-    });
+        success: false,
+        error: {
+          code: "DOMAIN_REQUIRED",
+          message: "Domain name is required"
+        }
+      });
 
-    return;
+      return;
     }
 
     const existingOrder = await Order.findOne({ domainName: data.domainName });
     if (existingOrder) {
       res.status(400).json({
-      success:false,
-      error:{
-        code:"DOMAIN_EXISTS",
-        message:"Domain already exists"
-      }
-    });
+        success: false,
+        error: {
+          code: "DOMAIN_EXISTS",
+          message: "Domain already exists"
+        }
+      });
 
-    return;
+      return;
     }
 
     // ===== Provider Validation =====
@@ -2329,32 +2329,32 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
 
     // Ensure domainSource is an array
     // ===== Domain Source Mapping =====
-if (data.domainSource) {
+    if (data.domainSource) {
 
-  if (mongoose.Types.ObjectId.isValid(data.domainSource)) {
+      if (mongoose.Types.ObjectId.isValid(data.domainSource)) {
 
-    mappedData.domainSource = data.domainSource;
+        mappedData.domainSource = data.domainSource;
 
-  } else {
+      } else {
 
-    const domainSourceDoc = await DomainSource.findOne({
-      name: data.domainSource
-    });
+        const domainSourceDoc = await DomainSource.findOne({
+          name: data.domainSource
+        });
 
-    if (!domainSourceDoc) {
-      res.status(400).json({
-        success:false,
-        error:{
-          code:"INVALID_DOMAIN_SOURCE",
-          message:"Domain source not found"
+        if (!domainSourceDoc) {
+          res.status(400).json({
+            success: false,
+            error: {
+              code: "INVALID_DOMAIN_SOURCE",
+              message: "Domain source not found"
+            }
+          });
+          return;
         }
-      });
-      return;
-    }
 
-    mappedData.domainSource = domainSourceDoc._id;
-  }
-}
+        mappedData.domainSource = domainSourceDoc._id;
+      }
+    }
 
     // ===== Create Order =====
     const newOrder = new Order(mappedData);
@@ -2362,155 +2362,155 @@ if (data.domainSource) {
 
     // ===== Save Multiple Email Plans =====
     // ===== Save Multiple Order Plans =====
-if (data.plans && Array.isArray(data.plans)) {
+    if (data.plans && Array.isArray(data.plans)) {
 
-  const plansToSave = await Promise.all(
-    data.plans.map(async (p: any) => {
-
-
-      // ===== Validate Plans =====
-      if (
-        !p.type ||
-        (
-          (p.type === "email" ||
-           p.type === "storage" ||
-           p.type === "msoffice") &&
-          (!p.planId || !p.emailTypeId)
-        )
-      ) {
-
-        const error:any = new Error(
-          "PlanId and EmailTypeId are required for email, storage and msoffice"
-        );
-
-        error.statusCode = 400;
-
-        throw error;
-      }
+      const plansToSave = await Promise.all(
+        data.plans.map(async (p: any) => {
 
 
-      let planDoc = null;
-      let emailTypeDoc = null;
+          // ===== Validate Plans =====
+          if (
+            !p.type ||
+            (
+              (p.type === "email" ||
+                p.type === "storage" ||
+                p.type === "msoffice") &&
+              (!p.planId || !p.emailTypeId)
+            )
+          ) {
+
+            const error: any = new Error(
+              "PlanId and EmailTypeId are required for email, storage and msoffice"
+            );
+
+            error.statusCode = 400;
+
+            throw error;
+          }
 
 
-      // Only email/storage/msoffice have plan & email type
-     if(!p.type){
- throw new Error("Service type required");
-}
+          let planDoc = null;
+          let emailTypeDoc = null;
 
 
-// email/storage/msoffice validation
-
-if(
- p.type==="email" ||
- p.type==="storage" ||
- p.type==="msoffice"
-){
-
- if(!p.planId || !p.emailTypeId){
-   const error:any = new Error(
-    "Plan and Email Type required"
-   );
-
-   error.statusCode=400;
-
-   throw error;
- }
-
-}
+          // Only email/storage/msoffice have plan & email type
+          if (!p.type) {
+            throw new Error("Service type required");
+          }
 
 
-// hosting validation
+          // email/storage/msoffice validation
 
-if(p.type==="hosting"){
+          if (
+            p.type === "email" ||
+            p.type === "storage" ||
+            p.type === "msoffice"
+          ) {
 
- if(
-  !p.hostingType ||
-  !p.hostingSubType ||
-  !p.storage
- ){
+            if (!p.planId || !p.emailTypeId) {
+              const error: any = new Error(
+                "Plan and Email Type required"
+              );
 
-  const error:any = new Error(
-    "Hosting details required"
-  );
+              error.statusCode = 400;
 
-  error.statusCode = 400;
+              throw error;
+            }
 
-  throw error;
- }
-
-}if(
- p.type==="email" ||
- p.type==="storage" ||
- p.type==="msoffice"
-){
-
- planDoc = await PlanEmail.findById(p.planId);
-
- emailTypeDoc = await TypeEmail.findById(
-   p.emailTypeId
- );
+          }
 
 
- if (!planDoc || !emailTypeDoc) {
-   throw new Error(
-    "Invalid planId or emailTypeId"
-   );
- }
+          // hosting validation
 
-}
+          if (p.type === "hosting") {
 
-    return {
+            if (
+              !p.hostingType ||
+              !p.hostingSubType ||
+              !p.storage
+            ) {
 
-  orderId: savedOrder._id,
+              const error: any = new Error(
+                "Hosting details required"
+              );
 
-  // Email / Storage / MS Office
-  planId: planDoc?._id || null,
+              error.statusCode = 400;
 
-  emailTypeId: emailTypeDoc?._id || null,
+              throw error;
+            }
 
-  // Hosting
-  hostTypeId: p.hostingType || null,
+          } if (
+            p.type === "email" ||
+            p.type === "storage" ||
+            p.type === "msoffice"
+          ) {
 
-  hostSubTypeId: p.hostingSubType || null,
+            planDoc = await PlanEmail.findById(p.planId);
 
-  storageId: p.storage || null,
-
-  type: p.type,
-
-  registrationDate: p.registrationDate
-    ? new Date(p.registrationDate)
-    : new Date(),
-
-  expiryDate: p.expiryDate
-    ? new Date(p.expiryDate)
-    : new Date(),
-
-  noOfUsers: Number(p.noOfUsers || 1)
-
-};
-
-    })
-  );
+            emailTypeDoc = await TypeEmail.findById(
+              p.emailTypeId
+            );
 
 
-  await OrderPlan.insertMany(plansToSave);
+            if (!planDoc || !emailTypeDoc) {
+              throw new Error(
+                "Invalid planId or emailTypeId"
+              );
+            }
 
-}
+          }
+
+          return {
+
+            orderId: savedOrder._id,
+
+            // Email / Storage / MS Office
+            planId: planDoc?._id || null,
+
+            emailTypeId: emailTypeDoc?._id || null,
+
+            // Hosting
+            hostTypeId: p.hostingType || null,
+
+            hostSubTypeId: p.hostingSubType || null,
+
+            storageId: p.storage || null,
+
+            type: p.type,
+
+            registrationDate: p.registrationDate
+              ? new Date(p.registrationDate)
+              : new Date(),
+
+            expiryDate: p.expiryDate
+              ? new Date(p.expiryDate)
+              : new Date(),
+
+            noOfUsers: Number(p.noOfUsers || 1)
+
+          };
+
+        })
+      );
+
+
+      await OrderPlan.insertMany(plansToSave);
+
+    }
 
     res.status(201).json({ success: true, data: savedOrder });
-  } catch(err:any){
+  } catch (err: any) {
 
     console.error(err);
 
 
-    if(err.statusCode){
+    if (err.statusCode) {
 
       res.status(err.statusCode).json({
-        success:false,
-        error:{
-          code:"VALIDATION_ERROR",
-          message:err.message
+        success: false,
+        error: {
+          code: "VALIDATION_ERROR",
+          message: err.message
         }
       });
 
@@ -2518,13 +2518,13 @@ if(p.type==="hosting"){
     }
 
 
-    if(err.name==="ValidationError"){
+    if (err.name === "ValidationError") {
 
       res.status(400).json({
-        success:false,
-        error:{
-          code:"VALIDATION_ERROR",
-          message:err.message
+        success: false,
+        error: {
+          code: "VALIDATION_ERROR",
+          message: err.message
         }
       });
 
@@ -2533,13 +2533,13 @@ if(p.type==="hosting"){
     }
 
 
-    if(err.code===11000){
+    if (err.code === 11000) {
 
       res.status(400).json({
-        success:false,
-        error:{
-          code:"DUPLICATE_ENTRY",
-          message:"Domain already exists"
+        success: false,
+        error: {
+          code: "DUPLICATE_ENTRY",
+          message: "Domain already exists"
         }
       });
 
@@ -2550,15 +2550,15 @@ if(p.type==="hosting"){
 
 
     res.status(500).json({
-      success:false,
-      error:{
-        code:"INTERNAL_SERVER_ERROR",
-        message:"Something went wrong"
+      success: false,
+      error: {
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Something went wrong"
       }
     });
 
 
-    }
+  }
 });
 
 
@@ -2607,7 +2607,7 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
       ...rest,
       client: clientId,
       hoststorageId: rest.hoststorageId?._id || rest.hoststorageId,
-  
+
     };
 
     // -------------------------
@@ -2627,139 +2627,139 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
     // Handle Order Plans
     // -------------------------
     // -------------------------
-// Handle Order Plans
-// -------------------------
-if (plans && Array.isArray(plans)) {
+    // Handle Order Plans
+    // -------------------------
+    if (plans && Array.isArray(plans)) {
 
-  // Remove old plans
-  await OrderPlan.deleteMany({
-    orderId: updatedOrder._id
-  });
+      // Remove old plans
+      await OrderPlan.deleteMany({
+        orderId: updatedOrder._id
+      });
 
-  const planDocs = await Promise.all(
-    plans.map(async (p: any) => {
+      const planDocs = await Promise.all(
+        plans.map(async (p: any) => {
 
-      let planId = p.planId || null;
-      let emailTypeId = p.emailTypeId || null;
+          let planId = p.planId || null;
+          let emailTypeId = p.emailTypeId || null;
 
 
-      // -------------------------
-      // EMAIL / STORAGE / MS OFFICE
-      // Need PlanEmail + TypeEmail
-      // -------------------------
-      if (
-        p.type === "email" ||
-        p.type === "storage" ||
-        p.type === "msoffice"
-      ) {
+          // -------------------------
+          // EMAIL / STORAGE / MS OFFICE
+          // Need PlanEmail + TypeEmail
+          // -------------------------
+          if (
+            p.type === "email" ||
+            p.type === "storage" ||
+            p.type === "msoffice"
+          ) {
 
-        // Plan validation
-        if (!planId && p.planName) {
+            // Plan validation
+            if (!planId && p.planName) {
 
-          const plan = await PlanEmail.findOne({
-            plan: p.planName
-          });
+              const plan = await PlanEmail.findOne({
+                plan: p.planName
+              });
 
-          if (!plan) {
-            throw new Error(
-              `PlanEmail not found: ${p.planName}`
-            );
+              if (!plan) {
+                throw new Error(
+                  `PlanEmail not found: ${p.planName}`
+                );
+              }
+
+              planId = plan._id;
+            }
+
+
+            // Email type validation
+            if (!emailTypeId && p.emailType) {
+
+              const emailType = await TypeEmail.findOne({
+                type: p.emailType
+              });
+
+              if (!emailType) {
+                throw new Error(
+                  `TypeEmail not found: ${p.emailType}`
+                );
+              }
+
+              emailTypeId = emailType._id;
+            }
           }
 
-          planId = plan._id;
-        }
+
+          // -------------------------
+          // HOSTING / WEBSITE / SSL
+          // No PlanEmail validation
+          // -------------------------
 
 
-        // Email type validation
-        if (!emailTypeId && p.emailType) {
+          return {
 
-          const emailType = await TypeEmail.findOne({
-            type: p.emailType
-          });
-
-          if (!emailType) {
-            throw new Error(
-              `TypeEmail not found: ${p.emailType}`
-            );
-          }
-
-          emailTypeId = emailType._id;
-        }
-      }
+            orderId: updatedOrder._id,
 
 
-      // -------------------------
-      // HOSTING / WEBSITE / SSL
-      // No PlanEmail validation
-      // -------------------------
+            planId:
+              planId &&
+                mongoose.Types.ObjectId.isValid(planId)
+                ? new mongoose.Types.ObjectId(planId)
+                : null,
 
 
-      return {
-
-  orderId: updatedOrder._id,
-
-
-  planId:
-    planId &&
-    mongoose.Types.ObjectId.isValid(planId)
-      ? new mongoose.Types.ObjectId(planId)
-      : null,
+            emailTypeId:
+              emailTypeId &&
+                mongoose.Types.ObjectId.isValid(emailTypeId)
+                ? new mongoose.Types.ObjectId(emailTypeId)
+                : null,
 
 
-  emailTypeId:
-    emailTypeId &&
-    mongoose.Types.ObjectId.isValid(emailTypeId)
-      ? new mongoose.Types.ObjectId(emailTypeId)
-      : null,
+            // ✅ HOSTING FIELDS
+            hostTypeId:
+              p.hostingType &&
+                mongoose.Types.ObjectId.isValid(p.hostingType)
+                ? new mongoose.Types.ObjectId(p.hostingType)
+                : null,
 
 
-  // ✅ HOSTING FIELDS
-  hostTypeId:
-    p.hostingType &&
-    mongoose.Types.ObjectId.isValid(p.hostingType)
-      ? new mongoose.Types.ObjectId(p.hostingType)
-      : null,
+            hostSubTypeId:
+              p.hostingSubType &&
+                mongoose.Types.ObjectId.isValid(p.hostingSubType)
+                ? new mongoose.Types.ObjectId(p.hostingSubType)
+                : null,
 
 
-  hostSubTypeId:
-    p.hostingSubType &&
-    mongoose.Types.ObjectId.isValid(p.hostingSubType)
-      ? new mongoose.Types.ObjectId(p.hostingSubType)
-      : null,
+            storageId:
+              p.storage &&
+                mongoose.Types.ObjectId.isValid(p.storage)
+                ? new mongoose.Types.ObjectId(p.storage)
+                : null,
 
 
-  storageId:
-    p.storage &&
-    mongoose.Types.ObjectId.isValid(p.storage)
-      ? new mongoose.Types.ObjectId(p.storage)
-      : null,
+            registrationDate:
+              p.registrationDate
+                ? new Date(p.registrationDate)
+                : null,
 
 
-  registrationDate:
-    p.registrationDate
-      ? new Date(p.registrationDate)
-      : null,
+            expiryDate:
+              p.expiryDate
+                ? new Date(p.expiryDate)
+                : null,
 
 
-  expiryDate:
-    p.expiryDate
-      ? new Date(p.expiryDate)
-      : null,
+            noOfUsers:
+              Number(p.noOfUsers || 1),
 
 
-  noOfUsers:
-    Number(p.noOfUsers || 1),
+            type: p.type,
+
+          };
+        })
+      );
 
 
-  type: p.type,
-
-};
-    })
-  );
-
-
-  await OrderPlan.insertMany(planDocs);
-}
+      await OrderPlan.insertMany(planDocs);
+    }
     // -------------------------
     // Populate for response
     // -------------------------
@@ -2967,7 +2967,7 @@ router.put(
 
 
 
-    } catch(error) {
+    } catch (error) {
 
 
       console.error(
@@ -2978,7 +2978,7 @@ router.put(
 
       return res.status(500).json({
 
-        success:false,
+        success: false,
 
         error:
           (error as Error).message
@@ -3027,22 +3027,22 @@ router.get("/provider/:name", async (req, res) => {
       .model("Order")
       .find({ provider })
       .populate({
-  path: "client",
-  select:
-    "c_name c_email c_phone c_company c_address c_city c_state c_country c_zipCode",
-  populate: [
-    {
-      path: "c_country",
-      model: "Country",
-      select: "name code"
-    },
-    {
-      path: "c_state",
-      model: "State",
-      select: "name stateCode"
-    }
-  ]
-})
+        path: "client",
+        select:
+          "c_name c_email c_phone c_company c_address c_city c_state c_country c_zipCode",
+        populate: [
+          {
+            path: "c_country",
+            model: "Country",
+            select: "name code"
+          },
+          {
+            path: "c_state",
+            model: "State",
+            select: "name stateCode"
+          }
+        ]
+      })
       .populate("customer")
       .lean();
 
@@ -3137,8 +3137,8 @@ router.get("/customer_order_details/:customerId", async (req, res) => {
 
     if (!client) {
       return res.status(404).json({
-        status:"ERROR",
-        message:"Customer not found"
+        status: "ERROR",
+        message: "Customer not found"
       });
     }
 
@@ -3147,25 +3147,19 @@ router.get("/customer_order_details/:customerId", async (req, res) => {
 
     // ================= HELPERS =================
 
-    const getName = async (
-      value:any,
-      model:any
-    ) => {
+    const getName = async (value: any, model: any) => {
+      if (!value) return undefined;
 
-      if(!value) return undefined;
-
-
-      if(typeof value === "string"){
-        const doc = await model.findById(value);
-        return doc?.name;
+      // Already populated
+      if (typeof value === "object" && value.name) {
+        return value.name;
       }
 
+      // ObjectId or string
+      const doc = await model.findById(value).lean();
 
-      return value.name;
-
+      return doc?.name;
     };
-
-
 
     const stateName = await getName(
       client.c_state,
@@ -3203,12 +3197,12 @@ router.get("/customer_order_details/:customerId", async (req, res) => {
     let orders = await Order.find({
       client: customerId
     })
-    .populate(
-  "domainSource",
-  "name image code"
-)
+      .populate(
+        "domainSource",
+        "name image code"
+      )
 
-    .select(`
+      .select(`
       domainName
       domainSource
 
@@ -3228,183 +3222,183 @@ router.get("/customer_order_details/:customerId", async (req, res) => {
 
       createdAt
     `)
-    .sort({
-      createdAt:-1
+      .sort({
+        createdAt: -1
+      })
+      .lean();
+
+
+
+    // ================= ADD PLANS =================
+
+    const orderIds = orders.map(
+      (order: any) => order._id
+    );
+
+
+    const plans = await OrderPlan.find({
+
+      orderId: {
+        $in: orderIds
+      }
+
     })
-    .lean();
+      .populate({
+        path: "emailTypeId",
+        select: "name image"
+      })
+      .populate({
+        path: "hostTypeId",
+        select: "type"
+      })
+      .populate({
+        path: "hostSubTypeId",
+        select: "name"
+      })
+      .populate({
+        path: "storageId",
+        select: "name storage"
+      })
+      .lean();
 
 
 
-// ================= ADD PLANS =================
-
-const orderIds = orders.map(
-  (order:any)=>order._id
-);
+    const planMap = new Map();
 
 
-const plans = await OrderPlan.find({
+    plans.forEach((plan: any) => {
 
-  orderId:{
-    $in:orderIds
-  }
-
-})
-.populate({
-  path:"emailTypeId",
-  select:"name image"
-})
-.populate({
-  path:"hostTypeId",
-  select:"type"
-})
-.populate({
-  path:"hostSubTypeId",
-  select:"name"
-})
-.populate({
-  path:"storageId",
-  select:"name storage"
-})
-.lean();
+      const key = plan.orderId.toString();
 
 
-
-const planMap = new Map();
-
-
-plans.forEach((plan:any)=>{
-
-  const key = plan.orderId.toString();
-
-
-  if(!planMap.has(key)){
-    planMap.set(key,[]);
-  }
-
-
-  planMap.get(key).push({
-
-    type:plan.type,
-
-    expiryDate:
-      plan.expiryDate || null,
-    noOfUsers:
-      plan.noOfUsers || 0,
-
-
-    emailType:
-      plan.emailTypeId?.name || null,
-
-
- emailTypeImage:
-  plan.emailTypeId?.image || null,
-
-    planId:
-      plan.planId || null,
-
-
-    hostType:
-      plan.hostTypeId
-      ?
-      {
-        _id:plan.hostTypeId._id,
-        type:plan.hostTypeId.type
+      if (!planMap.has(key)) {
+        planMap.set(key, []);
       }
-      :
-      null,
 
 
-    hostSubType:
-      plan.hostSubTypeId
-      ?
-      {
-        _id:plan.hostSubTypeId._id,
-        name:plan.hostSubTypeId.name
-      }
-      :
-      null,
+      planMap.get(key).push({
+
+        type: plan.type,
+
+        expiryDate:
+          plan.expiryDate || null,
+        noOfUsers:
+          plan.noOfUsers || 0,
 
 
-    storage:
-      plan.storageId
-      ?
-      {
-        _id:plan.storageId._id,
-        name:plan.storageId.name
-      }
-      :
-      null
-
-  });
-
-});
+        emailType:
+          plan.emailTypeId?.name || null,
 
 
-orders = orders.map((order:any)=>({
+        emailTypeImage:
+          plan.emailTypeId?.image || null,
 
-  ...order,
-
-
-  domainSource: order.domainSource
-    ? {
-        ...order.domainSource,
-
-        image:
-          order.domainSource.image
-          ? (
-              order.domainSource.image.startsWith("/uploads")
-              ?
-              order.domainSource.image
-              :
-              `/uploads/domainsources/${order.domainSource.image}`
-            )
-          : null
-      }
-    : null,
+        planId:
+          plan.planId || null,
 
 
-  Plans:
-    planMap.get(
-      order._id.toString()
-    ) || []
+        hostType:
+          plan.hostTypeId
+            ?
+            {
+              _id: plan.hostTypeId._id,
+              type: plan.hostTypeId.type
+            }
+            :
+            null,
 
-}));
-// Remove orders without domainSource and Plans
-orders = orders.filter((order:any) => {
 
-  const hasDomainSource = !!order.domainSource;
+        hostSubType:
+          plan.hostSubTypeId
+            ?
+            {
+              _id: plan.hostSubTypeId._id,
+              name: plan.hostSubTypeId.name
+            }
+            :
+            null,
 
-  const hasPlans =
-    order.Plans &&
-    order.Plans.length > 0;
 
-  return hasDomainSource || hasPlans;
+        storage:
+          plan.storageId
+            ?
+            {
+              _id: plan.storageId._id,
+              name: plan.storageId.name
+            }
+            :
+            null
 
-});
+      });
+
+    });
+
+
+    orders = orders.map((order: any) => ({
+
+      ...order,
+
+
+      domainSource: order.domainSource
+        ? {
+          ...order.domainSource,
+
+          image:
+            order.domainSource.image
+              ? (
+                order.domainSource.image.startsWith("/uploads")
+                  ?
+                  order.domainSource.image
+                  :
+                  `/uploads/domainsources/${order.domainSource.image}`
+              )
+              : null
+        }
+        : null,
+
+
+      Plans:
+        planMap.get(
+          order._id.toString()
+        ) || []
+
+    }));
+    // Remove orders without domainSource and Plans
+    orders = orders.filter((order: any) => {
+
+      const hasDomainSource = !!order.domainSource;
+
+      const hasPlans =
+        order.Plans &&
+        order.Plans.length > 0;
+
+      return hasDomainSource || hasPlans;
+
+    });
     // ================= EMAIL EXPIRY =================
 
 
     orders = await Promise.all(
 
-      orders.map(async(order:any)=>{
+      orders.map(async (order: any) => {
 
 
         const emailPlans = await OrderPlan.find({
 
-          orderId:order._id,
+          orderId: order._id,
 
-          type:"email"
+          type: "email"
 
         })
-        .select("expiryDate")
-        .lean();
+          .select("expiryDate")
+          .lean();
 
 
 
         const emailExpiryDates = emailPlans
 
           .map(
-            (item:any)=>item.expiryDate
+            (item: any) => item.expiryDate
           )
 
           .filter(Boolean);
@@ -3432,17 +3426,17 @@ orders = orders.filter((order:any) => {
 
             emailExpiryDates.length
 
-            ? emailExpiryDates
+              ? emailExpiryDates
 
-            :
+              :
 
-            order.email_expiryDate
+              order.email_expiryDate
 
-            ? [order.email_expiryDate]
+                ? [order.email_expiryDate]
 
-            :
+                :
 
-            []
+                []
 
         };
 
@@ -3466,38 +3460,38 @@ orders = orders.filter((order:any) => {
 
     orders = await Promise.all(
 
-      orders.map(async(order:any)=>{
+      orders.map(async (order: any) => {
 
 
         let newStatus = order.status || "";
 
 
 
-        if(order.expiryDate){
+        if (order.expiryDate) {
 
           newStatus =
             new Date(order.expiryDate) < today
-            ?
-            "EXPIRED"
-            :
-            "ACTIVE";
+              ?
+              "EXPIRED"
+              :
+              "ACTIVE";
 
         }
 
 
 
 
-        if(order.status !== newStatus){
+        if (order.status !== newStatus) {
 
 
           await Order.updateOne(
 
             {
-              _id:order._id
+              _id: order._id
             },
 
             {
-              status:newStatus
+              status: newStatus
             }
 
           );
@@ -3520,20 +3514,20 @@ orders = orders.filter((order:any) => {
 
 
 
-// orders = orders.map((order:any)=>({
+    // orders = orders.map((order:any)=>({
 
-//   ...order,
+    //   ...order,
 
-//   client: clientData
+    //   client: clientData
 
-// }));
+    // }));
 
     // ================= RESPONSE =================
 
 
     return res.json({
 
-      status:"SUCCESS",
+      status: "SUCCESS",
       client: clientData,
       orders
 
@@ -3542,7 +3536,7 @@ orders = orders.filter((order:any) => {
 
 
 
-  } catch(error){
+  } catch (error) {
 
 
     console.error(
@@ -3553,9 +3547,9 @@ orders = orders.filter((order:any) => {
 
     return res.status(500).json({
 
-      status:"ERROR",
+      status: "ERROR",
 
-      message:"Server error"
+      message: "Server error"
 
     });
 
