@@ -1311,6 +1311,8 @@ const emailType =
       expiryDate:
         plan.expiryDate || null,
 
+      noOfUsers: plan.noOfUsers || 0,
+
 
       emailType:
         plan.emailTypeId?.name || null,
