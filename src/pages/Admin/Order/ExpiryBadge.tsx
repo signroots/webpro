@@ -70,7 +70,7 @@ export default function ExpiryBadge({
           className={`${badgeBase} bg-green-100 text-green-800`}
         >
           <span className={iconBase}>
-            ED
+            DE
           </span>
 
           {domainDate}
@@ -93,7 +93,7 @@ export default function ExpiryBadge({
           >
 
             <span className={iconBase}>
-              EE
+              E
             </span>
 
             {date}
@@ -116,7 +116,7 @@ export default function ExpiryBadge({
         >
 
           <span className={iconBase}>
-            DE
+            D
           </span>
 
           {domainDate}

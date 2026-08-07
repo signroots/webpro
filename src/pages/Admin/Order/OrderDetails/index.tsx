@@ -40,6 +40,12 @@ interface Client {
   state?: string;
   country?: string;
 }
+interface DomainSource {
+  _id: string;
+  name: string;
+  code: string;
+  image?: string;
+}
 interface Order {
   _id: string;
   domainName: string;
@@ -48,7 +54,7 @@ interface Order {
   registrationDate?: string;
   expiryDate?: string;
   provider?: string;
-  domainSource?: string;
+domainSource?: DomainSource | null;
 
   /* FLAGS */
   domain_flag?: boolean;
@@ -74,7 +80,7 @@ interface Order {
 }
 
 /* ===================== SMALL COMPONENTS ===================== */
-
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const CheckboxValue: React.FC<{ checked?: boolean }> = ({ checked }) => (
   <input type="checkbox" checked={!!checked} readOnly className="cursor-default" />
 );
@@ -132,6 +138,7 @@ const OrderDetails: React.FC = () => {
 
         const mappedOrder: Order = {
           ...data,
+          domainSource: data.domainSource || null,
           customer: mapPerson(data.customer),
           client: mapPerson(data.client),
         };
@@ -182,25 +189,36 @@ const OrderDetails: React.FC = () => {
           <Info label="Status" value={order.status} />
           <Info label="Managed By" value={order.managedBy} />
 
-          {/* Registrar + Domain Flag (READ ONLY) */}
-          <div>
-            <p className="text-sm text-gray-500">Registrar</p>
-            <div className="flex items-center gap-4 font-medium text-gray-800">
-              <span>{order.domainSource || "-"}</span>
+         {/* Registrar + Domain Flag */}
 
-              {/* {order.domainSource === "Cloudflare" && (
-                <div className="flex items-center gap-2 text-gray-600">
-                  <input
-                    type="checkbox"
-                    checked={!!order.domain_flag}
-                    disabled
-                    className="cursor-not-allowed"
-                  />
-                  <span className="text-sm">Domain Flag</span>
-                </div>
-              )} */}
-            </div>
-          </div>
+<div className="flex items-center gap-2">
+
+  <label className="text-sm font-medium">
+    Registrar:
+  </label>
+
+  <div className="flex items-center gap-2">
+
+    {
+      order.domainSource?.image && (
+        <img
+          src={
+            order.domainSource.image.startsWith("/")
+            ? `${API_BASE_URL}${order.domainSource.image}`
+            : `${API_BASE_URL}/uploads/domainsources/${order.domainSource.image}`
+          }
+          className="w-6 h-6 object-contain"
+        />
+      )
+    }
+
+    <span className="text-sm text-gray-700">
+      {order.domainSource?.name || "-"}
+    </span>
+
+  </div>
+
+</div>
 
           <Info label="Registration Date" value={formatDate(order.registrationDate)} />
           <Info label="Expiry Date" value={formatDate(order.expiryDate)} />

@@ -1993,8 +1993,8 @@ const UpdateOrder: React.FC = () => {
                       <label>Users</label>
                       <input
                         type="number"
-                        min={1}
-                        value={plan.users || 1}
+                        min={0}
+                        value={plan.users || 0}
                         onChange={(e) =>
                           handleEmailPlanChange(idx, "users", e.target.value)
                         }

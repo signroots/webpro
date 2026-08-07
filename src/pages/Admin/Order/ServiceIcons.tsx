@@ -129,7 +129,7 @@ title="No Domain Source"
             "/email.png"
           }
 
-          className="w-5 h-5 cursor-pointer"
+          className="w-6 h-6 cursor-pointer"
 
           title={plan.emailType}
 
@@ -190,7 +190,7 @@ title="No Domain Source"
 
   <FaEnvelope
 
-    className="w-5 h-5 text-gray-300"
+    className="w-6 h-6 text-gray-300"
 
     title="No Email"
 

@@ -6,6 +6,7 @@ import {
   FaServer,
   FaLock,
   FaLaptopCode,
+  FaExternalLinkAlt,
   FaGlobe,
 
 } from "react-icons/fa";
@@ -1023,59 +1024,43 @@ highlightedOrderId === order._id
 
 <td className="px-3 py-4">
 
-<div className="flex items-start gap-3">
+<div className="flex flex-col">
+  {/* Domain */}
+  <div className="flex items-center gap-1">
+    <span className="font-medium">{order.domainName}</span>
 
+    <FaExternalLinkAlt
+      className="w-3 h-3 text-gray-500 cursor-pointer hover:text-blue-600"
+      title="Open Domain"
+      onClick={(e) => {
+        e.stopPropagation();
+        window.open(`https://${order.domainName}`, "_blank");
+      }}
+    />
+  </div>
 
-<FaLock
-className={`w-4 h-4 mt-1 shrink-0 ${
-order.lockStatus==="Locked"
-?"text-red-500"
-:"text-green-500"
-}`}
-/>
-
-
-<div className="min-w-0">
-
-
-<p className="font-semibold text-gray-800 truncate">
-{order.domainName || "-"}
-</p>
-
-
-{
-order.client
-?
-<Link
-to={`/admin/orders/customer/${order.client._id}`}
-className="text-blue-600 hover:underline text-xs truncate block"
->
-
-{order.client.c_company || order.client.c_name}
-
-</Link>
-
-:
-
-<button
-className="text-red-600 text-xs"
-onClick={()=>{
-setSelectedOrder(order);
-setModalType("addCustomer");
-}}
->
-
-Add Customer
-
-</button>
-
-}
-
-
+  {/* Customer */}
+  {order.client ? (
+    <Link
+      to={`/admin/customers/${order.client._id}`}
+      className="text-sm text-blue-600 hover:underline"
+    >
+      {order.client.c_company || order.client.c_name}
+    </Link>
+  ) : (
+    <button
+      className="text-red-600 text-xs"
+      onClick={() => {
+        setSelectedOrder(order);
+        setModalType("addCustomer");
+      }}
+    >
+      Add Customer
+    </button>
+  )}
 </div>
 
 
-</div>
 
 </td>
 
@@ -1086,7 +1071,7 @@ Add Customer
 
 {/* SERVICES */}
 
-<td className="px-3 py-4 text-center">
+<td className="px-0 py-4 text-left">
 
 <div className="flex justify-center items-center gap-2 whitespace-nowrap">
 
@@ -1121,10 +1106,10 @@ Add Customer
 <span
 className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${getStatusClass(order.order_status)}`}
 >
-
+{/* 
 <span className="w-4 h-4 flex justify-center items-center rounded-full bg-white text-black text-[9px]">
 D
-</span>
+</span> */}
 
 {order.order_status || "N/A"}
 
@@ -1155,7 +1140,7 @@ state:{fromPage:currentPage}
 }
 >
 
-<FaEye/>
+<FaEye className="w-4 h-4"/>
 
 </button>
 
@@ -1167,7 +1152,7 @@ className="hover:text-yellow-600"
 title="Edit"
 >
 
-<FaEdit/>
+<FaEdit className="w-4 h-4"/>
 
 </button>
 

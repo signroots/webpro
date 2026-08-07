@@ -31,6 +31,12 @@ interface TypeEmail {
   name: string;
   isActive: boolean;
 }
+export interface DomainSource {
+  _id: string;
+  name: string;
+  code: string;
+  image?: string;
+}
 export interface ApiPerson {
   _id?: string;
   c_name?: string;
@@ -50,7 +56,7 @@ export interface OrderApiResponse {
   managedBy?: string;
   registrationDate?: string;
   expiryDate?: string;
-  domainSource?: string;
+ domainSource?: DomainSource | null;
 
   customer?: ApiPerson | null;
   client?: ApiPerson | null;
