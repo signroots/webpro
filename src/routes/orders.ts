@@ -312,6 +312,7 @@ router.get(
 
 
           expiryDate:plan.expiryDate,
+          noOfUsers: plan.noOfUsers || 0,
 
 
           emailType:
