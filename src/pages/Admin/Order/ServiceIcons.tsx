@@ -97,109 +97,112 @@ title="No Domain Source"
 }
 
 
-
 {/* ================= EMAIL ================= */}
 
 {
   order.Plans?.some(
-    (plan:any) => plan.type?.toLowerCase() === "email"
+    (plan: any) => plan.type?.toLowerCase() === "email"
   )
 
   ?
 
   order.Plans
-  .filter(
-    (plan:any)=>plan.type?.toLowerCase()==="email"
-  )
-  .map(
-    (plan:any,index:number)=>(
-
-      <div
-        key={index}
-        className="relative group"
-      >
-
-        <img
-
-          src={
-            plan.emailTypeImage
-            ?
-            `${API_BASE_URL}${plan.emailTypeImage}`
-            :
-            "/email.png"
-          }
-
-          className="w-6 h-6 cursor-pointer"
-
-          title={plan.emailType}
-
-        />
-
-
-        {/* Hover Details */}
+    .filter(
+      (plan: any) => plan.type?.toLowerCase() === "email"
+    )
+    .map(
+      (plan: any, index: number) => (
 
         <div
-          className="
-          hidden group-hover:block
-          absolute left-0 top-full mt-2
-          bg-gray-900 text-white
-          text-xs p-3
-          rounded-lg
-          w-64
-          shadow-xl
-          z-50
-          "
+          key={index}
+          className="relative group"
         >
 
-          <p>
-            <b>Email:</b> {plan.emailType}
-          </p>
+          {/* Email Image + User Badge */}
+          <div className="relative inline-block">
 
+            <img
+              src={
+                plan.emailTypeImage
+                  ? `${API_BASE_URL}${plan.emailTypeImage}`
+                  : "/email.png"
+              }
+              className="w-6 h-6 cursor-pointer"
+              title={plan.emailType}
+            />
 
-          <p>
-            <b>Expiry:</b>{" "}
-            {
-              plan.expiryDate
-              ?
-              new Date(plan.expiryDate)
-              .toLocaleDateString()
-              :
-              "-"
-            }
-          </p>
+            {/* No. of Users Badge */}
+            <span
+              className="
+                absolute
+                -top-2
+                -right-2
+                min-w-[16px]
+                h-4
+                px-1
+                flex
+                items-center
+                justify-center
+                rounded-full
+                bg-red-500
+                text-white
+                text-[9px]
+                font-bold
+                border
+                border-white
+              "
+            >
+              {plan.noOfUsers ?? 0}
+            </span>
 
+          </div>
 
-          <p>
-            <b>Plan ID:</b>{" "}
-            {plan.planId}
-          </p>
+          {/* Hover Details */}
+          <div
+            className="
+              hidden group-hover:block
+              absolute left-0 top-full mt-2
+              bg-gray-900 text-white
+              text-xs p-3
+              rounded-lg
+              w-64
+              shadow-xl
+              z-50
+            "
+          >
 
+            <p>
+              <b>Email:</b> {plan.emailType}
+            </p>
+
+            <p>
+              <b>No. of Users:</b>{" "}
+              {plan.noOfUsers ?? "-"}
+            </p>
+
+            <p>
+              <b>Expiry:</b>{" "}
+              {
+                plan.expiryDate
+                  ? new Date(plan.expiryDate).toLocaleDateString()
+                  : "-"
+              }
+            </p>
+
+          </div>
 
         </div>
 
-
-      </div>
-
+      )
     )
-
-  )
-
 
   :
 
-
   <FaEnvelope
-
     className="w-6 h-6 text-gray-300"
-
     title="No Email"
-
   />
-
 }
-
-
-
 
 {/* ================= HOSTING ================= */}
 
