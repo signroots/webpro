@@ -67,7 +67,7 @@ const formatDate = (date:any) => {
 
 
   return (
-<div className="flex items-center justify-center gap-2 whitespace-nowrap">
+<div className="flex items-center justify-center gap-3 whitespace-nowrap">
 
 
 {/* ================= DOMAIN SOURCE ================= */}
@@ -83,7 +83,7 @@ order.domainSource.image.startsWith("/")
 :
 `${API_BASE_URL}/uploads/domainsources/${order.domainSource.image}`
 }
-className="w-7 h-7 object-contain"
+className="w-6 h-6 object-contain"
 title={order.domainSource.name}
 />
 
@@ -147,7 +147,7 @@ title="No Domain Source"
     bg-red-500
     text-white
     text-[10px]
-    font-[100]
+    font-[300]
     border
     border-white
   "

@@ -882,11 +882,11 @@ overflow-hidden
   Customer
 </th>
 
-<th className="w-[180px] px-4 py-4 text-center text-xs font-semibold text-gray-500 uppercase">
+<th className="w-[180px] px-4 py-4 text-left text-xs font-semibold text-gray-500 uppercase">
   Services
 </th>
 
-<th className="w-[130px] px-4 py-4 text-center text-xs font-semibold text-gray-500 uppercase">
+<th className="w-[130px] px-4 py-4 text-left text-xs font-semibold text-gray-500 uppercase">
   Expiry Date
 </th>
 
@@ -966,9 +966,9 @@ order.client.c_name
 
 
 {/* SERVICES */}
-<td className="px-4 py-4 text-center">
+<td className="px-4 py-4 text-left">
 
-<div className="flex justify-center items-center gap-2 whitespace-nowrap">
+<div className="flex items-center gap-2 whitespace-nowrap">
 
 <ServiceIcons order={order}/>
 

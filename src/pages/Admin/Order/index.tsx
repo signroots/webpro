@@ -1022,19 +1022,19 @@ highlightedOrderId === order._id
 
 {/* DOMAIN + CUSTOMER */}
 
-<td className="px-3 py-4">
+<td className=" px-3 py-4">
 
 <div className="flex flex-col">
   {/* Domain */}
   <div className="flex items-center gap-1">
-    {
+    {          
     order.lockStatus === "Locked"
     ?
-    <FaLock className="text-red-500 shrink-0"/>
+    <FaLock className="text-red-500 relative top-2 shrink-0"/>
     :
-    <FaLock className="text-green-500 shrink-0"/>
+    <FaLock className="text-green-500 relative top-2 shrink-0"/>
     }
-    <span className="font-medium">{order.domainName}</span>
+    <span className="font-medium text-[15px]">{order.domainName}</span>
 
     <FaExternalLinkAlt
       className="w-3 h-3 text-gray-500 cursor-pointer hover:text-blue-600"
@@ -1050,7 +1050,7 @@ highlightedOrderId === order._id
   {order.client ? (
     <Link
       to={`/admin/orders/customer/${order.client._id}`}
-      className="text-sm text-blue-600 hover:underline"
+      className="text-sm text-blue-600 px-4 py-1"
     >
       {order.client.c_company || order.client.c_name}
     </Link>
