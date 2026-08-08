@@ -26,7 +26,16 @@ export default function ExpiryBadge({
 
   const domainDate = formatDate(order.expiryDate);
 
-
+const msofficeDates = (order.Plans || [])
+  .filter(
+    (plan: any) =>
+      plan.type?.toLowerCase() === "msoffice"
+  )
+  .map(
+    (plan: any) =>
+      formatDate(plan.expiryDate)
+  )
+  .filter(Boolean);
 
   const emailDates = (order.Plans || [])
     .filter(
@@ -124,15 +133,40 @@ export default function ExpiryBadge({
         </div>
       }
 
+{
+  !domainDate &&
+  emailDates.length === 0 &&
+  msofficeDates.map(
+    (date: any, index: number) => (
+      <div
+        key={`msoffice-${index}`}
+        className={`${badgeBase} bg-purple-100 text-purple-800`}
+      >
+        <span className={iconBase}>
+          M
+        </span>
 
+        {date}
+      </div>
+    )
+  )
+}
 
       {
         !domainDate &&
+        msofficeDates.length === 0 &&
         emailDates.length===0 &&
 
-        <span className="text-gray-400 text-xs">
-          N/A
-        </span>
+       <div
+ className={`${badgeBase} bg-gray-200 text-gray-500 min-w-[100px]`}
+  >
+    <span className={iconBase}>
+      -
+    </span>
+
+    N/A
+
+  </div>
       }
 
 

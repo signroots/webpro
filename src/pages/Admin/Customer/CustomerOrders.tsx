@@ -236,7 +236,7 @@ const CustomerOrders: React.FC = () => {
 Domain
 </th>
 
-<th className="w-[200px] px-4 py-3 text-center">
+<th className="w-[200px] px-4 py-3 text-left">
 Services
 </th>
 
@@ -291,21 +291,17 @@ Status
           <div className="flex items-center gap-3">
 
 
-            <div
-              className="
-              bg-green-100
-              flex
-              items-center
-              justify-center
-              w-8
-              h-8
-              rounded
-              "
-            >
+      
 
-              <FaLock className="w-4 h-4 text-green-600" />
+              {
+                 order.lockStatus === "Locked"
+                 ?
+                 <FaLock className="text-red-500 shrink-0"/>
+                 :
+                 <FaLock className="text-green-500 shrink-0"/>
+                 }
 
-            </div>
+        
 
 
 
@@ -315,9 +311,9 @@ Status
     {order?.domainName || "-"}
   </p>
 
-  <p className="text-xs text-gray-500">
+  {/* <p className="text-xs text-gray-500">
     {customer?.c_company || "-"}
-  </p>
+  </p> */}
 
 </div>
 
@@ -332,17 +328,11 @@ Status
 
 
         {/* SERVICES */}
-        <td className="px-4 py-4 text-center">
-
-          <div className="flex justify-center items-center">
-
-            <ServiceIcons order={order} />
-
-          </div>
-
-        </td>
-
-
+<td className="px-4 py-4 text-left">
+  <div className="flex items-center">
+    <ServiceIcons order={order} />
+  </div>
+</td>
 
 
 

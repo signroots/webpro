@@ -970,11 +970,11 @@ SL No
 Domain Name
 </th>
 
-<th className="w-[200px] px-3 py-3 text-center">
+<th className="w-[200px] px-3 py-3 text-left">
 Services
 </th>
 
-<th className="w-[140px] px-3 py-3 text-center">
+<th className="w-[140px] px-3 py-3 text-left">
 Expiry Date
 </th>
 
@@ -1027,6 +1027,13 @@ highlightedOrderId === order._id
 <div className="flex flex-col">
   {/* Domain */}
   <div className="flex items-center gap-1">
+    {
+    order.lockStatus === "Locked"
+    ?
+    <FaLock className="text-red-500 shrink-0"/>
+    :
+    <FaLock className="text-green-500 shrink-0"/>
+    }
     <span className="font-medium">{order.domainName}</span>
 
     <FaExternalLinkAlt
@@ -1071,14 +1078,10 @@ highlightedOrderId === order._id
 
 {/* SERVICES */}
 
-<td className="px-0 py-4 text-left">
-
-<div className="flex justify-center items-center gap-2 whitespace-nowrap">
-
-<ServiceIcons order={order}/>
-
-</div>
-
+<td className="px-4 py-4 text-left">
+  <div className="flex items-center">
+    <ServiceIcons order={order} />
+  </div>
 </td>
 
 

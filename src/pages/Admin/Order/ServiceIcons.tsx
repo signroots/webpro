@@ -132,32 +132,32 @@ title="No Domain Source"
             />
 
             {/* No. of Users Badge */}
-            <span
-              className="
-                absolute
-                -top-2
-                -right-2
-                min-w-[16px]
-                h-4
-                px-1
-                flex
-                items-center
-                justify-center
-                rounded-full
-                bg-red-500
-                text-white
-                text-[9px]
-                font-bold
-                border
-                border-white
-              "
-            >
+          <span
+  className="
+    absolute
+    -top-2
+    -right-2
+    min-w-[16px]
+    h-4
+    px-1
+    flex
+    items-center
+    justify-center
+    rounded-full
+    bg-red-500
+    text-white
+    text-[10px]
+    font-[100]
+    border
+    border-white
+  "
+>
               {plan.noOfUsers ?? 0}
             </span>
 
           </div>
 
-          {/* Hover Details */}
+          {/* Hover Details
           <div
             className="
               hidden group-hover:block
@@ -189,7 +189,7 @@ title="No Domain Source"
               }
             </p>
 
-          </div>
+          </div> */}
 
         </div>
 
@@ -216,11 +216,11 @@ order.Plans?.some(
 
 ?
 
-"w-5 h-5 text-purple-500"
+"w-6 h-6 text-purple-500"
 
 :
 
-"w-5 h-5 text-gray-300"
+"w-6 h-6 text-gray-300"
 
 }
 
@@ -242,11 +242,11 @@ order.Plans?.some(
 
 ?
 
-"w-5 h-5 text-blue-500"
+"w-6 h-6 text-blue-500"
 
 :
 
-"w-5 h-5 text-gray-300"
+"w-6 h-6 text-gray-300"
 
 }
 
@@ -273,7 +273,7 @@ title="Website"
               ? `${API_BASE_URL}${plan.emailTypeImage}`
               : "/MSOffice.png"
           }
-          className="w-5 h-5 object-contain"
+          className="w-6 h-6 object-contain"
           title={plan.emailType}
         />
       ))
@@ -287,7 +287,7 @@ title="Website"
     (plan: any) => plan.type?.toLowerCase() === "ssl"
   ) && (
     <FaLock
-      className="w-5 h-5 text-yellow-500"
+      className="w-6 h-6 text-yellow-500"
       title="SSL"
     />
   )

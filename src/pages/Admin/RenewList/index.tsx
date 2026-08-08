@@ -110,7 +110,7 @@ interface Order {
 
   status?:string;
 
-
+order_status?:string;
 
   expiryDate?:string;
 
@@ -192,7 +192,37 @@ const RenewList = () => {
   ] = useState("");
 
 
+const getDaysLeft = (expiryDate?: string) => {
+  if (!expiryDate) return null;
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const expiry = new Date(expiryDate);
+  expiry.setHours(0, 0, 0, 0);
+
+  const diff = expiry.getTime() - today.getTime();
+
+  return Math.ceil(
+    diff / (1000 * 60 * 60 * 24)
+  );
+};
+
+const getStatusClass = (status?: string) => {
+  switch (status?.toUpperCase()) {
+    case "EXPIRED":
+      return "bg-red-100 text-red-700";
+
+    case "WARNING":
+      return "bg-orange-100 text-orange-700";
+
+    case "ACTIVE":
+      return "bg-green-100 text-green-700";
+
+    default:
+      return "bg-gray-100 text-gray-600";
+  }
+};
 
   // ===============================
   // EXPIRY STATUS
@@ -963,33 +993,20 @@ order.client.c_name
 <td className="px-4 py-4 text-center">
 
 
-{
-getExpiryStatus(order)==="expired"
+{/* STATUS */}
 
-?
+<div className="flex flex-col items-center gap-1">
 
-<span className="px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
-Expired
+ 
+<span
+  className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${getStatusClass(
+    order.order_status
+  )}`}
+>
+  {order.order_status || "-"}
 </span>
 
-:
-
-getExpiryStatus(order)==="warning"
-
-?
-
-<span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">
-15 Days Left
-</span>
-
-:
-
-<span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-Active
-</span>
-
-}
-
+</div>
 
 </td>
 
