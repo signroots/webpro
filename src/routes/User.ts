@@ -15,10 +15,10 @@ import { encryptPassword } from "../utils/encryption";
 router.get("/types", async (_req, res) => {
   try {
     const userTypes = await UserType.find();
-     res.status(200).json(userTypes);
+    res.status(200).json(userTypes);
   } catch (err) {
     console.error(err);
-     res.status(500).json({ error: "Failed to fetch user types" });
+    res.status(500).json({ error: "Failed to fetch user types" });
   }
 });
 console.log("✅ User routes file loaded");
@@ -27,10 +27,10 @@ router.get("/types/:id", async (req, res) => {
   try {
     const userType = await UserType.findById(req.params.id);
     if (!userType) res.status(404).json({ error: "User type not found" });
-     res.json(userType);
+    res.json(userType);
   } catch (err) {
     console.error(err);
-     res.status(500).json({ error: "Failed to fetch user type" });
+    res.status(500).json({ error: "Failed to fetch user type" });
   }
 });
 
@@ -71,7 +71,7 @@ router.delete("/types/:id", async (req: Request, res: Response) => {
     res.json({ message: "User type deleted successfully" });
   } catch (err) {
     console.error(err);
-     res.status(500).json({ error: "Failed to delete user type" });
+    res.status(500).json({ error: "Failed to delete user type" });
   }
 });
 
@@ -252,7 +252,7 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
 
     const client = await Client.findOne({
       c_email: normalizedEmail,
-    });
+    }).select("+password");
 
     if (!client) {
       console.log(
@@ -445,8 +445,8 @@ router.post("/customer/login", async (req: Request, res: Response): Promise<void
 
     const name = user.c_name;
     const role = (user.userType as IUserType)?.name || "User";
-console.log("Input password:", password);
-console.log("Stored hash:", user.password);
+    console.log("Input password:", password);
+    console.log("Stored hash:", user.password);
     res.json({
       success: true,
       token,
