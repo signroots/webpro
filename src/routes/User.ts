@@ -137,59 +137,269 @@ router.post("/register", async (req: Request, res: Response): Promise<void> => {
 router.post("/login", async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
-    console.log("[DEBUG] Login attempt:", email);
 
-    // ✅ Fetch user + populate userType
-    const user = await User.findOne({ email }).populate<{ userType: IUserType }>("userType");
+    // =========================================
+    // VALIDATE REQUEST
+    // =========================================
 
-    if (!user) {
-      res.status(404).json({ success: false, error: "User not found" });
+    if (!email || !password) {
+      res.status(400).json({
+        success: false,
+        error: "Email and password are required",
+      });
       return;
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      res.status(400).json({ success: false, error: "Invalid credentials" });
+    const normalizedEmail = email.trim().toLowerCase();
+
+    console.log("[DEBUG] Login attempt:", normalizedEmail);
+
+    // =========================================
+    // 1. CHECK ADMIN / NORMAL USER
+    // =========================================
+
+    const user = await User.findOne({
+      email: normalizedEmail,
+    }).populate<{ userType: IUserType }>("userType");
+
+    if (user) {
+      console.log("[DEBUG] User found:", user.email);
+
+      // Check password
+      const isMatch = await bcrypt.compare(
+        password,
+        user.password
+      );
+
+      if (!isMatch) {
+        res.status(400).json({
+          success: false,
+          error: "Invalid credentials",
+        });
+        return;
+      }
+
+      // Get role
+      const role = user.userType?.name || "User";
+
+      console.log("[DEBUG] User role:", role);
+
+      // =========================================
+      // GENERATE ACCESS TOKEN
+      // =========================================
+
+      const accessToken = jwt.sign(
+        {
+          _id: user._id,
+          email: user.email,
+          role,
+        },
+        process.env.JWT_SECRET as string,
+        {
+          expiresIn: "7d",
+        }
+      );
+
+      // =========================================
+      // GENERATE REFRESH TOKEN
+      // =========================================
+
+      const refreshToken = jwt.sign(
+        {
+          _id: user._id,
+          email: user.email,
+          role,
+        },
+        process.env.JWT_REFRESH_SECRET as string,
+        {
+          expiresIn: "7d",
+        }
+      );
+
+      // Store refresh token
+      refreshTokens.push(refreshToken);
+
+      // =========================================
+      // ADMIN / USER RESPONSE
+      // =========================================
+
+      res.status(200).json({
+        success: true,
+        accessToken,
+        refreshToken,
+
+        user: {
+          id: user._id,
+          email: user.email,
+          name: user.name,
+          role,
+          type: "user",
+          customerId: user.customer || null,
+        },
+      });
+
       return;
     }
 
-    // ✅ Safely access userType name
-    const role = user.userType?.name || "User";
+    // =========================================
+    // 2. USER NOT FOUND
+    // NOW CHECK CLIENT COLLECTION
+    // =========================================
 
-    // ✅ Generate Access Token
+    console.log(
+      "[DEBUG] User not found. Checking client..."
+    );
+
+    const client = await Client.findOne({
+      c_email: normalizedEmail,
+    });
+
+    if (!client) {
+      console.log(
+        "[DEBUG] Client not found:",
+        normalizedEmail
+      );
+
+      res.status(404).json({
+        success: false,
+        error: "User or client not found",
+      });
+
+      return;
+    }
+
+    console.log(
+      "[DEBUG] Client found:",
+      client.c_email
+    );
+
+    // =========================================
+    // CHECK CLIENT ACTIVE STATUS
+    // =========================================
+
+    if (client.is_active === false) {
+      res.status(403).json({
+        success: false,
+        error: "Client account is inactive",
+      });
+
+      return;
+    }
+
+    // =========================================
+    // CHECK CLIENT PORTAL ACCESS
+    // =========================================
+
+    if (client.c_portalEnabled === false) {
+      res.status(403).json({
+        success: false,
+        error: "Client portal access is disabled",
+      });
+
+      return;
+    }
+
+    // =========================================
+    // CHECK CLIENT PASSWORD
+    // =========================================
+
+    if (!client.password) {
+      res.status(400).json({
+        success: false,
+        error: "Client password is not configured",
+      });
+
+      return;
+    }
+
+    const clientPasswordMatch = await bcrypt.compare(
+      password,
+      client.password
+    );
+
+    if (!clientPasswordMatch) {
+      res.status(400).json({
+        success: false,
+        error: "Invalid credentials",
+      });
+
+      return;
+    }
+
+    // =========================================
+    // CLIENT JWT
+    // =========================================
+
+    const clientRole = "Client";
+
     const accessToken = jwt.sign(
-      { _id: user._id, email: user.email, role },
+      {
+        _id: client._id,
+        email: normalizedEmail,
+        role: clientRole,
+        clientId: client._id,
+      },
       process.env.JWT_SECRET as string,
-      { expiresIn: "7d" }
+      {
+        expiresIn: "7d",
+      }
     );
 
-    // ✅ Generate Refresh Token
+    // =========================================
+    // CLIENT REFRESH TOKEN
+    // =========================================
+
     const refreshToken = jwt.sign(
-      { _id: user._id, email: user.email },
+      {
+        _id: client._id,
+        email: normalizedEmail,
+        role: clientRole,
+        clientId: client._id,
+      },
       process.env.JWT_REFRESH_SECRET as string,
-      { expiresIn: "7d" }
+      {
+        expiresIn: "7d",
+      }
     );
 
-    // ✅ Store refresh token in memory
+    // Store refresh token
     refreshTokens.push(refreshToken);
 
-    res.json({
+    // =========================================
+    // CLIENT RESPONSE
+    // =========================================
+
+    res.status(200).json({
       success: true,
       accessToken,
       refreshToken,
+
       user: {
-        id: user._id,
-        email: user.email,
-        name: user.name,
-        role,
+        id: client._id,
+        email: normalizedEmail,
+        name: client.c_name,
+        role: clientRole,
+        type: "client",
+        clientId: client._id,
       },
     });
+
+    return;
+
   } catch (err: any) {
-    console.error("[ERROR] Login failed:", err.message);
-    res.status(500).json({ success: false, error: "Internal server error" });
+    console.error(
+      "[ERROR] Login failed:",
+      err.message
+    );
+
+    res.status(500).json({
+      success: false,
+      error: "Internal server error",
+    });
+
+    return;
   }
 });
-
 router.post("/customer/login", async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
