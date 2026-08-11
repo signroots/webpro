@@ -258,16 +258,20 @@ title="Website"
 {/* ================= MS OFFICE ================= */}
 
 {
-  order.Plans?.some(
-    (plan: any) => plan.type?.toLowerCase() === "msoffice"
-  ) &&
-    order.Plans
-      .filter(
-        (plan: any) => plan.type?.toLowerCase() === "msoffice"
-      )
-      .map((plan: any, index: number) => (
+  order.Plans
+    ?.filter(
+      (plan: any) =>
+        plan.type?.toLowerCase() === "msoffice"
+    )
+    .map((plan: any, index: number) => (
+
+      <div
+        key={index}
+        className="relative inline-block"
+      >
+
+        {/* MS Office Icon */}
         <img
-          key={index}
           src={
             plan.emailTypeImage
               ? `${API_BASE_URL}${plan.emailTypeImage}`
@@ -276,9 +280,35 @@ title="Website"
           className="w-6 h-6 object-contain"
           title={plan.emailType}
         />
-      ))
-}
 
+        {/* No. of Users Badge */}
+        <span
+          className="
+            absolute
+            -top-2
+            -right-2
+            min-w-[16px]
+            h-4
+            px-1
+            flex
+            items-center
+            justify-center
+            rounded-full
+            bg-red-500
+            text-white
+            text-[10px]
+            font-[300]
+            border
+            border-white
+          "
+        >
+          {plan.noOfUsers ?? 0}
+        </span>
+
+      </div>
+
+    ))
+}
 {/* ================= SSL ================= */}
 
 
