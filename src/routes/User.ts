@@ -133,14 +133,10 @@ router.post("/register", async (req: Request, res: Response): Promise<void> => {
     }
   }
 });
-// Login - POST /api/users/login
+// POST /api/users/login
 router.post("/login", async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
-
-    // =========================================
-    // VALIDATE REQUEST
-    // =========================================
 
     if (!email || !password) {
       res.status(400).json({
@@ -152,20 +148,20 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    console.log("[DEBUG] Login attempt:", normalizedEmail);
+    console.log("[LOGIN] Attempt:", normalizedEmail);
 
-    // =========================================
-    // 1. CHECK ADMIN / NORMAL USER
-    // =========================================
+    // =====================================================
+    // 1. CHECK USERS COLLECTION
+    //    Admin / normal users
+    // =====================================================
 
     const user = await User.findOne({
       email: normalizedEmail,
     }).populate<{ userType: IUserType }>("userType");
 
     if (user) {
-      console.log("[DEBUG] User found:", user.email);
+      console.log("[LOGIN] User found:", user.email);
 
-      // Check password
       const isMatch = await bcrypt.compare(
         password,
         user.password
@@ -179,14 +175,9 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
         return;
       }
 
-      // Get role
       const role = user.userType?.name || "User";
 
-      console.log("[DEBUG] User role:", role);
-
-      // =========================================
-      // GENERATE ACCESS TOKEN
-      // =========================================
+      console.log("[LOGIN] User role:", role);
 
       const accessToken = jwt.sign(
         {
@@ -200,10 +191,6 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
         }
       );
 
-      // =========================================
-      // GENERATE REFRESH TOKEN
-      // =========================================
-
       const refreshToken = jwt.sign(
         {
           _id: user._id,
@@ -216,49 +203,37 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
         }
       );
 
-      // Store refresh token
       refreshTokens.push(refreshToken);
-
-      // =========================================
-      // ADMIN / USER RESPONSE
-      // =========================================
 
       res.status(200).json({
         success: true,
         accessToken,
         refreshToken,
-
         user: {
           id: user._id,
           email: user.email,
           name: user.name,
           role,
           type: "user",
-          customerId: user.customer || null,
+          clientId: null,
         },
       });
 
       return;
     }
 
-    // =========================================
-    // 2. USER NOT FOUND
-    // NOW CHECK CLIENT COLLECTION
-    // =========================================
+    // =====================================================
+    // 2. CHECK CLIENTS COLLECTION
+    // =====================================================
 
-    console.log(
-      "[DEBUG] User not found. Checking client..."
-    );
+    console.log("[LOGIN] User not found. Checking clients...");
 
     const client = await Client.findOne({
       c_email: normalizedEmail,
     }).select("+password");
 
     if (!client) {
-      console.log(
-        "[DEBUG] Client not found:",
-        normalizedEmail
-      );
+      console.log("[LOGIN] Client not found:", normalizedEmail);
 
       res.status(404).json({
         success: false,
@@ -268,14 +243,11 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    console.log(
-      "[DEBUG] Client found:",
-      client.c_email
-    );
+    console.log("[LOGIN] Client found:", client.c_email);
 
-    // =========================================
-    // CHECK CLIENT ACTIVE STATUS
-    // =========================================
+    // =====================================================
+    // 3. CLIENT STATUS
+    // =====================================================
 
     if (client.is_active === false) {
       res.status(403).json({
@@ -286,10 +258,6 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // =========================================
-    // CHECK CLIENT PORTAL ACCESS
-    // =========================================
-
     if (client.c_portalEnabled === false) {
       res.status(403).json({
         success: false,
@@ -299,9 +267,9 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // =========================================
-    // CHECK CLIENT PASSWORD
-    // =========================================
+    // =====================================================
+    // 4. CLIENT PASSWORD
+    // =====================================================
 
     if (!client.password) {
       res.status(400).json({
@@ -312,12 +280,12 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const clientPasswordMatch = await bcrypt.compare(
+    const passwordMatch = await bcrypt.compare(
       password,
       client.password
     );
 
-    if (!clientPasswordMatch) {
+    if (!passwordMatch) {
       res.status(400).json({
         success: false,
         error: "Invalid credentials",
@@ -326,17 +294,17 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // =========================================
-    // CLIENT JWT
-    // =========================================
+    // =====================================================
+    // 5. CLIENT JWT
+    // =====================================================
 
-    const clientRole = "Client";
+    const role = "Client";
 
     const accessToken = jwt.sign(
       {
         _id: client._id,
         email: normalizedEmail,
-        role: clientRole,
+        role,
         clientId: client._id,
       },
       process.env.JWT_SECRET as string,
@@ -345,15 +313,11 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
       }
     );
 
-    // =========================================
-    // CLIENT REFRESH TOKEN
-    // =========================================
-
     const refreshToken = jwt.sign(
       {
         _id: client._id,
         email: normalizedEmail,
-        role: clientRole,
+        role,
         clientId: client._id,
       },
       process.env.JWT_REFRESH_SECRET as string,
@@ -362,23 +326,21 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
       }
     );
 
-    // Store refresh token
     refreshTokens.push(refreshToken);
 
-    // =========================================
-    // CLIENT RESPONSE
-    // =========================================
+    // =====================================================
+    // 6. CLIENT RESPONSE
+    // =====================================================
 
     res.status(200).json({
       success: true,
       accessToken,
       refreshToken,
-
       user: {
         id: client._id,
         email: normalizedEmail,
         name: client.c_name,
-        role: clientRole,
+        role: "Client",
         type: "client",
         clientId: client._id,
       },
@@ -387,10 +349,7 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
     return;
 
   } catch (err: any) {
-    console.error(
-      "[ERROR] Login failed:",
-      err.message
-    );
+    console.error("[LOGIN ERROR]:", err);
 
     res.status(500).json({
       success: false,
