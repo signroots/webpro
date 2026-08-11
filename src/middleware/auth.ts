@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
+
 import User from "../models/User";
 import Client from "../models/Client";
 
@@ -9,7 +10,7 @@ export interface AuthRequest extends Request {
     email: string;
     role: string;
     clientId?: string | null;
-    type?: "user" | "client";
+    type?: "user" | "client" | "customer";
   };
 }
 
@@ -20,12 +21,12 @@ export const authMiddleware = async (
 ): Promise<void> => {
   try {
     // =====================================================
-    // 1. CHECK AUTHORIZATION HEADER
+    // 1. AUTHORIZATION HEADER
     // =====================================================
 
     const authHeader = req.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if (!authHeader?.startsWith("Bearer ")) {
       res.status(401).json({
         success: false,
         error: "No token provided",
@@ -33,11 +34,7 @@ export const authMiddleware = async (
       return;
     }
 
-    // =====================================================
-    // 2. EXTRACT TOKEN
-    // =====================================================
-
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.substring(7);
 
     if (!token) {
       res.status(401).json({
@@ -48,7 +45,7 @@ export const authMiddleware = async (
     }
 
     // =====================================================
-    // 3. CHECK JWT SECRET
+    // 2. JWT SECRET
     // =====================================================
 
     if (!process.env.JWT_SECRET) {
@@ -60,7 +57,7 @@ export const authMiddleware = async (
     }
 
     // =====================================================
-    // 4. VERIFY TOKEN
+    // 3. VERIFY TOKEN
     // =====================================================
 
     const decoded = jwt.verify(
@@ -69,185 +66,231 @@ export const authMiddleware = async (
     ) as {
       _id: string;
       email: string;
-      role: string;
+      role?: string;
+      type?: string;
       clientId?: string;
     };
 
-    console.log("[AUTH] Decoded token:", decoded);
+    console.log("=================================");
+    console.log("[AUTH] DECODED TOKEN");
+    console.log(decoded);
+    console.log("=================================");
 
     // =====================================================
-    // 5. FIRST CHECK USERS COLLECTION
+    // 4. CLIENT / CUSTOMER
     // =====================================================
 
-    const user = await User.findById(decoded._id)
-      .populate("userType")
-      .select("_id email name userType");
+    const isClient =
+      decoded.role?.toLowerCase() === "client" ||
+      decoded.type?.toLowerCase() === "client" ||
+      decoded.type?.toLowerCase() === "customer";
 
-    // =====================================================
-    // 6. NORMAL USER / ADMIN
-    // =====================================================
+    if (isClient) {
+      const clientId =
+        decoded.clientId || decoded._id;
 
-    if (user) {
-      let role = decoded.role;
+      console.log("[AUTH] Client/Customer token");
+      console.log("[AUTH] Client ID:", clientId);
 
-      if (
-        user.userType &&
-        typeof user.userType === "object"
-      ) {
-        role = (user.userType as any).name || role;
+      // -----------------------------------------------------
+      // FIND CLIENT
+      // -----------------------------------------------------
+
+      const client = await Client.findById(clientId)
+        .populate("userType")
+        .select(
+          "_id c_email c_name userType is_active c_portalEnabled"
+        );
+
+      if (!client) {
+        console.log(
+          "[AUTH] Client not found:",
+          clientId
+        );
+
+        res.status(401).json({
+          success: false,
+          error: "Client not found",
+        });
+
+        return;
       }
 
-      console.log("[AUTH] User found:", user.email);
-      console.log("[AUTH] User role:", role);
-
-      req.user = {
-        _id: user._id.toString(),
-        email: user.email,
-        role,
-        clientId: null,
-        type: "user",
-      };
-
-      next();
-      return;
-    }
-
-    // =====================================================
-    // 7. USER NOT FOUND
-    //    CHECK CLIENT COLLECTION
-    // =====================================================
-
-    console.log(
-      "[AUTH] User not found. Checking client..."
-    );
-
-    const client = await Client.findById(decoded._id)
-      .populate("userType")
-      .select("_id c_email c_name userType is_active c_portalEnabled");
-
-    // =====================================================
-    // 8. CLIENT NOT FOUND
-    // =====================================================
-
-    if (!client) {
       console.log(
-        "[AUTH] Client not found:",
-        decoded._id
+        "[AUTH] Client found:",
+        client._id
       );
 
-      res.status(401).json({
-        success: false,
-        error: "User or client not found",
-      });
+      // -----------------------------------------------------
+      // ACTIVE CHECK
+      // -----------------------------------------------------
 
-      return;
-    }
+      if (client.is_active === false) {
+        res.status(403).json({
+          success: false,
+          error: "Client account is inactive",
+        });
 
-    console.log(
-      "[AUTH] Client found:",
-      client._id
-    );
+        return;
+      }
 
-    // =====================================================
-    // 9. CLIENT STATUS
-    // =====================================================
+      // -----------------------------------------------------
+      // PORTAL CHECK
+      // -----------------------------------------------------
 
-    if (client.is_active === false) {
-      res.status(403).json({
-        success: false,
-        error: "Client account is inactive",
-      });
+      if (client.c_portalEnabled === false) {
+        res.status(403).json({
+          success: false,
+          error: "Client portal access is disabled",
+        });
 
-      return;
-    }
+        return;
+      }
 
-    // =====================================================
-    // 10. CLIENT PORTAL ACCESS
-    // =====================================================
+      // -----------------------------------------------------
+      // USER TYPE
+      // -----------------------------------------------------
 
-    if (client.c_portalEnabled === false) {
-      res.status(403).json({
-        success: false,
-        error: "Client portal access is disabled",
-      });
-
-      return;
-    }
-
-    // =====================================================
-    // 11. GET CLIENT ROLE
-    // =====================================================
-
-    let role = decoded.role || "Client";
-
-    if (
-      client.userType &&
-      typeof client.userType === "object"
-    ) {
       const userTypeName =
-        (client.userType as any).name;
+        (client.userType as any)?.name;
 
       console.log(
         "[AUTH] Client UserType:",
         userTypeName
       );
 
-      // Database = Customer
-      // Application = Client
+      // Database:
+      // Customer
+      //
+      // Application:
+      // Client
 
-      if (userTypeName === "Customer") {
+      let role = "Client";
+
+      if (
+        userTypeName &&
+        userTypeName.toLowerCase() === "customer"
+      ) {
         role = "Client";
-      } else if (userTypeName) {
-        role = userTypeName;
       }
+
+      // -----------------------------------------------------
+      // EMAIL
+      // -----------------------------------------------------
+
+      let clientEmail = decoded.email;
+
+      if (Array.isArray(client.c_email)) {
+        clientEmail =
+          client.c_email[0] || decoded.email;
+      } else if (client.c_email) {
+        clientEmail = client.c_email as any;
+      }
+
+      // -----------------------------------------------------
+      // ATTACH CLIENT USER
+      // -----------------------------------------------------
+
+      req.user = {
+        _id: client._id.toString(),
+        email: clientEmail,
+        role: "Client",
+        clientId: client._id.toString(),
+        type: "customer",
+      };
+
+      console.log(
+        "[AUTH] FINAL CLIENT USER:",
+        req.user
+      );
+
+      next();
+      return;
     }
 
-    console.log("[AUTH] Final client role:", role);
-
     // =====================================================
-    // 12. GET CLIENT EMAIL
+    // 5. NORMAL USER / ADMIN
     // =====================================================
 
-    let clientEmail = decoded.email;
+    console.log(
+      "[AUTH] Normal User/Admin token"
+    );
+
+    const user = await User.findById(
+      decoded._id
+    )
+      .populate("userType")
+      .select("_id email name userType");
+
+    if (!user) {
+      console.log(
+        "[AUTH] User not found:",
+        decoded._id
+      );
+
+      res.status(401).json({
+        success: false,
+        error: "User not found",
+      });
+
+      return;
+    }
+
+    // -----------------------------------------------------
+    // USER ROLE
+    // -----------------------------------------------------
+
+    let role =
+      decoded.role || "User";
 
     if (
-      Array.isArray(client.c_email) &&
-      client.c_email.length > 0
+      user.userType &&
+      typeof user.userType === "object"
     ) {
-      clientEmail = client.c_email[0];
+      role =
+        (user.userType as any).name ||
+        role;
     }
 
-    // =====================================================
-    // 13. ATTACH CLIENT TO REQUEST
-    // =====================================================
+    console.log(
+      "[AUTH] User:",
+      user.email
+    );
+
+    console.log(
+      "[AUTH] User role:",
+      role
+    );
+
+    // -----------------------------------------------------
+    // ATTACH USER
+    // -----------------------------------------------------
 
     req.user = {
-      _id: client._id.toString(),
-      email: clientEmail,
+      _id: user._id.toString(),
+      email: user.email,
       role,
-      clientId: client._id.toString(),
-      type: "client",
+      clientId: null,
+      type: "user",
     };
 
-    console.log("[AUTH] req.user:", req.user);
-
-    // =====================================================
-    // 14. NEXT
-    // =====================================================
+    console.log(
+      "[AUTH] FINAL USER:",
+      req.user
+    );
 
     next();
 
   } catch (err: any) {
+
     console.error(
       "[AUTH ERROR]:",
-      err.message
+      err
     );
 
-    // =====================================================
-    // TOKEN EXPIRED
-    // =====================================================
-
-    if (err.name === "TokenExpiredError") {
+    if (
+      err.name === "TokenExpiredError"
+    ) {
       res.status(401).json({
         success: false,
         error: "Token expired",
@@ -256,11 +299,9 @@ export const authMiddleware = async (
       return;
     }
 
-    // =====================================================
-    // INVALID TOKEN
-    // =====================================================
-
-    if (err.name === "JsonWebTokenError") {
+    if (
+      err.name === "JsonWebTokenError"
+    ) {
       res.status(401).json({
         success: false,
         error: "Invalid token",
@@ -269,15 +310,9 @@ export const authMiddleware = async (
       return;
     }
 
-    // =====================================================
-    // OTHER ERROR
-    // =====================================================
-
     res.status(500).json({
       success: false,
       error: "Authentication failed",
     });
-
-    return;
   }
 };
