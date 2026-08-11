@@ -134,56 +134,252 @@ router.post("/register", async (req: Request, res: Response): Promise<void> => {
   }
 });
 // POST /api/users/login
-router.post("/login", async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { email, password } = req.body;
+// Login - POST /api/users/login
+router.post(
+  "/login",
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { email, password } = req.body;
 
-    if (!email || !password) {
-      res.status(400).json({
-        success: false,
-        error: "Email and password are required",
-      });
-      return;
-    }
+      // =====================================================
+      // 1. VALIDATE REQUEST
+      // =====================================================
 
-    const normalizedEmail = email.trim().toLowerCase();
-
-    console.log("[LOGIN] Attempt:", normalizedEmail);
-
-    // =====================================================
-    // 1. CHECK USERS COLLECTION
-    //    Admin / normal users
-    // =====================================================
-
-    const user = await User.findOne({
-      email: normalizedEmail,
-    }).populate<{ userType: IUserType }>("userType");
-
-    if (user) {
-      console.log("[LOGIN] User found:", user.email);
-
-      const isMatch = await bcrypt.compare(
-        password,
-        user.password
-      );
-
-      if (!isMatch) {
+      if (!email || !password) {
         res.status(400).json({
           success: false,
-          error: "Invalid credentials",
+          error: "Email and password are required",
         });
         return;
       }
 
-      const role = user.userType?.name || "User";
+      const normalizedEmail = email.trim().toLowerCase();
 
-      console.log("[LOGIN] User role:", role);
+      console.log("[LOGIN] Attempt:", normalizedEmail);
+
+      // =====================================================
+      // 2. CHECK USERS COLLECTION
+      //    Admin / Normal Users
+      // =====================================================
+
+      const user = await User.findOne({
+        email: normalizedEmail,
+      }).populate<{ userType: IUserType }>("userType");
+
+      if (user) {
+        console.log("[LOGIN] User found:", user.email);
+
+        // =====================================================
+        // CHECK USER PASSWORD
+        // =====================================================
+
+        const isMatch = await bcrypt.compare(
+          password,
+          user.password
+        );
+
+        if (!isMatch) {
+          res.status(400).json({
+            success: false,
+            error: "Invalid credentials",
+          });
+          return;
+        }
+
+        // =====================================================
+        // GET USER ROLE FROM USER TYPE
+        // =====================================================
+
+        const role = user.userType?.name || "User";
+
+        console.log("[LOGIN] UserType:", user.userType?.name);
+        console.log("[LOGIN] User role:", role);
+
+        // =====================================================
+        // ACCESS TOKEN
+        // =====================================================
+
+        const accessToken = jwt.sign(
+          {
+            _id: user._id,
+            email: user.email,
+            role,
+          },
+          process.env.JWT_SECRET as string,
+          {
+            expiresIn: "7d",
+          }
+        );
+
+        // =====================================================
+        // REFRESH TOKEN
+        // =====================================================
+
+        const refreshToken = jwt.sign(
+          {
+            _id: user._id,
+            email: user.email,
+            role,
+          },
+          process.env.JWT_REFRESH_SECRET as string,
+          {
+            expiresIn: "7d",
+          }
+        );
+
+        refreshTokens.push(refreshToken);
+
+        // =====================================================
+        // USER RESPONSE
+        // =====================================================
+
+        res.status(200).json({
+          success: true,
+          accessToken,
+          refreshToken,
+
+          user: {
+            id: user._id,
+            email: user.email,
+            name: user.name,
+            role,
+            type: "user",
+            clientId: null,
+          },
+        });
+
+        return;
+      }
+
+      // =====================================================
+      // 3. USER NOT FOUND
+      //    NOW CHECK CLIENTS COLLECTION
+      // =====================================================
+
+      console.log(
+        "[LOGIN] User not found. Checking clients..."
+      );
+
+      const client = await Client.findOne({
+        c_email: normalizedEmail,
+      })
+        .populate<{ userType: IUserType }>("userType")
+        .select("+password");
+
+      if (!client) {
+        console.log(
+          "[LOGIN] Client not found:",
+          normalizedEmail
+        );
+
+        res.status(404).json({
+          success: false,
+          error: "User or client not found",
+        });
+
+        return;
+      }
+
+      console.log(
+        "[LOGIN] Client found:",
+        client.c_email
+      );
+
+      // =====================================================
+      // 4. CLIENT STATUS
+      // =====================================================
+
+      if (client.is_active === false) {
+        res.status(403).json({
+          success: false,
+          error: "Client account is inactive",
+        });
+
+        return;
+      }
+
+      // =====================================================
+      // CLIENT PORTAL ACCESS
+      // =====================================================
+
+      if (client.c_portalEnabled === false) {
+        res.status(403).json({
+          success: false,
+          error: "Client portal access is disabled",
+        });
+
+        return;
+      }
+
+      // =====================================================
+      // 5. CLIENT PASSWORD
+      // =====================================================
+
+      if (!client.password) {
+        res.status(400).json({
+          success: false,
+          error: "Client password is not configured",
+        });
+
+        return;
+      }
+
+      const passwordMatch = await bcrypt.compare(
+        password,
+        client.password
+      );
+
+      if (!passwordMatch) {
+        res.status(400).json({
+          success: false,
+          error: "Invalid credentials",
+        });
+
+        return;
+      }
+
+      // =====================================================
+      // 6. GET CLIENT ROLE FROM USER TYPE
+      // =====================================================
+
+      const userTypeName =
+        client.userType?.name || "Customer";
+
+      /*
+       * Database:
+       *
+       * Customer
+       *
+       * Frontend/API:
+       *
+       * Client
+       */
+
+      const role =
+        userTypeName === "Customer"
+          ? "Client"
+          : userTypeName;
+
+      console.log(
+        "[LOGIN] Client UserType:",
+        userTypeName
+      );
+
+      console.log(
+        "[LOGIN] Client role:",
+        role
+      );
+
+      // =====================================================
+      // 7. CLIENT ACCESS TOKEN
+      // =====================================================
 
       const accessToken = jwt.sign(
         {
-          _id: user._id,
-          email: user.email,
+          _id: client._id,
+          email: normalizedEmail,
           role,
+          clientId: client._id,
         },
         process.env.JWT_SECRET as string,
         {
@@ -191,11 +387,16 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
         }
       );
 
+      // =====================================================
+      // 8. CLIENT REFRESH TOKEN
+      // =====================================================
+
       const refreshToken = jwt.sign(
         {
-          _id: user._id,
-          email: user.email,
+          _id: client._id,
+          email: normalizedEmail,
           role,
+          clientId: client._id,
         },
         process.env.JWT_REFRESH_SECRET as string,
         {
@@ -205,160 +406,46 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
 
       refreshTokens.push(refreshToken);
 
+      // =====================================================
+      // 9. CLIENT RESPONSE
+      // =====================================================
+
       res.status(200).json({
         success: true,
         accessToken,
         refreshToken,
+
         user: {
-          id: user._id,
-          email: user.email,
-          name: user.name,
+          id: client._id,
+          email: normalizedEmail,
+          name: client.c_name,
           role,
-          type: "user",
-          clientId: null,
+          type: "client",
+          clientId: client._id,
         },
       });
 
       return;
-    }
 
-    // =====================================================
-    // 2. CHECK CLIENTS COLLECTION
-    // =====================================================
+    } catch (err: any) {
+      // =====================================================
+      // ERROR HANDLING
+      // =====================================================
 
-    console.log("[LOGIN] User not found. Checking clients...");
+      console.error(
+        "[LOGIN ERROR]:",
+        err
+      );
 
-    const client = await Client.findOne({
-      c_email: normalizedEmail,
-    }).select("+password");
-
-    if (!client) {
-      console.log("[LOGIN] Client not found:", normalizedEmail);
-
-      res.status(404).json({
+      res.status(500).json({
         success: false,
-        error: "User or client not found",
+        error: "Internal server error",
       });
 
       return;
     }
-
-    console.log("[LOGIN] Client found:", client.c_email);
-
-    // =====================================================
-    // 3. CLIENT STATUS
-    // =====================================================
-
-    if (client.is_active === false) {
-      res.status(403).json({
-        success: false,
-        error: "Client account is inactive",
-      });
-
-      return;
-    }
-
-    if (client.c_portalEnabled === false) {
-      res.status(403).json({
-        success: false,
-        error: "Client portal access is disabled",
-      });
-
-      return;
-    }
-
-    // =====================================================
-    // 4. CLIENT PASSWORD
-    // =====================================================
-
-    if (!client.password) {
-      res.status(400).json({
-        success: false,
-        error: "Client password is not configured",
-      });
-
-      return;
-    }
-
-    const passwordMatch = await bcrypt.compare(
-      password,
-      client.password
-    );
-
-    if (!passwordMatch) {
-      res.status(400).json({
-        success: false,
-        error: "Invalid credentials",
-      });
-
-      return;
-    }
-
-    // =====================================================
-    // 5. CLIENT JWT
-    // =====================================================
-
-    const role = "Client";
-
-    const accessToken = jwt.sign(
-      {
-        _id: client._id,
-        email: normalizedEmail,
-        role,
-        clientId: client._id,
-      },
-      process.env.JWT_SECRET as string,
-      {
-        expiresIn: "7d",
-      }
-    );
-
-    const refreshToken = jwt.sign(
-      {
-        _id: client._id,
-        email: normalizedEmail,
-        role,
-        clientId: client._id,
-      },
-      process.env.JWT_REFRESH_SECRET as string,
-      {
-        expiresIn: "7d",
-      }
-    );
-
-    refreshTokens.push(refreshToken);
-
-    // =====================================================
-    // 6. CLIENT RESPONSE
-    // =====================================================
-
-    res.status(200).json({
-      success: true,
-      accessToken,
-      refreshToken,
-      user: {
-        id: client._id,
-        email: normalizedEmail,
-        name: client.c_name,
-        role: "Client",
-        type: "client",
-        clientId: client._id,
-      },
-    });
-
-    return;
-
-  } catch (err: any) {
-    console.error("[LOGIN ERROR]:", err);
-
-    res.status(500).json({
-      success: false,
-      error: "Internal server error",
-    });
-
-    return;
   }
-});
+);
 router.post("/customer/login", async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
