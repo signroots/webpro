@@ -14,11 +14,23 @@ const Header: React.FC = () => {
     }
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    navigate("/"); // back to login
-  };
+const handleLogout = () => {
+  const userType = user?.type?.toLowerCase();
 
+  localStorage.removeItem("user");
+
+  if (userType === "customer") {
+    navigate("/customer/login");
+  }
+  else if (userType === "client") {
+    navigate("/customer/login");
+  }
+  else if (userType === "admin") {
+    navigate("/admin/login");
+  } else {
+    navigate("/");
+  }
+};
   return (
     <header className="bg-white shadow-md">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">

@@ -9,7 +9,7 @@ import {
 
 import { useState } from "react";
 
-
+import { useAuth } from "../../../Common/AuthContext/Auth";
 export default function ServiceIcons({
   order,
   fetchOrderById
@@ -25,6 +25,16 @@ const formatDate = (date:any) => {
 
   return new Date(date).toLocaleDateString();
 };
+const { user } = useAuth();
+
+const loggedInUserType =
+  user?.type?.toLowerCase() ||
+  user?.role?.toLowerCase() ||
+  "";
+
+const isClientOrCustomer =
+  loggedInUserType === "client" ||
+  loggedInUserType === "customer";
 
   const handleMsofficeHover = async () => {
 
@@ -72,31 +82,66 @@ const formatDate = (date:any) => {
 
 {/* ================= DOMAIN SOURCE ================= */}
 
-{
-order.domainSource?.image ?
-
-<img
-src={
-order.domainSource.image.startsWith("/")
-?
-`${API_BASE_URL}${order.domainSource.image}`
-:
-`${API_BASE_URL}/uploads/domainsources/${order.domainSource.image}`
-}
-className="w-6 h-6 object-contain"
-title={order.domainSource.name}
-/>
-
-:
-
-<FaGlobe
-className="w-6 h-6 text-gray-400"
-title="No Domain Source"
-/>
-
-}
-
-
+{isClientOrCustomer ? (
+  // ==========================================
+  // CLIENT / CUSTOMER USER
+  // ==========================================
+  String(order.managedBy || "").trim().toLowerCase() === "signroots" ? (
+    // SignRoots → ALWAYS BLUE
+    // domainSource ഉണ്ടോ ഇല്ലയോ എന്നത് നോക്കേണ്ട
+    <FaGlobe
+      className="w-6 h-6 text-blue-500"
+      title="Managed by SignRoots"
+    />
+  ) : String(order.managedBy || "").trim().toLowerCase() === "customer" ? (
+    // Customer managed
+    order.domainSource?.image ? (
+      // Customer + Domain Source → DNS Image
+      <img
+        src={
+          order.domainSource.image.startsWith("/")
+            ? `${API_BASE_URL}${order.domainSource.image}`
+            : `${API_BASE_URL}/uploads/domainsources/${order.domainSource.image}`
+        }
+        className="w-6 h-6 object-contain"
+        title={order.domainSource.name || "Domain Source"}
+      />
+    ) : (
+      // Customer + No Domain Source → Gray
+      <FaGlobe
+        className="w-6 h-6 text-gray-400"
+        title="No Domain Source"
+      />
+    )
+  ) : (
+    // Unknown managedBy → Gray
+    <FaGlobe
+      className="w-6 h-6 text-gray-400"
+      title="No Domain Source"
+    />
+  )
+) : (
+  // ==========================================
+  // ADMIN USER
+  // Existing behavior
+  // ==========================================
+  order.domainSource?.image ? (
+    <img
+      src={
+        order.domainSource.image.startsWith("/")
+          ? `${API_BASE_URL}${order.domainSource.image}`
+          : `${API_BASE_URL}/uploads/domainsources/${order.domainSource.image}`
+      }
+      className="w-6 h-6 object-contain"
+      title={order.domainSource.name || "Domain Source"}
+    />
+  ) : (
+    <FaGlobe
+      className="w-6 h-6 text-gray-400"
+      title="No Domain Source"
+    />
+  )
+)}
 {/* ================= EMAIL ================= */}
 
 {

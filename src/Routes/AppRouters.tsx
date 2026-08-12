@@ -25,21 +25,21 @@ const AppRouters: React.FC = () => {
       <Route
         path="/admin/*"
         element={
-          <RequireAuth allowedRoles={['Admin']}>
+          <RequireAuth allowedRoles={['admin']}>
             <AdminRoutes />
           </RequireAuth>
         }
       />
 
       {/* Protected Customer routes */}
-      <Route
-        path="/customer/*"
-        element={
-          <RequireAuth allowedRoles={['Customer', 'Admin']}>
-            <CustomerRoutes />
-          </RequireAuth>
-        }
-      />
+  <Route
+  path="/customer/*"
+  element={
+    <RequireAuth allowedRoles={["customer", "client"]}>
+      <CustomerRoutes />
+    </RequireAuth>
+  }
+/>
 
       {/* Unauthorized and Not Found */}
       <Route path={Paths.unauthorized} element={<div>Unauthorized Access</div>} />

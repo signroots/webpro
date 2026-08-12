@@ -12,6 +12,8 @@ import { Link } from "react-router-dom";
 import { fetchOrders, fetchOrdersByProvider } from "./api"; // your API call
 import { useNavigate,useParams  } from "react-router-dom";
 import { SiCloudflare,SiHostinger } from "react-icons/si";
+import ServiceIcons from "../../Admin/Order/ServiceIcons";
+import ExpiryBadge from "../../Admin/Order/ExpiryBadge";
 // -------------------- Types --------------------
 interface Customer {
   _id: string;
@@ -34,7 +36,12 @@ interface Order {
   managedBy?: string;
   registrationDate?: string;
   expiryDate?: string;
-  domainSource?: string;
+  domainSource?: {
+  _id:string;
+  name:string;
+  code:string;
+  image?:string;
+};
   google_email?: boolean;
   microsoft_email?: boolean;
   cloudflareRegistered?: boolean;
@@ -185,9 +192,9 @@ return (
               "Domain Name",
               "Services",
               "Expiry Date",
-              "Domain Status",
-              "Email Expiry",
-              "Email Status",
+              // "Domain Status",
+              // "Email Expiry",
+              "Status",
               "Actions",
             ].map((col) => (
               <th
@@ -219,83 +226,26 @@ return (
   </td>
 
   {/* ✅ Services (Separate column) */}
-  <td className="px-6 py-4 flex items-center gap-3">
-    {/* Domain Source */}
-    {order.domainSource ? (
-      order.domainSource.toLowerCase() === "resellerclub" ? (
-        <img
-          src="/resellerclub-logo-2x.png"
-          className="w-6 h-6"
-          title="ResellerClub"
-        />
-      ) : order.domainSource.toLowerCase() === "cloudflare" ? (
-        <SiCloudflare
-          className="w-6 h-6 text-orange-500"
-          title="Cloudflare"
-        />
-      ) : order.domainSource.toLowerCase() === "hostinger" ? (
-        <SiHostinger className="w-6 h-6 text-blue-500" title="Hostinger" />
-      ) : (
-        <FaGlobe className="w-6 h-6 text-gray-400" title={order.domainSource} />
-      )
-    ) : (
-      <FaGlobe className="w-6 h-6 text-gray-300" title="No Domain Source" />
-    )}
+ <td className="px-4 py-4 text-left">
+   <div className="flex items-center">
+     <ServiceIcons order={order} />
+   </div>
+ </td>
 
-    {/* Email Service */}
-    {order.google_email ? (
-      <img src="/download.png" className="w-5 h-5" title="Google Workspace" />
-    ) : order.microsoft_email ? (
-      <img src="/microsoft.png" className="w-5 h-5" title="Microsoft 365" />
-    ) : (
-      <FaEnvelope className="w-5 h-5 text-gray-300" title="No Email" />
-    )}
 
-    {/* Hosting */}
-    <FaServer className="w-5 h-5 text-purple-400" title="Hosting" />
 
-    {/* Website */}
-    <FaLaptopCode className="w-5 h-5 text-pink-400" title="Website" />
-  </td>
 
-  {/* Expiry Date */}
-  <td className="px-6 py-4">
-    {order.expiryDate
-      ? new Date(order.expiryDate).toLocaleDateString("en-GB", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        })
-      : "N/A"}
-  </td>
 
-  {/* Domain Status */}
-  <td className="px-6 py-4 text-center">
-    {order.status ? (
-      <span
-        className={`px-2 py-1 rounded-full text-xs font-semibold ${
-          order.status.toLowerCase() === "active"
-            ? "bg-green-100 text-green-800"
-            : "bg-red-100 text-red-800"
-        }`}
-      >
-        {order.status}
-      </span>
-    ) : (
-      <span className="text-gray-400 text-sm font-medium">N/A</span>
-    )}
-  </td>
+{/* EXPIRY */}
 
-  {/* Email Expiry */}
-  <td className="px-6 py-4">
-    {order.email_expiryDate
-      ? new Date(order.email_expiryDate).toLocaleDateString("en-GB", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        })
-      : "N/A"}
-  </td>
+<td className="px-3 py-4 text-center">
+
+<ExpiryBadge order={order}/>
+
+</td>
+
+
+
 
   {/* Email Status */}
   <td className="px-6 py-4">

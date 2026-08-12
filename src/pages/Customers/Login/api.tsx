@@ -1,19 +1,21 @@
-// src/pages/Login/api.ts
-
 import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export interface LoginResponse {
   success: boolean;
-  token?: string;
+  accessToken?: string;
+  refreshToken?: string;
   message?: string;
-  error?:string;
-  refreshToken?:string;
+  error?: string;
+
   user?: {
     id: string;
     email: string;
+    name?: string;
     role?: string;
+    type?: string;
+    clientId?: string | null;
     [key: string]: any;
   };
 }
@@ -21,39 +23,49 @@ export interface LoginResponse {
 export const loginUser = async (
   email: string,
   password: string
-): Promise<LoginResponse> =>
-{
-  console.log("[DEBUG] loginUser called with URL:", `${API_BASE_URL}/api/users/customer/login`);
+): Promise<LoginResponse> => {
+  const url = `${API_BASE_URL}/api/users/login`;
+
+  console.log("[LOGIN API URL]:", url);
+
   try {
-    const response = await axios.post(`${API_BASE_URL}/api/users/customer/login`, {
-      email,
+    const response = await axios.post(url, {
+      email: email.trim().toLowerCase(),
       password,
     });
 
     const data = response.data as LoginResponse;
 
-    if (data.success && data.token) {
-      // Store token and user info safely
-      localStorage.setItem("token", data.token);
-      if (data.user) {
-        localStorage.setItem("user", JSON.stringify(data.user));
+    console.log("[LOGIN API RESPONSE]:", data);
+
+    if (data.success && data.accessToken && data.user) {
+      localStorage.setItem("token", data.accessToken);
+
+      if (data.refreshToken) {
+        localStorage.setItem(
+          "refreshToken",
+          data.refreshToken
+        );
       }
+
+      localStorage.setItem(
+        "user",
+        JSON.stringify(data.user)
+      );
     }
 
     return data;
-  } catch (error: any) {
-    console.error("[Login Error]", error);
 
-    // Extract error message safely from backend response
-    const message =
-      error?.response?.data?.error ||
-      error?.response?.data?.message ||
-      error.message ||
-      "Login failed";
+  } catch (error: any) {
+    console.error("[LOGIN ERROR]:", error);
 
     return {
       success: false,
-      message,
+      error:
+        error?.response?.data?.error ||
+        error?.response?.data?.message ||
+        error?.message ||
+        "Login failed",
     };
   }
 };
