@@ -2242,11 +2242,19 @@ router.get(
 router.post("/", async (req: Request, res: Response): Promise<void> => {
   try {
     const data = req.body;
+
     let customerId: string | undefined;
 
-    // ===== Customer Handling =====
+    // =====================================================
+    // CUSTOMER HANDLING
+    // =====================================================
+
     if (data.is_customer) {
-      if (!data.client || !(await Client.findById(data.client))) {
+
+      if (
+        !data.client ||
+        !(await Client.findById(data.client))
+      ) {
         res.status(400).json({
           success: false,
           error: {
@@ -2254,39 +2262,58 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
             message: "Invalid client"
           }
         });
+
         return;
       }
+
       customerId = data.client.toString();
+
     } else if (data.newCustomer) {
-      // Ensure 'c_name' is provided
-      if (!data.newCustomer.c_name || data.newCustomer.c_name.trim() === "") {
-        res.status(400).json({ success: false, message: "New customer name is required" });
+
+      // New customer name required
+      if (
+        !data.newCustomer.c_name ||
+        data.newCustomer.c_name.trim() === ""
+      ) {
+        res.status(400).json({
+          success: false,
+          message: "New customer name is required"
+        });
+
         return;
       }
 
-      // Ensure 'c_email' is provided and is a valid string
-      // if (!data.newCustomer.c_email || typeof data.newCustomer.c_email !== "string" || data.newCustomer.c_email.trim() === "") {
-      //   res.status(400).json({ success: false, message: "New customer email is required and must be a valid string" });
-      //   return;
-      // }
-
-      // Check if the email already exists
+      // Check existing customer
       const existingCustomer = await Client.findOne({
         c_email: data.newCustomer.c_email,
       });
 
       if (existingCustomer) {
-        customerId = existingCustomer._id.toString();
+
+        customerId =
+          existingCustomer._id.toString();
+
       } else {
+
         // Create new customer
-        const newCust = new Client(data.newCustomer);
-        const savedCustomer = await newCust.save();
-        customerId = savedCustomer._id.toString();
+        const newCust =
+          new Client(data.newCustomer);
+
+        const savedCustomer =
+          await newCust.save();
+
+        customerId =
+          savedCustomer._id.toString();
       }
     }
 
-    // ===== Domain Validation =====
+
+    // =====================================================
+    // DOMAIN VALIDATION
+    // =====================================================
+
     if (!data.domainName) {
+
       res.status(400).json({
         success: false,
         error: {
@@ -2298,8 +2325,16 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const existingOrder = await Order.findOne({ domainName: data.domainName });
+
+    // Check duplicate domain
+    const existingOrder =
+      await Order.findOne({
+        domainName: data.domainName
+      });
+
+
     if (existingOrder) {
+
       res.status(400).json({
         success: false,
         error: {
@@ -2311,37 +2346,80 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // ===== Provider Validation =====
-    const allowedProviders = ["Google Workspace", "Microsoft 365"];
-    if (data.provider && !allowedProviders.includes(data.provider)) {
-      res.status(400).json({ success: false, message: "Invalid provider" });
+
+    // =====================================================
+    // PROVIDER VALIDATION
+    // =====================================================
+
+    const allowedProviders = [
+      "Google Workspace",
+      "Microsoft 365"
+    ];
+
+
+    if (
+      data.provider &&
+      !allowedProviders.includes(data.provider)
+    ) {
+
+      res.status(400).json({
+        success: false,
+        message: "Invalid provider"
+      });
+
       return;
     }
 
-    // ===== Map References =====
+
+    // =====================================================
+    // MAP REFERENCES
+    // =====================================================
+
     const mappedData: any = {
       ...data,
+
       client: customerId,
-      hosttypeid: data.hosting_plan || undefined,
-      subHostTypeId: data.hosting_subplan || undefined,
-      hoststorageId: data.storage || undefined,
+
+      hosttypeid:
+        data.hosting_plan || undefined,
+
+      subHostTypeId:
+        data.hosting_subplan || undefined,
+
+      hoststorageId:
+        data.storage || undefined,
     };
 
-    // Ensure domainSource is an array
-    // ===== Domain Source Mapping =====
+
+    // =====================================================
+    // DOMAIN SOURCE MAPPING
+    // =====================================================
+
     if (data.domainSource) {
 
-      if (mongoose.Types.ObjectId.isValid(data.domainSource)) {
+      // Already ObjectId
+      if (
+        mongoose.Types.ObjectId.isValid(
+          data.domainSource
+        )
+      ) {
 
-        mappedData.domainSource = data.domainSource;
+        mappedData.domainSource =
+          data.domainSource;
 
-      } else {
+      }
 
-        const domainSourceDoc = await DomainSource.findOne({
-          name: data.domainSource
-        });
+      // Domain source name
+      else {
+
+        const domainSourceDoc =
+          await DomainSource.findOne({
+            name: data.domainSource
+          });
+
 
         if (!domainSourceDoc) {
+
           res.status(400).json({
             success: false,
             error: {
@@ -2349,232 +2427,416 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
               message: "Domain source not found"
             }
           });
+
           return;
         }
 
-        mappedData.domainSource = domainSourceDoc._id;
+
+        mappedData.domainSource =
+          domainSourceDoc._id;
       }
     }
 
-    // ===== Create Order =====
-    const newOrder = new Order(mappedData);
-    const savedOrder = await newOrder.save();
 
-    // ===== Save Multiple Email Plans =====
-    // ===== Save Multiple Order Plans =====
-    if (data.plans && Array.isArray(data.plans)) {
+    // =====================================================
+    // CREATE ORDER
+    // =====================================================
 
-      const plansToSave = await Promise.all(
-        data.plans.map(async (p: any) => {
+    const newOrder =
+      new Order(mappedData);
 
-
-          // ===== Validate Plans =====
-          if (
-            !p.type ||
-            (
-              (p.type === "email" ||
-                p.type === "storage" ||
-                p.type === "msoffice") &&
-              (!p.planId || !p.emailTypeId)
-            )
-          ) {
-
-            const error: any = new Error(
-              "PlanId and EmailTypeId are required for email, storage and msoffice"
-            );
-
-            error.statusCode = 400;
-
-            throw error;
-          }
+    const savedOrder =
+      await newOrder.save();
 
 
-          let planDoc = null;
-          let emailTypeDoc = null;
+    // =====================================================
+    // SAVE ORDER PLANS
+    // =====================================================
 
+    if (
+      data.plans &&
+      Array.isArray(data.plans)
+    ) {
 
-          // Only email/storage/msoffice have plan & email type
-          if (!p.type) {
-            throw new Error("Service type required");
-          }
+      const plansToSave =
+        await Promise.all(
 
+          data.plans.map(
+            async (p: any) => {
 
-          // email/storage/msoffice validation
+              // =================================================
+              // SERVICE TYPE REQUIRED
+              // =================================================
 
-          if (
-            p.type === "email" ||
-            p.type === "storage" ||
-            p.type === "msoffice"
-          ) {
+              if (!p.type) {
 
-            emailTypeDoc = await TypeEmail.findById(
-              p.emailTypeId
-            );
+                const error: any =
+                  new Error(
+                    "Service type required"
+                  );
 
-            if (!emailTypeDoc) {
-              throw new Error(
-                "Invalid emailTypeId"
-              );
-            }
+                error.statusCode = 400;
 
-            // Plan is optional for email
-            if (p.planId) {
-
-              planDoc = await PlanEmail.findById(
-                p.planId
-              );
-
-              if (!planDoc) {
-                throw new Error(
-                  "Invalid planId"
-                );
+                throw error;
               }
 
+
+              let planDoc = null;
+
+              let emailTypeDoc = null;
+
+
+              // =================================================
+              // EMAIL / STORAGE / MS OFFICE
+              // =================================================
+
+              if (
+                p.type === "email" ||
+                p.type === "storage" ||
+                p.type === "msoffice"
+              ) {
+
+                // ---------------------------------------------
+                // EMAIL TYPE IS REQUIRED
+                // ---------------------------------------------
+
+                if (!p.emailTypeId) {
+
+                  const error: any =
+                    new Error(
+                      "EmailTypeId is required for email, storage and msoffice"
+                    );
+
+                  error.statusCode = 400;
+
+                  throw error;
+                }
+
+
+                // ---------------------------------------------
+                // FIND EMAIL TYPE
+                // ---------------------------------------------
+
+                emailTypeDoc =
+                  await TypeEmail.findById(
+                    p.emailTypeId
+                  );
+
+
+                if (!emailTypeDoc) {
+
+                  const error: any =
+                    new Error(
+                      "Invalid emailTypeId"
+                    );
+
+                  error.statusCode = 400;
+
+                  throw error;
+                }
+
+
+                // ---------------------------------------------
+                // PLAN IS OPTIONAL
+                // ---------------------------------------------
+                //
+                // This is important for:
+                //
+                // TITAN Webmail
+                // email type exists
+                // but no plan selected
+                //
+                // ---------------------------------------------
+
+                if (p.planId) {
+
+                  planDoc =
+                    await PlanEmail.findById(
+                      p.planId
+                    );
+
+
+                  if (!planDoc) {
+
+                    const error: any =
+                      new Error(
+                        "Invalid planId"
+                      );
+
+                    error.statusCode = 400;
+
+                    throw error;
+                  }
+                }
+
+              }
+
+
+              // =================================================
+              // HOSTING
+              // =================================================
+
+              if (p.type === "hosting") {
+
+                if (
+                  !p.hostingType ||
+                  !p.hostingSubType ||
+                  !p.storage
+                ) {
+
+                  const error: any =
+                    new Error(
+                      "Hosting details required"
+                    );
+
+                  error.statusCode = 400;
+
+                  throw error;
+                }
+              }
+
+
+              // =================================================
+              // WEBSITE
+              // =================================================
+
+              if (p.type === "website") {
+
+                // No extra validation required
+                // website_flag comes from frontend
+
+              }
+
+
+              // =================================================
+              // SSL
+              // =================================================
+
+              if (p.type === "ssl") {
+
+                // No extra validation required
+                // ssl_flag comes from frontend
+
+              }
+
+
+              // =================================================
+              // RETURN ORDER PLAN
+              // =================================================
+
+              return {
+
+                orderId:
+                  savedOrder._id,
+
+
+                // ---------------------------------------------
+                // EMAIL / STORAGE / MS OFFICE
+                // ---------------------------------------------
+
+                planId:
+                  planDoc?._id || null,
+
+                emailTypeId:
+                  emailTypeDoc?._id || null,
+
+
+                // ---------------------------------------------
+                // HOSTING
+                // ---------------------------------------------
+
+                hostTypeId:
+                  p.hostingType || null,
+
+                hostSubTypeId:
+                  p.hostingSubType || null,
+
+                storageId:
+                  p.storage || null,
+
+
+                // ---------------------------------------------
+                // COMMON
+                // ---------------------------------------------
+
+                type:
+                  p.type,
+
+
+                registrationDate:
+                  p.registrationDate
+                    ? new Date(
+                        p.registrationDate
+                      )
+                    : new Date(),
+
+
+                expiryDate:
+                  p.expiryDate
+                    ? new Date(
+                        p.expiryDate
+                      )
+                    : new Date(),
+
+
+                noOfUsers:
+                  Number(
+                    p.noOfUsers || 1
+                  )
+
+              };
+
             }
-
-          }
-
-          // hosting validation
-
-          if (p.type === "hosting") {
-
-            if (
-              !p.hostingType ||
-              !p.hostingSubType ||
-              !p.storage
-            ) {
-
-              const error: any = new Error(
-                "Hosting details required"
-              );
-
-              error.statusCode = 400;
-
-              throw error;
-            }
-
-          } if (
-            p.type === "email" ||
-            p.type === "storage" ||
-            p.type === "msoffice"
-          ) {
-
-            planDoc = await PlanEmail.findById(p.planId);
-
-            emailTypeDoc = await TypeEmail.findById(
-              p.emailTypeId
-            );
+          )
+        );
 
 
-            if (!planDoc || !emailTypeDoc) {
-              throw new Error(
-                "Invalid planId or emailTypeId"
-              );
-            }
+      // =====================================================
+      // INSERT ORDER PLANS
+      // =====================================================
 
-          }
+      if (plansToSave.length > 0) {
 
-          return {
-
-            orderId: savedOrder._id,
-
-            // Email / Storage / MS Office
-            planId: planDoc?._id || null,
-
-            emailTypeId: emailTypeDoc?._id || null,
-
-            // Hosting
-            hostTypeId: p.hostingType || null,
-
-            hostSubTypeId: p.hostingSubType || null,
-
-            storageId: p.storage || null,
-
-            type: p.type,
-
-            registrationDate: p.registrationDate
-              ? new Date(p.registrationDate)
-              : new Date(),
-
-            expiryDate: p.expiryDate
-              ? new Date(p.expiryDate)
-              : new Date(),
-
-            noOfUsers: Number(p.noOfUsers || 1)
-
-          };
-
-        })
-      );
-
-
-      await OrderPlan.insertMany(plansToSave);
-
+        await OrderPlan.insertMany(
+          plansToSave
+        );
+      }
     }
 
-    res.status(201).json({ success: true, data: savedOrder });
-  } catch (err: any) {
 
-    console.error(err);
+    // =====================================================
+    // SUCCESS RESPONSE
+    // =====================================================
 
+    res.status(201).json({
+
+      success: true,
+
+      data: savedOrder
+
+    });
+
+  }
+
+
+  // =======================================================
+  // ERROR HANDLING
+  // =======================================================
+
+  catch (err: any) {
+
+    console.error(
+      "❌ Order creation error:",
+      err
+    );
+
+
+    // ---------------------------------------------
+    // Custom validation error
+    // ---------------------------------------------
 
     if (err.statusCode) {
 
-      res.status(err.statusCode).json({
+      res.status(
+        err.statusCode
+      ).json({
+
         success: false,
+
         error: {
-          code: "VALIDATION_ERROR",
-          message: err.message
+
+          code:
+            "VALIDATION_ERROR",
+
+          message:
+            err.message
+
         }
+
       });
 
       return;
     }
 
 
-    if (err.name === "ValidationError") {
+    // ---------------------------------------------
+    // Mongoose validation error
+    // ---------------------------------------------
+
+    if (
+      err.name === "ValidationError"
+    ) {
 
       res.status(400).json({
+
         success: false,
+
         error: {
-          code: "VALIDATION_ERROR",
-          message: err.message
+
+          code:
+            "VALIDATION_ERROR",
+
+          message:
+            err.message
+
         }
+
       });
 
       return;
-
     }
 
 
-    if (err.code === 11000) {
+    // ---------------------------------------------
+    // Duplicate entry
+    // ---------------------------------------------
+
+    if (
+      err.code === 11000
+    ) {
 
       res.status(400).json({
+
         success: false,
+
         error: {
-          code: "DUPLICATE_ENTRY",
-          message: "Domain already exists"
+
+          code:
+            "DUPLICATE_ENTRY",
+
+          message:
+            "Domain already exists"
+
         }
+
       });
 
       return;
-
     }
 
 
+    // ---------------------------------------------
+    // Internal server error
+    // ---------------------------------------------
 
     res.status(500).json({
-      success: false,
-      error: {
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Something went wrong"
-      }
-    });
 
+      success: false,
+
+      error: {
+
+        code:
+          "INTERNAL_SERVER_ERROR",
+
+        message:
+          "Something went wrong"
+
+      }
+
+    });
 
   }
 });
-
 
 // PUT update order
 router.put("/:id", async (req: Request, res: Response): Promise<void> => {
