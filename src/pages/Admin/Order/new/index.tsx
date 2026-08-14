@@ -257,14 +257,14 @@ useEffect(() => {
   fetchCustomers();
 }, [customerType]);
 useEffect(() => {
-  if (formData.managedBy === "Customer") {
-    setFormData((prev) => ({
-      ...prev,
-      domainSource: "Cloudflare",
+//   if (formData.managedBy === "Customer") {
+//     setFormData((prev) => ({
+//       ...prev,
+//       domainSource: "Cloudflare",
       
-domain_flag: true,
-    }));
-  }
+// domain_flag: true,
+//     }));
+//   }
 
   if (formData.managedBy === "Signroots") {
     setFormData((prev) => ({
