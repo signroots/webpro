@@ -130,7 +130,7 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
 
       {/* Domain */}
       <div className="flex items-center gap-1">
-        <span className="font-medium text-[18px] leading-5">
+        <span className="font-medium text-[16px] leading-5">
           {order.domainName}
         </span>
  {/* Copy Domain */}
