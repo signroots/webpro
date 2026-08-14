@@ -617,29 +617,78 @@ const handleHostTypeChange = async (hostTypeId: string) => {
   }
 };
 
-const handleEmailPlanChange = (
-  index:number,
-  key:keyof EmailPlan,
-  value:any
-)=>{
+const handleEmailPlanChange = async (
+  index: number,
+  key: keyof EmailPlan,
+  value: any
+) => {
 
-  setEmailPlans(prev=>{
+  if (key === "email_service_id") {
 
-    const updated=[...prev];
+    const typeObj = emailTypes.find(
+      (t) => t._id === value
+    );
 
+    if (!typeObj) return;
 
-    updated[index]={
-      ...updated[index],
-      [key]:value
-    };
+    try {
 
+      const plans = await getPlansByEmailType(typeObj._id);
 
-    return updated;
+      setEmailPlans((prev) =>
+        prev.map((plan, i) =>
+          i === index
+            ? {
+                ...plan,
+                email_service_id: typeObj._id,
+                email_service: typeObj.name,
+                plans: plans,
+                selected_plan: "",
+              }
+            : plan
+        )
+      );
 
-  });
+      // Main formData emailType
+      setFormData((prev) => ({
+        ...prev,
+        emailType: typeObj.name,
+      }));
 
+    } catch (err) {
+
+      console.error("Email plan loading error:", err);
+
+      setEmailPlans((prev) =>
+        prev.map((plan, i) =>
+          i === index
+            ? {
+                ...plan,
+                email_service_id: typeObj._id,
+                email_service: typeObj.name,
+                plans: [],
+                selected_plan: "",
+              }
+            : plan
+        )
+      );
+    }
+
+  } else {
+
+    setEmailPlans((prev) =>
+      prev.map((plan, i) =>
+        i === index
+          ? {
+              ...plan,
+              [key]: value,
+            }
+          : plan
+      )
+    );
+
+  }
 };
-
 const handleStoragePlanChange = async(
  index:number,
  key:keyof storagePlans,
@@ -924,48 +973,56 @@ const handleSubmit = async (e: React.FormEvent) => {
     // ============================
     // EMAIL PLANS
     // ============================
+// ============================
+// EMAIL PLANS
+// ============================
 
-    if(emailChecked && emailPlans.length > 0){
+if (emailChecked && emailPlans.length > 0) {
 
-  emailPlans.forEach((plan)=>{
+  emailPlans.forEach((plan) => {
 
+    console.log("EMAIL PLAN BEFORE PUSH:", plan);
 
-    const typeObj = emailTypes.find(
-      (t)=>t.name === plan.email_service
-    );
+    // Find email type using ID OR name
+    const typeObj =
+      emailTypes.find((t) => t._id === plan.email_service_id) ||
+      emailTypes.find((t) => t.name === plan.email_service);
 
+    console.log("TYPE OBJ:", typeObj);
 
+    // Find plan only if selected
     const planObj = plan.plans?.find(
-      (p)=>p.plan === plan.selected_plan
+      (p) => p._id === plan.selected_plan
     );
 
+    console.log("PLAN OBJ:", planObj);
 
-    if(typeObj && planObj){
+    if (typeObj) {
 
       combinedPlans.push({
 
-        planId: planObj._id,
+        // If no plan exists, send empty string
+        planId: planObj?._id || "",
 
         emailTypeId: typeObj._id,
 
         emailType: typeObj.name,
 
-        planName: planObj.plan,
+        planName: planObj?.plan || "",
 
-        noOfUsers:Number(plan.users || 1),
+        noOfUsers: Number(plan.users || 1),
 
         registrationDate:
-          plan.registrationDate,
+          plan.registrationDate || "",
 
         expiryDate:
-          plan.expiryDate,
+          plan.expiryDate || "",
 
-        type:"email"
+        type: "email"
 
       });
 
     }
-
 
   });
 
