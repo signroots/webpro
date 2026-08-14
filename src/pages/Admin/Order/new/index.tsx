@@ -1192,7 +1192,9 @@ if(payload.microsoft_email){
     }
 
 
-
+if (!payload.domainSource) {
+  delete payload.domainSource;
+}
     console.log("FINAL PAYLOAD",payload);
 
 
