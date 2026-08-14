@@ -2407,18 +2407,32 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
             p.type === "msoffice"
           ) {
 
-            if (!p.planId || !p.emailTypeId) {
-              const error: any = new Error(
-                "Plan and Email Type required"
+            emailTypeDoc = await TypeEmail.findById(
+              p.emailTypeId
+            );
+
+            if (!emailTypeDoc) {
+              throw new Error(
+                "Invalid emailTypeId"
+              );
+            }
+
+            // Plan is optional for email
+            if (p.planId) {
+
+              planDoc = await PlanEmail.findById(
+                p.planId
               );
 
-              error.statusCode = 400;
+              if (!planDoc) {
+                throw new Error(
+                  "Invalid planId"
+                );
+              }
 
-              throw error;
             }
 
           }
-
 
           // hosting validation
 
