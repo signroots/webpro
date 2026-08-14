@@ -3205,7 +3205,7 @@ router.get("/customer_order_details/:customerId", async (req, res) => {
       .select(`
       domainName
       domainSource
-
+      order_status
       expiryDate
       status
 
