@@ -25,8 +25,9 @@ import { fetchCountryCodes } from "../Customer/api";
 import { toast } from "react-toastify";
 import ExpiryBadge from "./ExpiryBadge";
 import ServiceIcons from "../Order/ServiceIcons";
+import OrdersTable from "./OrdersTable";
 // -------------------- Types --------------------
-interface Customer {
+export interface Customer {
   _id: string;
   name?: string;
   email?: string;
@@ -37,7 +38,7 @@ interface Customer {
   country?: string;
 
 }
-interface Client {
+export interface Client {
   _id: string;
   c_name?: string;
   c_email?: string[];
@@ -65,7 +66,7 @@ interface MSOfficeDetails {
   planId?: string;
 }
 
-interface Order {
+export interface Order {
   _id: string;
   domainName: string;
   lockStatus?: string;
@@ -527,15 +528,14 @@ useEffect(() => {
     setDefaultCountryAndState();
   }, [customerType, countries]);
 
-  const handleEdit = (orderId: string) => {
-    navigate(`/admin/orders/update/${orderId}`, {
-      state: {
-        fromPage: currentPage,
-        highlightOrderId: orderId,
-      },
-    });
-  };
-
+const handleEdit = (order: Order) => {
+  navigate(`/admin/orders/update/${order._id}`, {
+    state: {
+      fromPage: currentPage,
+      highlightOrderId: order._id,
+    },
+  });
+};
 
   const closeModal = () => {
     setSelectedOrder(null);
@@ -956,225 +956,18 @@ const getStatusClass = (status?: string) => {
  {/* Orders Table */}
 <div className="bg-white shadow rounded-lg overflow-x-auto">
 
-<table className="w-full table-fixed divide-y divide-gray-200 text-sm">
-
-<thead className="bg-gray-100 text-gray-600 uppercase text-xs tracking-wider">
-
-<tr>
-
-<th className="w-[60px] px-3 py-3 text-center">
-SL No
-</th>
-
-<th className="w-[350px] px-3 py-3 text-left">
-Domain Name
-</th>
-
-<th className="w-[200px] px-3 py-3 text-left">
-Services
-</th>
-
-<th className="w-[140px] px-3 py-3 text-left">
-Expiry Date
-</th>
-
-<th className="w-[120px] px-3 py-3 text-center">
-Status
-</th>
-
-<th className="w-[120px] px-3 py-3 text-center">
-Actions
-</th>
-
-</tr>
-
-</thead>
-
-
-<tbody className="divide-y divide-gray-100 text-gray-900">
-
-
-{paginatedOrders.map((order,idx)=>(
-
-
-<tr
-key={order._id}
-className={`transition-all duration-500 ${
-highlightedOrderId === order._id
-? "bg-blue-50 border-l-4 border-blue-500"
-: "hover:bg-gray-50"
-}`}
->
-
-
-
-{/* SL NO */}
-
-<td className="px-3 py-4 text-center">
-
-{(currentPage-1)*itemsPerPage+idx+1}
-
-</td>
-
-
-
-
-
-{/* DOMAIN + CUSTOMER */}
-
-<td className=" px-3 py-4">
-
-<div className="flex flex-col">
-  {/* Domain */}
-  <div className="flex items-center gap-1">
-    {          
-    order.lockStatus === "Locked"
-    ?
-    <FaLock className="text-red-500 relative top-2 shrink-0"/>
-    :
-    <FaLock className="text-green-500 relative top-2 shrink-0"/>
-    }
-    <span className="font-medium text-[15px]">{order.domainName}</span>
-
-    <FaExternalLinkAlt
-      className="w-3 h-3 text-gray-500 cursor-pointer hover:text-blue-600"
-      title="Open Domain"
-      onClick={(e) => {
-        e.stopPropagation();
-        window.open(`https://${order.domainName}`, "_blank");
-      }}
-    />
-  </div>
-
-  {/* Customer */}
-  {order.client ? (
-    <Link
-      to={`/admin/orders/customer/${order.client._id}`}
-      className="text-sm text-blue-600 px-4 py-1"
-    >
-      {order.client.c_company || order.client.c_name}
-    </Link>
-  ) : (
-    <button
-      className="text-red-600 text-xs"
-      onClick={() => {
-        setSelectedOrder(order);
-        setModalType("addCustomer");
-      }}
-    >
-      Add Customer
-    </button>
-  )}
-</div>
-
-
-
-</td>
-
-
-
-
-
-
-{/* SERVICES */}
-
-<td className="px-4 py-4 text-left">
-  <div className="flex items-center">
-    <ServiceIcons order={order} />
-  </div>
-</td>
-
-
-
-
-
-
-{/* EXPIRY */}
-
-<td className="px-3 py-4 text-center">
-
-<ExpiryBadge order={order}/>
-
-</td>
-
-
-
-
-
-
-{/* STATUS */}
-
-<td className="px-3 py-4 text-center">
-
-<span
-className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${getStatusClass(order.order_status)}`}
->
-{/* 
-<span className="w-4 h-4 flex justify-center items-center rounded-full bg-white text-black text-[9px]">
-D
-</span> */}
-
-{order.order_status || "N/A"}
-
-</span>
-
-
-</td>
-
-
-
-
-
-
-{/* ACTIONS */}
-
-<td className="px-3 py-4">
-
-<div className="flex justify-center gap-3 text-gray-500">
-
-
-<button
-className="hover:text-blue-600"
-title="View"
-onClick={()=>
-navigate(`/admin/orders/order-details/${order._id}`,{
-state:{fromPage:currentPage}
-})
-}
->
-
-<FaEye className="w-4 h-4"/>
-
-</button>
-
-
-
-<button
-onClick={()=>handleEdit(order._id)}
-className="hover:text-yellow-600"
-title="Edit"
->
-
-<FaEdit className="w-4 h-4"/>
-
-</button>
-
-
-</div>
-
-</td>
-
-
-
-</tr>
-
-
-))}
-
-
-</tbody>
-
-</table>
+{/* ORDERS TABLE */}
+<OrdersTable
+  paginatedOrders={paginatedOrders}
+  currentPage={currentPage}
+  itemsPerPage={itemsPerPage}
+  highlightedOrderId={highlightedOrderId}
+  setSelectedOrder={setSelectedOrder}
+  setModalType={setModalType}
+  handleEdit={handleEdit}
+  getStatusClass={getStatusClass}
+  navigate={navigate}
+/>
 
 </div>
 

@@ -13,6 +13,7 @@ import { SiHostinger } from "react-icons/si";
 import { Import } from "lucide-react";
 import ServiceIcons from "../Order/ServiceIcons";
 import ExpiryBadge from "../Order/ExpiryBadge";
+import OrdersTable from "../Order/OrdersTable";
 const CustomerOrders: React.FC = () => {
 
   console.log("🔥 CustomerOrders COMPONENT LOADED");
@@ -20,13 +21,17 @@ const CustomerOrders: React.FC = () => {
 
   const { customerId } = useParams();
   const navigate = useNavigate();
-
+const [modalType, setModalType] =
+  useState<"view" | "edit" | "addCustomer" | null>(null);
 
   const [customer, setCustomer] = useState<any>(null);
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
-
+const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  const closeModal = () => {
+    setSelectedOrder(null);
+    setModalType(null);
+  };
 
   useEffect(() => {
 
@@ -84,9 +89,35 @@ const CustomerOrders: React.FC = () => {
 
   };
 
+const handleEdit = (order: any) => {
+  navigate(`/admin/orders/update/${order._id}`, {
+    state: {
+      highlightOrderId: order._id,
+    },
+  });
+};
 
+const getStatusClass = (status?: string) => {
+  const value = status?.trim().toLowerCase();
 
+  // Empty / N/A
+  if (!value) {
+    return "bg-blue-100 text-blue-800";
+  }
 
+  // Expired
+  if (value === "expired") {
+    return "bg-red-600 text-white";
+  }
+
+  // Active
+  if (value === "active") {
+    return "bg-gray-100 text-green-700";
+  }
+
+  // Other status
+  return "bg-gray-200 text-gray-800";
+};
 
   if (loading) {
 
@@ -222,179 +253,15 @@ const CustomerOrders: React.FC = () => {
 
 
         <div className="overflow-x-auto">
-
-<table className="w-full table-fixed text-sm">
-
-<thead className="bg-gray-50 border-b">
-<tr>
-
-<th className="w-[60px] px-4 py-3 text-center">
-#
-</th>
-
-<th className="w-[350px] px-4 py-3 text-left">
-Domain
-</th>
-
-<th className="w-[200px] px-4 py-3 text-left">
-Services
-</th>
-
-<th className="w-[150px] px-4 py-3 text-center">
-Expiry
-</th>
-
-<th className="w-[120px] px-4 py-3 text-center">
-Status
-</th>
-
-</tr>
-</thead>
-
-
-
-
-
-       <tbody>
-
-{
-  orders.length === 0 ? (
-
-    <tr>
-      <td
-        colSpan={5}
-        className="text-center py-6 text-gray-500"
-      >
-        No orders found
-      </td>
-    </tr>
-
-  ) : (
-
-    orders.map((order,index)=>(
-
-      <tr
-        key={order._id}
-        className="border-b hover:bg-gray-50 transition"
-      >
-
-
-        {/* NUMBER */}
-      <td className="w-[60px] px-4 py-4 text-center">
-  {index + 1}
-</td>
-
-
-        {/* DOMAIN + CUSTOMER */}
-        <td className="px-4 py-4">
-
-          <div className="flex items-center gap-3">
-
-
-      
-
-              {
-                 order.lockStatus === "Locked"
-                 ?
-                 <FaLock className="text-red-500 shrink-0"/>
-                 :
-                 <FaLock className="text-green-500 shrink-0"/>
-                 }
-
-        
-
-
-
-       <div className="min-w-0">
-
-  <p className="font-semibold text-gray-800 truncate">
-    {order?.domainName || "-"}
-  </p>
-
-  {/* <p className="text-xs text-gray-500">
-    {customer?.c_company || "-"}
-  </p> */}
-
-</div>
-
-
-          </div>
-
-
-        </td>
-
-
-
-
-
-        {/* SERVICES */}
-<td className="px-4 py-4 text-left">
-  <div className="flex items-center">
-    <ServiceIcons order={order} />
-  </div>
-</td>
-
-
-
-
-        {/* EXPIRY DATE */}
-        <td className="px-1 py-4 font-medium text-center">
-
-          <div className="flex justify-center">
-
-            <ExpiryBadge order={order} />
-
-          </div>
-
-        </td>
-
-
-
-
-
-
-
-        {/* STATUS */}
-        <td className="px-4 py-4 text-center">
-
-
-          <span
-            className="
-            px-3
-            py-1
-            rounded-full
-            bg-green-100
-            text-green-700
-            text-xs
-            font-medium
-            "
-          >
-
-            {order.status || "ACTIVE"}
-
-          </span>
-
-
-        </td>
-
-
-
-
-
-      </tr>
-
-
-    ))
-
-  )
-}
-
-
-</tbody>
-
-
-          </table>
-
+{/* ORDERS TABLE */}
+<OrdersTable 
+  paginatedOrders={orders}
+  setSelectedOrder={setSelectedOrder} 
+  setModalType={setModalType} 
+  handleEdit={handleEdit} 
+  getStatusClass={getStatusClass} 
+  navigate={navigate} 
+/>
 
         </div>
 
