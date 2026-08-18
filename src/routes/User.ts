@@ -243,7 +243,7 @@ router.post(
             email: user.email,
             name: user.name,
             role,
-            type: "user",
+            type: "admin",
             clientId: null,
           },
         });
@@ -420,7 +420,7 @@ router.post(
           email: normalizedEmail,
           name: client.c_name,
           role,
-          type: "client",
+          type: "customer",
           clientId: client._id,
         },
       });
