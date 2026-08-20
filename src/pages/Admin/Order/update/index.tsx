@@ -2388,7 +2388,28 @@ if (hostingChecked && hostingPlans.length > 0) {
             <input
               type="checkbox"
               checked={hostingChecked}
-              onChange={(e) => setHostingChecked(e.target.checked)}
+             onChange={(e) => {
+  const checked = e.target.checked;
+
+  setHostingChecked(checked);
+
+  if (checked && hostingPlans.length === 0) {
+    setHostingPlans([
+      {
+        hosting_plan: "",
+        hosting_subplan: "",
+        storage: "",
+        registrationDate: "",
+        expiryDate: "",
+      },
+    ]);
+  }
+
+  if (!checked) {
+    setHostingPlans([]);
+  }
+}}
+
               className="h-4 w-4"
             />
             Hosting
