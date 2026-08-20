@@ -1028,12 +1028,14 @@ className="text-blue-500 hover:text-blue-700"
 
 
 <Link
-to={`/admin/orders/update/${order._id}`}
-title="Edit"
-className="text-yellow-500 hover:text-yellow-700"
+  to={`/admin/orders/update/${order._id}`}
+  state={{ from: "renewal" }}
+  title="Edit"
+  className="text-yellow-500 hover:text-yellow-700"
 >
-<FaEdit/>
+  <FaEdit />
 </Link>
+
 
 
 <Link

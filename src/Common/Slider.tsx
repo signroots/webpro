@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import {
   ChevronLeft,
   ChevronRight,
@@ -98,7 +98,7 @@ const roleMenus: Record<string, string[]> = {
 const Slider: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-
+const location = useLocation();
   // =====================================================
   // GET USER
   // =====================================================
@@ -172,6 +172,62 @@ const Slider: React.FC = () => {
 
     default:
       return "#";
+  }
+};
+
+
+const isMenuActive = (name: string): boolean => {
+  const pathname = location.pathname;
+  const from = location.state?.from;
+
+  // Edit page
+  if (pathname.startsWith("/admin/orders/update/")) {
+    if (from === "renewal" && name === "Renew List") {
+      return true;
+    }
+
+    if (from === "dns" && name === "DNS Orders") {
+      return true;
+    }
+
+    if (from === "orders" && name === "Orders") {
+      return true;
+    }
+
+    return false;
+  }
+
+  // Normal pages
+  switch (name) {
+    case "Orders":
+      return pathname === "/admin/orders";
+
+    case "Renew List":
+      return pathname === "/admin/renew-list";
+
+    case "DNS Orders":
+      return pathname === "/admin/dns-order";
+
+    case "Dashboard":
+      return pathname === "/admin/dashboard_management";
+
+    case "Customers":
+      return pathname === "/admin/customers";
+
+    case "Status":
+      return pathname === "/admin/status";
+
+    case "User Types":
+      return pathname === "/admin/user-types";
+
+    case "Data Management":
+      return pathname === "/admin/data-management";
+
+    case "Domain Source":
+      return pathname === "/admin/domain-source";
+
+    default:
+      return false;
   }
 };
 
@@ -288,16 +344,17 @@ const Slider: React.FC = () => {
             ================================================= */
 
             <NavLink
-              key={item.name}
-              to={getPathFor(item.name)}
-              className={({ isActive }) =>
-                `flex items-center p-4 my-2 rounded-lg hover:bg-gray-800 ${
-                  isActive
-                    ? "bg-gray-700 font-semibold"
-                    : ""
-                }`
-              }
-            >
+  key={item.name}
+  to={getPathFor(item.name)}
+  className={() =>
+    `flex items-center p-4 my-2 rounded-lg hover:bg-gray-800 ${
+      isMenuActive(item.name)
+        ? "bg-gray-700 font-semibold"
+        : ""
+    }`
+  }
+>
+
               <div className="w-8 h-8 flex items-center justify-center bg-gray-700 rounded-full mr-3">
                 {item.icon}
               </div>

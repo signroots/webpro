@@ -17,7 +17,7 @@ export interface User {
   email: string;
   name?: string;
   role: string;
-  type?: "user" | "client" | "customer";
+  type?: "user" | "admin" | "client" | "customer";
   clientId?: string | null;
 }
 
@@ -66,6 +66,10 @@ const normalizeUser = (data: any): User => {
     .trim()
     .toLowerCase();
 
+  // ================================
+  // NORMALIZED ROLE
+  // ================================
+
   let normalizedRole = "user";
 
   if (role === "admin") {
@@ -77,13 +81,25 @@ const normalizeUser = (data: any): User => {
     normalizedRole = "client";
   }
 
+  // ================================
+  // NORMALIZED TYPE
+  // ================================
+
   let normalizedType: User["type"] = "user";
 
-  if (
+  const originalType = String(
+    data?.type ?? ""
+  )
+    .trim()
+    .toLowerCase();
+
+  if (originalType === "admin" || role === "admin") {
+    normalizedType = "admin";
+  } else if (
+    originalType === "client" ||
+    originalType === "customer" ||
     role === "client" ||
-    role === "customer" ||
-    data?.type?.toLowerCase() === "client" ||
-    data?.type?.toLowerCase() === "customer"
+    role === "customer"
   ) {
     normalizedType = "client";
   }

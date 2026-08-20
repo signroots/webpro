@@ -26,169 +26,9 @@ import { toast } from "react-toastify";
 import ExpiryBadge from "./ExpiryBadge";
 import ServiceIcons from "../Order/ServiceIcons";
 import OrdersTable from "./OrdersTable";
+import type { Order,Client,Customer,MSOfficeDetails} from "../../../types/order";
+
 // -------------------- Types --------------------
-export interface Customer {
-  _id: string;
-  name?: string;
-  email?: string;
-  phone?: string;
-  company?: string;
-  address?: string;
-  city?: string;
-  country?: string;
-
-}
-export interface Client {
-  _id: string;
-  c_name?: string;
-  c_email?: string[];
-  c_phone?: string;
-  c_company?: string;
-  c_address?: string;
-  c_city?: string;
-  c_country?: string;
-
-}
-interface ICountry {
-  _id: string;
-  name: string;
-}
-interface MSOfficeDetails {
-  _id: string;
-  orderId: string;
-  planName: string;
-  emailType: string;
-  noOfUsers: number;
-  serviceType: string;
-  type: string;
-  registrationDate: string;
-  expiryDate: string;
-  planId?: string;
-}
-
-export interface Order {
-  _id: string;
-  domainName: string;
-  lockStatus?: string;
-  status?: string;
-  order_status?:string;
-  users?: number;
-  domain_flag?: boolean;
-  managedBy?: string;
-  registrationDate?: string;
-  expiryDate?: string;
- domainSource?: {
-  _id:string;
-  name:string;
-  code:string;
-  image?:string;
-};
-  google_email?: boolean;
-  microsoft_email?: boolean;
-  cloudflareRegistered?: boolean;
-  hosting?: boolean;
-  email_flag?: boolean;
-  
-  website_flag?: boolean;
-  ssl_flag?: boolean;
-  host_flag?: boolean;
-  msoffice_services_flag?: boolean;
-  customer?: Customer | null;
-  client?: Client | null;
-  subResellerName?: string;
-  subResellerEmail?: string;
-  subscription?: string;
-  provider?: string;
-  email_status?: string;
-
-  // ✅ Email Plans (OrderPlanSchema)
-  emailPlans?: {
-    _id: string;
-    orderId: string;
-    planId: {
-      _id: string;
-      plan: string;
-      emailType: string;
-      isActive: boolean;
-    };
-    emailTypeId: {
-      _id: string;
-      name: string;
-    };
-    registrationDate: string;
-    expiryDate: string; // 👈 IMPORTANT
-    noOfUsers: number;
-    type:
-    | "email"
-    | "storage"
-    | "msoffice"
-    | "hosting"
-    | "website"
-    | "ssl";
-    adminEmail: string;
-    adminPassword: string;
-    status: string;
-    createdAt: string;
-    updatedAt: string;
-  }[];
-
-  // ✅ Plans array (From your previous system)
-  plans?: {
-    _id: string;
-    orderId: string;
-    planName: string;
-    emailType: string;
-    noOfUsers: number;
-    serviceType: string;
-    type: string;
-    registrationDate: string;
-    expiryDate: string;
-    planId?: string;
-  }[];
-
-  // Flags merged from API
-  email_service?: "Google Workspace" | "Microsoft 365";
-  email_expiryDate?: string;
-
-  // Customer Details
-  // Customer Details
-  newCustomer?: {
-    c_salutation?: string;
-    c_firstName?: string;
-    c_lastName?: string;
-    c_name?: string;
-    c_email?: string[];
-    c_phone?: string;
-    c_company?: string;
-    c_address?: string;
-    c_address2?: string;
-    c_city?: string;
-    c_state?: string;
-    c_country?: string;
-    c_countryCode?: string;
-    c_zipCode?: string;
-    c_gst?: string;
-    c_bankAccountPayment?: string;
-    c_placeOfContact?: string;
-    c_placeOfContactWithStateCode?: string;
-    c_portalEnabled?: boolean;
-  };
-  // API Response Plans
-Plans?: {
-  type:
-    | "email"
-    | "storage"
-    | "msoffice"
-    | "hosting"
-    | "website"
-    | "ssl";
-  expiryDate: string;
-  emailType: string;
-  emailTypeImage: string;
-  planId: string;
-}[];
-
-}
 
 // -------------------- Component --------------------
 const Orders: React.FC = () => {
@@ -276,6 +116,7 @@ const [emailType, setEmailType] = useState<string | undefined>(undefined);
   const [msofficeCache, setMsofficeCache] = useState<Record<string, any[]>>({});
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const isRestoringRef = useRef(false);
+
 
 
 
@@ -531,6 +372,7 @@ useEffect(() => {
 const handleEdit = (order: Order) => {
   navigate(`/admin/orders/update/${order._id}`, {
     state: {
+      from: "orders",
       fromPage: currentPage,
       highlightOrderId: order._id,
     },
@@ -962,11 +804,12 @@ const getStatusClass = (status?: string) => {
   currentPage={currentPage}
   itemsPerPage={itemsPerPage}
   highlightedOrderId={highlightedOrderId}
-  setSelectedOrder={setSelectedOrder}
-  setModalType={setModalType}
+  // setSelectedOrder={setSelectedOrder}
+  // setModalType={setModalType}
   handleEdit={handleEdit}
   getStatusClass={getStatusClass}
   navigate={navigate}
+  
 />
 
 </div>

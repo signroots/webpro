@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation,useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import Select from "react-select";
-import { notify } from "../../../../Common/Toastify";
-import { fetchCountries, fetchStatesByCountry, fetchCountryCodes } from "../../Customer/api";
+import { notify } from "../../../Common/Toastify";
+import { fetchCountries, fetchStatesByCountry, fetchCountryCodes } from "../../Admin/Customer/api";
 import { BiLabel } from "react-icons/bi";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-interface Status {
-  _id: string;
-  name: string;
-}
 interface EmailPlan {
   email_service: string;
   workspace_plan?: string;
@@ -28,7 +24,6 @@ interface EmailPlan {
   email_services?: string;
   emailTypeId?: string;
   plans?: { _id: string; plan: string }[];
-  status?: string;
 }
 
 interface MsofficeOrderPlan {
@@ -110,8 +105,6 @@ interface OrderForm {
   expiryDate?: string;
   client?: string;
   plans?: any[];
-  hosting_expiry_date?:string;
-  hosting_registration_date?:string;
   newCustomer: {
     c_salutation?: string;
     c_name?: string;
@@ -158,7 +151,6 @@ interface OrderForm {
 
 const UpdateOrder: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { orderId } = useParams<{ orderId: string }>();
   const inputClass =
     "w-full h-11 border border-gray-300 rounded-md px-3 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500";
@@ -216,8 +208,6 @@ const UpdateOrder: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [loadingOrder, setLoadingOrder] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [statusList, setStatusList] = useState<Status[]>([]);
-  const [domainStatus, setDomainStatus] = useState("");
   const [emailChecked, setEmailChecked] = useState(false);
   const [msofficeChecked, setMsofficeChecked] = useState(false)
   const [customerType, setCustomerType] = useState<"existing" | "new">("new");
@@ -240,8 +230,7 @@ const UpdateOrder: React.FC = () => {
       type: "",
       selected_plan: "",
       planName: "",
-      email_service_id: "",
-      status: "",
+      email_service_id: ""
     },
   ]);
   const [storagePlans, setStoragePlans] = useState<storagePlans[]>([
@@ -262,36 +251,36 @@ const UpdateOrder: React.FC = () => {
 
   // ------------------- FETCH EMAIL TYPES -------------------
   const fetchPlansByEmailType = async (
-    typeId: string,
-    index: number
-  ) => {
-    try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/api/plans/planlist/${typeId}`
-      );
+  typeId: string,
+  index: number
+) => {
+  try {
+    const res = await axios.get(
+      `${import.meta.env.VITE_API_BASE_URL}/api/plans/planlist/${typeId}`
+    );
 
-      const plans = res.data.data
-        .filter((p: any) => p.isActive)
-        .map((p: any) => ({
-          _id: p._id,
-          plan: p.plan,
-        }));
+    const plans = res.data.data
+      .filter((p: any) => p.isActive)
+      .map((p: any) => ({
+        _id: p._id,
+        plan: p.plan,
+      }));
 
-      setMsofficePlans((prev) =>
-        prev.map((item, i) =>
-          i === index
-            ? {
+    setMsofficePlans((prev) =>
+      prev.map((item, i) =>
+        i === index
+          ? {
               ...item,
               plans: plans,
             }
-            : item
-        )
-      );
+          : item
+      )
+    );
 
-    } catch (err) {
-      console.error("Failed to fetch plans", err);
-    }
-  };
+  } catch (err) {
+    console.error("Failed to fetch plans", err);
+  }
+};
   // const fetchPlansByEmailType = async (typeId: string, index: number) => {
   //   try {
   //     const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/plans/planlist/${typeId}`);
@@ -307,32 +296,6 @@ const UpdateOrder: React.FC = () => {
   //     console.error("Failed to fetch plans", err);
   //   }
   // };
-  // ------------------- FETCH STATUSES -------------------
-
-  useEffect(() => {
-    const fetchStatuses = async () => {
-      try {
-        const token = localStorage.getItem("token");
-
-        const res = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/api/status`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        const data = res.data?.data || res.data || [];
-
-        setStatusList(data);
-      } catch (err) {
-        console.error("Failed to fetch statuses", err);
-      }
-    };
-
-    fetchStatuses();
-  }, []);
   useEffect(() => {
     if (highlightedOrderId) {
       const timer = setTimeout(() => setHighlightedOrderId(null), 5000);
@@ -358,7 +321,6 @@ const UpdateOrder: React.FC = () => {
         plans: [],         // initially empty
         selected_plan: "",
         type: "email",     // <-- IMPORTANT: set type so backend validation passes
-        status: "",
       },
     ]);
   };
@@ -847,13 +809,6 @@ const UpdateOrder: React.FC = () => {
         );
 
         const order = res.data.data || res.data;
-
-        const existingDomainStatus =
-          typeof order.status === "object"
-            ? order.status?._id
-            : order.status || "";
-
-        setDomainStatus(existingDomainStatus);
         const hostingPlan = order.plans?.some(
           (p: any) => p.type === "hosting"
         );
@@ -971,33 +926,28 @@ const UpdateOrder: React.FC = () => {
         );
 
         setHostingPlans(
-  hostingOnly.map((p: any) => ({
-    type: "hosting",
+          hostingOnly.map((p: any) => ({
+            type: "hosting",
 
-    hosting_plan:
-      p.hostingType?._id ||
-      p.hostType?._id ||
-      "",
+            hostingType:
+              p.hostType?._id || "",
 
-    hosting_subplan:
-      p.hostingSubType?._id ||
-      p.hostSubType?._id ||
-      "",
+            hostingSubType:
+              p.hostSubType?._id || "",
 
-    storage:
-      p.storage?._id ||
-      "",
+            storage:
+              p.storage?._id || "",
 
-    registrationDate:
-      p.registrationDate?.slice(0, 10) || "",
+            registrationDate:
+              p.registrationDate?.slice(0, 10) || "",
 
-    expiryDate:
-      p.expiryDate?.slice(0, 10) || "",
+            expiryDate:
+              p.expiryDate?.slice(0, 10) || "",
 
-    users:
-      p.noOfUsers || 1,
-  }))
-);
+            users:
+              p.noOfUsers || 1
+          }))
+        );
 
 
         // Set formData
@@ -1043,9 +993,9 @@ const UpdateOrder: React.FC = () => {
           // host_flag: !!order.host_flag,
 
           domainSource:
-            order.domainSource?._id ||
-            order.domainSource ||
-            "",
+  order.domainSource?._id ||
+  order.domainSource ||
+  "",
           email_expiryDate: order.email_expiryDate?.slice(0, 10) || "",
           users: order.users || 1,
           plans: order.plans || [],
@@ -1138,10 +1088,6 @@ const UpdateOrder: React.FC = () => {
                   email_flag: true,
                   type: p.type || "email",
                   plans,
-                  status:
-                    typeof p.status === "object"
-                      ? p.status?._id
-                      : p.status || "",
                 };
               })
           );
@@ -1306,34 +1252,25 @@ const UpdateOrder: React.FC = () => {
   };
 
   // Handler for Host Type change
-  const handleHostTypeChange = async (
-  index: number,
-  hostTypeId: string
-) => {
-  const selectedHostType =
-    hostTypes.find((ht: any) => ht._id === hostTypeId) || null;
+  const handleHostTypeChange = (hostTypeId: string) => {
+    const selectedHostType = hostTypes.find(ht => ht._id === hostTypeId) || null;
+    setFormData((prev) => ({
+      ...prev,
+      hosttypeid: selectedHostType,
+      hosting_plan: selectedHostType?._id || "",
+      subHostTypeId: null,
+      hosting_subplan: "",
+      hoststorageId: null,
+      storage: "",
+    }));
 
-  // Update hosting plan
-  setHostingPlans((prev) =>
-    prev.map((plan, i) =>
-      i === index
-        ? {
-            ...plan,
-            hosting_plan: hostTypeId,
-            hosting_subplan: "",
-            storage: "",
-          }
-        : plan
-    )
-  );
-
-  if (hostTypeId) {
-    await fetchSubTypesAndStorage(hostTypeId);
-  } else {
-    setHostSubTypes([]);
-    setStorages([]);
-  }
-};
+    if (hostTypeId) {
+      fetchSubTypesAndStorage(hostTypeId);
+    } else {
+      setHostSubTypes([]);
+      setStorages([]);
+    }
+  };
 
 
   // ------------------- FETCH CLIENTS -------------------
@@ -1458,29 +1395,28 @@ const UpdateOrder: React.FC = () => {
         });
       }
       // HOSTING PLAN
-      // HOSTING PLANS
-if (hostingChecked && hostingPlans.length > 0) {
-  hostingPlans.forEach((plan) => {
-    combinedPlans.push({
-      type: "hosting",
+      if (hostingChecked) {
+        combinedPlans.push({
+          type: "hosting",
 
-      hostingType: plan.hosting_plan || "",
+          hostingType:
+            formData.hosting_plan || "",
 
-      hostingSubType: plan.hosting_subplan || "",
+          hostingSubType:
+            formData.hosting_subplan || "",
 
-      storage: plan.storage || "",
+          storage:
+            formData.storage || "",
 
-      registrationDate:
-        plan.registrationDate || "",
+          registrationDate:
+            formData.registrationDate,
 
-      expiryDate:
-        plan.expiryDate || "",
+          expiryDate:
+            formData.expiryDate,
 
-      noOfUsers:
-        plan.users || 1,
-    });
-  });
-}
+          noOfUsers: 1,
+        });
+      }
 
       // WEBSITE SERVICE
       if (websiteChecked) {
@@ -1529,24 +1465,14 @@ if (hostingChecked && hostingPlans.length > 0) {
       // send update request
       const res = await axios.put(`${import.meta.env.VITE_API_BASE_URL}/api/orders/${orderId}`, payload);
 
-     if (res.data?.success === true) {
-  const from = location.state?.from;
+      if (res.data?.success === true) {
+        // alert("✅ Order updated successfully!");
+        navigate("/admin/orders", {
+          state: { updatedOrderId: orderId }
+        });
+        notify("Order Updated Successfully...", "success");
 
-  if (from === "renewal") {
-    navigate("/admin/renew-list");
-  } else if (from === "dns") {
-    navigate("/admin/dns-order");
-  } else if (from === "customer") {
-    navigate(`/admin/orders/customer/${location.state?.customerId}`);
-  } else {
-    navigate("/admin/orders");
-  }
-
-  notify("Order Updated Successfully...", "success");
-}
-
-
-       else {
+      } else {
         alert("❌ Failed to update order");
       }
     } catch (err) {
@@ -1934,11 +1860,11 @@ if (hostingChecked && hostingPlans.length > 0) {
                   >
                     <option value="">-- Select Registrar --</option>
 
-                    {domainSources.map((source) => (
-                      <option key={source._id} value={source._id}>
-                        {source.name}
-                      </option>
-                    ))}
+{domainSources.map((source) => (
+  <option key={source._id} value={source._id}>
+    {source.name}
+  </option>
+))}
                   </select>
 
 
@@ -2166,21 +2092,21 @@ if (hostingChecked && hostingPlans.length > 0) {
 
                     {/* Storage Plan */}
                     {/* {plan.plans && plan.plans.length > 0 && ( */}
-                    <div>
-                      <label className="block mb-1 text-gray-700">Select Plan</label>
-                      <select
-                        value={plan.selected_plan || ""}
-                        onChange={(e) => handleStoragePlanChange(idx, "selected_plan", e.target.value)}
-                        className="w-full border rounded px-2 py-1"
-                      >
-                        <option value="">-- Select Plan --</option>
-                        {plan.plans?.map((p) => (
-                          <option key={p._id} value={p._id}>
-                            {p.plan}   {/* plan name shown in dropdown */}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                      <div>
+                        <label className="block mb-1 text-gray-700">Select Plan</label>
+                        <select
+                          value={plan.selected_plan || ""}
+                          onChange={(e) => handleStoragePlanChange(idx, "selected_plan", e.target.value)}
+                          className="w-full border rounded px-2 py-1"
+                        >
+                          <option value="">-- Select Plan --</option>
+                          {plan.plans?.map((p) => (
+                            <option key={p._id} value={p._id}>
+                              {p.plan}   {/* plan name shown in dropdown */}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     {/* )} */}
 
                     {/* Users */}
@@ -2270,17 +2196,17 @@ if (hostingChecked && hostingPlans.length > 0) {
                           const selectedId = e.target.value;
                           const typeObj = emailTypes.find((t) => t._id === selectedId);
                           if (typeObj) {
-                            handleMsofficePlanChange(
-                              idx,
-                              "email_service_id",
-                              typeObj._id
-                            );
+  handleMsofficePlanChange(
+    idx,
+    "email_service_id",
+    typeObj._id
+  );
 
-                            fetchPlansByEmailType(
-                              typeObj._id,
-                              idx
-                            );
-                          }
+  fetchPlansByEmailType(
+    typeObj._id,
+    idx
+  );
+}
                           // if (typeObj) {
                           //   // update state properly
                           //   handleMsofficePlanChange(idx, "email_service_id", typeObj._id);
@@ -2394,156 +2320,80 @@ if (hostingChecked && hostingPlans.length > 0) {
             Hosting
           </label>
 
-         {hostingPlans.map((plan, idx) => (
-  <div
-    key={idx}
-    className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-2 p-3 border rounded bg-gray-50"
-  >
+          {/* Hosting Details */}
+          {hostingChecked && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2 p-3 border rounded bg-gray-50">
 
-    {/* Hosting Type */}
-    <div>
-      <label className="block text-gray-700 font-medium mb-2">
-        Hosting Type
-      </label>
+              {/* Hosting Type */}
+              <div className="mb-3">
+                <label className="block mb-1 text-gray-700">Hosting Type</label>
+                <select
+                  name="hosting_plan"
+                  value={formData.hosttypeid?._id || ""}
+                  onChange={(e) => handleHostTypeChange(e.target.value)}
+                  className="w-full border rounded px-3 py-2"
+                >
+                  <option value="">Select Hosting Type</option>
+                  {hostTypes.map((ht: HostType) => (
+                    <option key={ht._id} value={ht._id}>
+                      {ht.type}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-      <select
-  value={plan.hosting_plan || ""}
-  onChange={(e) =>
-    handleHostTypeChange(idx, e.target.value)
-  }
-  className="w-full border rounded px-3 py-2"
->
-  <option value="">-- Select Hosting Type --</option>
+              {/* Hosting Sub Type */}
+              <div className="mb-3">
+                <label className="block mb-1 text-gray-700">Hosting Sub Plan</label>
+                <select
+                  name="hosting_subplan"
+                  value={formData.subHostTypeId?._id || ""}
+                  onChange={(e) => {
+                    const selectedSub = hostSubTypes.find(sub => sub._id === e.target.value) || null;
+                    setFormData((prev) => ({
+                      ...prev,
+                      subHostTypeId: selectedSub,
+                      hosting_subplan: selectedSub?._id || "",
+                    }));
+                  }}
+                  className="w-full border rounded px-3 py-2"
+                >
+                  <option value="">Select Sub Plan</option>
+                  {hostSubTypes.map((sub: SubHostType) => (
+                    <option key={sub._id} value={sub._id}>
+                      {sub.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-  {hostTypes.map((ht: any) => (
-    <option key={ht._id} value={ht._id}>
-      {ht.type}
-    </option>
-  ))}
-</select>
+              {/* Storage */}
+              <div className="mb-3">
+                <label className="block mb-1 text-gray-700">Storage</label>
+                <select
+                  name="storage"
+                  value={formData.hoststorageId?._id || ""}
+                  onChange={(e) => {
+                    const selectedStorage = storages.find(s => s._id === e.target.value) || null;
+                    setFormData((prev) => ({
+                      ...prev,
+                      hoststorageId: selectedStorage,
+                      storage: selectedStorage?._id || "",
+                    }));
+                  }}
+                  className="w-full border rounded px-3 py-2"
+                >
+                  <option value="">Select Storage</option>
+                  {storages.map((s: Storage) => (
+                    <option key={s._id} value={s._id}>
+                      {s.storage}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-    </div>
-
-
-    {/* Hosting Sub Type */}
-    <div>
-      <label className="block text-gray-700 font-medium mb-2">
-        Hosting Sub Type
-      </label>
-
-      <select
-        value={plan.hosting_subplan || ""}
-        onChange={(e) =>
-          setHostingPlans((prev) =>
-            prev.map((item, i) =>
-              i === idx
-                ? {
-                    ...item,
-                    hosting_subplan: e.target.value,
-                  }
-                : item
-            )
-          )
-        }
-        className="w-full border rounded px-3 py-2"
-      >
-        <option value="">-- Select Sub Type --</option>
-
-        {hostSubTypes.map((st) => (
-          <option key={st._id} value={st._id}>
-            {st.name}
-          </option>
-        ))}
-      </select>
-    </div>
-
-
-    {/* Storage */}
-    <div>
-      <label className="block text-gray-700 font-medium mb-2">
-        Storage
-      </label>
-
-      <select
-        value={plan.storage || ""}
-        onChange={(e) =>
-          setHostingPlans((prev) =>
-            prev.map((item, i) =>
-              i === idx
-                ? {
-                    ...item,
-                    storage: e.target.value,
-                  }
-                : item
-            )
-          )
-        }
-        className="w-full border rounded px-3 py-2"
-      >
-        <option value="">-- Select Storage --</option>
-
-        {storages.map((s) => (
-          <option key={s._id} value={s._id}>
-            {s.storage}
-          </option>
-        ))}
-      </select>
-    </div>
-
-
-    {/* Registration Date */}
-    <div>
-      <label className="block text-gray-700 font-medium mb-2">
-        Registration Date
-      </label>
-
-      <input
-        type="date"
-        value={plan.registrationDate || ""}
-        onChange={(e) =>
-          setHostingPlans((prev) =>
-            prev.map((item, i) =>
-              i === idx
-                ? {
-                    ...item,
-                    registrationDate: e.target.value,
-                  }
-                : item
-            )
-          )
-        }
-        className="w-full border rounded px-3 py-2"
-      />
-    </div>
-
-
-    {/* Expiry Date */}
-    <div>
-      <label className="block text-gray-700 font-medium mb-2">
-        Expiry Date
-      </label>
-
-      <input
-        type="date"
-        value={plan.expiryDate || ""}
-        onChange={(e) =>
-          setHostingPlans((prev) =>
-            prev.map((item, i) =>
-              i === idx
-                ? {
-                    ...item,
-                    expiryDate: e.target.value,
-                  }
-                : item
-            )
-          )
-        }
-        className="w-full border rounded px-3 py-2"
-      />
-    </div>
-
-  </div>
-))}
+            </div>
+          )}
 
 
           {/* Website & SSL */}

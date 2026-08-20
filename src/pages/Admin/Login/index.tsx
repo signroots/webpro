@@ -26,6 +26,8 @@ const Login: React.FC = () => {
           email: data.user.email,
           role: data.user.role || "Unknown",
           name: data.user.name || "Unknown",
+          type: data.user.type || "user",
+          clientId: data.user.clientId ?? null,
         };
 
         // ✅ Save user in context

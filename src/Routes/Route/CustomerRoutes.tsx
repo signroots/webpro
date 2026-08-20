@@ -5,6 +5,8 @@ import Order from "../../pages/Customers/Order";
 import CustomerOrders from "../../pages/Admin/Order/details";
 import Login from "../../pages/Customers/Login";
 import CustomerDashboard from "../../pages/Customers/Dashboard";
+import OrderDetails from "../../pages/Customers/OrderDetails";
+import UpdateOrder from "../../pages/Customers/update";
 
 export default function CustomerRoutes() {
   return (
@@ -21,7 +23,10 @@ export default function CustomerRoutes() {
           index
           element={<Navigate to="dashboard" replace />}
         />
-
+<Route
+  path="orders/:orderId"
+  element={<OrderDetails />}
+/>
         {/* ================= DASHBOARD ================= */}
         <Route
           path="dashboard"
@@ -47,6 +52,12 @@ export default function CustomerRoutes() {
         />
 
       </Route>
+       {/* ================= UPDATE ORDER ================= */}
+       <Route
+  path="orders/update/:orderId"
+  element={<UpdateOrder />}
+/>
+
 
     </Routes>
   );

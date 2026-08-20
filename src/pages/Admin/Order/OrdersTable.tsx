@@ -1,10 +1,11 @@
 import React from "react";
 import { FaEye, FaEdit, FaLock, FaExternalLinkAlt,FaCopy } from "react-icons/fa";
 import { Link, NavigateFunction } from "react-router-dom";
-import { Order } from "./index";
+// import { Order } from "./index";
+import { Order } from "../../../types/order";
 import ServiceIcons from "./ServiceIcons";
 import ExpiryBadge from "./ExpiryBadge";
-
+import { useAuth } from "../../../Common/AuthContext/Auth";
 // interface Order {
 //   _id: string;
 //   domainName: string;
@@ -23,12 +24,12 @@ interface OrdersTableProps {
   currentPage?: number;
   itemsPerPage?: number;
   highlightedOrderId?: string | null;
+  userType?: string;
+  // setSelectedOrder: (order: Order) => void;
 
-  setSelectedOrder: (order: Order) => void;
-
-  setModalType: (
-    type: "view" | "edit" | "addCustomer" | null
-  ) => void;
+  // setModalType: (
+  //   type: "view" | "edit" | "addCustomer" | null
+  // ) => void;
 
   handleEdit: (order: Order) => void;
 
@@ -42,12 +43,17 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
   currentPage,
   itemsPerPage,
   highlightedOrderId,
-  setSelectedOrder,
-  setModalType,
   handleEdit,
   getStatusClass,
   navigate,
 }) => {
+  const { user } = useAuth();
+
+  const userType = user?.type;
+
+  console.log("AUTH USER:", user);
+  console.log("USER TYPE:", userType);
+
   return (
     <div className="bg-white shadow rounded-lg overflow-x-auto">
 
@@ -162,19 +168,17 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
         />
       </div>
 
-      {/* Customer */}
-      {order.client ? (
-        <Link
-          to={`/admin/orders/customer/${order.client._id}`}
-          className="text-sm text-blue-600 leading-5"
-        >
-          {order.client.c_company || order.client.c_name}
-        </Link>
-      ) : (
-        <span className="text-gray-400 text-xs leading-5">
-        </span>
-      )}
-
+{/* Customer */}
+{userType === "admin" && order.client ? (
+  <Link
+    to={`/admin/orders/customer/${order.client._id}`}
+    className="text-sm text-blue-600 leading-5"
+  >
+    {order.client.c_company || order.client.c_name}
+  </Link>
+) : (
+  <span className="text-gray-400 text-xs leading-5"></span>
+)}
     </div>
 
   </div>

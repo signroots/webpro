@@ -109,6 +109,8 @@ interface NewOrderForm {
   microsoft_plan?: string;
   hosting_subplan?: string;
   hosting_plan?: string;
+  hosting_registration_date?: string;
+  hosting_expiry_date?: string;
   storage?: string;
   subResellerName?: string;
   subResellerEmail?: string;
@@ -1139,28 +1141,31 @@ msofficePlans.forEach((plan)=>{
 // ============================
 // HOSTING PLAN
 // ============================
+// ============================
+// HOSTING PLAN
+// ============================
 
 if (hosting) {
-
   combinedPlans.push({
-
     type: "hosting",
 
-    hostingType:
-      formData.hosting_plan,
+    hostingType: formData.hosting_plan,
 
-    hostingSubType:
-      formData.hosting_subplan,
+    hostingSubType: formData.hosting_subplan,
 
-    storage:
-      formData.storage,
+    storage: formData.storage,
 
-    hosting_flag: true
+    hosting_flag: true,
 
+    // ✅ Hosting Registration Date
+    registrationDate:
+      formData.hosting_registration_date || "",
+
+    // ✅ Hosting Expiry Date
+    expiryDate:
+      formData.hosting_expiry_date || "",
   });
-
 }
-
 
 // ============================
 // WEBSITE & SSL
@@ -1723,7 +1728,12 @@ if (!payload.domainSource) {
 
             <div>
               <label className="block text-gray-700 font-medium mb-2">Expiry Date</label>
-              <input type="date" name="expiryDate" value={formData.expiryDate || ""} readOnly className="w-full border rounded px-3 py-2 bg-gray-100 cursor-not-allowed" />
+              <input type="date" name="expiryDate" value={formData.expiryDate || ""} onChange={(e) =>
+      setFormData((prev) => ({
+        ...prev,
+        expiryDate: e.target.value,
+      }))
+    } className="w-full border rounded px-3 py-2 bg-gray-100 cursor-not-allowed" />
             </div>
           </div>
 
@@ -2056,63 +2066,158 @@ if (!payload.domainSource) {
 
 
               {/* Hosting */}
-              <label className="flex items-center gap-2 text-black mt-3">
-                <input type="checkbox" name="hosting" checked={hosting} onChange={(e) => setHosting(e.target.checked)} className="h-4 w-4" /> Hosting
-              </label>
-           {hosting && (
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2 p-3 border rounded bg-gray-50">
-  <div>
-      <label className="block text-gray-700 font-medium mb-2">Hosting Type</label>
+         {/* Hosting */}
+<label className="flex items-center gap-2 text-black mt-3">
+  <input
+    type="checkbox"
+    name="hosting"
+    checked={hosting}
+    onChange={(e) => setHosting(e.target.checked)}
+    className="h-4 w-4"
+  />
+  Hosting
+</label>
+
+{hosting && (
+  <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-2 p-3 border rounded bg-gray-50">
+
+    {/* Hosting Type */}
+    <div>
+      <label className="block text-gray-700 font-medium mb-2">
+        Hosting Type
+      </label>
+
       <select
         name="hosting_plan"
         value={formData.hosting_plan || ""}
-        onChange={(e) => handleHostTypeChange(e.target.value)}
+        onChange={(e) =>
+          handleHostTypeChange(e.target.value)
+        }
         className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
       >
         <option value="">-- Select Hosting Type --</option>
-        {hostTypes.map(ht => (
-          <option key={ht._id} value={ht._id}>{ht.type}</option>
+
+        {hostTypes.map((ht) => (
+          <option key={ht._id} value={ht._id}>
+            {ht.type}
+          </option>
         ))}
       </select>
     </div>
 
-    {/* Sub Type dropdown remains, you can make it dynamic later */}
+    {/* Hosting Sub Type */}
     <div>
-      <label className="block text-gray-700 font-medium mb-2">Hosting Sub Type</label>
+      <label className="block text-gray-700 font-medium mb-2">
+        Hosting Sub Type
+      </label>
+
       <select
         name="hosting_subplan"
         value={formData.hosting_subplan || ""}
         onChange={(e) =>
-          setFormData(prev => ({ ...prev, hosting_subplan: e.target.value }))
+          setFormData((prev) => ({
+            ...prev,
+            hosting_subplan: e.target.value,
+          }))
         }
         className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-        disabled={!formData.hosting_plan} // disable if no host type selected
+        disabled={!formData.hosting_plan}
       >
         <option value="">-- Select Sub Type --</option>
-        {hostSubTypes.map(st => (
-          <option key={st._id} value={st._id}>{st.name}</option>
+
+        {hostSubTypes.map((st) => (
+          <option key={st._id} value={st._id}>
+            {st.name}
+          </option>
         ))}
       </select>
     </div>
 
-  <div>
-  <label className="block text-gray-700 font-medium mb-2">Storage</label>
-  <select
-    name="storage"
-    value={formData.storage || ""}
-    onChange={(e) =>
-      setFormData((prev) => ({ ...prev, storage: e.target.value }))
-    }
-    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-  >
-    <option value="">-- Select Storage --</option>
-    {storages.map((s) => (
-      <option key={s._id} value={s._id}>
-        {s.storage}
-      </option>
-    ))}
-  </select>
-</div>
+    {/* Storage */}
+    <div>
+      <label className="block text-gray-700 font-medium mb-2">
+        Storage
+      </label>
+
+      <select
+        name="storage"
+        value={formData.storage || ""}
+        onChange={(e) =>
+          setFormData((prev) => ({
+            ...prev,
+            storage: e.target.value,
+          }))
+        }
+        className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+      >
+        <option value="">-- Select Storage --</option>
+
+        {storages.map((s) => (
+          <option key={s._id} value={s._id}>
+            {s.storage}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    {/* Registration Date */}
+    <div>
+      <label className="block text-gray-700 font-medium mb-2">
+        Registration Date
+      </label>
+
+      <input
+        type="date"
+        name="hosting_registration_date"
+        value={formData.hosting_registration_date || ""}
+        onChange={(e) => {
+          const newDate = e.target.value;
+
+          let expiryDate = "";
+
+          if (newDate) {
+            const reg = new Date(newDate);
+
+            const exp = new Date(reg);
+
+            exp.setFullYear(
+              reg.getFullYear() + 1
+            );
+
+            expiryDate = exp
+              .toISOString()
+              .split("T")[0];
+          }
+
+          setFormData((prev) => ({
+            ...prev,
+            hosting_registration_date: newDate,
+            hosting_expiry_date: expiryDate,
+          }));
+        }}
+        className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+      />
+    </div>
+
+    {/* Expiry Date */}
+    <div>
+      <label className="block text-gray-700 font-medium mb-2">
+        Expiry Date
+      </label>
+
+      <input
+        type="date"
+        name="hosting_expiry_date"
+        value={formData.hosting_expiry_date || ""}
+         onChange={(e) => {
+      setFormData((prev) => ({
+        ...prev,
+        hosting_expiry_date: e.target.value,
+      }));
+    }}
+        className="w-full border rounded px-3 py-2 bg-gray-100 cursor-not-allowed"
+      />
+    </div>
 
   </div>
 )}

@@ -767,13 +767,15 @@ const handleSubmit = async (e: React.FormEvent) => {
                       <FaEye />
                     </button>
 
-                    <Link
-                      to={`/admin/orders/update/${order._id}`}
-                      className="text-yellow-400 hover:text-yellow-600"
-                      title="Edit"
-                    >
-                      <FaEdit />
-                    </Link>
+                   <Link
+  to={`/admin/orders/update/${order._id}`}
+  state={{ from: "dns" }}
+  className="text-yellow-400 hover:text-yellow-600"
+  title="Edit"
+>
+  <FaEdit />
+</Link>
+
                   </td>
                 </tr>
               );

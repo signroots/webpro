@@ -92,6 +92,8 @@ const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
 const handleEdit = (order: any) => {
   navigate(`/admin/orders/update/${order._id}`, {
     state: {
+      from: "customer",
+      customerId: customerId,
       highlightOrderId: order._id,
     },
   });
@@ -254,14 +256,13 @@ const getStatusClass = (status?: string) => {
 
         <div className="overflow-x-auto">
 {/* ORDERS TABLE */}
-<OrdersTable 
+<OrdersTable
   paginatedOrders={orders}
-  setSelectedOrder={setSelectedOrder} 
-  setModalType={setModalType} 
-  handleEdit={handleEdit} 
-  getStatusClass={getStatusClass} 
-  navigate={navigate} 
+  handleEdit={handleEdit}
+  getStatusClass={getStatusClass}
+  navigate={navigate}
 />
+
 
         </div>
 
