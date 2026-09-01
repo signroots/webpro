@@ -25,6 +25,7 @@ interface OrdersTableProps {
   itemsPerPage?: number;
   highlightedOrderId?: string | null;
   userType?: string;
+  //  isArchived?: boolean;
   // setSelectedOrder: (order: Order) => void;
 
   // setModalType: (
@@ -46,6 +47,7 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
   handleEdit,
   getStatusClass,
   navigate,
+  // isArchived = false,
 }) => {
   const { user } = useAuth();
 

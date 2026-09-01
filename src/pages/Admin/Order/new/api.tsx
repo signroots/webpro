@@ -51,13 +51,53 @@ export interface Client {
   c_country?: string;
 
 }
-
-// ✅ Create a new order (POST)
-export const createOrder = async (orderData: Partial<Order>): Promise<Order> => {
-  const response = await axios.post(`${FULL_API_URL}/orders`, orderData);
-  return response.data.data;
+const getToken = (): string | null => {
+  return (
+    localStorage.getItem("token") ||
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("authToken")
+  );
 };
+// ✅ Create a new order (POST)
+export const createOrder = async (
+  orderData: Partial<Order>
+): Promise<Order> => {
 
+  console.log("========== CREATE ORDER START ==========");
+
+  const token =
+    localStorage.getItem("token") ||
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("authToken");
+
+  console.log("TOKEN:", token);
+  console.log("TOKEN EXISTS:", !!token);
+  console.log("API URL:", `${FULL_API_URL}/orders`);
+
+  try {
+    const response = await axios.post(
+      `${FULL_API_URL}/orders`,
+      orderData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        withCredentials: true,
+      }
+    );
+
+    console.log("CREATE ORDER SUCCESS:", response.data);
+
+    return response.data.data;
+
+  } catch (error: any) {
+
+    console.log("CREATE ORDER ERROR:", error.response?.data);
+    console.log("CREATE ORDER STATUS:", error.response?.status);
+
+    throw error;
+  }
+};
 // ✅ Get existing customers
 export const getExistingCustomers = async (): Promise<Client[]> => {
 

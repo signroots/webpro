@@ -6,7 +6,11 @@ const FULL_API_URL = `${API_BASE_URL}/api`;
 export interface Order {
   _id: string;
   domainName: string;
-  status?: string;
+    status?: {
+    _id: string;
+    name: string;
+    type: "order" | "plan";
+  } | null;
   managedBy: "Signroots" | "Customer";
   registrationDate: string;
   expiryDate: string;
@@ -48,11 +52,71 @@ export interface ApiPerson {
   c_state?: { name?: string };
   c_country?: { name?: string };
 }
+export const fetchStatuses = async () => {
+  const response = await axios.get(`${API_BASE_URL}/api/status`);
+  return response.data;
+};
 
+// ===============================
+// ORDER STATUSES
+// ===============================
+
+export const fetchOrderStatuses = async (orderId: string) => {
+  const response = await axios.get(
+    `${FULL_API_URL}/status/order/${orderId}`
+  );
+
+  return response.data;
+};
+
+// ===============================
+// PLAN STATUSES
+// ===============================
+
+export const fetchPlanStatuses = async (planId: string) => {
+  const response = await axios.get(
+    `${FULL_API_URL}/status/plan/${planId}`
+  );
+
+  return response.data;
+};
+export const updateOrderStatus = async (
+  orderId: string,
+  statusId: string
+) => {
+  const response = await axios.put(
+    `${FULL_API_URL}/status/order/${orderId}/status`,
+    {
+      status: statusId,
+    }
+  );
+
+  return response.data.data || response.data;
+};
+
+// ===============================
+// UPDATE PLAN STATUS
+// ===============================
+export const updatePlanStatus = async (
+  planId: string,
+  statusId: string
+) => {
+  const response = await axios.put(
+    `${FULL_API_URL}/status/plan/${planId}/status`,
+    {
+      status: statusId,
+    }
+  );
+
+  return response.data.data || response.data;
+};
 export interface OrderApiResponse {
   _id: string;
   domainName: string;
-  status?: string;
+  status?: {
+    _id: string;
+    name: string;
+  } | null;
   managedBy?: string;
   registrationDate?: string;
   expiryDate?: string;
@@ -155,9 +219,44 @@ export const fetchRenewListOrders = async (
 
 
 // ✅ Create a new order (POST)
-export const createOrder = async (orderData: Partial<Order>): Promise<Order> => {
-  const response = await axios.post(`${FULL_API_URL}/orders`, orderData);
-  return response.data.data;
+export const createOrder = async (
+  orderData: Partial<Order>
+): Promise<Order> => {
+
+  console.log("========== CREATE ORDER START ==========");
+
+  const token =
+    localStorage.getItem("token") ||
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("authToken");
+
+  console.log("TOKEN:", token);
+  console.log("TOKEN EXISTS:", !!token);
+  console.log("API URL:", `${FULL_API_URL}/orders`);
+
+  try {
+    const response = await axios.post(
+      `${FULL_API_URL}/orders`,
+      orderData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        withCredentials: true,
+      }
+    );
+
+    console.log("CREATE ORDER SUCCESS:", response.data);
+
+    return response.data.data;
+
+  } catch (error: any) {
+
+    console.log("CREATE ORDER ERROR:", error.response?.data);
+    console.log("CREATE ORDER STATUS:", error.response?.status);
+
+    throw error;
+  }
 };
 export const fetchCustomerOrders = async (customerId: string) => {
   const token = localStorage.getItem("token"); // fresh token

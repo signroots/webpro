@@ -43,7 +43,12 @@ export interface Order {
   domainName: string;
 
   lockStatus?: string;
-  status?: string;
+   status?: {
+    _id: string;
+    name: string;
+    type: "order" | "plan";
+  } | null;
+
   order_status?: string;
 
   users?: number;

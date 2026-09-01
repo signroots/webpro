@@ -18,6 +18,9 @@ import RenewList from "../../pages/Admin/RenewList";
 import OrderDetails from "../../pages/Admin/Order/OrderDetails"
 import Dashboard from "../../pages/Admin/Dashboard";
 import DomainSource from "../../pages/Admin/DomainSource"
+import ArchivedOrders from "../../pages/Admin/ArchivedOrders";
+import UserActivity from "../../pages/Admin/UserActivity";
+
 export default function AdminRoutes() {
   return (
     <Routes>
@@ -34,6 +37,8 @@ export default function AdminRoutes() {
         <Route path="orders/order-details/:orderId" element={<OrderDetails />} />
         <Route path="dashboard_management" element={<Dashboard />} />
         <Route path="orders" element={<Order />} />
+        <Route path="archived-orders" element={<ArchivedOrders />} />
+
         <Route path="orders/new" element={<NewOrder />} />
         <Route
           path="orders/customer/:customerId"
@@ -44,7 +49,7 @@ export default function AdminRoutes() {
         {/* ✅ FIXED */}
         <Route path="renew-list" element={<RenewList />} />
         <Route path="dns-order" element={<DnsOrder />} />
-
+<Route path="user-activity" element={<UserActivity />} />
         <Route path="categories" element={<Categories />} />
         <Route path="user-types" element={<UserTypes />} />
         <Route path="domain-source" element={<DomainSource />} />

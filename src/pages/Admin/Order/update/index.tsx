@@ -1529,7 +1529,7 @@ if (hostingChecked && hostingPlans.length > 0) {
       // send update request
       const res = await axios.put(`${import.meta.env.VITE_API_BASE_URL}/api/orders/${orderId}`, payload);
 
-     if (res.data?.success === true) {
+ if (res.data?.success === true) {
   const from = location.state?.from;
 
   if (from === "renewal") {
@@ -1538,6 +1538,8 @@ if (hostingChecked && hostingPlans.length > 0) {
     navigate("/admin/dns-order");
   } else if (from === "customer") {
     navigate(`/admin/orders/customer/${location.state?.customerId}`);
+  } else if (from === "archived") {
+    navigate("/admin/archived-orders");
   } else {
     navigate("/admin/orders");
   }

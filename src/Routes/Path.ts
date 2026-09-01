@@ -12,6 +12,7 @@ export interface PathsType {
       new: string;
       details: (id?: string | number) => string;
     };
+    userActivity: string;
     registration: string;
     status: string;
     orders: {
@@ -51,6 +52,7 @@ const Paths: PathsType = {
       new: '/admin/customers/new',
       details: (id = ':id') => `/admin/customers/${id}`,
     },
+    userActivity: '/admin/user-activity',
     registration: '/admin/registration',
     status: '/admin/status',
     orders: {

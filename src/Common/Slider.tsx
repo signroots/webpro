@@ -10,6 +10,7 @@ import {
   Layers,
   Globe,
   Database,
+  Archive,
 } from "lucide-react";
 
 interface MenuItem {
@@ -32,6 +33,10 @@ const menuItems: MenuItem[] = [
     icon: <BarChart size={16} />,
   },
   {
+    name: "Archived Orders",
+    icon: <Archive size={20} />,
+  },
+  {
     name: "DNS Orders",
     icon: <Globe size={20} />,
   },
@@ -39,6 +44,10 @@ const menuItems: MenuItem[] = [
     name: "Customers",
     icon: <Users size={20} />,
   },
+  {
+  name: "User Activity",
+  icon: <Layers size={20} />,
+},
   {
     name: "Settings",
     icon: <Settings size={20} />,
@@ -60,7 +69,9 @@ const menuItems: MenuItem[] = [
         icon: <Database size={16} />,
       },
     ],
+    
   },
+  
 ];
 
 // =====================================================
@@ -73,8 +84,10 @@ const roleMenus: Record<string, string[]> = {
     "Dashboard",
     "Orders",
     "Renew List",
+     "Archived Orders",
     "DNS Orders",
     "Customers",
+      "User Activity",
     "Settings",
   ],
 
@@ -154,10 +167,12 @@ const location = useLocation();
 
     case "Renew List":
       return "/admin/renew-list";
-
+    case "Archived Orders":
+      return "/admin/archived-orders";
     case "Customers":
       return "/admin/customers";
-
+case "User Activity":
+  return "/admin/user-activity";
     case "Status":
       return "/admin/status";
 
@@ -204,7 +219,8 @@ const isMenuActive = (name: string): boolean => {
 
     case "Renew List":
       return pathname === "/admin/renew-list";
-
+    case "Archived Orders":
+      return pathname === "/admin/archived-orders";
     case "DNS Orders":
       return pathname === "/admin/dns-order";
 
@@ -213,7 +229,8 @@ const isMenuActive = (name: string): boolean => {
 
     case "Customers":
       return pathname === "/admin/customers";
-
+case "User Activity":
+  return pathname === "/admin/user-activity";
     case "Status":
       return pathname === "/admin/status";
 

@@ -880,7 +880,7 @@ const getStatusClass = (status?: string) => {
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                           <InfoItem label="Domain" value={selectedOrder.domainName} />
-                          <InfoItem label="Status" value={selectedOrder.status || "Unknown"} />
+                          <InfoItem label="Status"  value={selectedOrder.status?.name || "Unknown"} />
                           <InfoItem
                             label="Registration Date"
                             value={

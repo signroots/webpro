@@ -43,7 +43,7 @@ import {
 
 
 const API_BASE_URL =
-import.meta.env.VITE_API_BASE_URL;
+  import.meta.env.VITE_API_BASE_URL;
 
 
 
@@ -52,29 +52,29 @@ import.meta.env.VITE_API_BASE_URL;
 // =================================
 
 
-interface EditClient extends Partial<Client>{
+interface EditClient extends Partial<Client> {
 
- _id:string;
-
-}
-
-
-
-interface Country{
-
- _id:string;
-
- name:string;
+  _id: string;
 
 }
 
 
 
-interface State{
+interface Country {
 
- _id:string;
+  _id: string;
 
- name:string;
+  name: string;
+
+}
+
+
+
+interface State {
+
+  _id: string;
+
+  name: string;
 
 }
 
@@ -85,489 +85,489 @@ interface State{
 // =================================
 
 
-const CustomerOrders:React.FC = ()=>{
+const CustomerOrders: React.FC = () => {
 
 
-const {
-customerId
-}=useParams<{
-customerId:string
-}>();
+  const {
+    customerId
+  } = useParams<{
+    customerId: string
+  }>();
 
 
 
 
-const [
-client,
-setClient
-]=useState<Client|null>(null);
+  const [
+    client,
+    setClient
+  ] = useState<Client | null>(null);
 
 
 
-const [
-orders,
-setOrders
-]=useState<Order[]>([]);
+  const [
+    orders,
+    setOrders
+  ] = useState<Order[]>([]);
 
 
 
-const [
-loading,
-setLoading
-]=useState(true);
+  const [
+    loading,
+    setLoading
+  ] = useState(true);
 
 
 
-const [
-countries,
-setCountries
-]=useState<Country[]>([]);
+  const [
+    countries,
+    setCountries
+  ] = useState<Country[]>([]);
 
 
 
-const [
-states,
-setStates
-]=useState<State[]>([]);
+  const [
+    states,
+    setStates
+  ] = useState<State[]>([]);
 
 
 
-const [
-editClient,
-setEditClient
-]=useState<EditClient|null>(null);
+  const [
+    editClient,
+    setEditClient
+  ] = useState<EditClient | null>(null);
 
 
 
-const [
-isModalOpen,
-setIsModalOpen
-]=useState(false);
+  const [
+    isModalOpen,
+    setIsModalOpen
+  ] = useState(false);
 
 
 
-const [
-saving,
-setSaving
-]=useState(false);
+  const [
+    saving,
+    setSaving
+  ] = useState(false);
 
 
 
-const [
-phoneCodes,
-setPhoneCodes
-]=useState<string[]>([]);
+  const [
+    phoneCodes,
+    setPhoneCodes
+  ] = useState<string[]>([]);
 
 
 
-const [
-phoneCode,
-setPhoneCode
-]=useState("+91");
+  const [
+    phoneCode,
+    setPhoneCode
+  ] = useState("+91");
 
 
 
-const [
-search,
-setSearch
-]=useState("");
+  const [
+    search,
+    setSearch
+  ] = useState("");
 
 
 
 
-// =================================
-// EXPIRY STATUS
-// =================================
+  // =================================
+  // EXPIRY STATUS
+  // =================================
 
 
-const getExpiryStatus = (
-date?:string
-)=>{
+  const getExpiryStatus = (
+    date?: string
+  ) => {
 
 
-if(!date)
+    if (!date)
 
-return "normal";
+      return "normal";
 
 
 
-const today =
-new Date();
+    const today =
+      new Date();
 
 
-today.setHours(
-0,
-0,
-0,
-0
-);
+    today.setHours(
+      0,
+      0,
+      0,
+      0
+    );
 
 
 
-const expiry =
-new Date(date);
+    const expiry =
+      new Date(date);
 
 
-expiry.setHours(
-0,
-0,
-0,
-0
-);
+    expiry.setHours(
+      0,
+      0,
+      0,
+      0
+    );
 
 
 
-const diff =
-Math.ceil(
-(
-expiry.getTime()
--
-today.getTime()
-)
-/
-(
-1000*60*60*24
-)
-);
+    const diff =
+      Math.ceil(
+        (
+          expiry.getTime()
+          -
+          today.getTime()
+        )
+        /
+        (
+          1000 * 60 * 60 * 24
+        )
+      );
 
 
 
-if(diff < 0)
+    if (diff < 0)
 
-return "expired";
+      return "expired";
 
 
 
-if(diff <=15)
+    if (diff <= 15)
 
-return "warning";
+      return "warning";
 
 
 
-return "active";
+    return "active";
 
 
-};
+  };
 
 
 
 
-// =================================
-// LOAD CUSTOMER ORDERS
-// =================================
+  // =================================
+  // LOAD CUSTOMER ORDERS
+  // =================================
 
 
-const loadCustomerOrders =
-async()=>{
+  const loadCustomerOrders =
+    async () => {
 
 
-if(!customerId)
+      if (!customerId)
 
-return;
+        return;
 
 
 
-setLoading(true);
+      setLoading(true);
 
 
-try{
+      try {
 
 
-const data =
-await fetchCustomerOrders(
-customerId
-);
+        const data =
+          await fetchCustomerOrders(
+            customerId
+          );
 
 
 
-if(data.status==="SUCCESS"){
+        if (data.status === "SUCCESS") {
 
 
-const customer:Client={
+          const customer: Client = {
 
 
-_id:data.client._id,
+            _id: data.client._id,
 
 
-c_name:data.client.c_name,
+            c_name: data.client.c_name,
 
 
-c_email:
-data.client.c_email || [],
+            c_email:
+              data.client.c_email || [],
 
 
-c_phone:
-data.client.c_phone || "",
+            c_phone:
+              data.client.c_phone || "",
 
 
-c_mobilePhone:
-data.client.c_mobilePhone || "",
+            c_mobilePhone:
+              data.client.c_mobilePhone || "",
 
 
 
-c_company:
-data.client.c_company || "",
+            c_company:
+              data.client.c_company || "",
 
 
 
-c_address:
-data.client.c_address || "",
+            c_address:
+              data.client.c_address || "",
 
 
 
-c_address2:
-data.client.c_address2 || "",
+            c_address2:
+              data.client.c_address2 || "",
 
 
 
-c_city:
-data.client.c_city || "",
+            c_city:
+              data.client.c_city || "",
 
 
 
-c_state:
-data.client.c_state || "",
+            c_state:
+              data.client.c_state || "",
 
 
 
-c_country:
-data.client.c_country || "",
+            c_country:
+              data.client.c_country || "",
 
 
 
-c_zipCode:
-data.client.c_zipCode || "",
+            c_zipCode:
+              data.client.c_zipCode || "",
 
 
 
-c_gst:
-data.client.c_gst || "",
+            c_gst:
+              data.client.c_gst || "",
 
 
 
-c_countryCode:
-data.client.c_countryCode || "",
+            c_countryCode:
+              data.client.c_countryCode || "",
 
 
 
-c_country_name:
-countries.find(
-c=>c._id===data.client.c_country
-)?.name || ""
+            c_country_name:
+              countries.find(
+                c => c._id === data.client.c_country
+              )?.name || ""
 
 
 
-};
+          };
 
 
 
-setClient(customer);
+          setClient(customer);
 
 
 
-setOrders(
-data.orders || []
-);
+          setOrders(
+            data.orders || []
+          );
 
 
 
-}
+        }
 
 
 
-}
-catch(error){
+      }
+      catch (error) {
 
 
-console.error(
-"Customer loading failed",
-error
-);
+        console.error(
+          "Customer loading failed",
+          error
+        );
 
 
-}
-finally{
+      }
+      finally {
 
 
-setLoading(false);
+        setLoading(false);
 
 
-}
+      }
 
 
 
-};
+    };
 
 
 
 
 
-// =================================
-// LOAD COUNTRIES
-// =================================
+  // =================================
+  // LOAD COUNTRIES
+  // =================================
 
 
-useEffect(()=>{
+  useEffect(() => {
 
 
-const loadCountries =
-async()=>{
+    const loadCountries =
+      async () => {
 
 
-try{
+        try {
 
 
-const res =
-await fetch(
-`${API_BASE_URL}/api/settings/countries`
-);
+          const res =
+            await fetch(
+              `${API_BASE_URL}/api/settings/countries`
+            );
 
 
 
-const data =
-await res.json();
+          const data =
+            await res.json();
 
 
 
-setCountries(data);
+          setCountries(data);
 
 
 
-}
-catch(err){
+        }
+        catch (err) {
 
 
-console.error(err);
+          console.error(err);
 
 
-}
+        }
 
 
 
-};
+      };
 
 
 
-loadCountries();
+    loadCountries();
 
 
 
-},[]);
+  }, []);
 
 
 
 
 
-// =================================
-// LOAD CUSTOMER
-// =================================
+  // =================================
+  // LOAD CUSTOMER
+  // =================================
 
 
-useEffect(()=>{
+  useEffect(() => {
 
 
-loadCustomerOrders();
+    loadCustomerOrders();
 
 
-},[
-customerId,
-countries
-]);
+  }, [
+    customerId,
+    countries
+  ]);
 
 
 
 
 
 
-// =================================
-// PHONE CODES
-// =================================
+  // =================================
+  // PHONE CODES
+  // =================================
 
 
-useEffect(()=>{
+  useEffect(() => {
 
 
-fetchCountryCodes()
+    fetchCountryCodes()
 
-.then(
-codes=>
-setPhoneCodes(codes)
-)
+      .then(
+        codes =>
+          setPhoneCodes(codes)
+      )
 
-.catch(
-console.error
-);
+      .catch(
+        console.error
+      );
 
 
 
-},[]);
+  }, []);
 
 
 
 
 
 
-// =================================
-// COUNTS
-// =================================
+  // =================================
+  // COUNTS
+  // =================================
 
 
-const domainCount =
-orders.length;
+  const domainCount =
+    orders.length;
 
 
 
-const emailCount =
-orders.filter(
-o=>
-o.google_email ||
-o.microsoft_email
-).length;
+  const emailCount =
+    orders.filter(
+      o =>
+        o.google_email ||
+        o.microsoft_email
+    ).length;
 
 
 
-const expiredCount =
-orders.filter(
-o=>
-getExpiryStatus(
-o.expiryDate
-)
-==="expired"
-).length;
+  const expiredCount =
+    orders.filter(
+      o =>
+        getExpiryStatus(
+          o.expiryDate
+        )
+        === "expired"
+    ).length;
 
 
 
-const warningCount =
-orders.filter(
-o=>
-getExpiryStatus(
-o.expiryDate
-)
-==="warning"
-).length;
+  const warningCount =
+    orders.filter(
+      o =>
+        getExpiryStatus(
+          o.expiryDate
+        )
+        === "warning"
+    ).length;
 
 
 
 
-const filteredOrders =
-orders.filter(
-order=>
-order.domainName
-.toLowerCase()
-.includes(
-search.toLowerCase()
-)
-);
+  const filteredOrders =
+    orders.filter(
+      order =>
+        order.domainName
+          .toLowerCase()
+          .includes(
+            search.toLowerCase()
+          )
+    );
 
 
 
 
 
-if(loading)
+  if (loading)
 
-return (
+    return (
 
-<div className="
+      <div className="
 flex
 justify-center
 items-center
@@ -575,46 +575,46 @@ h-screen
 text-gray-500
 ">
 
-Loading customer...
+        Loading customer...
 
-</div>
+      </div>
 
-);
+    );
 
 
 
-if(!client)
+  if (!client)
 
-return (
+    return (
 
-<div className="
+      <div className="
 text-center
 mt-10
 text-red-500
 ">
 
-Customer not found
+        Customer not found
 
-</div>
+      </div>
 
-);
+    );
 
 
 
-return (
+  return (
 
-<div className="
+    <div className="
 min-h-screen
 bg-gray-100
 p-6
 text-gray-900
 ">
-{/* ================================
+      {/* ================================
     CUSTOMER PROFILE CARD
 ================================ */}
 
 
-<div className="
+      <div className="
 bg-white
 rounded-2xl
 shadow-sm
@@ -625,24 +625,24 @@ mb-6
 ">
 
 
-<div className="
+        <div className="
 flex
 justify-between
 items-start
 ">
 
 
-<div>
+          <div>
 
 
-<div className="
+            <div className="
 flex
 items-center
 gap-4
 ">
 
 
-<div className="
+              <div className="
 w-14
 h-14
 rounded-full
@@ -656,72 +656,72 @@ font-bold
 ">
 
 
-{
-client.c_name
-?.charAt(0)
-.toUpperCase()
-}
+                {
+                  client.c_name
+                    ?.charAt(0)
+                    .toUpperCase()
+                }
 
 
-</div>
+              </div>
 
 
 
-<div>
+              <div>
 
 
-<h2 className="
+                <h2 className="
 text-2xl
 font-semibold
 text-gray-800
 ">
 
-{client.c_name}
+                  {client.c_name}
 
-</h2>
+                </h2>
 
 
-<p className="
+                <p className="
 text-gray-500
 ">
 
-{client.c_company || "No Company"}
+                  {client.c_company || "No Company"}
 
-</p>
-
-
-
-</div>
+                </p>
 
 
 
-</div>
+              </div>
 
 
 
-</div>
+            </div>
+
+
+
+          </div>
 
 
 
 
 
-<button
+          <button
 
-onClick={()=>{
+            onClick={() => {
 
-setEditClient({
-...client
-});
+              setEditClient({
+                ...client
+              });
 
-setPhoneCode(
-client.c_countryCode || "+91"
-);
+              setPhoneCode(
+                client.c_countryCode || "+91"
+              );
 
-setIsModalOpen(true);
+              setIsModalOpen(true);
 
-}}
+            }}
 
-className="
+            className="
 flex
 items-center
 gap-2
@@ -734,25 +734,25 @@ hover:bg-blue-700
 transition
 "
 
->
+          >
 
-<FaEdit/>
+            <FaEdit />
 
-Edit
+            Edit
 
-</button>
-
-
-
-</div>
+          </button>
 
 
+
+        </div>
 
 
 
 
 
-<div className="
+
+
+        <div className="
 grid
 grid-cols-1
 md:grid-cols-3
@@ -762,209 +762,209 @@ text-sm
 ">
 
 
-<div>
+          <div>
 
-<p className="
+            <p className="
 text-gray-400
 ">
 
-Email
+              Email
 
-</p>
+            </p>
 
-<p className="
+            <p className="
 font-medium
 ">
 
-{
+              {
 
-Array.isArray(client.c_email)
+                Array.isArray(client.c_email)
 
-?
+                  ?
 
-client.c_email.join(", ")
+                  client.c_email.join(", ")
 
-:
+                  :
 
-"-"
+                  "-"
 
-}
+              }
 
-</p>
-
-
-</div>
+            </p>
 
 
+          </div>
 
 
 
-<div>
 
-<p className="
+
+          <div>
+
+            <p className="
 text-gray-400
 ">
 
-Phone
+              Phone
 
-</p>
+            </p>
 
 
-<p className="
+            <p className="
 font-medium
 ">
 
-{
+              {
 
-client.c_mobilePhone
+                client.c_mobilePhone
 
-?
+                  ?
 
-`${client.c_countryCode || ""} ${client.c_mobilePhone}`
+                  `${client.c_countryCode || ""} ${client.c_mobilePhone}`
 
-:
+                  :
 
-"-"
+                  "-"
 
-}
-
-
-</p>
+              }
 
 
-</div>
+            </p>
 
 
+          </div>
 
 
 
-<div>
 
-<p className="
+
+          <div>
+
+            <p className="
 text-gray-400
 ">
 
-Country
+              Country
 
-</p>
+            </p>
 
 
-<p className="
+            <p className="
 font-medium
 ">
 
-{
-client.c_country_name || "-"
-}
+              {
+                client.c_country_name || "-"
+              }
 
-</p>
-
-
-</div>
+            </p>
 
 
+          </div>
 
 
-<div>
 
-<p className="
+
+          <div>
+
+            <p className="
 text-gray-400
 ">
 
-Address
+              Address
 
-</p>
+            </p>
 
 
-<p className="
+            <p className="
 font-medium
 ">
 
-{
-client.c_address || "-"
-}
+              {
+                client.c_address || "-"
+              }
 
-</p>
-
-
-</div>
+            </p>
 
 
+          </div>
 
 
-<div>
 
-<p className="
+
+          <div>
+
+            <p className="
 text-gray-400
 ">
 
-City
+              City
 
-</p>
+            </p>
 
 
-<p className="
+            <p className="
 font-medium
 ">
 
-{
-client.c_city || "-"
-}
+              {
+                client.c_city || "-"
+              }
 
-</p>
-
-
-</div>
+            </p>
 
 
+          </div>
 
 
-<div>
 
-<p className="
+
+          <div>
+
+            <p className="
 text-gray-400
 ">
 
-GST
+              GST
 
-</p>
+            </p>
 
 
-<p className="
+            <p className="
 font-medium
 ">
 
-{
-client.c_gst || "-"
-}
+              {
+                client.c_gst || "-"
+              }
 
-</p>
-
-
-</div>
+            </p>
 
 
-
-</div>
+          </div>
 
 
 
-</div>
+        </div>
 
 
+
+      </div>
 
 
 
 
 
 
-{/* ================================
+
+
+      {/* ================================
     SUMMARY CARDS
 ================================ */}
 
 
 
-<div className="
+      <div className="
 grid
 grid-cols-1
 md:grid-cols-4
@@ -974,7 +974,7 @@ mb-6
 
 
 
-<div className="
+        <div className="
 bg-white
 rounded-xl
 shadow-sm
@@ -982,34 +982,34 @@ border
 p-5
 ">
 
-<p className="
+          <p className="
 text-gray-500
 text-sm
 ">
 
-Total Orders
+            Total Orders
 
-</p>
+          </p>
 
 
-<h3 className="
+          <h3 className="
 text-3xl
 font-bold
 text-blue-600
 ">
 
-{domainCount}
+            {domainCount}
 
-</h3>
-
-
-</div>
+          </h3>
 
 
+        </div>
 
 
 
-<div className="
+
+
+        <div className="
 bg-white
 rounded-xl
 shadow-sm
@@ -1018,37 +1018,37 @@ p-5
 ">
 
 
-<p className="
+          <p className="
 text-gray-500
 text-sm
 ">
 
-Email Services
+            Email Services
 
-</p>
+          </p>
 
 
-<h3 className="
+          <h3 className="
 text-3xl
 font-bold
 text-purple-600
 ">
 
-{emailCount}
+            {emailCount}
 
-</h3>
-
-
-
-</div>
+          </h3>
 
 
+
+        </div>
 
 
 
 
 
-<div className="
+
+
+        <div className="
 bg-white
 rounded-xl
 shadow-sm
@@ -1057,36 +1057,36 @@ p-5
 ">
 
 
-<p className="
+          <p className="
 text-gray-500
 text-sm
 ">
 
-Renew Soon
+            Renew Soon
 
-</p>
+          </p>
 
 
-<h3 className="
+          <h3 className="
 text-3xl
 font-bold
 text-orange-500
 ">
 
-{warningCount}
+            {warningCount}
 
-</h3>
-
-
-</div>
+          </h3>
 
 
+        </div>
 
 
 
 
 
-<div className="
+
+
+        <div className="
 bg-white
 rounded-xl
 shadow-sm
@@ -1095,48 +1095,48 @@ p-5
 ">
 
 
-<p className="
+          <p className="
 text-gray-500
 text-sm
 ">
 
-Expired
+            Expired
 
-</p>
+          </p>
 
 
-<h3 className="
+          <h3 className="
 text-3xl
 font-bold
 text-red-600
 ">
 
-{expiredCount}
+            {expiredCount}
 
-</h3>
-
-
-</div>
+          </h3>
 
 
+        </div>
 
 
-</div>
 
 
+      </div>
 
 
 
 
 
 
-{/* ================================
+
+
+      {/* ================================
     ORDERS HEADER
 ================================ */}
 
 
 
-<div className="
+      <div className="
 bg-white
 rounded-2xl
 shadow-sm
@@ -1146,7 +1146,7 @@ p-6
 
 
 
-<div className="
+        <div className="
 flex
 justify-between
 items-center
@@ -1154,52 +1154,52 @@ mb-5
 ">
 
 
-<div>
+          <div>
 
 
-<h2 className="
+            <h2 className="
 text-xl
 font-semibold
 ">
 
-Orders
+              Orders
 
-</h2>
+            </h2>
 
 
-<p className="
+            <p className="
 text-gray-500
 text-sm
 ">
 
-Customer domain & service details
+              Customer domain & service details
 
-</p>
-
-
-
-</div>
+            </p>
 
 
 
+          </div>
 
 
-<input
-
-type="text"
-
-placeholder="Search domain..."
-
-value={search}
-
-onChange={
-e=>setSearch(
-e.target.value
-)
-}
 
 
-className="
+
+          <input
+
+            type="text"
+
+            placeholder="Search domain..."
+
+            value={search}
+
+            onChange={
+              e => setSearch(
+                e.target.value
+              )
+            }
+
+
+            className="
 px-4
 py-2
 border
@@ -1209,35 +1209,35 @@ focus:ring-2
 focus:ring-blue-400
 "
 
-/>
+          />
 
-{/* ================================
+          {/* ================================
         ORDERS TABLE
 ================================ */}
 
 
-<div className="
+          <div className="
 overflow-x-auto
 ">
 
 
-<table className="
+            <table className="
 min-w-full
 text-sm
 ">
 
 
-<thead
-className="
+              <thead
+                className="
 bg-gray-50
 border-b
 "
->
+              >
 
-<tr>
+                <tr>
 
 
-<th className="
+                  <th className="
 px-5
 py-4
 text-left
@@ -1245,12 +1245,12 @@ font-semibold
 text-gray-600
 ">
 
-#
+                    #
 
-</th>
+                  </th>
 
 
-<th className="
+                  <th className="
 px-5
 py-4
 text-left
@@ -1258,12 +1258,12 @@ font-semibold
 text-gray-600
 ">
 
-Domain
+                    Domain
 
-</th>
+                  </th>
 
 
-<th className="
+                  <th className="
 px-5
 py-4
 text-left
@@ -1271,12 +1271,12 @@ font-semibold
 text-gray-600
 ">
 
-Services
+                    Services
 
-</th>
+                  </th>
 
 
-<th className="
+                  <th className="
 px-5
 py-4
 text-left
@@ -1284,12 +1284,12 @@ font-semibold
 text-gray-600
 ">
 
-Expiry
+                    Expiry
 
-</th>
+                  </th>
 
 
-<th className="
+                  <th className="
 px-5
 py-4
 text-left
@@ -1297,111 +1297,110 @@ font-semibold
 text-gray-600
 ">
 
-Status
+                    Status
 
-</th>
-
-
-
-</tr>
-
-
-</thead>
+                  </th>
 
 
 
+                </tr>
 
 
-<tbody
-className="
+              </thead>
+
+
+
+
+
+              <tbody
+                className="
 divide-y
 "
->
+              >
 
 
 
-{
-filteredOrders.map(
-(order,index)=>{
+                {
+                  filteredOrders.map(
+                    (order, index) => {
 
 
-const expiryStatus =
-getExpiryStatus(
-order.expiryDate
-);
-
-
-
-return (
+                      const expiryStatus =
+                        getExpiryStatus(
+                          order.expiryDate
+                        );
 
 
 
-<tr
+                      return (
 
-key={order._id}
 
-className={`
+
+                        <tr
+
+                          key={order._id}
+
+                          className={`
 transition
 hover:bg-gray-50
 
-${
-expiryStatus==="expired"
+${expiryStatus === "expired"
 
-?
+                              ?
 
-"bg-red-50"
+                              "bg-red-50"
 
-:
+                              :
 
-expiryStatus==="warning"
+                              expiryStatus === "warning"
 
-?
+                                ?
 
-"bg-orange-50"
+                                "bg-orange-50"
 
-:
+                                :
 
-""
-}
+                                ""
+                            }
 
 `}
 
->
+                        >
 
 
 
 
-<td className="
+                          <td className="
 px-5
 py-4
 text-gray-500
 ">
 
-{index+1}
+                            {index + 1}
 
-</td>
-
-
+                          </td>
 
 
 
 
 
-<td className="
+
+
+                          <td className="
 px-5
 py-4
 ">
 
 
-<div className="
+                            <div className="
 flex
 items-center
 gap-3
 ">
 
 
-<div
-className={`
+                              <div
+                                className={`
 w-8
 h-8
 rounded-full
@@ -1409,72 +1408,69 @@ flex
 items-center
 justify-center
 
-${
-expiryStatus==="expired"
+${expiryStatus === "expired"
 
-?
+                                    ?
 
-"bg-red-100 text-red-600"
+                                    "bg-red-100 text-red-600"
 
-:
+                                    :
 
-expiryStatus==="warning"
+                                    expiryStatus === "warning"
 
-?
+                                      ?
 
-"bg-orange-100 text-orange-600"
+                                      "bg-orange-100 text-orange-600"
 
-:
+                                      :
 
-"bg-green-100 text-green-600"
+                                      "bg-green-100 text-green-600"
 
-}
+                                  }
 
 `}
->
+                              >
 
 
-<FaLock/>
+                                <FaLock />
 
 
-</div>
+                              </div>
 
 
 
 
-<div>
+                              <div>
 
 
-<p className="
+                                <p className="
 font-semibold
 text-gray-800
 ">
 
-{order.domainName}
+                                  {order.domainName}
 
-</p>
+                                </p>
 
 
 
-<p className="
+                                <p className="
 text-xs
 text-gray-400
 ">
 
-Domain
+                                  Domain
 
-</p>
-
-
-</div>
+                                </p>
 
 
-</div>
+                              </div>
 
 
-</td>
+                            </div>
 
 
+                          </td>
 
 
 
@@ -1482,13 +1478,15 @@ Domain
 
 
 
-<td className="
+
+
+                          <td className="
 px-5
 py-4
 ">
 
 
-<div className="
+                            <div className="
 flex
 items-center
 gap-3
@@ -1496,163 +1494,161 @@ gap-3
 
 
 
-{/* Domain Source */}
+                              {/* Domain Source */}
 
-{
+                              {
 
-order.domainSource?.toLowerCase()
-==="resellerclub"
+                                order.domainSource?.toLowerCase()
+                                  === "resellerclub"
 
-?
+                                  ?
 
-<img
-src="/images/resellerclub.png"
-className="w-7 h-7"
-/>
+                                  <img
+                                    src="/images/resellerclub.png"
+                                    className="w-7 h-7"
+                                  />
 
-:
+                                  :
 
-order.domainSource?.toLowerCase()
-==="cloudflare"
+                                  order.domainSource?.toLowerCase()
+                                    === "cloudflare"
 
-?
+                                    ?
 
-<SiCloudflare
-className="
+                                    <SiCloudflare
+                                      className="
 w-6
 h-6
 text-orange-500
 "
-/>
+                                    />
 
 
-:
+                                    :
 
-order.domainSource?.toLowerCase()
-==="hostinger"
+                                    order.domainSource?.toLowerCase()
+                                      === "hostinger"
 
-?
+                                      ?
 
-<SiHostinger
-className="
+                                      <SiHostinger
+                                        className="
 w-6
 h-6
 text-blue-500
 "
-/>
+                                      />
 
 
-:
+                                      :
 
-<FaGlobe
-className="
+                                      <FaGlobe
+                                        className="
 w-6
 h-6
 text-gray-400
 "
-/>
+                                      />
 
 
-}
+                              }
 
 
 
 
 
-{/* Email */}
+                              {/* Email */}
 
 
-{
+                              {
 
-order.google_email
+                                order.google_email
 
-?
+                                  ?
 
-<img
-src="/download.png"
-title="Google Workspace"
-className="w-5 h-5"
-/>
-
-
-:
-
-order.microsoft_email
-
-?
-
-<img
-src="/microsoft.png"
-title="Microsoft 365"
-className="w-5 h-5"
-/>
+                                  <img
+                                    src="/download.png"
+                                    title="Google Workspace"
+                                    className="w-5 h-5"
+                                  />
 
 
-:
+                                  :
 
-<FaEnvelope
-className="
+                                  order.microsoft_email
+
+                                    ?
+
+                                    <img
+                                      src="/microsoft.png"
+                                      title="Microsoft 365"
+                                      className="w-5 h-5"
+                                    />
+
+
+                                    :
+
+                                    <FaEnvelope
+                                      className="
 w-5
 h-5
 text-gray-300
 "
-/>
+                                    />
 
 
-}
-
-
-
+                              }
 
 
 
 
-{/* Hosting */}
 
-{
 
-order.hosting &&
 
-<FaServer
-className="
+                              {/* Hosting */}
+
+                              {
+
+                                order.hosting &&
+
+                                <FaServer
+                                  className="
 w-5
 h-5
 text-purple-500
 "
-/>
+                                />
 
-}
-
-
+                              }
 
 
 
 
 
-{/* Website */}
 
-{
 
-order.website_flag &&
+                              {/* Website */}
 
-<FaLaptopCode
-className="
+                              {
+
+                                order.website_flag &&
+
+                                <FaLaptopCode
+                                  className="
 w-5
 h-5
 text-pink-500
 "
-/>
+                                />
 
-}
-
-
-
-</div>
+                              }
 
 
-</td>
+
+                            </div>
 
 
+                          </td>
 
 
 
@@ -1660,21 +1656,23 @@ text-pink-500
 
 
 
-<td className="
+
+
+                          <td className="
 px-5
 py-4
 ">
 
 
-{
+                            {
 
-order.expiryDate
+                              order.expiryDate
 
-?
+                                ?
 
-<div
+                                <div
 
-className={`
+                                  className={`
 inline-flex
 px-3
 py-1
@@ -1683,67 +1681,64 @@ text-xs
 font-semibold
 
 
-${
-expiryStatus==="expired"
+${expiryStatus === "expired"
 
-?
+                                      ?
 
-"bg-red-600 text-white"
+                                      "bg-red-600 text-white"
 
-:
+                                      :
 
-expiryStatus==="warning"
+                                      expiryStatus === "warning"
 
-?
+                                        ?
 
-"bg-orange-500 text-white"
+                                        "bg-orange-500 text-white"
 
-:
+                                        :
 
-"bg-green-100 text-green-700"
+                                        "bg-green-100 text-green-700"
 
-}
+                                    }
 
 `}
 
->
+                                >
 
 
-{
-new Date(
-order.expiryDate
-)
-.toLocaleDateString(
-"en-GB"
-)
-.replace(
-"/",
-"-"
-)
-}
+                                  {
+                                    new Date(
+                                      order.expiryDate
+                                    )
+                                      .toLocaleDateString(
+                                        "en-GB"
+                                      )
+                                      .replace(
+                                        "/",
+                                        "-"
+                                      )
+                                  }
 
 
 
-</div>
+                                </div>
 
 
-:
+                                :
 
-<span className="
+                                <span className="
 text-gray-400
 ">
 
-N/A
+                                  N/A
 
-</span>
-
-
-}
+                                </span>
 
 
-</td>
+                            }
 
 
+                          </td>
 
 
 
@@ -1751,15 +1746,17 @@ N/A
 
 
 
-<td className="
+
+
+                          <td className="
 px-5
 py-4
 ">
 
 
-<span
+                            <span
 
-className={`
+                              className={`
 px-3
 py-1
 rounded-full
@@ -1767,112 +1764,111 @@ text-xs
 font-semibold
 
 
-${
-expiryStatus==="expired"
+${expiryStatus === "expired"
 
-?
+                                  ?
 
-"bg-red-100 text-red-700"
+                                  "bg-red-100 text-red-700"
 
-:
+                                  :
 
-expiryStatus==="warning"
+                                  expiryStatus === "warning"
 
-?
+                                    ?
 
-"bg-orange-100 text-orange-700"
+                                    "bg-orange-100 text-orange-700"
 
-:
+                                    :
 
-"bg-green-100 text-green-700"
+                                    "bg-green-100 text-green-700"
 
-}
+                                }
 
 `}
 
 
->
+                            >
 
 
-{
+                              {
 
 
-expiryStatus==="expired"
+                                expiryStatus === "expired"
 
-?
+                                  ?
 
-"Expired"
-
-
-:
-
-expiryStatus==="warning"
-
-?
-
-"Renew Soon"
+                                  "Expired"
 
 
-:
+                                  :
 
-"Active"
+                                  expiryStatus === "warning"
+
+                                    ?
+
+                                    "Renew Soon"
 
 
+                                    :
 
-}
+                                    "Active"
 
 
 
-</span>
-
-
-</td>
+                              }
 
 
 
+                            </span>
 
 
-</tr>
-
-
-)
-
-
-}
-
-)
-
-}
-
-
-
-</tbody>
-
-
-</table>
-
-
-</div>
+                          </td>
 
 
 
 
 
-</div>
+                        </tr>
 
-{/* orders card closing */}
 
-</div>
-{/* ================================
+                      )
+
+
+                    }
+
+                  )
+
+                }
+
+
+
+              </tbody>
+
+
+            </table>
+
+
+          </div>
+
+
+
+
+
+        </div>
+
+        {/* orders card closing */}
+
+      </div>
+      {/* ================================
         EDIT CUSTOMER MODAL
 ================================ */}
 
 
-{
-isModalOpen &&
-editClient &&
+      {
+        isModalOpen &&
+        editClient &&
 
-<div className="
+        <div className="
 fixed
 inset-0
 bg-black/40
@@ -1884,7 +1880,7 @@ p-4
 ">
 
 
-<div className="
+          <div className="
 bg-white
 rounded-2xl
 shadow-xl
@@ -1897,7 +1893,7 @@ p-6
 
 
 
-<div className="
+            <div className="
 flex
 justify-between
 items-center
@@ -1905,61 +1901,61 @@ mb-6
 ">
 
 
-<h2 className="
+              <h2 className="
 text-xl
 font-semibold
 ">
 
-Edit Customer
+                Edit Customer
 
-</h2>
+              </h2>
 
 
-<button
+              <button
 
-onClick={()=>
-setIsModalOpen(false)
-}
+                onClick={() =>
+                  setIsModalOpen(false)
+                }
 
-className="
+                className="
 text-gray-500
 hover:text-red-500
 text-xl
 "
 
->
+              >
 
-✕
+                ✕
 
-</button>
-
-
-
-</div>
+              </button>
 
 
+
+            </div>
 
 
 
 
 
-{/* PERSONAL INFORMATION */}
 
 
-<h3 className="
+            {/* PERSONAL INFORMATION */}
+
+
+            <h3 className="
 text-sm
 font-semibold
 text-blue-600
 mb-3
 ">
 
-Personal Information
+              Personal Information
 
-</h3>
+            </h3>
 
 
 
-<div className="
+            <div className="
 grid
 grid-cols-1
 md:grid-cols-3
@@ -1967,139 +1963,139 @@ gap-4
 ">
 
 
-<input
+              <input
 
-className="
+                className="
 border
 rounded-lg
 p-3
 "
 
-placeholder="Name"
+                placeholder="Name"
 
-value={
-editClient.c_name || ""
-}
+                value={
+                  editClient.c_name || ""
+                }
 
-onChange={
-e=>
-setEditClient(
-prev=>
-prev
-?
-{
-...prev,
-c_name:e.target.value
-}
-:null
-)
+                onChange={
+                  e =>
+                    setEditClient(
+                      prev =>
+                        prev
+                          ?
+                          {
+                            ...prev,
+                            c_name: e.target.value
+                          }
+                          : null
+                    )
 
-}
+                }
 
-/>
-
-
+              />
 
 
-<input
 
-className="
+
+              <input
+
+                className="
 border
 rounded-lg
 p-3
 "
 
-placeholder="Company"
+                placeholder="Company"
 
-value={
-editClient.c_company || ""
-}
+                value={
+                  editClient.c_company || ""
+                }
 
-onChange={
-e=>
-setEditClient(
-prev=>
-prev
-?
-{
-...prev,
-c_company:e.target.value
-}
-:null
-)
+                onChange={
+                  e =>
+                    setEditClient(
+                      prev =>
+                        prev
+                          ?
+                          {
+                            ...prev,
+                            c_company: e.target.value
+                          }
+                          : null
+                    )
 
-}
+                }
 
-/>
-
-
+              />
 
 
 
 
-<input
 
-className="
+
+              <input
+
+                className="
 border
 rounded-lg
 p-3
 "
 
-placeholder="GST"
+                placeholder="GST"
 
-value={
-editClient.c_gst || ""
-}
+                value={
+                  editClient.c_gst || ""
+                }
 
-onChange={
-e=>
-setEditClient(
-prev=>
-prev
-?
-{
-...prev,
-c_gst:e.target.value
-}
-:null
-)
+                onChange={
+                  e =>
+                    setEditClient(
+                      prev =>
+                        prev
+                          ?
+                          {
+                            ...prev,
+                            c_gst: e.target.value
+                          }
+                          : null
+                    )
 
-}
+                }
 
-/>
-
-
-
-</div>
+              />
 
 
+
+            </div>
 
 
 
 
 
-{/* EMAIL */}
 
 
-<div className="
+            {/* EMAIL */}
+
+
+            <div className="
 mt-5
 ">
 
 
-<label className="
+              <label className="
 text-sm
 font-medium
 ">
 
-Email
+                Email
 
-</label>
+              </label>
 
 
 
-<input
+              <input
 
-className="
+                className="
 w-full
 border
 rounded-lg
@@ -2107,180 +2103,178 @@ p-3
 mt-2
 "
 
-value={
-Array.isArray(editClient.c_email)
-?
-editClient.c_email.join(", ")
-:
-""
-}
+                value={
+                  Array.isArray(editClient.c_email)
+                    ?
+                    editClient.c_email.join(", ")
+                    :
+                    ""
+                }
 
 
-onChange={
-e=>
+                onChange={
+                  e =>
 
-setEditClient(
-prev=>
-prev
-?
-{
-...prev,
-c_email:[
-e.target.value
-]
-}
-:null
-)
+                    setEditClient(
+                      prev =>
+                        prev
+                          ?
+                          {
+                            ...prev,
+                            c_email: [
+                              e.target.value
+                            ]
+                          }
+                          : null
+                    )
 
-}
-
-
-/>
+                }
 
 
-</div>
+              />
 
 
-
+            </div>
 
 
 
 
 
-{/* PHONE */}
 
 
-<div className="
+
+            {/* PHONE */}
+
+
+            <div className="
 mt-5
 ">
 
 
-<label className="
+              <label className="
 text-sm
 font-medium
 ">
 
-Phone
+                Phone
 
-</label>
+              </label>
 
 
 
-<div className="
+              <div className="
 flex
 gap-3
 mt-2
 ">
 
 
-<select
+                <select
 
-className="
+                  className="
 border
 rounded-lg
 p-3
 w-28
 "
 
-value={phoneCode}
+                  value={phoneCode}
 
-onChange={
-e=>{
+                  onChange={
+                    e => {
 
-setPhoneCode(
-e.target.value
-);
-
-
-setEditClient(
-prev=>
-prev
-?
-{
-...prev,
-
-c_countryCode:
-e.target.value
-
-}
-:null
-);
+                      setPhoneCode(
+                        e.target.value
+                      );
 
 
-}
+                      setEditClient(
+                        prev =>
+                          prev
+                            ?
+                            {
+                              ...prev,
 
-}
+                              c_countryCode:
+                                e.target.value
 
-
->
-
-
-{
-
-phoneCodes.map(
-code=>
-
-<option
-key={code}
-value={code}
->
-
-{code}
-
-</option>
-
-)
-
-}
+                            }
+                            : null
+                      );
 
 
-</select>
+                    }
+
+                  }
 
 
+                >
+
+
+                  {
+
+                    phoneCodes.map(
+                      code =>
+
+                        <option
+                          key={code}
+                          value={code}
+                        >
+
+                          {code}
+
+                        </option>
+
+                    )
+
+                  }
+
+
+                </select>
 
 
 
-<input
 
-className="
+
+                <input
+
+                  className="
 flex-1
 border
 rounded-lg
 p-3
 "
 
-placeholder="Mobile Number"
+                  placeholder="Mobile Number"
 
-value={
-editClient.c_mobilePhone || ""
-}
+                  value={
+                    editClient.c_mobilePhone || ""
+                  }
 
-onChange={
-e=>
+                  onChange={
+                    e =>
 
-setEditClient(
-prev=>
-prev
-?
-{
-...prev,
-c_mobilePhone:e.target.value
-}
-:null
-)
+                      setEditClient(
+                        prev =>
+                          prev
+                            ?
+                            {
+                              ...prev,
+                              c_mobilePhone: e.target.value
+                            }
+                            : null
+                      )
 
-}
-
-
-/>
+                  }
 
 
-</div>
+                />
 
 
-</div>
+              </div>
 
 
+            </div>
 
 
 
@@ -2288,10 +2282,12 @@ c_mobilePhone:e.target.value
 
 
 
-{/* ADDRESS SECTION */}
 
 
-<h3 className="
+            {/* ADDRESS SECTION */}
+
+
+            <h3 className="
 text-sm
 font-semibold
 text-blue-600
@@ -2299,14 +2295,14 @@ mt-6
 mb-3
 ">
 
-Address Information
+              Address Information
 
-</h3>
-
-
+            </h3>
 
 
-<div className="
+
+
+            <div className="
 grid
 grid-cols-1
 md:grid-cols-3
@@ -2314,264 +2310,264 @@ gap-4
 ">
 
 
-<input
+              <input
 
-className="
+                className="
 border
 rounded-lg
 p-3
 "
 
-placeholder="Address"
+                placeholder="Address"
 
-value={
-editClient.c_address || ""
-}
+                value={
+                  editClient.c_address || ""
+                }
 
-onChange={
-e=>
+                onChange={
+                  e =>
 
-setEditClient(
-prev=>
-prev
-?
-{
-...prev,
-c_address:e.target.value
-}
-:null
-)
+                    setEditClient(
+                      prev =>
+                        prev
+                          ?
+                          {
+                            ...prev,
+                            c_address: e.target.value
+                          }
+                          : null
+                    )
 
-}
+                }
 
-/>
-
-
+              />
 
 
-<input
 
-className="
+
+              <input
+
+                className="
 border
 rounded-lg
 p-3
 "
 
-placeholder="City"
+                placeholder="City"
 
-value={
-editClient.c_city || ""
-}
+                value={
+                  editClient.c_city || ""
+                }
 
-onChange={
-e=>
+                onChange={
+                  e =>
 
-setEditClient(
-prev=>
-prev
-?
-{
-...prev,
-c_city:e.target.value
-}
-:null
-)
+                    setEditClient(
+                      prev =>
+                        prev
+                          ?
+                          {
+                            ...prev,
+                            c_city: e.target.value
+                          }
+                          : null
+                    )
 
-}
+                }
 
-/>
-
-
+              />
 
 
 
 
 
-<input
 
-className="
+
+              <input
+
+                className="
 border
 rounded-lg
 p-3
 "
 
-placeholder="Zip Code"
+                placeholder="Zip Code"
 
-value={
-editClient.c_zipCode || ""
-}
+                value={
+                  editClient.c_zipCode || ""
+                }
 
-onChange={
-e=>
+                onChange={
+                  e =>
 
-setEditClient(
-prev=>
-prev
-?
-{
-...prev,
-c_zipCode:e.target.value
-}
-:null
-)
+                    setEditClient(
+                      prev =>
+                        prev
+                          ?
+                          {
+                            ...prev,
+                            c_zipCode: e.target.value
+                          }
+                          : null
+                    )
 
-}
+                }
 
-/>
-
-
+              />
 
 
 
-<select
 
-className="
+
+              <select
+
+                className="
 border
 rounded-lg
 p-3
 "
 
-value={
-editClient.c_country || ""
-}
+                value={
+                  editClient.c_country || ""
+                }
 
 
-onChange={
-e=>{
+                onChange={
+                  e => {
 
-setEditClient(
-prev=>
-prev
-?
-{
-...prev,
-c_country:e.target.value,
-c_state:""
-}
-:null
-)
+                    setEditClient(
+                      prev =>
+                        prev
+                          ?
+                          {
+                            ...prev,
+                            c_country: e.target.value,
+                            c_state: ""
+                          }
+                          : null
+                    )
 
-}
+                  }
 
-}
-
-
->
+                }
 
 
-<option value="">
-
-Select Country
-
-</option>
+              >
 
 
-{
+                <option value="">
 
-countries.map(
-country=>
+                  Select Country
 
-<option
-key={country._id}
-value={country._id}
->
-
-{country.name}
-
-</option>
-
-)
-
-}
+                </option>
 
 
-</select>
+                {
+
+                  countries.map(
+                    country =>
+
+                      <option
+                        key={country._id}
+                        value={country._id}
+                      >
+
+                        {country.name}
+
+                      </option>
+
+                  )
+
+                }
 
 
-
+              </select>
 
 
 
 
-<select
 
-className="
+
+
+              <select
+
+                className="
 border
 rounded-lg
 p-3
 "
 
-value={
-editClient.c_state || ""
-}
+                value={
+                  editClient.c_state || ""
+                }
 
 
-onChange={
-e=>
+                onChange={
+                  e =>
 
-setEditClient(
-prev=>
-prev
-?
-{
-...prev,
-c_state:e.target.value
-}
-:null
-)
+                    setEditClient(
+                      prev =>
+                        prev
+                          ?
+                          {
+                            ...prev,
+                            c_state: e.target.value
+                          }
+                          : null
+                    )
 
-}
-
-
->
+                }
 
 
-<option value="">
-
-Select State
-
-</option>
+              >
 
 
+                <option value="">
 
-{
+                  Select State
 
-states.map(
-state=>
-
-<option
-key={state._id}
-value={state._id}
->
-
-{state.name}
-
-</option>
-
-)
-
-}
-
-
-</select>
+                </option>
 
 
 
+                {
 
-</div>
+                  states.map(
+                    state =>
+
+                      <option
+                        key={state._id}
+                        value={state._id}
+                      >
+
+                        {state.name}
+
+                      </option>
+
+                  )
+
+                }
+
+
+              </select>
 
 
 
+
+            </div>
 
 
 
 
 
 
-{/* FOOTER BUTTONS */}
 
 
-<div className="
+
+            {/* FOOTER BUTTONS */}
+
+
+            <div className="
 flex
 justify-end
 gap-3
@@ -2579,13 +2575,13 @@ mt-8
 ">
 
 
-<button
+              <button
 
-onClick={()=>
-setIsModalOpen(false)
-}
+                onClick={() =>
+                  setIsModalOpen(false)
+                }
 
-className="
+                className="
 px-5
 py-2
 rounded-lg
@@ -2593,83 +2589,83 @@ bg-gray-200
 hover:bg-gray-300
 "
 
->
+              >
 
-Cancel
+                Cancel
 
-</button>
-
-
+              </button>
 
 
 
 
-<button
-
-disabled={saving}
 
 
-onClick={async()=>{
+              <button
+
+                disabled={saving}
 
 
-if(!editClient)
-
-return;
+                onClick={async () => {
 
 
-setSaving(true);
+                  if (!editClient)
+
+                    return;
 
 
-try{
+                  setSaving(true);
 
 
-await updateCustomer(
-editClient._id,
-editClient as ICustomer
-);
+                  try {
 
 
-alert(
-"Customer updated successfully"
-);
+                    await updateCustomer(
+                      editClient._id,
+                      editClient as ICustomer
+                    );
 
 
-setIsModalOpen(false);
+                    alert(
+                      "Customer updated successfully"
+                    );
 
 
-loadCustomerOrders();
+                    setIsModalOpen(false);
 
 
-
-}
-
-catch(err){
-
-
-console.error(err);
-
-
-alert(
-"Update failed"
-);
-
-
-}
-
-finally{
-
-
-setSaving(false);
-
-
-}
+                    loadCustomerOrders();
 
 
 
-}}
+                  }
+
+                  catch (err) {
 
 
-className="
+                    console.error(err);
+
+
+                    alert(
+                      "Update failed"
+                    );
+
+
+                  }
+
+                  finally {
+
+
+                    setSaving(false);
+
+
+                  }
+
+
+
+                }}
+
+
+                className="
 px-5
 py-2
 rounded-lg
@@ -2679,52 +2675,52 @@ hover:bg-blue-700
 disabled:opacity-50
 "
 
->
+              >
 
 
-{
-saving
-?
-"Saving..."
-:
-"Save Changes"
-}
+                {
+                  saving
+                    ?
+                    "Saving..."
+                    :
+                    "Save Changes"
+                }
 
 
-</button>
-
-
-
-</div>
+              </button>
 
 
 
-
-
-
-</div>
-
-
-</div>
-
-}
+            </div>
 
 
 
 
 
 
+          </div>
 
-{/* ================================
+
+        </div>
+
+      }
+
+
+
+
+
+
+
+      {/* ================================
         BACK BUTTON
 ================================ */}
 
 
-<Link
+      <Link
 
-to="/admin/orders"
+        to="/admin/orders"
 
-className="
+        className="
 inline-flex
 mt-6
 px-5
@@ -2735,19 +2731,19 @@ text-white
 hover:bg-gray-900
 "
 
->
+      >
 
-← Back to Orders
+        ← Back to Orders
 
-</Link>
-
-
+      </Link>
 
 
 
-</div>
 
-);
+
+    </div>
+
+  );
 
 
 };

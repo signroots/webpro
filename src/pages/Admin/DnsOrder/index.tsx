@@ -19,206 +19,213 @@ import axios from "axios";
 import { fetchCountries, fetchStatesByCountry } from "../Customer/api";
 import ServiceIcons from "../Order/ServiceIcons";
 import ExpiryBadge from "../Order/ExpiryBadge";
+import {
+  Order,
+  Client,
+  Customer,
+  ICountry,
+} from "../../../types/order";
+
 // -------------------- Types --------------------
 
-interface Customer {
-  _id: string;
-  name?: string;
-  email?: string;
-  phone?: string;
-  company?: string;
-  address?: string;
-  city?: string;
-  country?: string;
-}
+// interface Customer {
+//   _id: string;
+//   name?: string;
+//   email?: string;
+//   phone?: string;
+//   company?: string;
+//   address?: string;
+//   city?: string;
+//   country?: string;
+// }
 
 
-interface Client {
-  _id: string;
-  c_name?: string;
-  c_email?: string[];
-  c_phone?: string;
-  c_company?: string;
-  c_address?: string;
-  c_city?: string;
-  c_country?: string;
-}
+// interface Client {
+//   _id: string;
+//   c_name?: string;
+//   c_email?: string[];
+//   c_phone?: string;
+//   c_company?: string;
+//   c_address?: string;
+//   c_city?: string;
+//   c_country?: string;
+// }
 
 
-interface ICountry {
-  _id: string;
-  name: string;
-}
+// interface ICountry {
+//   _id: string;
+//   name: string;
+// }
 
 
 // Order Plans
-interface OrderPlan {
+// interface OrderPlan {
 
-  type:
-    | "email"
-    | "storage"
-    | "msoffice"
-    | "hosting"
-    | "website"
-    | "ssl";
-
-
-  emailType?: string | null;
-
-  emailTypeId?: string | null;
+//   type:
+//     | "email"
+//     | "storage"
+//     | "msoffice"
+//     | "hosting"
+//     | "website"
+//     | "ssl";
 
 
-  planId?: string | null;
+//   emailType?: string | null;
 
-  planName?: string;
-
-
-  hostType?: {
-    _id: string;
-    type?: string;
-  } | null;
+//   emailTypeId?: string | null;
 
 
-  hostSubType?: {
-    _id: string;
-    name?: string;
-  } | null;
+//   planId?: string | null;
+
+//   planName?: string;
 
 
-  storage?: {
-    _id: string;
-    name?: string;
-  } | null;
+//   hostType?: {
+//     _id: string;
+//     type?: string;
+//   } | null;
 
 
-  registrationDate?: string;
+//   hostSubType?: {
+//     _id: string;
+//     name?: string;
+//   } | null;
 
-  expiryDate?: string;
 
-  noOfUsers?: number;
+//   storage?: {
+//     _id: string;
+//     name?: string;
+//   } | null;
 
-}
+
+//   registrationDate?: string;
+
+//   expiryDate?: string;
+
+//   noOfUsers?: number;
+
+// }
 
 
 
 // Main Order
-interface Order {
+// interface Order {
 
-  _id: string;
+//   _id: string;
 
-  domainName: string;
+//   domainName: string;
 
 
-  lockStatus?: string;
+//   lockStatus?: string;
 
-  status?: string;
+//   status?: string;
 
 
-  users?: number;
+//   users?: number;
 
 
-  managedBy?: string;
+//   managedBy?: string;
 
 
-  registrationDate?: string;
+//   registrationDate?: string;
 
 
-  expiryDate?: string;
+//   expiryDate?: string;
 
 
 
-  // Domain Source
-  domainSource?: {
-    _id:string;
-    name:string;
-    code?:string;
-    image?:string;
-  } | null;
+//   // Domain Source
+//   domainSource?: {
+//     _id:string;
+//     name:string;
+//     code?:string;
+//     image?:string;
+//   } | null;
 
 
 
-  // Services
-  plans?: OrderPlan[];
+//   // Services
+//   plans?: OrderPlan[];
 
 
 
-  google_email?: boolean;
+//   google_email?: boolean;
 
-  microsoft_email?: boolean;
+//   microsoft_email?: boolean;
 
 
-  cloudflareRegistered?: boolean;
+//   cloudflareRegistered?: boolean;
 
 
 
-  hosting?: boolean;
+//   hosting?: boolean;
 
-  email_flag?: boolean;
+//   email_flag?: boolean;
 
-  website_flag?: boolean;
+//   website_flag?: boolean;
 
-  ssl_flag?: boolean;
+//   ssl_flag?: boolean;
 
-  host_flag?: boolean;
+//   host_flag?: boolean;
 
 
 
-  customer?: Customer | null;
+//   customer?: Customer | null;
 
 
-  client?: Client | null;
+//   client?: Client | null;
 
 
 
-  subResellerName?: string;
+//   subResellerName?: string;
 
-  subResellerEmail?: string;
+//   subResellerEmail?: string;
 
 
-  subscription?: string;
+//   subscription?: string;
 
 
-  provider?: string;
+//   provider?: string;
 
 
 
-  email_status?: string;
+//   email_status?: string;
 
 
-  email_service?: 
-    | "Google Workspace"
-    | "Microsoft 365";
+//   email_service?: 
+//     | "Google Workspace"
+//     | "Microsoft 365";
 
 
-  email_expiryDate?: string;
+//   email_expiryDate?: string;
 
 
 
-  newCustomer?: {
+//   newCustomer?: {
 
-    c_name?: string;
+//     c_name?: string;
 
-    c_email?: string[];
+//     c_email?: string[];
 
-    c_phone?: string;
+//     c_phone?: string;
 
-    c_company?: string;
+//     c_company?: string;
 
-    c_address?: string;
+//     c_address?: string;
 
-    c_city?: string;
+//     c_city?: string;
 
-    c_state?: string;
+//     c_state?: string;
 
-    c_country?: string;
+//     c_country?: string;
 
-    c_zipCode?: string;
+//     c_zipCode?: string;
 
-    c_gst?: string;
+//     c_gst?: string;
 
-  };
+//   };
 
-}
+// }
 
 // -------------------- Component --------------------
 const DNSOrders: React.FC = () => {
@@ -708,7 +715,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
 
                   {/* Domain Status */}
-                  <td className="px-6 py-4">
+                  {/* <td className="px-6 py-4">
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-semibold ${
                         order.status?.toLowerCase() === "active"
@@ -718,7 +725,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                     >
                       {order.status || "N/A"}
                     </span>
-                  </td>
+                  </td> */}
 
                {/* Email Expiry */}
 {/* <td className="px-6 py-4">
@@ -848,7 +855,11 @@ const handleSubmit = async (e: React.FormEvent) => {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
               <InfoItem label="Domain" value={selectedOrder.domainName} />
-              <InfoItem label="Status" value={selectedOrder.status || "Unknown"} />
+              <InfoItem
+  label="Status"
+  value={selectedOrder.order_status || "Unknown"}
+/>
+
               <InfoItem label="Registration Date" value={selectedOrder.registrationDate} />
               <InfoItem label="Expiry Date" value={selectedOrder.expiryDate} />
               <InfoItem label="Provider" value={selectedOrder.provider} />
@@ -943,17 +954,18 @@ const handleSubmit = async (e: React.FormEvent) => {
 </label>
 
 
-            <label className="block">
-              Status:
-              <select
-                defaultValue={selectedOrder.status}
-                className="border px-3 py-2 rounded w-full text-black"
-              >
-                <option>Active</option>
-                <option>Inactive</option>
-                <option>Expired</option>
-              </select>
-            </label>
+           <label className="block">
+  Status:
+
+  <select
+    defaultValue={selectedOrder.order_status || "ACTIVE"}
+    className="border px-3 py-2 rounded w-full text-black"
+  >
+    <option value="ACTIVE">Active</option>
+    <option value="EXPIRED">Expired</option>
+  </select>
+</label>
+
 
             <label className="block">
               Customer Name:
