@@ -134,7 +134,6 @@ router.post("/register", async (req: Request, res: Response): Promise<void> => {
   }
 });
 // POST /api/users/login
-// Login - POST /api/users/login
 router.post(
   "/login",
   async (req: Request, res: Response): Promise<void> => {

@@ -1,9 +1,9 @@
-import mongoose, { Schema, Document, Types } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
 
 export interface IStatus extends Document {
   name: string;
+  type: "order" | "plan" ;
   is_active: boolean;
-  typeEmail: Types.ObjectId;
 }
 
 const StatusSchema: Schema = new Schema(
@@ -13,17 +13,22 @@ const StatusSchema: Schema = new Schema(
       required: true,
       trim: true,
     },
+
+    // Status belongs to Order / Plan / Service
+    type: {
+      type: String,
+      enum: ["order", "plan"],
+      required: true,
+    },
+
     is_active: {
       type: Boolean,
       default: true,
     },
-    typeEmail: {
-      type: Schema.Types.ObjectId,
-      ref: "TypeEmail",
-      required: true,
-    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
 export default mongoose.model<IStatus>("Status", StatusSchema);

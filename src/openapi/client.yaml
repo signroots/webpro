@@ -3,88 +3,315 @@ paths:
     get:
       tags:
         - Client
+
       summary: Get all customers
+
+      description: Fetch all customers with country and state details.
+
       responses:
+
         "200":
           description: Customer list fetched successfully
+
+          content:
+            application/json:
+              schema:
+
+                type: object
+
+                properties:
+
+                  success:
+                    type: boolean
+                    example: true
+
+                  data:
+
+                    type: array
+
+                    items:
+
+                      type: object
+
+                      properties:
+
+                        _id:
+                          type: string
+                          example: "6a74300ef9ec5b554533a787"
+
+                        c_salutation:
+                          type: string
+                          example: "mr"
+
+                        c_firstName:
+                          type: string
+                          example: ""
+
+                        c_lastName:
+                          type: string
+                          example: ""
+
+                        c_name:
+                          type: string
+                          example: "hari"
+
+                        c_email:
+                          type: array
+                          items:
+                            type: string
+                          example:
+                            - "hari@gmail.com"
+
+                        c_phone:
+                          type: string
+                          example: "9539263198"
+
+                        c_mobilePhone:
+                          type: string
+                          example: "9539263198"
+
+                        c_company:
+                          type: string
+                          example: "signroots"
+
+                        c_address:
+                          type: string
+                          example: "kottayil"
+
+                        c_address2:
+                          type: string
+                          example: "nambidiyattu"
+
+                        c_city:
+                          type: string
+                          example: "ckm"
+
+                        c_country:
+                          type: object
+                          nullable: true
+                          properties:
+
+                            _id:
+                              type: string
+                              example: "690f017ff26a6aa6a32cea22"
+
+                            name:
+                              type: string
+                              example: "India"
+
+                            code:
+                              type: string
+                              example: "IN"
+
+
+                        c_state:
+                          type: object
+                          nullable: true
+                          properties:
+
+                            _id:
+                              type: string
+                              example: "690f01a752cf242a3fea0863"
+
+                            name:
+                              type: string
+                              example: "Kerala"
+
+                            code:
+                              type: string
+                              example: "KL"
+
+                            country:
+                              type: string
+                              example: "690f017ff26a6aa6a32cea22"
+
+
+                        c_countryCode:
+                          type: string
+                          example: "+91"
+
+                        c_zipCode:
+                          type: string
+                          example: "900"
+
+                        c_gst:
+                          type: string
+                          example: "32ABCDE1234F1Z5"
+
+                        c_bankAccountPayment:
+                          type: string
+                          example: "150000"
+
+                        c_placeOfContact:
+                          type: string
+                          example: "kkm"
+
+                        c_placeOfContactWithStateCode:
+                          type: string
+                          example: "ML"
+
+                        c_portalEnabled:
+                          type: boolean
+                          example: true
+
+                        userType:
+                          type: string
+                          example: "6900a4ef87b9fe9ff304e91e"
+
+                        is_active:
+                          type: boolean
+                          example: true
+
+                        createdAt:
+                          type: string
+                          format: date-time
+                          example: "2026-08-06T06:56:14.414Z"
+
+                        updatedAt:
+                          type: string
+                          format: date-time
+                          example: "2026-08-06T06:56:14.414Z"
+
+
         "500":
+
           description: Failed to fetch customers
+
+          content:
+            application/json:
+              schema:
+
+                type: object
+
+                properties:
+
+                  success:
+                    type: boolean
+                    example: false
+
+                  message:
+                    type: string
+                    example: "Failed to fetch customers"
 
     post:
       tags:
         - Client
+
       summary: Create a new customer
+
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+
               required:
                 - c_name
                 - c_phone
                 - c_email
+
               properties:
+
+                c_salutation:
+                  type: string
+                  example: "mr"
+
                 c_name:
                   type: string
-                  example: John Doe
+                  example: "hari"
+
                 c_email:
                   type: array
                   items:
                     type: string
+                    format: email
                   example:
-                    - john@example.com
-                    - support@example.com
+                    - hari@gmail.com
+
                 c_phone:
                   type: string
-                  example: "9876543210"
+                  example: "9539263198"
+
                 c_mobilePhone:
                   type: string
-                  example: "9876543211"
+                  example: "9539263198"
+
                 c_company:
                   type: string
-                  example: ABC Technologies
+                  example: "signroots"
+
                 c_address:
                   type: string
-                  example: MG Road
+                  example: "kottayil"
+
                 c_address2:
                   type: string
-                  example: Near Metro Station
+                  example: "nambidiyattu"
+
                 c_city:
                   type: string
-                  example: Kochi
+                  example: "ckm"
+
                 c_state:
                   type: string
-                  example: 689b12d5e3f0f9b2a1234567
+                  example: "690f01a752cf242a3fea0863"
+
                 c_country:
                   type: string
-                  example: 689b12d5e3f0f9b2a7654321
+                  example: "690f017ff26a6aa6a32cea22"
+
                 c_countryCode:
                   type: string
                   example: "+91"
+
                 c_zipCode:
                   type: string
-                  example: "682001"
+                  example: "900"
+
                 c_gst:
                   type: string
-                  example: 32ABCDE1234F1Z5
+                  example: "32ABCDE1234F1Z5"
+
+                c_bankAccountPayment:
+                  type: string
+                  example: "150000"
+
+                c_portalEnabled:
+                  type: boolean
+                  example: true
+
+                c_placeOfContact:
+                  type: string
+                  example: "kkm"
+
+                c_placeOfContactWithStateCode:
+                  type: string
+                  example: "ML"
+
                 password:
                   type: string
-                  example: Password@123
+                  example: "Password@123"
+
                 resellerCustomerId:
                   type: string
-                  example: 1b7ef4dc-11d0-4b91-aac9-7dc6d7c2c111
+                  example: "1b7ef4dc-11d0-4b91-aac9-7dc6d7c2c111"
+
                 userType:
                   type: string
-                  example: 6900a4ef87b9fe9ff304e91e
+                  example: "6900a4ef87b9fe9ff304e91e"
+
+
       responses:
+
         "201":
           description: Customer created successfully
+
         "400":
           description: Validation error
+
         "500":
           description: Server error
-
   /client/client-country-codes:
     get:
       tags:
@@ -100,79 +327,193 @@ paths:
     put:
       tags:
         - Client
+
       summary: Update customer
+
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+          example: "6a74300ef9ec5b554533a787"
+
       requestBody:
         required: true
+
         content:
           application/json:
+
             schema:
+
               type: object
+
               properties:
+
+                c_salutation:
+                  type: string
+                  example: "mr"
+
+                c_firstName:
+                  type: string
+                  example: ""
+
+                c_lastName:
+                  type: string
+                  example: ""
+
                 c_name:
                   type: string
-                  example: John Doe
+                  example: "harishma"
+
                 c_email:
                   type: array
                   items:
                     type: string
                   example:
-                    - john@example.com
-                    - admin@example.com
+                    - "hari@gmail.com"
+
                 c_phone:
                   type: string
-                  example: "9876543210"
+                  example: "9539263198"
+
                 c_mobilePhone:
                   type: string
-                  example: "9876543211"
+                  example: "9539263198"
+
                 c_company:
                   type: string
-                  example: ABC Technologies
+                  example: "signroots"
+
                 c_address:
                   type: string
-                  example: MG Road
+                  example: "kottayil"
+
                 c_address2:
                   type: string
-                  example: Near Metro Station
+                  example: "nambidiyattu"
+
                 c_city:
                   type: string
-                  example: Kochi
+                  example: "ckm"
+
                 c_state:
                   type: string
-                  example: 689b12d5e3f0f9b2a1234567
+                  example: "690f01a752cf242a3fea0863"
+
                 c_country:
                   type: string
-                  example: 689b12d5e3f0f9b2a7654321
-                c_country_code:
+                  example: "690f017ff26a6aa6a32cea22"
+
+                c_countryCode:
                   type: string
                   example: "+91"
+
                 c_zipCode:
                   type: string
-                  example: "682001"
+                  example: "900"
+
                 c_gst:
                   type: string
-                  example: 32ABCDE1234F1Z5
+                  example: "32ABCDE1234F1Z5"
+
+                c_bankAccountPayment:
+                  type: string
+                  example: "150000"
+
+                c_placeOfContact:
+                  type: string
+                  example: "kkm"
+
+                c_placeOfContactWithStateCode:
+                  type: string
+                  example: "ML"
+
+                c_portalEnabled:
+                  type: boolean
+                  example: true
+
                 password:
                   type: string
-                  example: NewPassword@123
+                  example: "NewPassword@123"
+
                 resellerCustomerId:
                   type: string
-                  example: 1b7ef4dc-11d0-4b91-aac9-7dc6d7c2c111
+                  example: "1b7ef4dc-11d0-4b91-aac9-7dc6d7c2c111"
+
                 userType:
                   type: string
-                  example: 6900a4ef87b9fe9ff304e91e
+                  example: "6900a4ef87b9fe9ff304e91e"
+
+
       responses:
+
         "200":
           description: Customer updated successfully
+
+          content:
+            application/json:
+              schema:
+
+                type: object
+
+                properties:
+
+                  success:
+                    type: boolean
+                    example: true
+
+                  message:
+                    type: string
+                    example: "Customer updated successfully"
+
+                  data:
+                    type: object
+
+                    properties:
+
+                      _id:
+                        type: string
+                        example: "6a74300ef9ec5b554533a787"
+
+                      c_name:
+                        type: string
+                        example: "harishma"
+
+                      c_company:
+                        type: string
+                        example: "signroots"
+
+                      c_email:
+                        type: array
+                        items:
+                          type: string
+
+                      c_phone:
+                        type: string
+                        example: "9539263198"
+
+                      is_active:
+                        type: boolean
+                        example: true
+
+                      createdAt:
+                        type: string
+                        format: date-time
+
+                      updatedAt:
+                        type: string
+                        format: date-time
+
+
         "400":
           description: Invalid customer ID or validation error
+
+
         "404":
           description: Customer not found
+
+
         "500":
           description: Server error
 

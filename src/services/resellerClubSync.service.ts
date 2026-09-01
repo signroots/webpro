@@ -95,7 +95,7 @@ export async function syncResellerClubDomains() {
         {
           domainName,
           customer: customer._id,
-          status: d["entity.currentstatus"],
+          server_status: d["entity.currentstatus"],
           expiryDate,
           registrationDate: new Date(
             Number(d["orders.creationtime"]) * 1000

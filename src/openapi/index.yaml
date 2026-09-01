@@ -24,14 +24,16 @@ paths:
   /users/register:
     $ref: "./auth.yaml#/paths/~1users~1register"
 
+
+  # User Type Routes
   /users/types:
-    $ref: "./auth.yaml#/paths/~1users~1types"
+    $ref: "./userType.yaml#/paths/~1types"
 
   /users/types/{id}:
-    $ref: "./auth.yaml#/paths/~1users~1types~1{id}"
+    $ref: "./userType.yaml#/paths/~1types~1{id}"
 
-  /users/customer/login:
-    $ref: "./auth.yaml#/paths/~1users~1customer~1login"
+  # /users/customer/login:
+  #   $ref: "./auth.yaml#/paths/~1users~1customer~1login"
 
   /users/refresh:
     $ref: "./auth.yaml#/paths/~1users~1refresh"
@@ -85,3 +87,10 @@ paths:
 
   /orders/{id}:
     $ref: "./orders.yaml#/paths/~1order~1{id}"
+  /orders-by-month:
+    $ref: "./orders.yaml#/paths/~1orders-by-month"
+  /existing_customers:
+    $ref: "./orders.yaml#/paths/~1existing_customers"
+
+  /dnsorders:
+    $ref: "./orders.yaml#/paths/~1dnsorders"

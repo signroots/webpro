@@ -1,0 +1,179 @@
+paths:
+
+  /types:
+
+    get:
+
+      tags:
+        - User Type
+
+      summary: Get all user types
+
+      description: Returns all user types
+
+      responses:
+
+        "200":
+          description: User type list fetched successfully
+
+        "500":
+          description: Server error
+
+
+    post:
+
+      tags:
+        - User Type
+
+      summary: Create User Type
+
+      description: Create a new user type
+
+      requestBody:
+
+        required: true
+
+        content:
+
+          application/json:
+
+            schema:
+
+              type: object
+
+              required:
+                - name
+                - is_active
+
+              properties:
+
+                name:
+                  type: string
+                  example: Admin
+
+                is_active:
+                  type: boolean
+                  example: true
+
+      responses:
+
+        "201":
+          description: User type created successfully
+
+        "500":
+          description: Server error
+
+
+
+  /types/{id}:
+
+    get:
+
+      tags:
+        - User Type
+
+      summary: Get user type by ID
+
+      description: Returns a user type by its ID
+
+      parameters:
+
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: 687fd15f4c25dd8d0b6e1234
+
+      responses:
+
+        "200":
+          description: User type fetched successfully
+
+        "404":
+          description: User type not found
+
+        "500":
+          description: Server error
+
+
+    put:
+
+      tags:
+        - User Type
+
+      summary: Update user type
+
+      description: Update an existing user type
+
+      parameters:
+
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: 687fd15f4c25dd8d0b6e1234
+
+      requestBody:
+
+        required: true
+
+        content:
+
+          application/json:
+
+            schema:
+
+              type: object
+
+              properties:
+
+                name:
+                  type: string
+                  example: Super Admin
+
+                is_active:
+                  type: boolean
+                  example: true
+
+      responses:
+
+        "200":
+          description: User type updated successfully
+
+        "404":
+          description: User type not found
+
+        "500":
+          description: Server error
+
+
+    delete:
+
+      tags:
+        - User Type
+
+      summary: Delete user type
+
+      description: Delete a user type by its ID
+
+      parameters:
+
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: 687fd15f4c25dd8d0b6e1234
+
+      responses:
+
+        "200":
+          description: User type deleted successfully
+
+        "404":
+          description: User type not found
+
+        "500":
+          description: Server error

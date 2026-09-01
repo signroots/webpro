@@ -1,28 +1,80 @@
 paths:
-  /order:
+  /existing_customers:
     get:
-      security:
-        - bearerAuth: []
       tags:
         - Order
 
-      summary: Get all orders with search, pagination, and status updates
+      summary: Get existing customers
 
       description: |
-        Fetches orders based on logged-in user role.
-        Admin users can view all orders.
-        Customer users can view only their own orders.
+        Returns a list of existing customers.
+        This endpoint is restricted to Admin users.
+
+      security:
+        - bearerAuth: []
+
+      responses:
+
+        "200":
+          description: Customers fetched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                          example: "694f9174fad527504eb2ba55"
+
+                        c_name:
+                          type: string
+                          example: "John Doe"
+
+                        c_email:
+                          type: string
+                          example: "john@example.com"
+
+                        c_phone:
+                          type: string
+                          example: "+91 9876543210"
+
+                        c_company:
+                          type: string
+                          example: "ABC Technologies Pvt Ltd"
+
+        "403":
+          description: Admin access required
+
+        "500":
+          description: Failed to fetch customers
+
+
+  /dnsorders:
+    get:
+      tags:
+        - Order
+
+      summary: Get DNS orders
+
+      description: |
+        Fetches DNS orders based on the logged-in user's role.
+
+        Admin users can view all DNS orders.
+        Customer users can view only their own DNS orders.
+
+      security:
+        - bearerAuth: []
 
       parameters:
-
-        - name: search
-          in: query
-          required: false
-          description: Search by domain name or managedBy
-          schema:
-            type: string
-            example: "aapkapath.com"
-
 
         - name: page
           in: query
@@ -30,167 +82,90 @@ paths:
           description: Page number
           schema:
             type: integer
+            minimum: 1
             default: 1
-            example: 1
-
+          example: 1
 
         - name: limit
           in: query
           required: false
-          description: Number of records per page
+          description: Number of records per page. Maximum 100.
           schema:
             type: integer
+            minimum: 1
+            maximum: 100
             default: 50
-            example: 10
+          example: 50
 
+        - name: search
+          in: query
+          required: false
+          description: Search by domain name or managedBy
+          schema:
+            type: string
+          example: "example.com"
 
       responses:
 
         "200":
-
-          description: Orders retrieved successfully
+          description: DNS orders fetched successfully
 
           content:
-
             application/json:
-
               schema:
-
                 type: object
-
                 properties:
 
                   success:
                     type: boolean
                     example: true
 
-
                   data:
-
                     type: array
-
                     items:
-
                       type: object
-
                       properties:
-
 
                         _id:
                           type: string
-                          example: "6a5868da4a72a2ca184fa3a2"
-
+                          example: "6933b87d7439b558ce42561d"
 
                         domainName:
                           type: string
-                          example: "aapkapath.com"
+                          example: "example.com"
 
+                        dns_flag:
+                          type: boolean
+                          example: true
 
-                        domainSource:
+                        order_status:
                           type: string
-                          example: "Cloudflare"
-
+                          enum:
+                            - ACTIVE
+                            - EXPIRED
+                          example: "ACTIVE"
 
                         managedBy:
                           type: string
                           enum:
                             - Signroots
                             - Customer
-                          example: Signroots
-
-                        is_active:
-                          type: boolean
-                          example: true
-                        order_status:
-                          type: string
-                          enum:
-                            - ACTIVE
-                            - EXPIRED
-                          example: ACTIVE
-
+                          example: "Signroots"
 
                         registrationDate:
                           type: string
                           format: date-time
-                          example: "2025-02-07T19:24:58.779Z"
-
 
                         expiryDate:
                           type: string
                           format: date-time
-                          example: "2027-02-07T19:24:59.000Z"
-
 
                         lockStatus:
                           type: string
-                          example: "Unlocked"
-
-
-                        client:
-
-                          type: object
-
-                          nullable: true
-
-                          properties:
-
-                            _id:
-                              type: string
-                              example: "6a59e227c76bf36534a02d2b"
-
-
-                            c_name:
-                              type: string
-                              example: "Hari"
-
-
-                            c_company:
-                              type: string
-                              example: "signroots"
-
-
-
-                        Plans:
-
-                          type: array
-
-                          items:
-
-                            type: object
-
-                            properties:
-
-                              type:
-                                type: string
-                                example: "email"
-
-
-                              expiryDate:
-                                type: string
-                                format: date-time
-                                example: "2026-07-25T00:00:00.000Z"
-
-
-                              emailType:
-                                type: string
-                                example: "Google Workspace"
-
-
-                              emailTypeImage:
-                                type: string
-                                example: "/uploads/typeemails/1783938806008.png"
-
-
-                              planId:
-                                type: string
-                                example: "6a54befb1e9ab96fe142b5c5"
-
-
+                          example: "LOCKED"
 
                   pagination:
-
                     type: object
-
                     properties:
 
                       page:
@@ -209,10 +184,497 @@ paths:
                         type: integer
                         example: 2
 
+        "401":
+          description: Unauthorized
+
+        "403":
+          description: Access denied
+
+        "404":
+          description: Client not found
+
+        "500":
+          description: Internal server error
+  /orders-by-month:
+
+    get:
+
+      tags:
+        - Order
+
+      summary: Get orders by month
+
+      description: |
+        Returns orders whose domain expiry date or associated plan expiry date
+        falls within the selected month.
+
+        This endpoint is restricted to Admin users.
+
+        The month query parameter supports:
+        - current: Current month
+        - previous: Previous month
+        - next: Next month
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+
+        - name: month
+          in: query
+          required: false
+
+          description: Select the month for which expiring orders should be returned
+
+          schema:
+            type: string
+            enum:
+              - current
+              - previous
+              - next
+
+            default: current
+
+          example: current
+
+      responses:
+
+        "200":
+          description: Orders fetched successfully
+
+          content:
+            application/json:
+
+              schema:
+                type: object
+
+                properties:
+
+                  success:
+                    type: boolean
+                    example: true
+
+                  counts:
+                    type: object
+
+                    properties:
+
+                      total:
+                        type: integer
+                        example: 12
+
+                      month:
+                        type: string
+                        enum:
+                          - current
+                          - previous
+                          - next
+
+                        example: current
+
+                      startDate:
+                        type: string
+                        format: date-time
+
+                        example: "2026-08-01T00:00:00.000Z"
+
+                      endDate:
+                        type: string
+                        format: date-time
+
+                        example: "2026-08-31T23:59:59.000Z"
+
+                  data:
+                    type: array
+
+                    items:
+
+                      type: object
+
+                      properties:
+
+                        _id:
+                          type: string
+                          example: 687fd15f4c25dd8d0b6e1234
+
+                        orderId:
+                          type: string
+                          example: ORD-2026-001
+
+                        expiryDate:
+                          type: string
+                          format: date-time
+
+                          example: "2026-08-20T00:00:00.000Z"
+
+                        nearestExpiryDate:
+                          type: string
+                          format: date-time
+
+                          nullable: true
+
+                          example: "2026-08-20T00:00:00.000Z"
+
+                        customer:
+                          type: object
+
+                          nullable: true
+
+                          properties:
+
+                            name:
+                              type: string
+                              example: John Doe
+
+                            email:
+                              type: string
+                              example: john@example.com
+
+                            mobile:
+                              type: string
+                              example: "+91 9876543210"
+
+                        client:
+                          type: object
+
+                          nullable: true
+
+                          properties:
+
+                            _id:
+                              type: string
+                              example: 687fd15f4c25dd8d0b6e1234
+
+                            c_name:
+                              type: string
+                              example: ABC Technologies
+
+                            c_company:
+                              type: string
+                              example: ABC Technologies Pvt Ltd
+
+                            c_email:
+                              type: string
+                              example: contact@abc.com
+
+                            c_phone:
+                              type: string
+                              example: "+91 9876543210"
+
+                        domainSource:
+                          type: object
+
+                          nullable: true
+
+                          properties:
+
+                            name:
+                              type: string
+                              example: GoDaddy
+
+                            code:
+                              type: string
+                              example: GODADDY
+
+                            image:
+                              type: string
+                              example: /uploads/domain-source/godaddy.png
+
+                        Plans:
+                          type: array
+
+                          items:
+
+                            type: object
+
+                            properties:
+
+                              type:
+                                type: string
+                                example: Email
+
+                              expiryDate:
+                                type: string
+                                format: date-time
+
+                                example: "2026-08-25T00:00:00.000Z"
+
+                              noOfUsers:
+                                type: integer
+                                example: 10
+
+                              emailType:
+                                type: string
+
+                                nullable: true
+
+                                example: Business Email
+
+                              emailTypeImage:
+                                type: string
+
+                                nullable: true
+
+                                example: /uploads/typeemails/business.png
+
+                              planId:
+                                type: string
+
+                                nullable: true
+
+                                example: 687fd15f4c25dd8d0b6e5678
 
 
         "401":
+          description: Unauthorized - Authentication token is missing or invalid
 
+          content:
+            application/json:
+
+              schema:
+                type: object
+
+                properties:
+
+                  success:
+                    type: boolean
+                    example: false
+
+                  error:
+                    type: string
+                    example: Unauthorized
+
+
+        "403":
+          description: Forbidden - Admin access required
+
+          content:
+            application/json:
+
+              schema:
+                type: object
+
+                properties:
+
+                  success:
+                    type: boolean
+                    example: false
+
+                  error:
+                    type: string
+                    example: Admin access required
+
+
+        "500":
+          description: Server error
+
+          content:
+            application/json:
+
+              schema:
+                type: object
+
+                properties:
+
+                  success:
+                    type: boolean
+                    example: false
+
+                  message:
+                    type: string
+                    example: Server Error
+  /order:
+    get:
+      security:
+        - bearerAuth: []
+
+      tags:
+        - Order
+
+      summary: Get all orders with search, pagination, and status updates
+
+      description: |
+        Fetches orders based on logged-in user role.
+        Admin users can view all orders.
+        Customer users can view only their own orders.
+
+      parameters:
+        - name: search
+          in: query
+          required: false
+          description: Search by domain name or managedBy
+          schema:
+            type: string
+            example: "aapkapath.com"
+
+        - name: page
+          in: query
+          required: false
+          description: Page number
+          schema:
+            type: integer
+            default: 1
+            example: 1
+
+        - name: limit
+          in: query
+          required: false
+          description: Number of records per page
+          schema:
+            type: integer
+            default: 50
+            example: 10
+
+      responses:
+        "200":
+          description: Orders retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                          example: "6933b87d7439b558ce42561d"
+
+                        domainName:
+                          type: string
+                          example: "abcfacilitymanagement.com"
+
+                        domainSource:
+                          type: object
+                          nullable: true
+                          properties:
+                            _id:
+                              type: string
+                              example: "6a6b212ffc628050e088d667"
+                            name:
+                              type: string
+                              example: "ResellerClub"
+                            code:
+                              type: string
+                              example: "RESELLERCLUB"
+                            image:
+                              type: string
+                              example: "resellerclub.png"
+
+                        managedBy:
+                          type: string
+                          enum:
+                            - Signroots
+                            - Customer
+                          example: "Signroots"
+
+                        dns_flag:
+                          type: boolean
+                          example: false
+
+                        is_active:
+                          type: boolean
+                          example: true
+
+                        order_status:
+                          type: string
+                          enum:
+                            - ACTIVE
+                            - EXPIRED
+                          example: "ACTIVE"
+
+                        registrationDate:
+                          type: string
+                          format: date-time
+                          example: "2024-01-09T06:21:58.000Z"
+
+                        expiryDate:
+                          type: string
+                          format: date-time
+                          example: "2027-01-09T06:21:58.000Z"
+
+                        lockStatus:
+                          type: string
+                          example: "Locked"
+
+                        client:
+                          type: object
+                          nullable: true
+                          properties:
+                            _id:
+                              type: string
+                              example: "694f9174fad527504eb2ba55"
+                            c_name:
+                              type: string
+                              example: "Unknown_178"
+                            c_company:
+                              type: string
+                              example: "ABC FACILITY MANAGEMENT AND SECURITY SERVICES PRIVATE LIMITED"
+
+                        Plans:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              type:
+                                type: string
+                                example: "email"
+
+                              expiryDate:
+                                type: string
+                                format: date-time
+                                example: "2027-01-09T00:00:00.000Z"
+
+                              emailType:
+                                type: string
+                                example: "Google Workspace"
+
+                              emailTypeImage:
+                                type: string
+                                example: "/uploads/typeemails/1785313165824.png"
+
+                              hostType:
+                                type: string
+                                nullable: true
+                                example: null
+
+                              hostSubType:
+                                type: string
+                                nullable: true
+                                example: null
+
+                              storage:
+                                type: string
+                                nullable: true
+                                example: null
+
+                              planId:
+                                type: string
+                                example: "6a5b1550bf6cfcb6a21197d1"
+
+                  pagination:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                        example: 1
+                      limit:
+                        type: integer
+                        example: 50
+                      total:
+                        type: integer
+                        example: 100
+                      totalPages:
+                        type: integer
+                        example: 2
+
+        "401":
           description: Unauthorized
           content:
             application/json:
@@ -226,9 +688,7 @@ paths:
                     type: string
                     example: "Unauthorized"
 
-
         "403":
-
           description: Access denied
           content:
             application/json:
@@ -243,7 +703,6 @@ paths:
                     example: "Access denied"
 
         "500":
-
           description: Internal server error
           content:
             application/json:

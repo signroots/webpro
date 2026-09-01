@@ -30,7 +30,7 @@ import storageRoutes from "./routes/storageroute";
 import hostinger from "./routes/hostinger";
 import domainSourceRoutes from "./routes/domainSource";
 import { exportOrders } from "./controllers/export.controller";
-
+import activityLogRoutes  from "./routes/activitylog"
 // Cron
 import { startDomainSyncCron } from "./utils/cronjob";
 import "./cron/cloudflareCron";
@@ -124,6 +124,7 @@ app.use("/api/hostsubtype", hostSubTypeRoutes);
 app.use("/api/storage", storageRoutes);
 
 app.use("/api/dashboard", dashboard);
+app.use("/api/activity",activityLogRoutes);
 
 app.use("/api/export", exportOrders);
 

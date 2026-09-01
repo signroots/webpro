@@ -77,7 +77,7 @@ const orderData = {
             registrationDate: reg?.registered_at
               ? new Date(reg.registered_at)
               : null,
-            status: expiryDate && expiryDate < new Date() ? "EXPIRED" : "ACTIVE",
+            server_status: expiryDate && expiryDate < new Date() ? "EXPIRED" : "ACTIVE",
             domainSource: cloudflareSource._id,
             lockStatus: reg?.locked ? "Locked" : "Unlocked",
             nameServers: reg?.name_servers || z.name_servers || [],

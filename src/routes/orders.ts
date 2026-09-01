@@ -11,6 +11,7 @@ import { PlanEmail } from "../models/PlanEmail";
 import { TypeEmail } from "../models/TypeEmail";
 import State from "../models/State";
 import Country from "../models/Country";
+import ActivityLog from "../models/ActivityLog";
 const router = express.Router();
 interface IOrderPlanResponse {
   _id: string;
@@ -1182,6 +1183,803 @@ storageId
 
   }
 );
+
+router.get(
+  "/archived",
+  authMiddleware,
+  async (req: AuthRequest, res: Response) => {
+    try {
+
+      // =====================================================
+      // LOGGED IN USER
+      // =====================================================
+
+      const loggedInUser = req.user;
+
+      if (!loggedInUser?._id) {
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized",
+        });
+      }
+
+
+      // =====================================================
+      // DATE
+      // =====================================================
+
+      const today = new Date();
+
+      today.setHours(
+        0,
+        0,
+        0,
+        0
+      );
+
+
+      // =====================================================
+      // PAGINATION
+      // =====================================================
+
+      const search =
+        typeof req.query.search === "string"
+          ? req.query.search.trim()
+          : "";
+
+      const page =
+        Math.max(
+          Number(req.query.page) || 1,
+          1
+        );
+
+      const limit =
+        Math.min(
+          Number(req.query.limit) || 25,
+          100
+        );
+
+      const skip =
+        (page - 1) * limit;
+
+
+      // =====================================================
+      // USER
+      // =====================================================
+
+      const user =
+        await User.findById(
+          loggedInUser._id
+        ).populate("userType");
+
+
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: "User not found",
+        });
+      }
+
+
+      // =====================================================
+      // ADMIN CHECK
+      // =====================================================
+
+      const isAdmin =
+        user.userType &&
+        (user.userType as IUserType)
+          .name
+          .toLowerCase() === "admin";
+
+
+      // =====================================================
+      // BASE FILTER
+      // =====================================================
+
+      // Only orders whose expiry date has passed
+      const filters: any[] = [
+
+        {
+          expiryDate: {
+            $lt: today,
+          },
+        },
+
+      ];
+
+
+      // =====================================================
+      // SEARCH
+      // =====================================================
+
+      if (search) {
+
+        filters.push({
+
+          $or: [
+
+            {
+              domainName: {
+                $regex: search,
+                $options: "i",
+              },
+            },
+
+            {
+              managedBy: {
+                $regex: search,
+                $options: "i",
+              },
+            },
+
+          ],
+
+        });
+
+      }
+
+
+      // =====================================================
+      // CUSTOMER FILTER
+      // =====================================================
+
+      if (!isAdmin) {
+
+        const client =
+          await Client.findById(
+            loggedInUser._id
+          ).populate("userType");
+
+
+        if (!client) {
+
+          return res.status(403).json({
+            success: false,
+            message: "Client not found",
+          });
+
+        }
+
+
+        if (
+          !client.userType ||
+          (client.userType as IUserType)
+            .name
+            .toLowerCase() !== "customer"
+        ) {
+
+          return res.status(403).json({
+            success: false,
+            message: "Access denied",
+          });
+
+        }
+
+
+        filters.push({
+
+          client: client._id,
+
+        });
+
+      }
+
+
+      // =====================================================
+      // FINAL FILTER
+      // =====================================================
+
+      const finalFilter = {
+        $and: filters,
+      };
+
+
+      // =====================================================
+      // TOTAL
+      // =====================================================
+
+      const total =
+        await Order.countDocuments(
+          finalFilter
+        );
+
+
+      // =====================================================
+      // ORDERS
+      // =====================================================
+
+      let orders =
+        await Order.find(
+          finalFilter
+        )
+
+        .select({
+
+          domainName: 1,
+          order_status: 1,
+          is_active: 1,
+          dns_flag: 1,
+          client: 1,
+          managedBy: 1,
+          registrationDate: 1,
+          expiryDate: 1,
+          lockStatus: 1,
+          domainSource: 1,
+
+        })
+
+        .populate(
+          "client",
+          "_id c_name c_company"
+        )
+
+        .populate(
+          "domainSource",
+          "name code image"
+        )
+
+        .sort({
+          expiryDate: -1,
+        })
+
+        .skip(skip)
+
+        .limit(limit)
+
+        .lean();
+
+
+      // =====================================================
+      // ARCHIVED STATUS
+      // =====================================================
+
+      orders =
+        orders.map(
+          (order: any) => {
+
+            // -----------------------------------------------
+            // NO EXPIRY DATE
+            // -----------------------------------------------
+
+            if (!order.expiryDate) {
+
+              return {
+                ...order,
+                order_status: "UNKNOWN",
+              };
+
+            }
+
+
+            // -----------------------------------------------
+            // EXPIRY DATE
+            // -----------------------------------------------
+
+            const expiryDate =
+              new Date(
+                order.expiryDate
+              );
+
+            expiryDate.setHours(
+              0,
+              0,
+              0,
+              0
+            );
+
+
+            // -----------------------------------------------
+            // 65 DAYS AFTER EXPIRY
+            // -----------------------------------------------
+
+            const redemptionEnd =
+              new Date(
+                expiryDate
+              );
+
+            redemptionEnd.setDate(
+              redemptionEnd.getDate() + 65
+            );
+
+
+            // -----------------------------------------------
+            // STATUS
+            // -----------------------------------------------
+
+            let order_status: string;
+
+
+            if (
+              today <= redemptionEnd
+            ) {
+
+              order_status =
+                "REDEMPTION PERIOD";
+
+            } else {
+
+              order_status =
+                "PENDING DELETE RESTORABLE";
+
+            }
+
+
+            // -----------------------------------------------
+            // RETURN
+            // -----------------------------------------------
+
+            return {
+
+              ...order,
+
+              order_status,
+
+            };
+
+          }
+        );
+
+
+      // =====================================================
+      // RESPONSE
+      // =====================================================
+
+      return res.status(200).json({
+
+        success: true,
+
+        data: orders,
+
+        pagination: {
+
+          page,
+
+          limit,
+
+          total,
+
+          totalPages:
+            Math.ceil(
+              total / limit
+            ),
+
+        },
+
+      });
+
+
+    } catch (error) {
+
+      // =====================================================
+      // ERROR
+      // =====================================================
+
+      console.error(
+        "ARCHIVED ORDERS GET ERROR:",
+        error
+      );
+
+
+      return res.status(500).json({
+
+        success: false,
+
+        message:
+          "Internal server error",
+
+      });
+
+    }
+
+  }
+);
+
+router.get(
+  "/archived",
+  authMiddleware,
+  async (req: AuthRequest, res: Response) => {
+    try {
+
+      // =====================================================
+      // LOGGED IN USER
+      // =====================================================
+
+      const loggedInUser = req.user;
+
+      if (!loggedInUser?._id) {
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized",
+        });
+      }
+
+
+      // =====================================================
+      // TODAY
+      // =====================================================
+
+      const today = new Date();
+
+      today.setHours(
+        0,
+        0,
+        0,
+        0
+      );
+
+
+      // =====================================================
+      // PAGINATION
+      // =====================================================
+
+      const search =
+        typeof req.query.search === "string"
+          ? req.query.search.trim()
+          : "";
+
+      const page =
+        Math.max(
+          Number(req.query.page) || 1,
+          1
+        );
+
+      const limit =
+        Math.min(
+          Number(req.query.limit) || 25,
+          100
+        );
+
+      const skip =
+        (page - 1) * limit;
+
+
+      // =====================================================
+      // USER
+      // =====================================================
+
+      const user =
+        await User.findById(
+          loggedInUser._id
+        ).populate("userType");
+
+
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: "User not found",
+        });
+      }
+
+
+      // =====================================================
+      // ADMIN CHECK
+      // =====================================================
+
+      const isAdmin =
+        user.userType &&
+        (user.userType as IUserType)
+          .name
+          .toLowerCase() === "admin";
+
+
+      // =====================================================
+      // BASE FILTER
+      // =====================================================
+
+      // Only expired orders
+      const filters: any[] = [
+
+        {
+          expiryDate: {
+            $lt: today,
+          },
+        },
+
+      ];
+
+
+      // =====================================================
+      // SEARCH
+      // =====================================================
+
+      if (search) {
+
+        filters.push({
+
+          $or: [
+
+            {
+              domainName: {
+                $regex: search,
+                $options: "i",
+              },
+            },
+
+            {
+              managedBy: {
+                $regex: search,
+                $options: "i",
+              },
+            },
+
+          ],
+
+        });
+
+      }
+
+
+      // =====================================================
+      // CUSTOMER FILTER
+      // =====================================================
+
+      if (!isAdmin) {
+
+        const client =
+          await Client.findById(
+            loggedInUser._id
+          ).populate("userType");
+
+
+        if (!client) {
+
+          return res.status(403).json({
+            success: false,
+            message: "Client not found",
+          });
+
+        }
+
+
+        if (
+          !client.userType ||
+          (client.userType as IUserType)
+            .name
+            .toLowerCase() !== "customer"
+        ) {
+
+          return res.status(403).json({
+            success: false,
+            message: "Access denied",
+          });
+
+        }
+
+
+        filters.push({
+
+          client: client._id,
+
+        });
+
+      }
+
+
+      // =====================================================
+      // FINAL FILTER
+      // =====================================================
+
+      const finalFilter = {
+        $and: filters,
+      };
+
+
+      // =====================================================
+      // GET TOTAL
+      // =====================================================
+
+      const total =
+        await Order.countDocuments(
+          finalFilter
+        );
+
+
+      // =====================================================
+      // GET ORDERS
+      // =====================================================
+
+      let orders =
+        await Order.find(
+          finalFilter
+        )
+
+        .select({
+
+          domainName: 1,
+          order_status: 1,
+          archived_status: 1,
+          is_active: 1,
+          dns_flag: 1,
+          client: 1,
+          managedBy: 1,
+          registrationDate: 1,
+          expiryDate: 1,
+          lockStatus: 1,
+          domainSource: 1,
+
+        })
+
+        .populate(
+          "client",
+          "_id c_name c_company"
+        )
+
+        .populate(
+          "domainSource",
+          "name code image"
+        )
+
+        .sort({
+          expiryDate: -1,
+        })
+
+        .skip(skip)
+
+        .limit(limit)
+
+        .lean();
+
+
+      // =====================================================
+      // UPDATE ORDER STATUS
+      // =====================================================
+
+      for (const order of orders) {
+
+        // ---------------------------------------------------
+        // Skip if no expiry date
+        // ---------------------------------------------------
+
+        if (!order.expiryDate) {
+          continue;
+        }
+
+
+        // ---------------------------------------------------
+        // EXPIRY DATE
+        // ---------------------------------------------------
+
+        const expiryDate =
+          new Date(
+            order.expiryDate
+          );
+
+        expiryDate.setHours(
+          0,
+          0,
+          0,
+          0
+        );
+
+
+        // ---------------------------------------------------
+        // 65 DAYS AFTER EXPIRY
+        // ---------------------------------------------------
+
+        const redemptionEnd =
+          new Date(
+            expiryDate
+          );
+
+        redemptionEnd.setDate(
+          redemptionEnd.getDate() + 65
+        );
+
+
+        // ---------------------------------------------------
+        // DETERMINE STATUS
+        // ---------------------------------------------------
+
+        let newStatus: string;
+
+
+        if (
+          today <= redemptionEnd
+        ) {
+
+          newStatus =
+            "REDEMPTION PERIOD";
+
+        } else {
+
+          newStatus =
+            "PENDING DELETE RESTORABLE";
+
+        }
+
+
+        // ---------------------------------------------------
+        // UPDATE DATABASE
+        // ---------------------------------------------------
+
+        if (
+          order.archived_status !==
+          newStatus
+        ) {
+
+          await Order.updateOne(
+
+            {
+              _id: order._id,
+            },
+
+            {
+              $set: {
+                archived_status:
+                  newStatus,
+              },
+            }
+
+          );
+
+        }
+
+
+        // ---------------------------------------------------
+        // UPDATE RESPONSE OBJECT
+        // ---------------------------------------------------
+
+        order.archived_status =
+          newStatus;
+
+      }
+
+
+      // =====================================================
+      // RESPONSE
+      // =====================================================
+
+      return res.status(200).json({
+
+        success: true,
+
+        data: orders,
+
+        pagination: {
+
+          page,
+
+          limit,
+
+          total,
+
+          totalPages:
+            Math.ceil(
+              total / limit
+            ),
+
+        },
+
+      });
+
+
+    } catch (error) {
+
+      // =====================================================
+      // ERROR
+      // =====================================================
+
+      console.error(
+        "ARCHIVED ORDERS GET ERROR:",
+        error
+      );
+
+
+      return res.status(500).json({
+
+        success: false,
+
+        message:
+          "Internal server error",
+
+      });
+
+    }
+
+  }
+);
+
+
 router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
 
   try {
@@ -1226,7 +2024,15 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
 
 
 
+    console.log(
+      "OrderPlan schema paths:",
+      Object.keys(OrderPlan.schema.paths)
+    );
 
+    console.log(
+      "hostTypeId path:",
+      OrderPlan.schema.path("hostTypeId")
+    );
     // ================= ATTACH EMAIL EXPIRY =================
 
 
@@ -1268,6 +2074,8 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
           `
     orderId
     type
+    registrationDate
+    expiryDate
     expiryDate
     emailTypeId
     planId
@@ -1308,6 +2116,9 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
 
           type: plan.type,
 
+
+          registrationDate:
+            plan.registrationDate || null,
 
           expiryDate:
             plan.expiryDate || null,
@@ -1484,52 +2295,61 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
 
     // ================= EXPIRY 65 DAYS FILTER =================
 
-    const expiryLimitDate = new Date();
+    // const expiryLimitDate = new Date();
 
-    expiryLimitDate.setDate(
-      expiryLimitDate.getDate() - 65
-    );
+    // expiryLimitDate.setDate(
+    //   expiryLimitDate.getDate() - 65
+    // );
     // ================= COMMON EXPIRY FILTER =================
 
-    const getExpiryFilter = () => {
+    // ================= COMMON EXPIRY FILTER =================
 
-      const expiryLimitDate = new Date();
+const getExpiryFilter = () => {
 
-      expiryLimitDate.setDate(
-        expiryLimitDate.getDate() - 65
-      );
+  const expiryLimitDate = new Date();
 
+  expiryLimitDate.setHours(
+    0,
+    0,
+    0,
+    0
+  );
 
-      return {
-        $or: [
+  expiryLimitDate.setDate(
+    expiryLimitDate.getDate() - 35
+  );
 
-          // Plan ഉള്ള orders എല്ലാം
-          {
-            _id: {
-              $in: planOrderIds
-            }
-          },
+  return {
+    $or: [
 
+      // ================= PLAN ORDERS =================
+      {
+        _id: {
+          $in: planOrderIds
+        },
+        expiryDate: {
+          $gte: expiryLimitDate
+        }
+      },
 
-          // Plan ഇല്ലാത്ത normal domains
-          {
-            dns_flag: false,
-            expiryDate: {
-              $gte: expiryLimitDate
-            }
-          },
+      // ================= NORMAL DOMAINS =================
+      {
+        dns_flag: false,
+        expiryDate: {
+          $gte: expiryLimitDate
+        }
+      },
 
+      // ================= NO EXPIRY DATE =================
+      {
+        dns_flag: false,
+        expiryDate: null
+      }
 
-          // Plan ഇല്ലാത്ത expiryDate ഇല്ലാത്ത domains
-          {
-            dns_flag: false,
-            expiryDate: null
-          }
+    ]
+  };
 
-        ]
-      };
-
-    };
+};
 
     // ================= SEARCH FILTER =================
 
@@ -1999,6 +2819,11 @@ router.get(
           ]
         })
         .populate({
+          path: "status",
+          model: "Status",
+          select: "name"
+        })
+        .populate({
           path: "domainSource",
           model: "DomainSource",
           select: "name code image"
@@ -2023,73 +2848,81 @@ router.get(
       }
 
       // Fetch related plans
-      const orderPlansRaw = await OrderPlan.find({
-        orderId: order._id
-      })
-        .populate({
-          path: "planId",
-          model: "PlanEmail"
-        })
-        .populate({
-          path: "emailTypeId",
-          model: "TypeEmail"
-        })
-        .populate({
-          path: "hostTypeId",
-          model: "HostType"
-        })
-        .populate({
-          path: "hostSubTypeId",
-          model: "HostSubType"
-        })
-        .populate({
-          path: "storageId",
-          model: "Storage"
-        })
-        .lean();
+     const orderPlansRaw = await OrderPlan.find({
+  orderId: order._id
+})
+  .populate({
+    path: "planId",
+    model: "PlanEmail"
+  })
+  .populate({
+    path: "emailTypeId",
+    model: "TypeEmail"
+  })
+  .populate({
+    path: "hostTypeId",
+    model: "HostType"
+  })
+  .populate({
+    path: "hostSubTypeId",
+    model: "HostSubType"
+  })
+  .populate({
+    path: "storageId",
+    model: "Storage"
+  })
+  .populate({
+    path: "status",
+    model: "Status",
+    select: "name",
+  })
+  .lean();
 
-      const orderPlans: IOrderPlanResponse[] = orderPlansRaw.map((p: any) => ({
-        _id: p._id.toString(),
-        orderId: p.orderId.toString(),
+     const orderPlans: IOrderPlanResponse[] = orderPlansRaw.map((p: any) => ({
+  _id: p._id.toString(),
+  orderId: p.orderId.toString(),
 
-        serviceType: p.type,
-        type: p.type,
+  serviceType: p.type,
+  type: p.type,
 
-        planName: p.planId?.plan || "",
-        planId: p.planId?._id?.toString() || "",
+  planName: p.planId?.plan || "",
+  planId: p.planId?._id?.toString() || "",
 
-        emailType: p.emailTypeId?.name || "",
+  emailType: p.emailTypeId?.name || "",
 
+  // ✅ PLAN STATUS
+  status: p.status
+    ? {
+        _id: p.status._id,
+        name: p.status.name,
+      }
+    : null,
 
-        hostType: p.hostTypeId
-          ? {
-            _id: p.hostTypeId._id,
-            name: p.hostTypeId.type,
-          }
-          : null,
+  hostType: p.hostTypeId
+    ? {
+        _id: p.hostTypeId._id,
+        name: p.hostTypeId.type,
+      }
+    : null,
 
+  hostSubType: p.hostSubTypeId
+    ? {
+        _id: p.hostSubTypeId._id,
+        name: p.hostSubTypeId.name,
+      }
+    : null,
 
-        hostSubType: p.hostSubTypeId
-          ? {
-            _id: p.hostSubTypeId._id,
-            name: p.hostSubTypeId.name,
-          }
-          : null,
+  storage: p.storageId
+    ? {
+        _id: p.storageId._id,
+        name: p.storageId.storage,
+      }
+    : null,
 
-
-        storage: p.storageId
-          ? {
-            _id: p.storageId._id,
-            name: p.storageId.storage,
-          }
-          : null,
-
-
-        registrationDate: p.registrationDate,
-        expiryDate: p.expiryDate,
-        noOfUsers: p.noOfUsers,
-      }));
-
+  registrationDate: p.registrationDate,
+  expiryDate: p.expiryDate,
+  noOfUsers: p.noOfUsers,
+}));
       // Merge client + customer details
       const clientData = order.client
         ? {
@@ -2239,272 +3072,282 @@ router.get(
 //     }
 //   }
 // );
-router.post("/", async (req: Request, res: Response): Promise<void> => {
-  try {
-    const data = req.body;
+router.post(
+  "/",
+  authMiddleware,
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const data = req.body;
 
-    let customerId: string | undefined;
+      let customerId: string | undefined;
 
-    // =====================================================
-    // CUSTOMER HANDLING
-    // =====================================================
+      // =====================================================
+      // CUSTOMER HANDLING
+      // =====================================================
 
-    if (data.is_customer) {
-
-      if (
-        !data.client ||
-        !(await Client.findById(data.client))
-      ) {
-        res.status(400).json({
-          success: false,
-          error: {
-            code: "INVALID_CLIENT",
-            message: "Invalid client"
-          }
-        });
-
-        return;
-      }
-
-      customerId = data.client.toString();
-
-    } else if (data.newCustomer) {
-
-      // New customer name required
-      if (
-        !data.newCustomer.c_name ||
-        data.newCustomer.c_name.trim() === ""
-      ) {
-        res.status(400).json({
-          success: false,
-          message: "New customer name is required"
-        });
-
-        return;
-      }
-
-      // Check existing customer
-      const existingCustomer = await Client.findOne({
-        c_email: data.newCustomer.c_email,
-      });
-
-      if (existingCustomer) {
-
-        customerId =
-          existingCustomer._id.toString();
-
-      } else {
-
-        // Create new customer
-        const newCust =
-          new Client(data.newCustomer);
-
-        const savedCustomer =
-          await newCust.save();
-
-        customerId =
-          savedCustomer._id.toString();
-      }
-    }
-
-
-    // =====================================================
-    // DOMAIN VALIDATION
-    // =====================================================
-
-    if (!data.domainName) {
-
-      res.status(400).json({
-        success: false,
-        error: {
-          code: "DOMAIN_REQUIRED",
-          message: "Domain name is required"
-        }
-      });
-
-      return;
-    }
-
-
-    // Check duplicate domain
-    const existingOrder =
-      await Order.findOne({
-        domainName: data.domainName
-      });
-
-
-    if (existingOrder) {
-
-      res.status(400).json({
-        success: false,
-        error: {
-          code: "DOMAIN_EXISTS",
-          message: "Domain already exists"
-        }
-      });
-
-      return;
-    }
-
-
-    // =====================================================
-    // PROVIDER VALIDATION
-    // =====================================================
-
-    const allowedProviders = [
-      "Google Workspace",
-      "Microsoft 365"
-    ];
-
-
-    if (
-      data.provider &&
-      !allowedProviders.includes(data.provider)
-    ) {
-
-      res.status(400).json({
-        success: false,
-        message: "Invalid provider"
-      });
-
-      return;
-    }
-
-
-    // =====================================================
-    // MAP REFERENCES
-    // =====================================================
-
-    const mappedData: any = {
-      ...data,
-
-      client: customerId,
-
-      hosttypeid:
-        data.hosting_plan || undefined,
-
-      subHostTypeId:
-        data.hosting_subplan || undefined,
-
-      hoststorageId:
-        data.storage || undefined,
-    };
-
-
-    // =====================================================
-    // DOMAIN SOURCE MAPPING
-    // =====================================================
-
-    if (data.domainSource) {
-
-      // Already ObjectId
-      if (
-        mongoose.Types.ObjectId.isValid(
-          data.domainSource
-        )
-      ) {
-
-        mappedData.domainSource =
-          data.domainSource;
-
-      }
-
-      // Domain source name
-      else {
-
-        const domainSourceDoc =
-          await DomainSource.findOne({
-            name: data.domainSource
-          });
-
-
-        if (!domainSourceDoc) {
-
+      if (data.is_customer) {
+        if (
+          !data.client ||
+          !(await Client.findById(data.client))
+        ) {
           res.status(400).json({
             success: false,
             error: {
-              code: "INVALID_DOMAIN_SOURCE",
-              message: "Domain source not found"
-            }
+              code: "INVALID_CLIENT",
+              message: "Invalid client",
+            },
           });
 
           return;
         }
 
+        customerId = data.client.toString();
+      } else if (data.newCustomer) {
+        if (
+          !data.newCustomer.c_name ||
+          data.newCustomer.c_name.trim() === ""
+        ) {
+          res.status(400).json({
+            success: false,
+            message: "New customer name is required",
+          });
 
-        mappedData.domainSource =
-          domainSourceDoc._id;
+          return;
+        }
+
+        const existingCustomer = await Client.findOne({
+          c_email: data.newCustomer.c_email,
+        });
+
+        if (existingCustomer) {
+          customerId = existingCustomer._id.toString();
+        } else {
+          const newCust = new Client(data.newCustomer);
+
+          const savedCustomer = await newCust.save();
+
+          customerId = savedCustomer._id.toString();
+        }
       }
-    }
 
+      // =====================================================
+      // DOMAIN VALIDATION
+      // =====================================================
 
-    // =====================================================
-    // CREATE ORDER
-    // =====================================================
+      if (!data.domainName) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "DOMAIN_REQUIRED",
+            message: "Domain name is required",
+          },
+        });
 
-    const newOrder =
-      new Order(mappedData);
+        return;
+      }
 
-    const savedOrder =
-      await newOrder.save();
+      // =====================================================
+      // DUPLICATE DOMAIN
+      // =====================================================
 
+      const existingOrder = await Order.findOne({
+        domainName: data.domainName,
+      });
 
-    // =====================================================
-    // SAVE ORDER PLANS
-    // =====================================================
+      if (existingOrder) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "DOMAIN_EXISTS",
+            message: "Domain already exists",
+          },
+        });
 
-    if (
-      data.plans &&
-      Array.isArray(data.plans)
-    ) {
+        return;
+      }
 
-      const plansToSave =
-        await Promise.all(
+      // =====================================================
+      // PROVIDER VALIDATION
+      // =====================================================
 
-          data.plans.map(
-            async (p: any) => {
+      const allowedProviders = [
+        "Google Workspace",
+        "Microsoft 365",
+      ];
 
-              // =================================================
-              // SERVICE TYPE REQUIRED
-              // =================================================
+      if (
+        data.provider &&
+        !allowedProviders.includes(data.provider)
+      ) {
+        res.status(400).json({
+          success: false,
+          message: "Invalid provider",
+        });
 
-              if (!p.type) {
+        return;
+      }
 
-                const error: any =
-                  new Error(
-                    "Service type required"
-                  );
+      // =====================================================
+      // MAP REFERENCES
+      // =====================================================
 
-                error.statusCode = 400;
+      const mappedData: any = {
+        ...data,
 
-                throw error;
-              }
+        client: customerId,
 
+        hosttypeid:
+          data.hosting_plan || undefined,
 
-              let planDoc = null;
+        subHostTypeId:
+          data.hosting_subplan || undefined,
 
-              let emailTypeDoc = null;
+        hoststorageId:
+          data.storage || undefined,
+      };
 
+      // =====================================================
+      // DOMAIN SOURCE MAPPING
+      // =====================================================
 
-              // =================================================
-              // EMAIL / STORAGE / MS OFFICE
-              // =================================================
+      if (data.domainSource) {
+        if (
+          mongoose.Types.ObjectId.isValid(
+            data.domainSource
+          )
+        ) {
+          mappedData.domainSource =
+            data.domainSource;
+        } else {
+          const domainSourceDoc =
+            await DomainSource.findOne({
+              name: data.domainSource,
+            });
 
-              if (
-                p.type === "email" ||
-                p.type === "storage" ||
-                p.type === "msoffice"
-              ) {
+          if (!domainSourceDoc) {
+            res.status(400).json({
+              success: false,
+              error: {
+                code: "INVALID_DOMAIN_SOURCE",
+                message: "Domain source not found",
+              },
+            });
 
-                // ---------------------------------------------
-                // EMAIL TYPE IS REQUIRED
-                // ---------------------------------------------
+            return;
+          }
 
-                if (!p.emailTypeId) {
+          mappedData.domainSource =
+            domainSourceDoc._id;
+        }
+      }
 
+      // =====================================================
+      // CREATE ORDER
+      // =====================================================
+
+      const newOrder = new Order(mappedData);
+
+      const savedOrder = await newOrder.save();
+
+      console.log(
+        "✅ ORDER SAVED:",
+        savedOrder._id.toString()
+      );
+
+      // =====================================================
+      // CREATE ORDER ACTIVITY LOG
+      // =====================================================
+
+      try {
+        const activityLog =
+          await ActivityLog.create({
+            entityType: "ORDER",
+
+            entityId: savedOrder._id,
+
+            orderId: savedOrder._id,
+
+            domainName:
+              savedOrder.domainName,
+
+            action: "CREATED",
+
+            performedBy:
+              req.user?._id || null,
+
+            performedByName:
+              (req as any).user?.name ||
+              "Unknown",
+
+            changes: [],
+
+            description:
+              `Domain ${savedOrder.domainName} was created`,
+
+            source:
+              req.user?.type === "customer"
+                ? "CUSTOMER"
+                : "ADMIN",
+
+            ipAddress:
+              req.ip,
+
+            userAgent:
+              req.get("user-agent") || "",
+
+            isSystemAction:
+              false,
+
+            metadata: {
+              clientId:
+                savedOrder.client || null,
+
+              domainSource:
+                savedOrder.domainSource || null,
+
+              provider:
+                savedOrder.provider || null,
+            },
+          });
+
+        console.log(
+          "✅ ACTIVITY LOG CREATED:",
+          activityLog._id.toString()
+        );
+
+      } catch (activityError) {
+
+        console.error(
+          "❌ ACTIVITY LOG ERROR:",
+          activityError
+        );
+
+        // Activity log failure should not hide
+        // successful order creation
+
+      }
+
+      // =====================================================
+      // SAVE ORDER PLANS
+      // =====================================================
+
+      if (
+        data.plans &&
+        Array.isArray(data.plans)
+      ) {
+        const plansToSave =
+          await Promise.all(
+            data.plans.map(
+              async (p: any) => {
+
+                // =================================================
+                // SERVICE TYPE REQUIRED
+                // =================================================
+
+                if (!p.type) {
                   const error: any =
                     new Error(
-                      "EmailTypeId is required for email, storage and msoffice"
+                      "Service type required"
                     );
 
                   error.statusCode = 400;
@@ -2512,55 +3355,90 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
                   throw error;
                 }
 
+                let planDoc = null;
 
-                // ---------------------------------------------
-                // FIND EMAIL TYPE
-                // ---------------------------------------------
+                let emailTypeDoc = null;
 
-                emailTypeDoc =
-                  await TypeEmail.findById(
-                    p.emailTypeId
-                  );
+                // =================================================
+                // EMAIL / STORAGE / MS OFFICE
+                // =================================================
 
+                if (
+                  p.type === "email" ||
+                  p.type === "storage" ||
+                  p.type === "msoffice"
+                ) {
+                  // ---------------------------------------------
+                  // EMAIL TYPE REQUIRED
+                  // ---------------------------------------------
 
-                if (!emailTypeDoc) {
-
-                  const error: any =
-                    new Error(
-                      "Invalid emailTypeId"
-                    );
-
-                  error.statusCode = 400;
-
-                  throw error;
-                }
-
-
-                // ---------------------------------------------
-                // PLAN IS OPTIONAL
-                // ---------------------------------------------
-                //
-                // This is important for:
-                //
-                // TITAN Webmail
-                // email type exists
-                // but no plan selected
-                //
-                // ---------------------------------------------
-
-                if (p.planId) {
-
-                  planDoc =
-                    await PlanEmail.findById(
-                      p.planId
-                    );
-
-
-                  if (!planDoc) {
-
+                  if (!p.emailTypeId) {
                     const error: any =
                       new Error(
-                        "Invalid planId"
+                        "EmailTypeId is required for email, storage and msoffice"
+                      );
+
+                    error.statusCode = 400;
+
+                    throw error;
+                  }
+
+                  // ---------------------------------------------
+                  // FIND EMAIL TYPE
+                  // ---------------------------------------------
+
+                  emailTypeDoc =
+                    await TypeEmail.findById(
+                      p.emailTypeId
+                    );
+
+                  if (!emailTypeDoc) {
+                    const error: any =
+                      new Error(
+                        "Invalid emailTypeId"
+                      );
+
+                    error.statusCode = 400;
+
+                    throw error;
+                  }
+
+                  // ---------------------------------------------
+                  // PLAN OPTIONAL
+                  // ---------------------------------------------
+
+                  if (p.planId) {
+                    planDoc =
+                      await PlanEmail.findById(
+                        p.planId
+                      );
+
+                    if (!planDoc) {
+                      const error: any =
+                        new Error(
+                          "Invalid planId"
+                        );
+
+                      error.statusCode = 400;
+
+                      throw error;
+                    }
+                  }
+                }
+
+                // =================================================
+                // HOSTING
+                // =================================================
+
+                if (p.type === "hosting") {
+                  if (
+                    !p.hostingType ||
+                    !p.hostingSubType ||
+                    !p.storage
+                  ) {
+                    const error: any =
+                      new Error(
+                        "Hosting details required"
                       );
 
                     error.statusCode = 400;
@@ -2569,348 +3447,463 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
                   }
                 }
 
-              }
+                // =================================================
+                // WEBSITE
+                // =================================================
 
-
-              // =================================================
-              // HOSTING
-              // =================================================
-
-              if (p.type === "hosting") {
-
-                if (
-                  !p.hostingType ||
-                  !p.hostingSubType ||
-                  !p.storage
-                ) {
-
-                  const error: any =
-                    new Error(
-                      "Hosting details required"
-                    );
-
-                  error.statusCode = 400;
-
-                  throw error;
+                if (p.type === "website") {
+                  // No additional validation
                 }
+
+                // =================================================
+                // SSL
+                // =================================================
+
+                if (p.type === "ssl") {
+                  // No additional validation
+                }
+
+                // =================================================
+                // RETURN ORDER PLAN
+                // =================================================
+
+                return {
+                  orderId:
+                    savedOrder._id,
+
+                  planId:
+                    planDoc?._id || null,
+
+                  emailTypeId:
+                    emailTypeDoc?._id || null,
+
+                  hostTypeId:
+                    p.hostingType || null,
+
+                  hostSubTypeId:
+                    p.hostingSubType || null,
+
+                  storageId:
+                    p.storage || null,
+
+                  type:
+                    p.type,
+
+                  registrationDate:
+                    p.registrationDate
+                      ? new Date(
+                          p.registrationDate
+                        )
+                      : new Date(),
+
+                  expiryDate:
+                    p.expiryDate
+                      ? new Date(
+                          p.expiryDate
+                        )
+                      : new Date(),
+
+                  noOfUsers:
+                    Number(
+                      p.noOfUsers || 1
+                    ),
+                };
               }
+            )
+          );
 
+        // =====================================================
+        // INSERT ORDER PLANS
+        // =====================================================
 
-              // =================================================
-              // WEBSITE
-              // =================================================
+        if (plansToSave.length > 0) {
+          const savedPlans =
+            await OrderPlan.insertMany(
+              plansToSave
+            );
 
-              if (p.type === "website") {
+          console.log(
+            "✅ ORDER PLANS SAVED:",
+            savedPlans.length
+          );
 
-                // No extra validation required
-                // website_flag comes from frontend
+          // ===================================================
+          // PLAN ACTIVITY LOG
+          // ===================================================
 
-              }
+          try {
+            const planActivity =
+              await ActivityLog.create({
+                entityType: "ORDER",
 
-
-              // =================================================
-              // SSL
-              // =================================================
-
-              if (p.type === "ssl") {
-
-                // No extra validation required
-                // ssl_flag comes from frontend
-
-              }
-
-
-              // =================================================
-              // RETURN ORDER PLAN
-              // =================================================
-
-              return {
+                entityId:
+                  savedOrder._id,
 
                 orderId:
                   savedOrder._id,
 
+                domainName:
+                  savedOrder.domainName,
 
-                // ---------------------------------------------
-                // EMAIL / STORAGE / MS OFFICE
-                // ---------------------------------------------
+                action:
+                  "PLAN_CHANGED",
 
-                planId:
-                  planDoc?._id || null,
+                performedBy:
+                  req.user?._id || null,
 
-                emailTypeId:
-                  emailTypeDoc?._id || null,
+                performedByName:
+                  (req as any).user?.name ||
+                  "Unknown",
 
+                changes: [],
 
-                // ---------------------------------------------
-                // HOSTING
-                // ---------------------------------------------
+                description:
+                  `Plans added for order ${savedOrder.domainName}`,
 
-                hostTypeId:
-                  p.hostingType || null,
+                source:
+                  req.user?.type === "customer"
+                    ? "CUSTOMER"
+                    : "ADMIN",
 
-                hostSubTypeId:
-                  p.hostingSubType || null,
+                ipAddress:
+                  req.ip,
 
-                storageId:
-                  p.storage || null,
+                userAgent:
+                  req.get("user-agent") || "",
 
+                isSystemAction:
+                  false,
 
-                // ---------------------------------------------
-                // COMMON
-                // ---------------------------------------------
+                metadata: {
+                  plans:
+                    savedPlans.map(
+                      (plan) => ({
+                        planId:
+                          plan.planId,
 
-                type:
-                  p.type,
+                        emailTypeId:
+                          plan.emailTypeId,
 
+                        hostTypeId:
+                          plan.hostTypeId,
 
-                registrationDate:
-                  p.registrationDate
-                    ? new Date(
-                        p.registrationDate
-                      )
-                    : new Date(),
+                        hostSubTypeId:
+                          plan.hostSubTypeId,
 
+                        storageId:
+                          plan.storageId,
 
-                expiryDate:
-                  p.expiryDate
-                    ? new Date(
-                        p.expiryDate
-                      )
-                    : new Date(),
+                        type:
+                          plan.type,
 
+                        noOfUsers:
+                          plan.noOfUsers,
+                      })
+                    ),
+                },
+              });
 
-                noOfUsers:
-                  Number(
-                    p.noOfUsers || 1
-                  )
+            console.log(
+              "✅ PLAN ACTIVITY CREATED:",
+              planActivity._id.toString()
+            );
 
-              };
+          } catch (activityError) {
 
-            }
-          )
-        );
+            console.error(
+              "❌ PLAN ACTIVITY ERROR:",
+              activityError
+            );
 
-
-      // =====================================================
-      // INSERT ORDER PLANS
-      // =====================================================
-
-      if (plansToSave.length > 0) {
-
-        await OrderPlan.insertMany(
-          plansToSave
-        );
-      }
-    }
-
-
-    // =====================================================
-    // SUCCESS RESPONSE
-    // =====================================================
-
-    res.status(201).json({
-
-      success: true,
-
-      data: savedOrder
-
-    });
-
-  }
-
-
-  // =======================================================
-  // ERROR HANDLING
-  // =======================================================
-
-  catch (err: any) {
-
-    console.error(
-      "❌ Order creation error:",
-      err
-    );
-
-
-    // ---------------------------------------------
-    // Custom validation error
-    // ---------------------------------------------
-
-    if (err.statusCode) {
-
-      res.status(
-        err.statusCode
-      ).json({
-
-        success: false,
-
-        error: {
-
-          code:
-            "VALIDATION_ERROR",
-
-          message:
-            err.message
-
+          }
         }
-
-      });
-
-      return;
-    }
-
-
-    // ---------------------------------------------
-    // Mongoose validation error
-    // ---------------------------------------------
-
-    if (
-      err.name === "ValidationError"
-    ) {
-
-      res.status(400).json({
-
-        success: false,
-
-        error: {
-
-          code:
-            "VALIDATION_ERROR",
-
-          message:
-            err.message
-
-        }
-
-      });
-
-      return;
-    }
-
-
-    // ---------------------------------------------
-    // Duplicate entry
-    // ---------------------------------------------
-
-    if (
-      err.code === 11000
-    ) {
-
-      res.status(400).json({
-
-        success: false,
-
-        error: {
-
-          code:
-            "DUPLICATE_ENTRY",
-
-          message:
-            "Domain already exists"
-
-        }
-
-      });
-
-      return;
-    }
-
-
-    // ---------------------------------------------
-    // Internal server error
-    // ---------------------------------------------
-
-    res.status(500).json({
-
-      success: false,
-
-      error: {
-
-        code:
-          "INTERNAL_SERVER_ERROR",
-
-        message:
-          "Something went wrong"
-
       }
 
-    });
+      // =====================================================
+      // SUCCESS RESPONSE
+      // =====================================================
 
+      res.status(201).json({
+        success: true,
+        data: savedOrder,
+      });
+
+    } catch (err: any) {
+
+      console.error(
+        "❌ Order creation error:",
+        err
+      );
+
+      // =====================================================
+      // CUSTOM VALIDATION ERROR
+      // =====================================================
+
+      if (err.statusCode) {
+        res.status(
+          err.statusCode
+        ).json({
+          success: false,
+          error: {
+            code:
+              "VALIDATION_ERROR",
+            message:
+              err.message,
+          },
+        });
+
+        return;
+      }
+
+      // =====================================================
+      // MONGOOSE VALIDATION ERROR
+      // =====================================================
+
+      if (
+        err.name ===
+        "ValidationError"
+      ) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code:
+              "VALIDATION_ERROR",
+            message:
+              err.message,
+          },
+        });
+
+        return;
+      }
+
+      // =====================================================
+      // DUPLICATE ENTRY
+      // =====================================================
+
+      if (
+        err.code === 11000
+      ) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code:
+              "DUPLICATE_ENTRY",
+            message:
+              "Domain already exists",
+          },
+        });
+
+        return;
+      }
+
+      // =====================================================
+      // INTERNAL SERVER ERROR
+      // =====================================================
+
+      res.status(500).json({
+        success: false,
+        error: {
+          code:
+            "INTERNAL_SERVER_ERROR",
+          message:
+            "Something went wrong",
+        },
+      });
+    }
   }
-});
+);
 
-// PUT update order
+
+// =====================================================
+// PUT - UPDATE ORDER
+// =====================================================
+
 router.put("/:id", async (req: Request, res: Response): Promise<void> => {
   try {
-    const { newCustomer, client: existingClient, is_customer, plans, ...rest }: any = req.body;
+    const {
+      newCustomer,
+      client: existingClient,
+      is_customer,
+      plans,
+      ...rest
+    }: any = req.body;
+
+    // =====================================================
+    // GET OLD ORDER
+    // =====================================================
+
+    const oldOrder = await Order.findById(req.params.id).lean();
+
+    if (!oldOrder) {
+      res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+      return;
+    }
+
+    // =====================================================
+    // DETERMINE CLIENT
+    // =====================================================
 
     let clientId;
 
-    // -------------------------
-    // Determine client
-    // -------------------------
     if (is_customer) {
       if (existingClient) {
-        // ✅ Handle both object and string client
+        // Handle both object and string client
         const clientIdValue =
           typeof existingClient === "object" && existingClient._id
             ? existingClient._id
             : existingClient;
 
         if (!mongoose.Types.ObjectId.isValid(clientIdValue)) {
-          res.status(400).json({ success: false, message: "Invalid client ID" });
+          res.status(400).json({
+            success: false,
+            message: "Invalid client ID",
+          });
           return;
         }
 
         clientId = new mongoose.Types.ObjectId(clientIdValue);
       } else {
-        res.status(400).json({ success: false, message: "Existing client ID is required" });
+        res.status(400).json({
+          success: false,
+          message: "Existing client ID is required",
+        });
         return;
       }
     } else if (newCustomer?.c_name && newCustomer?.c_email?.length) {
-      // ✅ Create new client if not existing
+      // Create new client
       const { _id, ...customerData } = newCustomer;
+
       const createdClient = await Client.create(customerData);
+
       clientId = createdClient._id;
     } else {
-      res.status(400).json({ success: false, message: "New customer data is required" });
+      res.status(400).json({
+        success: false,
+        message: "New customer data is required",
+      });
       return;
     }
 
-    // -------------------------
-    // Prepare update payload
-    // -------------------------
+    // =====================================================
+    // PREPARE UPDATE PAYLOAD
+    // =====================================================
+
     const updatePayload: any = {
       ...rest,
       client: clientId,
-      hoststorageId: rest.hoststorageId?._id || rest.hoststorageId,
-
+      hoststorageId:
+        rest.hoststorageId?._id || rest.hoststorageId,
     };
 
-    // -------------------------
-    // Update order
-    // -------------------------
-    const updatedOrder = await Order.findByIdAndUpdate(req.params.id, updatePayload, {
-      new: true,
-      runValidators: true,
-    });
+    // =====================================================
+    // UPDATE ORDER
+    // =====================================================
+
+    const updatedOrder = await Order.findByIdAndUpdate(
+      req.params.id,
+      updatePayload,
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
 
     if (!updatedOrder) {
-      res.status(404).json({ success: false, message: "Order not found" });
+      res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
       return;
     }
 
-    // -------------------------
-    // Handle Order Plans
-    // -------------------------
-    // -------------------------
-    // Handle Order Plans
-    // -------------------------
+    // =====================================================
+    // ORDER ACTIVITY LOG
+    // =====================================================
+
+    const orderChanges: {
+      field: string;
+      oldValue?: any;
+      newValue?: any;
+    }[] = [];
+
+    Object.keys(updatePayload).forEach((field) => {
+      const oldValue = (oldOrder as any)[field];
+      const newValue = (updatedOrder as any)[field];
+
+      const oldString = String(oldValue ?? "");
+      const newString = String(newValue ?? "");
+
+      // Only save changed fields
+      if (oldString !== newString) {
+        orderChanges.push({
+          field,
+          oldValue,
+          newValue,
+        });
+      }
+    });
+
+    // Create order activity only if something changed
+    if (orderChanges.length > 0) {
+      await ActivityLog.create({
+        entityType: "ORDER",
+        entityId: updatedOrder._id,
+        orderId: updatedOrder._id,
+        domainName: updatedOrder.domainName,
+
+        action: "UPDATED",
+
+        performedBy: (req as any).user?._id,
+        performedByName: (req as any).user?.name,
+
+        changes: orderChanges,
+
+        description:
+          `Order ${updatedOrder.domainName} was updated`,
+
+        source: "ADMIN",
+
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent"),
+
+        isSystemAction: false,
+      });
+    }
+
+    // =====================================================
+    // HANDLE ORDER PLANS
+    // =====================================================
+
     if (plans && Array.isArray(plans)) {
 
-      // Remove old plans
+      // =====================================================
+      // GET OLD PLANS BEFORE DELETE
+      // =====================================================
+
+      const oldPlans = await OrderPlan.find({
+        orderId: updatedOrder._id,
+      })
+        .populate("planId")
+        .populate("emailTypeId")
+        .populate("hostTypeId")
+        .populate("hostSubTypeId")
+        .populate("storageId")
+        .lean();
+
+      // =====================================================
+      // DELETE OLD PLANS
+      // =====================================================
+
       await OrderPlan.deleteMany({
-        orderId: updatedOrder._id
+        orderId: updatedOrder._id,
       });
+
+      // =====================================================
+      // PREPARE NEW PLANS
+      // =====================================================
 
       const planDocs = await Promise.all(
         plans.map(async (p: any) => {
@@ -2918,22 +3911,24 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
           let planId = p.planId || null;
           let emailTypeId = p.emailTypeId || null;
 
-
-          // -------------------------
+          // =================================================
           // EMAIL / STORAGE / MS OFFICE
-          // Need PlanEmail + TypeEmail
-          // -------------------------
+          // =================================================
+
           if (
             p.type === "email" ||
             p.type === "storage" ||
             p.type === "msoffice"
           ) {
 
-            // Plan validation
+            // -----------------------------------------------
+            // PLAN VALIDATION
+            // -----------------------------------------------
+
             if (!planId && p.planName) {
 
               const plan = await PlanEmail.findOne({
-                plan: p.planName
+                plan: p.planName,
               });
 
               if (!plan) {
@@ -2945,12 +3940,14 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
               planId = plan._id;
             }
 
+            // -----------------------------------------------
+            // EMAIL TYPE VALIDATION
+            // -----------------------------------------------
 
-            // Email type validation
             if (!emailTypeId && p.emailType) {
 
               const emailType = await TypeEmail.findOne({
-                type: p.emailType
+                type: p.emailType,
               });
 
               if (!emailType) {
@@ -2963,94 +3960,528 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
             }
           }
 
-
-          // -------------------------
-          // HOSTING / WEBSITE / SSL
-          // No PlanEmail validation
-          // -------------------------
-
+          // =================================================
+          // RETURN PLAN DOCUMENT
+          // =================================================
 
           return {
 
             orderId: updatedOrder._id,
 
+            // -----------------------------------------------
+            // PLAN
+            // -----------------------------------------------
 
             planId:
               planId &&
-                mongoose.Types.ObjectId.isValid(planId)
+              mongoose.Types.ObjectId.isValid(planId)
                 ? new mongoose.Types.ObjectId(planId)
                 : null,
 
+            // -----------------------------------------------
+            // EMAIL TYPE
+            // -----------------------------------------------
 
             emailTypeId:
               emailTypeId &&
-                mongoose.Types.ObjectId.isValid(emailTypeId)
+              mongoose.Types.ObjectId.isValid(emailTypeId)
                 ? new mongoose.Types.ObjectId(emailTypeId)
                 : null,
 
+            // -----------------------------------------------
+            // HOSTING TYPE
+            // -----------------------------------------------
 
-            // ✅ HOSTING FIELDS
             hostTypeId:
               p.hostingType &&
-                mongoose.Types.ObjectId.isValid(p.hostingType)
-                ? new mongoose.Types.ObjectId(p.hostingType)
+              mongoose.Types.ObjectId.isValid(
+                p.hostingType
+              )
+                ? new mongoose.Types.ObjectId(
+                    p.hostingType
+                  )
                 : null,
 
+            // -----------------------------------------------
+            // HOSTING SUB TYPE
+            // -----------------------------------------------
 
             hostSubTypeId:
               p.hostingSubType &&
-                mongoose.Types.ObjectId.isValid(p.hostingSubType)
-                ? new mongoose.Types.ObjectId(p.hostingSubType)
+              mongoose.Types.ObjectId.isValid(
+                p.hostingSubType
+              )
+                ? new mongoose.Types.ObjectId(
+                    p.hostingSubType
+                  )
                 : null,
 
+            // -----------------------------------------------
+            // STORAGE
+            // -----------------------------------------------
 
             storageId:
               p.storage &&
-                mongoose.Types.ObjectId.isValid(p.storage)
+              mongoose.Types.ObjectId.isValid(p.storage)
                 ? new mongoose.Types.ObjectId(p.storage)
                 : null,
 
+            // -----------------------------------------------
+            // REGISTRATION DATE
+            // -----------------------------------------------
 
             registrationDate:
               p.registrationDate
                 ? new Date(p.registrationDate)
                 : null,
 
+            // -----------------------------------------------
+            // EXPIRY DATE
+            // -----------------------------------------------
 
             expiryDate:
               p.expiryDate
                 ? new Date(p.expiryDate)
                 : null,
 
+            // -----------------------------------------------
+            // NUMBER OF USERS
+            // -----------------------------------------------
 
             noOfUsers:
               Number(p.noOfUsers || 1),
 
+            // -----------------------------------------------
+            // TYPE
+            // -----------------------------------------------
 
             type: p.type,
-
           };
         })
       );
 
+      // =====================================================
+      // INSERT NEW PLANS
+      // =====================================================
 
       await OrderPlan.insertMany(planDocs);
-    }
-    // -------------------------
-    // Populate for response
-    // -------------------------
-    const populatedOrder = await Order.findById(updatedOrder._id)
-      .populate("client")
-      .populate({
-        path: "hoststorageId",
-        populate: [{ path: "hostType" }, { path: "hostSubType" }],
-      });
 
-    // ✅ Send success response
-    res.status(200).json({ success: true, data: populatedOrder });
+      // =====================================================
+      // GET NEW PLANS WITH POPULATED DATA
+      // =====================================================
+
+      const newPlans = await OrderPlan.find({
+        orderId: updatedOrder._id,
+      })
+        .populate("planId")
+        .populate("emailTypeId")
+        .populate("hostTypeId")
+        .populate("hostSubTypeId")
+        .populate("storageId")
+        .lean();
+
+      // =====================================================
+      // PLAN CHANGES
+      // =====================================================
+
+      const planChanges: {
+        field: string;
+        oldValue?: any;
+        newValue?: any;
+      }[] = [];
+
+      const maxPlans = Math.max(
+        oldPlans.length,
+        newPlans.length
+      );
+
+      // =====================================================
+      // COMPARE EVERY PLAN
+      // =====================================================
+
+      for (let i = 0; i < maxPlans; i++) {
+
+        const oldPlan: any = oldPlans[i];
+        const newPlan: any = newPlans[i];
+
+        // =================================================
+        // NEW PLAN ADDED
+        // =================================================
+
+        if (!oldPlan && newPlan) {
+
+          planChanges.push({
+            field: `plans[${i}]`,
+            oldValue: null,
+            newValue: {
+              plan:
+                newPlan.planId?.plan || null,
+
+              emailType:
+                newPlan.emailTypeId?.type || null,
+
+              hostingType:
+                newPlan.hostTypeId?.name || null,
+
+              hostingSubType:
+                newPlan.hostSubTypeId?.name || null,
+
+              storage:
+                newPlan.storageId?.name || null,
+
+              registrationDate:
+                newPlan.registrationDate || null,
+
+              expiryDate:
+                newPlan.expiryDate || null,
+
+              noOfUsers:
+                newPlan.noOfUsers || 0,
+
+              type:
+                newPlan.type || null,
+            },
+          });
+
+          continue;
+        }
+
+        // =================================================
+        // PLAN REMOVED
+        // =================================================
+
+        if (oldPlan && !newPlan) {
+
+          planChanges.push({
+            field: `plans[${i}]`,
+            oldValue: {
+              plan:
+                oldPlan.planId?.plan || null,
+
+              emailType:
+                oldPlan.emailTypeId?.type || null,
+
+              hostingType:
+                oldPlan.hostTypeId?.name || null,
+
+              hostingSubType:
+                oldPlan.hostSubTypeId?.name || null,
+
+              storage:
+                oldPlan.storageId?.name || null,
+
+              registrationDate:
+                oldPlan.registrationDate || null,
+
+              expiryDate:
+                oldPlan.expiryDate || null,
+
+              noOfUsers:
+                oldPlan.noOfUsers || 0,
+
+              type:
+                oldPlan.type || null,
+            },
+            newValue: null,
+          });
+
+          continue;
+        }
+
+        // =================================================
+        // PLAN
+        // =================================================
+
+        const oldPlanId =
+          oldPlan?.planId?._id?.toString() || "";
+
+        const newPlanId =
+          newPlan?.planId?._id?.toString() || "";
+
+        if (oldPlanId !== newPlanId) {
+
+          planChanges.push({
+            field: `plans[${i}].plan`,
+            oldValue:
+              oldPlan?.planId?.plan || null,
+            newValue:
+              newPlan?.planId?.plan || null,
+          });
+        }
+
+        // =================================================
+        // EMAIL TYPE
+        // =================================================
+
+        const oldEmailTypeId =
+          oldPlan?.emailTypeId?._id?.toString() || "";
+
+        const newEmailTypeId =
+          newPlan?.emailTypeId?._id?.toString() || "";
+
+        if (
+          oldEmailTypeId !== newEmailTypeId
+        ) {
+
+          planChanges.push({
+            field: `plans[${i}].emailType`,
+            oldValue:
+              oldPlan?.emailTypeId?.type || null,
+            newValue:
+              newPlan?.emailTypeId?.type || null,
+          });
+        }
+
+        // =================================================
+        // HOSTING TYPE
+        // =================================================
+
+        const oldHostTypeId =
+          oldPlan?.hostTypeId?._id?.toString() || "";
+
+        const newHostTypeId =
+          newPlan?.hostTypeId?._id?.toString() || "";
+
+        if (
+          oldHostTypeId !== newHostTypeId
+        ) {
+
+          planChanges.push({
+            field: `plans[${i}].hostingType`,
+            oldValue:
+              oldPlan?.hostTypeId?.name || null,
+            newValue:
+              newPlan?.hostTypeId?.name || null,
+          });
+        }
+
+        // =================================================
+        // HOSTING SUB TYPE
+        // =================================================
+
+        const oldHostSubTypeId =
+          oldPlan?.hostSubTypeId?._id?.toString() || "";
+
+        const newHostSubTypeId =
+          newPlan?.hostSubTypeId?._id?.toString() || "";
+
+        if (
+          oldHostSubTypeId !== newHostSubTypeId
+        ) {
+
+          planChanges.push({
+            field: `plans[${i}].hostingSubType`,
+            oldValue:
+              oldPlan?.hostSubTypeId?.name || null,
+            newValue:
+              newPlan?.hostSubTypeId?.name || null,
+          });
+        }
+
+        // =================================================
+        // STORAGE
+        // =================================================
+
+        const oldStorageId =
+          oldPlan?.storageId?._id?.toString() || "";
+
+        const newStorageId =
+          newPlan?.storageId?._id?.toString() || "";
+
+        if (
+          oldStorageId !== newStorageId
+        ) {
+
+          planChanges.push({
+            field: `plans[${i}].storage`,
+            oldValue:
+              oldPlan?.storageId?.name || null,
+            newValue:
+              newPlan?.storageId?.name || null,
+          });
+        }
+
+        // =================================================
+        // REGISTRATION DATE
+        // =================================================
+
+        const oldRegistration =
+          oldPlan?.registrationDate
+            ? new Date(
+                oldPlan.registrationDate
+              ).getTime()
+            : null;
+
+        const newRegistration =
+          newPlan?.registrationDate
+            ? new Date(
+                newPlan.registrationDate
+              ).getTime()
+            : null;
+
+        if (
+          oldRegistration !== newRegistration
+        ) {
+
+          planChanges.push({
+            field:
+              `plans[${i}].registrationDate`,
+
+            oldValue:
+              oldPlan?.registrationDate || null,
+
+            newValue:
+              newPlan?.registrationDate || null,
+          });
+        }
+
+        // =================================================
+        // EXPIRY DATE
+        // =================================================
+
+        const oldExpiry =
+          oldPlan?.expiryDate
+            ? new Date(
+                oldPlan.expiryDate
+              ).getTime()
+            : null;
+
+        const newExpiry =
+          newPlan?.expiryDate
+            ? new Date(
+                newPlan.expiryDate
+              ).getTime()
+            : null;
+
+        if (oldExpiry !== newExpiry) {
+
+          planChanges.push({
+            field:
+              `plans[${i}].expiryDate`,
+
+            oldValue:
+              oldPlan?.expiryDate || null,
+
+            newValue:
+              newPlan?.expiryDate || null,
+          });
+        }
+
+        // =================================================
+        // NUMBER OF USERS
+        // =================================================
+
+        const oldUsers =
+          Number(oldPlan?.noOfUsers || 0);
+
+        const newUsers =
+          Number(newPlan?.noOfUsers || 0);
+
+        if (oldUsers !== newUsers) {
+
+          planChanges.push({
+            field:
+              `plans[${i}].noOfUsers`,
+
+            oldValue: oldUsers,
+            newValue: newUsers,
+          });
+        }
+
+        // =================================================
+        // TYPE
+        // =================================================
+
+        const oldType =
+          oldPlan?.type || null;
+
+        const newType =
+          newPlan?.type || null;
+
+        if (oldType !== newType) {
+
+          planChanges.push({
+            field:
+              `plans[${i}].type`,
+
+            oldValue: oldType,
+            newValue: newType,
+          });
+        }
+      }
+
+      // =====================================================
+      // CREATE PLAN ACTIVITY LOG
+      // =====================================================
+
+      if (planChanges.length > 0) {
+
+        await ActivityLog.create({
+          entityType: "ORDER",
+          entityId: updatedOrder._id,
+          orderId: updatedOrder._id,
+          domainName: updatedOrder.domainName,
+
+          action: "PLAN_CHANGED",
+
+          performedBy:
+            (req as any).user?._id,
+
+          performedByName:
+            (req as any).user?.name,
+
+          changes: planChanges,
+
+          description:
+            `Plans updated for order ${updatedOrder.domainName}`,
+
+          source: "ADMIN",
+
+          ipAddress: req.ip,
+
+          userAgent:
+            req.get("user-agent"),
+
+          isSystemAction: false,
+        });
+      }
+    }
+
+    // =====================================================
+    // POPULATE FOR RESPONSE
+    // =====================================================
+
+    const populatedOrder =
+      await Order.findById(updatedOrder._id)
+        .populate("client")
+        .populate({
+          path: "hoststorageId",
+          populate: [
+            { path: "hostType" },
+            { path: "hostSubType" },
+          ],
+        });
+
+    // =====================================================
+    // SUCCESS RESPONSE
+    // =====================================================
+
+    res.status(200).json({
+      success: true,
+      data: populatedOrder,
+    });
+
   } catch (err: any) {
-    console.error("Error updating order:", err);
-    res.status(500).json({ success: false, error: err.message });
+
+    console.error(
+      "Error updating order:",
+      err
+    );
+
+    res.status(500).json({
+      success: false,
+      error: err.message,
+    });
   }
 });
 router.put(
@@ -3848,29 +5279,4 @@ router.get("/orderplans/:orderid", async (req: Request, res: Response): Promise<
     res.status(500).json({ error: "Failed to fetch order plans" });
   }
 });
-
-
-// router.put("/:id", async (req: Request, res: Response): Promise<void> => {
-//   try {
-//     const { id } = req.params;
-//     const updateData = req.body as Partial<IOrder>;
-
-//     const updatedOrder = await mongoose.model<IOrder>("Order").findByIdAndUpdate(id, updateData, {
-//       new: true, // return the updated document
-//       runValidators: true, // validate before updating
-//     }).populate("customer registrarName"); // optional: populate references
-
-//     if (!updatedOrder) {
-//       res.status(404).json({ message: "Order not found" });
-//       return;
-//     }
-
-//     res.status(200).json(updatedOrder);
-//   } catch (error) {
-//     console.error("Error updating order:", error);
-//     res.status(500).json({ message: "Server error", error });
-//   }
-// });
-
-
 export default router;

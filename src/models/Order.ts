@@ -2,7 +2,7 @@ import mongoose, { Document } from "mongoose";
 
 export interface IOrder extends Document {
   domainName: string;
-  status?: string;
+status?: mongoose.Types.ObjectId;
   customer?: mongoose.Types.ObjectId;
   client?: mongoose.Types.ObjectId;
   emailtypeid?: mongoose.Types.ObjectId;
@@ -12,6 +12,7 @@ export interface IOrder extends Document {
   hoststorageId?: mongoose.Types.ObjectId;
   registrarName?: mongoose.Types.ObjectId;
   managedBy: "Signroots" | "Customer";
+  server_status?: string;
   is_active:{
   type:Boolean,
   default:true
@@ -20,6 +21,13 @@ order_status: {
   type: String,
   enum: ["ACTIVE", "EXPIRED"],
   default: "ACTIVE"
+},
+archived_status: {
+  type: String,
+  enum: [
+    "REDEMPTION PERIOD",
+    "PENDING DELETE RESTORABLE",
+  ],
 },
   registrationDate?: Date;
   expiryDate?: Date;
@@ -68,12 +76,19 @@ const orderSchema = new mongoose.Schema<IOrder>(
     // Basic Domain Information
     // ========================
     domainName: { type: String, required: true, index: true, unique: true },
-    status: { type: String },
+status: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Status",
+},
     order_status: {
     type: String,
     enum: ["ACTIVE", "EXPIRED"],
     default: "ACTIVE"
   },
+   archived_status:{
+    type: String,
+    enum:["REDEMPTION PERIOD","PENDING DELETE RESTORABLE"]
+   },
     customer: { type: mongoose.Schema.Types.ObjectId, ref: "Customer" },
     client: { type: mongoose.Schema.Types.ObjectId, ref: "Client" },
     registrarName: { type: mongoose.Schema.Types.ObjectId, ref: "Registrar" },
@@ -147,6 +162,7 @@ hoststorageId: { type: mongoose.Schema.Types.ObjectId, ref: "Storage" },
     // ========================
     subscription: { type: String },
     email_status: { type: String },
+    server_status: { type: String },
     username: { type: String },
     password: { type: String },
     users: { type: Number },

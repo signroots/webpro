@@ -1,40 +1,40 @@
-// import cron from "node-cron";
-// import { syncCloudflareDomains }
-//   from "../services/cloudflareSync";
+import cron from "node-cron";
+import { syncCloudflareDomains }
+  from "../services/cloudflareSync";
 
-// let isRunning = false;
+let isRunning = false;
 
-// cron.schedule("* * * * *", async () => {
+cron.schedule("* * * * *", async () => {
 
-//   if (isRunning) {
-//     console.log(
-//       "⚠️ Previous Cloudflare sync still running"
-//     );
-//     return;
-//   }
+  if (isRunning) {
+    console.log(
+      "⚠️ Previous Cloudflare sync still running"
+    );
+    return;
+  }
 
-//   isRunning = true;
+  isRunning = true;
 
-//   console.log("⏰ Running Cloudflare auto sync");
+  console.log("⏰ Running Cloudflare auto sync");
 
-//   try {
+  try {
 
-//     await syncCloudflareDomains();
+    await syncCloudflareDomains();
 
-//     console.log(
-//       "✅ Cloudflare auto sync completed"
-//     );
+    console.log(
+      "✅ Cloudflare auto sync completed"
+    );
 
-//   } catch (err) {
+  } catch (err) {
 
-//     console.error(
-//       "❌ Cloudflare sync failed",
-//       err
-//     );
+    console.error(
+      "❌ Cloudflare sync failed",
+      err
+    );
 
-//   } finally {
+  } finally {
 
-//     isRunning = false;
+    isRunning = false;
 
-//   }
-// });
+  }
+});

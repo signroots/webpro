@@ -8,6 +8,158 @@ components:
       bearerFormat: JWT
 paths:
 
+  /users/register:
+
+    post:
+
+      tags:
+        - Authentication
+
+      summary: Register User
+
+      description: |
+        Register a new user.
+        If the selected user type is "Customer" and customer details are provided,
+        a Customer record will also be created and associated with the user.
+
+      requestBody:
+
+        required: true
+
+        content:
+
+          application/json:
+
+            schema:
+
+              type: object
+
+              required:
+                - email
+                - password
+                - name
+                - userType
+
+              properties:
+
+                email:
+                  type: string
+                  format: email
+                  example: admin@example.com
+
+                password:
+                  type: string
+                  format: password
+                  minLength: 6
+                  example: password123
+
+                name:
+                  type: string
+                  example: John Doe
+
+                userType:
+                  type: string
+                  description: MongoDB ObjectId of the user type
+                  example: 687fd15f4c25dd8d0b6e1234
+
+                customerDetails:
+                  type: object
+                  nullable: true
+                  description: Customer details required when the selected user type is Customer
+                  example:
+                    phone: "+91 9876543210"
+                    companyName: ABC Company
+                    address: "Kochi, Kerala"
+
+      responses:
+
+        "201":
+          description: User registered successfully
+
+          content:
+            application/json:
+
+              schema:
+                type: object
+
+                properties:
+
+                  message:
+                    type: string
+                    example: User registered successfully
+
+                  user:
+                    type: object
+                    properties:
+
+                      _id:
+                        type: string
+                        example: 687fd15f4c25dd8d0b6e1234
+
+                      email:
+                        type: string
+                        example: admin@example.com
+
+                      name:
+                        type: string
+                        example: John Doe
+
+                      userType:
+                        type: string
+                        example: 687fd15f4c25dd8d0b6e1234
+
+                      customer:
+                        type: string
+                        nullable: true
+                        example: 687fd15f4c25dd8d0b6e5678
+
+        "400":
+          description: Bad request
+
+          content:
+            application/json:
+
+              schema:
+                type: object
+
+                properties:
+                  error:
+                    type: string
+                    example: Password must be at least 6 characters long
+
+          examples:
+
+            Invalid password:
+              value:
+                error: Password must be at least 6 characters long
+
+            Missing user type:
+              value:
+                error: User type is required
+
+            Invalid user type:
+              value:
+                error: Invalid user type
+
+            Duplicate email:
+              value:
+                error: Email already registered
+
+        "500":
+          description: Server error
+
+          content:
+            application/json:
+
+              schema:
+                type: object
+
+                properties:
+                  error:
+                    type: string
+                    example: Server error
+
+
   /users/login:
 
     post:
@@ -15,10 +167,15 @@ paths:
       tags:
         - Authentication
 
-      summary: Admin user login
+      summary: Login User or Client
 
-      description: Login using email and password
+      description: |
+        Authenticate a registered user or client using email and password.
 
+        The API first checks the Users collection.
+        If the user is not found, it checks the Clients collection.
+
+        A successful login returns an access token and refresh token.
 
       requestBody:
 
@@ -39,29 +196,21 @@ paths:
               properties:
 
                 email:
-
                   type: string
-
-                  example: signroots@gmail.com
-
+                  format: email
+                  example: admin@example.com
 
                 password:
-
                   type: string
-
+                  format: password
                   example: password123
-
-
 
       responses:
 
-
         "200":
-
           description: Login successful
 
           content:
-
             application/json:
 
               schema:
@@ -71,119 +220,158 @@ paths:
                 properties:
 
                   success:
-
                     type: boolean
-
                     example: true
 
-
                   accessToken:
-
                     type: string
-
+                    description: JWT access token
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
                   refreshToken:
-
                     type: string
-
+                    description: JWT refresh token
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
                   user:
-
                     type: object
 
                     properties:
 
                       id:
-
                         type: string
+                        example: 687fd15f4c25dd8d0b6e1234
 
                       email:
-
                         type: string
+                        example: admin@example.com
 
                       name:
-
                         type: string
+                        example: John Doe
 
                       role:
-
                         type: string
+                        example: Admin
 
+                      type:
+                        type: string
+                        enum:
+                          - user
+                          - customer
+                        example: user
 
-
-        "404":
-
-          description: User not found
-
+                      clientId:
+                        type: string
+                        nullable: true
+                        example: null
 
         "400":
+          description: Invalid request or credentials
 
-          description: Invalid credentials
+          content:
+            application/json:
+
+              schema:
+                type: object
+
+                properties:
+
+                  success:
+                    type: boolean
+                    example: false
+
+                  error:
+                    type: string
+                    example: Invalid credentials
+
+          examples:
+
+            Missing credentials:
+              value:
+                success: false
+                error: Email and password are required
+
+            Invalid credentials:
+              value:
+                success: false
+                error: Invalid credentials
+
+            Client password missing:
+              value:
+                success: false
+                error: Client password is not configured
+
+        "403":
+          description: Client account access denied
+
+          content:
+            application/json:
+
+              schema:
+                type: object
+
+                properties:
+
+                  success:
+                    type: boolean
+                    example: false
+
+                  error:
+                    type: string
+                    example: Client account is inactive
+
+          examples:
+
+            Inactive client:
+              value:
+                success: false
+                error: Client account is inactive
+
+            Portal disabled:
+              value:
+                success: false
+                error: Client portal access is disabled
+
+        "404":
+          description: User or client not found
+
+          content:
+            application/json:
+
+              schema:
+                type: object
+
+                properties:
+
+                  success:
+                    type: boolean
+                    example: false
+
+                  error:
+                    type: string
+                    example: User or client not found
+
+        "500":
+          description: Internal server error
+
+          content:
+            application/json:
+
+              schema:
+                type: object
+
+                properties:
+
+                  success:
+                    type: boolean
+                    example: false
+
+                  error:
+                    type: string
+                    example: Internal server error
 
 
-
-  /users/register:
-
-    post:
-
-      tags:
-
-        - Authentication
-
-
-      summary: Register new user
-
-
-      requestBody:
-
-        required: true
-
-
-        content:
-
-          application/json:
-
-            schema:
-
-              type: object
-
-              properties:
-
-
-                email:
-
-                  type: string
-
-                  example: test@gmail.com
-
-
-                password:
-
-                  type: string
-
-                  example: password123
-
-
-                name:
-
-                  type: string
-
-                  example: Test User
-
-
-                userType:
-
-                  type: string
-
-                  example: 64fxxxxxx
-
-
-      responses:
-
-
-        "201":
-
-          description: User registered successfully
 
 
 
@@ -422,56 +610,56 @@ paths:
           description: User type not found
 
 
-  /users/customer/login:
+  # /users/customer/login:
 
 
-    post:
+  #   post:
 
-      tags:
+  #     tags:
 
-        - Customer Authentication
-
-
-      summary: Customer login
+  #       - Customer Authentication
 
 
-      requestBody:
-
-        required: true
+  #     summary: Customer login
 
 
-        content:
+  #     requestBody:
 
-          application/json:
-
-            schema:
-
-              type: object
-
-              properties:
+  #       required: true
 
 
-                email:
+  #       content:
 
-                  type: string
+  #         application/json:
 
-                  example: customer@gmail.com
+  #           schema:
 
+  #             type: object
 
-                password:
-
-                  type: string
-
-                  example: password123
+  #             properties:
 
 
+  #               email:
 
-      responses:
+  #                 type: string
+
+  #                 example: customer@gmail.com
 
 
-        "200":
+  #               password:
 
-          description: Customer login success
+  #                 type: string
+
+  #                 example: password123
+
+
+
+  #     responses:
+
+
+  #       "200":
+
+  #         description: Customer login success
 
 
 

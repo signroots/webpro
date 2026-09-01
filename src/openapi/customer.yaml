@@ -1,4 +1,224 @@
 paths:
+  /customer_order_details/{customerId}:
+    get:
+      tags:
+        - Customer
+      summary: Get customer details with all order information
+      description: >
+        Returns customer profile details along with all associated orders,
+        domain information, hosting/email/storage plans, expiry dates and
+        current status.
+ 
+      parameters:
+        - in: path
+          name: customerId
+          required: true
+          description: MongoDB ObjectId of the customer
+      schema:
+        type: string
+          example:"66c9fd8b4c0d0d8d90d4c123"
+
+      responses:
+       200:
+          description: Customer order details fetched successfully
+      content:
+         application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  example: SUCCESS
+ 
+                client:
+                  type: object
+                  properties:
+                    _id:
+                      type: string
+                      example: "66c9fd8b4c0d0d8d90d4c123"
+ 
+                    c_name:
+                      type: string
+                      example: John Mathew
+ 
+                    c_email:
+                      type: string
+                      example: john@gmail.com
+ 
+                    c_mobilePhone:
+                      type: string
+                      example: "9876543210"
+ 
+                    c_countryCode:
+                      type: string
+                      example: "+91"
+ 
+                    c_company:
+                      type: string
+                      example: ABC Technologies
+ 
+                    c_address:
+                      type: string
+                      example: MG Road
+ 
+                    c_city:
+                      type: string
+                      example: Kochi
+ 
+                    c_zipCode:
+                      type: string
+                      example: "682001"
+
+                    c_state:
+                       type: string
+                       example: "66a1b23cde45f67890abcd11"
+
+                    c_state_name:
+                      type: string
+                      example: Kerala
+
+                    c_country:
+                      type: string
+                      example: "66a1b23cde45f67890abcd22"
+ 
+                    c_country_name:
+                      type: string
+                      example: India
+ 
+                orders:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+
+                    _id:
+                      type: string
+                      example: "66b11d8e4c0d0d8d90d4ab11"
+ 
+                    domainName:
+                      type: string
+                      example: example.com
+ 
+                      domainSource:
+                        type: object
+                        nullable: true
+                        properties:
+                        _id:
+                          type: string
+                          name:
+                            type: string
+                            example: GoDaddy
+                          code:
+                            type: string
+                            example: GD
+                          image:
+                            type: string
+                            example: /uploads/domainsources/godaddy.png
+ 
+                      createdAt:
+                        type: string
+                        format: date-time
+ 
+                      status:
+                        type: string
+                        enum:
+                          - ACTIVE
+                          - EXPIRED
+ 
+                      domainExpiryDate:
+                        type: string
+                        format: date
+                        nullable: true
+ 
+                      emailExpiryDate:
+                        type: array
+                        items:
+                          type: string
+                          format: date
+
+                      Plans:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+ 
+                            type:
+                              type: string
+                              example: hosting
+ 
+                            expiryDate:
+                              type: string
+                              format: date
+                              nullable: true
+ 
+                            emailType:
+                              type: string
+                              nullable: true
+                              example: Google Workspace
+
+                            emailTypeImage:
+                              type: string
+                              nullable: true
+                              example: /uploads/email/google.png
+
+                            planId:
+                              type: string
+                              example: PLAN001
+ 
+                            hostType:
+                              type: object
+                              nullable: true
+                              properties:
+                                _id:
+                                  type: string
+                                type:
+                                  type: string
+                                  example: Linux
+ 
+                            hostSubType:
+                              type: object
+                              nullable: true
+                              properties:
+                                _id:
+                                  type: string
+                                name:
+                                  type: string
+                                  example: Premium Hosting
+ 
+                              storage:
+                                type: object
+                                nullable: true
+                                properties:
+                                  _id:
+                                    type: string
+                                  name:
+                                    type: string
+                                    example: SSD Storage
+ 
+      400:
+          description: Invalid customer ID
+          content:
+            application/json:
+              example:
+                status: ERROR
+                message: Invalid customer ID
+ 
+      404:
+          description: Customer not found
+          content:
+           application/json:
+             example:
+                status: ERROR
+                message: Customer not found
+ 
+      500:
+        description: Internal Server Error
+        content:
+           application/json:
+             example:
+              status: ERROR
+              message: Server error
+ 
   /reseller_customer/{id}:
     post:
       tags:
