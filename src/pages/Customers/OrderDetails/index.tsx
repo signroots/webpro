@@ -54,7 +54,7 @@ interface Order {
   registrationDate?: string;
   expiryDate?: string;
   provider?: string;
-domainSource?: DomainSource | null;
+  domainSource?: DomainSource | null;
 
   /* FLAGS */
   domain_flag?: boolean;
@@ -138,6 +138,7 @@ const OrderDetails: React.FC = () => {
 
         const mappedOrder: Order = {
           ...data,
+          status: data.status?.name || undefined,
           domainSource: data.domainSource || null,
           customer: mapPerson(data.customer),
           client: mapPerson(data.client),
@@ -189,36 +190,36 @@ const OrderDetails: React.FC = () => {
           <Info label="Status" value={order.status} />
           <Info label="Managed By" value={order.managedBy} />
 
-         {/* Registrar + Domain Flag */}
+          {/* Registrar + Domain Flag */}
 
-<div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
 
-  <label className="text-sm font-medium">
-    Registrar:
-  </label>
+            <label className="text-sm font-medium">
+              Registrar:
+            </label>
 
-  <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
 
-    {
-      order.domainSource?.image && (
-        <img
-          src={
-            order.domainSource.image.startsWith("/")
-            ? `${API_BASE_URL}${order.domainSource.image}`
-            : `${API_BASE_URL}/uploads/domainsources/${order.domainSource.image}`
-          }
-          className="w-6 h-6 object-contain"
-        />
-      )
-    }
+              {
+                order.domainSource?.image && (
+                  <img
+                    src={
+                      order.domainSource.image.startsWith("/")
+                        ? `${API_BASE_URL}${order.domainSource.image}`
+                        : `${API_BASE_URL}/uploads/domainsources/${order.domainSource.image}`
+                    }
+                    className="w-6 h-6 object-contain"
+                  />
+                )
+              }
 
-    <span className="text-sm text-gray-700">
-      {order.domainSource?.name || "-"}
-    </span>
+              <span className="text-sm text-gray-700">
+                {order.domainSource?.name || "-"}
+              </span>
 
-  </div>
+            </div>
 
-</div>
+          </div>
 
           <Info label="Registration Date" value={formatDate(order.registrationDate)} />
           <Info label="Expiry Date" value={formatDate(order.expiryDate)} />
@@ -235,40 +236,40 @@ const OrderDetails: React.FC = () => {
 
 
         {order.customer && (
-  <Section title="Customer Details">
-    {order.customer.name && (
-      <Info label="Name" value={order.customer.name} />
-    )}
+          <Section title="Customer Details">
+            {order.customer.name && (
+              <Info label="Name" value={order.customer.name} />
+            )}
 
-    {order.customer.company && (
-      <Info label="Company" value={order.customer.company} />
-    )}
+            {order.customer.company && (
+              <Info label="Company" value={order.customer.company} />
+            )}
 
-    {order.customer.email && (
-      <Info label="Email" value={order.customer.email} />
-    )}
+            {order.customer.email && (
+              <Info label="Email" value={order.customer.email} />
+            )}
 
-    {order.customer.phone && (
-      <Info label="Phone" value={order.customer.phone} />
-    )}
+            {order.customer.phone && (
+              <Info label="Phone" value={order.customer.phone} />
+            )}
 
-    {order.customer.address && (
-      <Info label="Address" value={order.customer.address} />
-    )}
+            {order.customer.address && (
+              <Info label="Address" value={order.customer.address} />
+            )}
 
-    {order.customer.city && (
-      <Info label="City" value={order.customer.city} />
-    )}
+            {order.customer.city && (
+              <Info label="City" value={order.customer.city} />
+            )}
 
-    {order.customer.state && (
-      <Info label="State" value={order.customer.state} />
-    )}
+            {order.customer.state && (
+              <Info label="State" value={order.customer.state} />
+            )}
 
-    {order.customer.country && (
-      <Info label="Country" value={order.customer.country} />
-    )}
-  </Section>
-)}
+            {order.customer.country && (
+              <Info label="Country" value={order.customer.country} />
+            )}
+          </Section>
+        )}
         {order.client && (
           <Section title="Client Details">
             <Info label="Name" value={order.client.name} />
@@ -290,7 +291,7 @@ const OrderDetails: React.FC = () => {
               <table className="w-full border border-gray-300">
                 <thead className="bg-gray-100">
                   <tr>
-                      <th className="border px-2 py-1">Email Type</th>
+                    <th className="border px-2 py-1">Email Type</th>
                     <th className="border px-2 py-1">Plan Name</th>
                     {/* <th className="border px-2 py-1">Service Type</th> */}
                     <th className="border px-2 py-1">Type</th>
@@ -298,7 +299,7 @@ const OrderDetails: React.FC = () => {
                     <th className="border px-2 py-1">Users</th>
                     <th className="border px-2 py-1">Reg Date</th>
                     <th className="border px-2 py-1">Exp Date</th>
-                  
+
                   </tr>
                 </thead>
                 <tbody>
@@ -312,7 +313,7 @@ const OrderDetails: React.FC = () => {
                       <td className="border px-2 py-1">{plan.noOfUsers}</td>
                       <td className="border px-2 py-1">{formatDate(plan.registrationDate)}</td>
                       <td className="border px-2 py-1">{formatDate(plan.expiryDate)}</td>
-                      
+
                     </tr>
                   ))}
                 </tbody>
