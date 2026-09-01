@@ -319,7 +319,7 @@ setOrder((prev) => {
           src={
             order.domainSource.image.startsWith("/")
               ? `${API_BASE_URL}${order.domainSource.image}`
-              : `${API_BASE_URL}/uploads/domainsources/${order.domainSource.image}`
+              : `${API_BASE_URL}/${order.domainSource.image}`
           }
           className="w-6 h-6 object-contain"
         />
