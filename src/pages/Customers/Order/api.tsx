@@ -1,31 +1,35 @@
 import axios from "axios";
-
+import type { Order } from "../../../types/order";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const FULL_API_URL = `${API_BASE_URL}/api`;
 
-export interface Order {
-  _id: string;
-  domainName: string;
-  status?: string;
-  managedBy: "Signroots" | "Customer";
-  registrationDate: string;
-  expiryDate: string;
-  subscription: string;
-  plan: string;
-  email_status: string;
-  username: string;
-  password: string;
-  users: number;
-  email_customer: string;
-  provider: string;
-  customer?: {
-    _id: string;
-    name: string;
-    email: string;
-    c_name: string;
-    c_email: string;
-  };
-}
+// export interface Order {
+//   _id: string;
+//   domainName: string;
+//   status?: {
+//     _id: string;
+//     name: string;
+//     type: "order" | "plan";
+//   } | null;
+//   managedBy: "Signroots" | "Customer";
+//   registrationDate: string;
+//   expiryDate: string;
+//   subscription: string;
+//   plan: string;
+//   email_status: string;
+//   username: string;
+//   password: string;
+//   users: number;
+//   email_customer: string;
+//   provider: string;
+//   customer?: {
+//     _id: string;
+//     name: string;
+//     email: string;
+//     c_name: string;
+//     c_email: string;
+//   };
+// }
 const token = localStorage.getItem("token");
 export const fetchOrders = async (): Promise<Order[]> => {
   const token = localStorage.getItem("token");  // always fresh token
