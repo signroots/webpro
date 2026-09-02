@@ -1008,7 +1008,7 @@ const UpdateOrder: React.FC = () => {
           managedBy: order.managedBy || "Signroots",
           registrationDate: order.registrationDate?.slice(0, 10) || "",
           expiryDate: order.expiryDate?.slice(0, 10) || "",
-          status: order.status || "Active",
+          status: existingDomainStatus,
           client: order.client?._id || "",
           newCustomer: {
             ...prev.newCustomer,
