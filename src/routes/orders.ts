@@ -438,110 +438,110 @@ router.get(
 
 
 
-// =================================================
-// UPDATE ORDER STATUS
-// Same logic as Orders API
-// Domain expiry OR Plan expiry
-// =================================================
+      // =================================================
+      // UPDATE ORDER STATUS
+      // Same logic as Orders API
+      // Domain expiry OR Plan expiry
+      // =================================================
 
-const today = new Date();
+      const today = new Date();
 
-today.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
 
-const bulkOps: any[] = [];
+      const bulkOps: any[] = [];
 
-finalOrders.forEach((order: any) => {
+      finalOrders.forEach((order: any) => {
 
-  let isExpired = false;
+        let isExpired = false;
 
-  // ================= DOMAIN EXPIRY =================
+        // ================= DOMAIN EXPIRY =================
 
-  if (order.expiryDate) {
+        if (order.expiryDate) {
 
-    const expiry = new Date(order.expiryDate);
+          const expiry = new Date(order.expiryDate);
 
-    expiry.setHours(0, 0, 0, 0);
+          expiry.setHours(0, 0, 0, 0);
 
-    if (expiry < today) {
-      isExpired = true;
-    }
+          if (expiry < today) {
+            isExpired = true;
+          }
 
-  }
-
-  // ================= PLAN EXPIRY =================
-
-  if (
-    order.Plans &&
-    order.Plans.length > 0
-  ) {
-
-    const planExpired = order.Plans.some(
-      (plan: any) => {
-
-        if (!plan.expiryDate) {
-          return false;
         }
 
-        const expiry = new Date(
-          plan.expiryDate
+        // ================= PLAN EXPIRY =================
+
+        if (
+          order.Plans &&
+          order.Plans.length > 0
+        ) {
+
+          const planExpired = order.Plans.some(
+            (plan: any) => {
+
+              if (!plan.expiryDate) {
+                return false;
+              }
+
+              const expiry = new Date(
+                plan.expiryDate
+              );
+
+              expiry.setHours(0, 0, 0, 0);
+
+              return expiry < today;
+
+            }
+          );
+
+          if (planExpired) {
+            isExpired = true;
+          }
+
+        }
+
+        // ================= NEW STATUS =================
+
+        const newStatus = isExpired
+          ? "EXPIRED"
+          : "ACTIVE";
+
+        if (order.order_status !== newStatus) {
+
+          bulkOps.push({
+
+            updateOne: {
+
+              filter: {
+                _id: order._id
+              },
+
+              update: {
+                $set: {
+                  order_status: newStatus
+                }
+              }
+
+            }
+
+          });
+
+          // Response-ilum updated status kaanikkum
+          order.order_status = newStatus;
+
+        }
+
+      });
+
+
+      // ================= DB UPDATE =================
+
+      if (bulkOps.length) {
+
+        await Order.bulkWrite(
+          bulkOps
         );
 
-        expiry.setHours(0, 0, 0, 0);
-
-        return expiry < today;
-
       }
-    );
-
-    if (planExpired) {
-      isExpired = true;
-    }
-
-  }
-
-  // ================= NEW STATUS =================
-
-  const newStatus = isExpired
-    ? "EXPIRED"
-    : "ACTIVE";
-
-  if (order.order_status !== newStatus) {
-
-    bulkOps.push({
-
-      updateOne: {
-
-        filter: {
-          _id: order._id
-        },
-
-        update: {
-          $set: {
-            order_status: newStatus
-          }
-        }
-
-      }
-
-    });
-
-    // Response-ilum updated status kaanikkum
-    order.order_status = newStatus;
-
-  }
-
-});
-
-
-// ================= DB UPDATE =================
-
-if (bulkOps.length) {
-
-  await Order.bulkWrite(
-    bulkOps
-  );
-
-}
 
       // =================================================
       // SORT BY NEAREST EXPIRY
@@ -1496,40 +1496,40 @@ router.get(
           finalFilter
         )
 
-        .select({
+          .select({
 
-          domainName: 1,
-          order_status: 1,
-          is_active: 1,
-          dns_flag: 1,
-          client: 1,
-          managedBy: 1,
-          registrationDate: 1,
-          expiryDate: 1,
-          lockStatus: 1,
-          domainSource: 1,
+            domainName: 1,
+            order_status: 1,
+            is_active: 1,
+            dns_flag: 1,
+            client: 1,
+            managedBy: 1,
+            registrationDate: 1,
+            expiryDate: 1,
+            lockStatus: 1,
+            domainSource: 1,
 
-        })
+          })
 
-        .populate(
-          "client",
-          "_id c_name c_company"
-        )
+          .populate(
+            "client",
+            "_id c_name c_company"
+          )
 
-        .populate(
-          "domainSource",
-          "name code image"
-        )
+          .populate(
+            "domainSource",
+            "name code image"
+          )
 
-        .sort({
-          expiryDate: -1,
-        })
+          .sort({
+            expiryDate: -1,
+          })
 
-        .skip(skip)
+          .skip(skip)
 
-        .limit(limit)
+          .limit(limit)
 
-        .lean();
+          .lean();
 
 
       // =====================================================
@@ -1886,41 +1886,41 @@ router.get(
           finalFilter
         )
 
-        .select({
+          .select({
 
-          domainName: 1,
-          order_status: 1,
-          archived_status: 1,
-          is_active: 1,
-          dns_flag: 1,
-          client: 1,
-          managedBy: 1,
-          registrationDate: 1,
-          expiryDate: 1,
-          lockStatus: 1,
-          domainSource: 1,
+            domainName: 1,
+            order_status: 1,
+            archived_status: 1,
+            is_active: 1,
+            dns_flag: 1,
+            client: 1,
+            managedBy: 1,
+            registrationDate: 1,
+            expiryDate: 1,
+            lockStatus: 1,
+            domainSource: 1,
 
-        })
+          })
 
-        .populate(
-          "client",
-          "_id c_name c_company"
-        )
+          .populate(
+            "client",
+            "_id c_name c_company"
+          )
 
-        .populate(
-          "domainSource",
-          "name code image"
-        )
+          .populate(
+            "domainSource",
+            "name code image"
+          )
 
-        .sort({
-          expiryDate: -1,
-        })
+          .sort({
+            expiryDate: -1,
+          })
 
-        .skip(skip)
+          .skip(skip)
 
-        .limit(limit)
+          .limit(limit)
 
-        .lean();
+          .lean();
 
 
       // =====================================================
@@ -2407,43 +2407,43 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
 
     // ================= COMMON EXPIRY FILTER =================
 
-const getExpiryFilter = () => {
-  const expiryLimitDate = new Date();
+    const getExpiryFilter = () => {
+      const expiryLimitDate = new Date();
 
-  expiryLimitDate.setHours(0, 0, 0, 0);
+      expiryLimitDate.setHours(0, 0, 0, 0);
 
-  expiryLimitDate.setDate(
-    expiryLimitDate.getDate() - 35
-  );
+      expiryLimitDate.setDate(
+        expiryLimitDate.getDate() - 35
+      );
 
-  return {
-    $or: [
+      return {
+        $or: [
 
-      // 1. Order has Plan
-      // Plan ഉണ്ടെങ്കിൽ expiryDate എന്തായാലും order കാണിക്കണം
-      {
-        _id: {
-          $in: planOrderIds
-        }
-      },
+          // 1. Order has Plan
+          // Plan ഉണ്ടെങ്കിൽ expiryDate എന്തായാലും order കാണിക്കണം
+          {
+            _id: {
+              $in: planOrderIds
+            }
+          },
 
-      // 2. Normal domains
-      {
-        dns_flag: false,
-        expiryDate: {
-          $gte: expiryLimitDate
-        }
-      },
+          // 2. Normal domains
+          {
+            dns_flag: false,
+            expiryDate: {
+              $gte: expiryLimitDate
+            }
+          },
 
-      // 3. Normal domains without expiry date
-      {
-        dns_flag: false,
-        expiryDate: null
-      }
+          // 3. Normal domains without expiry date
+          {
+            dns_flag: false,
+            expiryDate: null
+          }
 
-    ]
-  };
-};
+        ]
+      };
+    };
 
     // ================= SEARCH FILTER =================
 
@@ -2456,13 +2456,13 @@ const getExpiryFilter = () => {
     filters.push({
       $or: [
         {
-          
+
           _id: {
             $in: planOrderIds
           }
         },
         {
-          
+
           dns_flag: false
         }
       ]
@@ -2885,7 +2885,10 @@ router.get(
 
       // Validate ObjectId
       if (!mongoose.Types.ObjectId.isValid(id)) {
-        res.status(400).json({ success: false, message: "Invalid order ID" });
+        res.status(400).json({
+          success: false,
+          message: "Invalid order ID",
+        });
         return;
       }
 
@@ -2893,7 +2896,8 @@ router.get(
       const order = await Order.findById(id)
         .populate({
           path: "customer",
-          select: "name email phone company address city state country zipCode"
+          select:
+            "name email phone company address city state country zipCode",
         })
         .populate({
           path: "client",
@@ -2903,153 +2907,149 @@ router.get(
             {
               path: "c_country",
               model: "Country",
-              select: "name code"
+              select: "name code",
             },
             {
               path: "c_state",
               model: "State",
-              select: "name stateCode"
-            }
-          ]
+              select: "name stateCode",
+            },
+          ],
         })
         .populate({
           path: "status",
           model: "Status",
-          select: "name"
+          select: "name",
         })
         .populate({
           path: "domainSource",
           model: "DomainSource",
-          select: "name code image"
+          select: "name code image",
         })
         .populate("hosttypeid")
         .populate("subHostTypeId")
         .populate("hoststorageId")
         .exec();
+
       if (!order) {
-        res.status(404).json({ success: false, message: "Order not found" });
+        res.status(404).json({
+          success: false,
+          message: "Order not found",
+        });
         return;
       }
+
+      // Access check
       if (
         req.user?.role?.toLowerCase() !== "admin" &&
         order.client?._id?.toString() !== req.user?._id
       ) {
         res.status(403).json({
           success: false,
-          error: "Access denied"
+          error: "Access denied",
         });
         return;
       }
 
       // Fetch related plans
-     const orderPlansRaw = await OrderPlan.find({
-  orderId: order._id
-})
-  .populate({
-    path: "planId",
-    model: "PlanEmail"
-  })
-  .populate({
-    path: "emailTypeId",
-    model: "TypeEmail"
-  })
-  .populate({
-    path: "hostTypeId",
-    model: "HostType"
-  })
-  .populate({
-    path: "hostSubTypeId",
-    model: "HostSubType"
-  })
-  .populate({
-    path: "storageId",
-    model: "Storage"
-  })
-  .populate({
-    path: "status",
-    model: "Status",
-    select: "name",
-  })
-  .lean();
+      const orderPlansRaw = await OrderPlan.find({
+        orderId: order._id,
+      })
+        .populate({
+          path: "planId",
+          model: "PlanEmail",
+        })
+        .populate({
+          path: "emailTypeId",
+          model: "TypeEmail",
+        })
+        .populate({
+          path: "hostTypeId",
+          model: "HostType",
+        })
+        .populate({
+          path: "hostSubTypeId",
+          model: "HostSubType",
+        })
+        .populate({
+          path: "storageId",
+          model: "Storage",
+        })
+        .populate({
+          path: "status",
+          model: "Status",
+          select: "name",
+        })
+        .lean();
 
-     const orderPlans: IOrderPlanResponse[] = orderPlansRaw.map((p: any) => ({
-  _id: p._id.toString(),
-  orderId: p.orderId.toString(),
+      const orderPlans: IOrderPlanResponse[] = orderPlansRaw.map(
+        (p: any) => ({
+          _id: p._id.toString(),
+          orderId: p.orderId.toString(),
 
-  serviceType: p.type,
-  type: p.type,
+          serviceType: p.type,
+          type: p.type,
 
-  planName: p.planId?.plan || "",
-  planId: p.planId?._id?.toString() || "",
+          planName: p.planId?.plan || "",
+          planId: p.planId?._id?.toString() || "",
 
-  emailType: p.emailTypeId?.name || "",
+          emailType: p.emailTypeId?.name || "",
 
-  // ✅ PLAN STATUS
-  status: p.status
-    ? {
-        _id: p.status._id,
-        name: p.status.name,
-      }
-    : null,
+          // PLAN STATUS
+          status: p.status
+            ? {
+                _id: p.status._id,
+                name: p.status.name,
+              }
+            : null,
 
-  hostType: p.hostTypeId
-    ? {
-        _id: p.hostTypeId._id,
-        name: p.hostTypeId.type,
-      }
-    : null,
+          hostType: p.hostTypeId
+            ? {
+                _id: p.hostTypeId._id,
+                name: p.hostTypeId.type,
+              }
+            : null,
 
-  hostSubType: p.hostSubTypeId
-    ? {
-        _id: p.hostSubTypeId._id,
-        name: p.hostSubTypeId.name,
-      }
-    : null,
+          hostSubType: p.hostSubTypeId
+            ? {
+                _id: p.hostSubTypeId._id,
+                name: p.hostSubTypeId.name,
+              }
+            : null,
 
-  storage: p.storageId
-    ? {
-        _id: p.storageId._id,
-        name: p.storageId.storage,
-      }
-    : null,
+          storage: p.storageId
+            ? {
+                _id: p.storageId._id,
+                name: p.storageId.storage,
+              }
+            : null,
 
-  registrationDate: p.registrationDate,
-  expiryDate: p.expiryDate,
-  noOfUsers: p.noOfUsers,
-}));
-      // Merge client + customer details
-      const clientData = order.client
-        ? {
-          c_name: (order.client as any).c_name,
-          c_email: (order.client as any).c_email,
-          c_phone: (order.client as any).c_phone,
-          c_company: (order.client as any).c_company,
-          c_address: (order.client as any).c_address,
-          c_city: (order.client as any).c_city,
-          c_state: (order.client as any).c_state,
-          c_country: (order.client as any).c_country,
-          c_zipCode: (order.client as any).c_zipCode,
-        }
-        : {};
+          registrationDate: p.registrationDate,
+          expiryDate: p.expiryDate,
+          noOfUsers: p.noOfUsers,
+        })
+      );
 
-      const customerData = order.customer
-        ? {
-          name: (order.customer as any).name,
-          email: (order.customer as any).email,
-          phone: (order.customer as any).phone,
-          company: (order.customer as any).company,
-          address: (order.customer as any).address,
-          city: (order.customer as any).city,
-          state: (order.customer as any).state,
-          country: (order.customer as any).country,
-          zipCode: (order.customer as any).zipCode,
-        }
-        : {};
-
-      // const mergedCustomerDetails = { ...clientData, ...customerData };
-
-      // ✅ IMPORTANT: convert once and reuse
+      // Convert order to plain object
       const orderObj = order.toObject();
+
+      // Clean image path
+      let domainSourceImage: string | null = null;
+
+      if (orderObj.domainSource?.image) {
+        const image = String(orderObj.domainSource.image);
+
+        if (image.startsWith("http")) {
+          domainSourceImage = image;
+        } else {
+          // Remove existing upload path(s)
+          const cleanImage = image
+            .replace(/^\/+/, "")
+            .replace(/^uploads\/domainsources\/+/, "");
+
+          domainSourceImage = `/uploads/domainsources/${cleanImage}`;
+        }
+      }
 
       // Final response
       res.status(200).json({
@@ -3059,25 +3059,32 @@ router.get(
           domainName: orderObj.domainName,
           status: orderObj.status,
           managedBy: orderObj.managedBy,
+
+          // Registrar / Domain Source
           domainSource: orderObj.domainSource
             ? {
-              ...orderObj.domainSource,
-              image: orderObj.domainSource.image || null
-            }
+                ...orderObj.domainSource,
+                image: domainSourceImage,
+              }
             : null,
+
           registrationDate: orderObj.registrationDate,
           expiryDate: orderObj.expiryDate,
           lockStatus: orderObj.lockStatus,
           domain_flag: orderObj.domain_flag,
           nameServers: orderObj.nameServers,
+
           client: orderObj.client,
           customer: orderObj.customer,
+
           plans: orderPlans,
-          __v: orderObj.__v
-        }
+
+          __v: orderObj.__v,
+        },
       });
     } catch (err) {
       console.error("❌ Error fetching order:", err);
+
       res.status(500).json({
         success: false,
         error: (err as Error).message,
@@ -3584,15 +3591,15 @@ router.post(
                   registrationDate:
                     p.registrationDate
                       ? new Date(
-                          p.registrationDate
-                        )
+                        p.registrationDate
+                      )
                       : new Date(),
 
                   expiryDate:
                     p.expiryDate
                       ? new Date(
-                          p.expiryDate
-                        )
+                        p.expiryDate
+                      )
                       : new Date(),
 
                   noOfUsers:
@@ -4066,7 +4073,7 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
 
             planId:
               planId &&
-              mongoose.Types.ObjectId.isValid(planId)
+                mongoose.Types.ObjectId.isValid(planId)
                 ? new mongoose.Types.ObjectId(planId)
                 : null,
 
@@ -4076,7 +4083,7 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
 
             emailTypeId:
               emailTypeId &&
-              mongoose.Types.ObjectId.isValid(emailTypeId)
+                mongoose.Types.ObjectId.isValid(emailTypeId)
                 ? new mongoose.Types.ObjectId(emailTypeId)
                 : null,
 
@@ -4086,12 +4093,12 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
 
             hostTypeId:
               p.hostingType &&
-              mongoose.Types.ObjectId.isValid(
-                p.hostingType
-              )
+                mongoose.Types.ObjectId.isValid(
+                  p.hostingType
+                )
                 ? new mongoose.Types.ObjectId(
-                    p.hostingType
-                  )
+                  p.hostingType
+                )
                 : null,
 
             // -----------------------------------------------
@@ -4100,12 +4107,12 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
 
             hostSubTypeId:
               p.hostingSubType &&
-              mongoose.Types.ObjectId.isValid(
-                p.hostingSubType
-              )
+                mongoose.Types.ObjectId.isValid(
+                  p.hostingSubType
+                )
                 ? new mongoose.Types.ObjectId(
-                    p.hostingSubType
-                  )
+                  p.hostingSubType
+                )
                 : null,
 
             // -----------------------------------------------
@@ -4114,7 +4121,7 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
 
             storageId:
               p.storage &&
-              mongoose.Types.ObjectId.isValid(p.storage)
+                mongoose.Types.ObjectId.isValid(p.storage)
                 ? new mongoose.Types.ObjectId(p.storage)
                 : null,
 
@@ -4400,15 +4407,15 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
         const oldRegistration =
           oldPlan?.registrationDate
             ? new Date(
-                oldPlan.registrationDate
-              ).getTime()
+              oldPlan.registrationDate
+            ).getTime()
             : null;
 
         const newRegistration =
           newPlan?.registrationDate
             ? new Date(
-                newPlan.registrationDate
-              ).getTime()
+              newPlan.registrationDate
+            ).getTime()
             : null;
 
         if (
@@ -4434,15 +4441,15 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
         const oldExpiry =
           oldPlan?.expiryDate
             ? new Date(
-                oldPlan.expiryDate
-              ).getTime()
+              oldPlan.expiryDate
+            ).getTime()
             : null;
 
         const newExpiry =
           newPlan?.expiryDate
             ? new Date(
-                newPlan.expiryDate
-              ).getTime()
+              newPlan.expiryDate
+            ).getTime()
             : null;
 
         if (oldExpiry !== newExpiry) {
