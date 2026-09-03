@@ -3062,9 +3062,7 @@ router.get(
           domainSource: orderObj.domainSource
             ? {
               ...orderObj.domainSource,
-              image: orderObj.domainSource.image
-                ? `/uploads/domainsources/${orderObj.domainSource.image}`
-                : null
+              image: orderObj.domainSource.image || null
             }
             : null,
           registrationDate: orderObj.registrationDate,
