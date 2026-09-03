@@ -2305,15 +2305,9 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
     // ================= COMMON EXPIRY FILTER =================
 
 const getExpiryFilter = () => {
-
   const expiryLimitDate = new Date();
 
-  expiryLimitDate.setHours(
-    0,
-    0,
-    0,
-    0
-  );
+  expiryLimitDate.setHours(0, 0, 0, 0);
 
   expiryLimitDate.setDate(
     expiryLimitDate.getDate() - 35
@@ -2322,17 +2316,15 @@ const getExpiryFilter = () => {
   return {
     $or: [
 
-      // ================= PLAN ORDERS =================
+      // 1. Order has Plan
+      // Plan ഉണ്ടെങ്കിൽ expiryDate എന്തായാലും order കാണിക്കണം
       {
         _id: {
           $in: planOrderIds
-        },
-        expiryDate: {
-          $gte: expiryLimitDate
         }
       },
 
-      // ================= NORMAL DOMAINS =================
+      // 2. Normal domains
       {
         dns_flag: false,
         expiryDate: {
@@ -2340,7 +2332,7 @@ const getExpiryFilter = () => {
         }
       },
 
-      // ================= NO EXPIRY DATE =================
+      // 3. Normal domains without expiry date
       {
         dns_flag: false,
         expiryDate: null
@@ -2348,7 +2340,6 @@ const getExpiryFilter = () => {
 
     ]
   };
-
 };
 
     // ================= SEARCH FILTER =================
@@ -2362,13 +2353,13 @@ const getExpiryFilter = () => {
     filters.push({
       $or: [
         {
-          // Plan ഉള്ള എല്ലാ orders
+          
           _id: {
             $in: planOrderIds
           }
         },
         {
-          // Plan ഇല്ലെങ്കിലും normal domain കാണിക്കുക
+          
           dns_flag: false
         }
       ]
