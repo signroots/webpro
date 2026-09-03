@@ -438,7 +438,110 @@ router.get(
 
 
 
+// =================================================
+// UPDATE ORDER STATUS
+// Same logic as Orders API
+// Domain expiry OR Plan expiry
+// =================================================
 
+const today = new Date();
+
+today.setHours(0, 0, 0, 0);
+
+const bulkOps: any[] = [];
+
+finalOrders.forEach((order: any) => {
+
+  let isExpired = false;
+
+  // ================= DOMAIN EXPIRY =================
+
+  if (order.expiryDate) {
+
+    const expiry = new Date(order.expiryDate);
+
+    expiry.setHours(0, 0, 0, 0);
+
+    if (expiry < today) {
+      isExpired = true;
+    }
+
+  }
+
+  // ================= PLAN EXPIRY =================
+
+  if (
+    order.Plans &&
+    order.Plans.length > 0
+  ) {
+
+    const planExpired = order.Plans.some(
+      (plan: any) => {
+
+        if (!plan.expiryDate) {
+          return false;
+        }
+
+        const expiry = new Date(
+          plan.expiryDate
+        );
+
+        expiry.setHours(0, 0, 0, 0);
+
+        return expiry < today;
+
+      }
+    );
+
+    if (planExpired) {
+      isExpired = true;
+    }
+
+  }
+
+  // ================= NEW STATUS =================
+
+  const newStatus = isExpired
+    ? "EXPIRED"
+    : "ACTIVE";
+
+  if (order.order_status !== newStatus) {
+
+    bulkOps.push({
+
+      updateOne: {
+
+        filter: {
+          _id: order._id
+        },
+
+        update: {
+          $set: {
+            order_status: newStatus
+          }
+        }
+
+      }
+
+    });
+
+    // Response-ilum updated status kaanikkum
+    order.order_status = newStatus;
+
+  }
+
+});
+
+
+// ================= DB UPDATE =================
+
+if (bulkOps.length) {
+
+  await Order.bulkWrite(
+    bulkOps
+  );
+
+}
 
       // =================================================
       // SORT BY NEAREST EXPIRY
