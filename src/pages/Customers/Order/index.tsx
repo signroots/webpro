@@ -65,28 +65,35 @@ const Orders: React.FC = () => {
       <p>{value || "N/A"}</p>
     </div>
   );
-  const getStatusClass = (status?: string) => {
-    const value = status?.trim().toLowerCase();
+  const getStatusClass = (
+  status?: {
+    _id: string;
+    name: string;
+    code: string;
+    type: "order" | "plan" | "domain";
+    is_active: boolean;
+  } | null
+): string => {
+  const value = status?.name?.trim().toLowerCase();
 
-    // N/A or empty → YELLOW
-    if (!value) {
-      return "bg-blue-100 text-blue-800";
-    }
+  // N/A or empty
+  if (!value) {
+    return "bg-blue-100 text-blue-800";
+  }
 
-    // EXPIRED → RED
-    if (value === "expired") {
-      return "bg-red-600 text-white";
-    }
+  // EXPIRED → RED
+  if (value === "expired") {
+    return "bg-red-600 text-white";
+  }
 
-    // ACTIVE → GREEN
-    if (value === "active") {
-      return "bg-gray-100 text-green-700";
-    }
+  // ACTIVE → GREEN
+  if (value === "active") {
+    return "bg-gray-100 text-green-700";
+  }
 
-    // fallback
-    return "bg-gray-200 text-gray-800";
-  };
-
+  // fallback
+  return "bg-gray-200 text-gray-800";
+};
 
   const handleSaveChanges = async (
     e: React.FormEvent<HTMLFormElement>
@@ -537,10 +544,11 @@ const Orders: React.FC = () => {
 
                       <select
                         defaultValue={
-                          selectedOrder.order_status ||
-                          selectedOrder.status?.name ||
-                          ""
-                        }
+  selectedOrder.order_status?.name ||
+  selectedOrder.status?.name ||
+  ""
+}
+                        
                         className="w-full border border-gray-300
                              px-3 py-2.5 rounded-lg
                              text-gray-800
@@ -548,9 +556,6 @@ const Orders: React.FC = () => {
                              focus:ring-2
                              focus:ring-blue-500"
                       >
-                        <option value="ACTIVE">Active</option>
-                        <option value="INACTIVE">Inactive</option>
-                        <option value="EXPIRED">Expired</option>
                       </select>
                     </div>
 
