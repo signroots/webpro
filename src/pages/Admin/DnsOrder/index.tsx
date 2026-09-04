@@ -857,7 +857,7 @@ const handleSubmit = async (e: React.FormEvent) => {
               <InfoItem label="Domain" value={selectedOrder.domainName} />
               <InfoItem
   label="Status"
-  value={selectedOrder.order_status || "Unknown"}
+   value={selectedOrder.order_status?.name || "Unknown"}
 />
 
               <InfoItem label="Registration Date" value={selectedOrder.registrationDate} />
@@ -958,7 +958,7 @@ const handleSubmit = async (e: React.FormEvent) => {
   Status:
 
   <select
-    defaultValue={selectedOrder.order_status || "ACTIVE"}
+    defaultValue={selectedOrder.order_status?.name || "ACTIVE"}
     className="border px-3 py-2 rounded w-full text-black"
   >
     <option value="ACTIVE">Active</option>
