@@ -157,55 +157,32 @@ const [orders, setOrders] = useState<Order[]>([]);
   // STATUS CLASS
   // =====================================================
 
-  const getStatusClass = (
-    status?: string
-  ) => {
+const getStatusClass = (
+  status?: {
+    _id: string;
+    name: string;
+    code: string;
+    type: "order" | "plan" | "domain";
+    is_active: boolean;
+  } | null
+) => {
+  switch (status?.name) {
+    case "REDEMPTION PERIOD":
+      return "bg-yellow-100 text-yellow-700";
 
-    switch (status) {
+    case "PENDING DELETE RESTORABLE":
+      return "bg-red-100 text-red-700";
 
-      case "REDEMPTION PERIOD":
+    case "ACTIVE":
+      return "bg-green-100 text-green-700";
 
-        return (
-          "bg-yellow-100 " +
-          "text-yellow-700"
-        );
+    case "EXPIRED":
+      return "bg-orange-100 text-orange-700";
 
-
-      case "PENDING DELETE RESTORABLE":
-
-        return (
-          "bg-red-100 " +
-          "text-red-700"
-        );
-
-
-      case "ACTIVE":
-
-        return (
-          "bg-green-100 " +
-          "text-green-700"
-        );
-
-
-      case "EXPIRED":
-
-        return (
-          "bg-orange-100 " +
-          "text-orange-700"
-        );
-
-
-      default:
-
-        return (
-          "bg-gray-100 " +
-          "text-gray-600"
-        );
-
-    }
-
-  };
-
+    default:
+      return "bg-gray-100 text-gray-600";
+  }
+};
 
   // =====================================================
   // EDIT
