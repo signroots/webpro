@@ -8,11 +8,19 @@ import { OrderPlan } from "../models/OrderPlan";
 // ===============================
 export const createStatus: RequestHandler = async (req, res) => {
   try {
-    const { name, type, is_active } = req.body;
+    const {
+      name,
+      code,
+      type,
+      is_custom,
+      is_active,
+    } = req.body;
 
     const status = new Status({
       name,
+      code,
       type,
+      is_custom,
       is_active,
     });
 
@@ -25,7 +33,6 @@ export const createStatus: RequestHandler = async (req, res) => {
     });
   }
 };
-
 
 // ===============================
 // GET PLAN STATUSES
@@ -53,8 +60,11 @@ export const getOrderStatuses: RequestHandler = async (req, res) => {
   try {
     const statuses = await Status.find({
       type: "order",
+      is_custom: true,
       is_active: true,
-    }).sort({ createdAt: -1 });
+    })
+      .select("_id name code type is_custom is_active")
+      .sort({ createdAt: -1 });
 
     res.json(statuses);
   } catch (err: any) {
@@ -63,8 +73,23 @@ export const getOrderStatuses: RequestHandler = async (req, res) => {
     });
   }
 };
+export const getDomainStatuses: RequestHandler = async (req, res) => {
+  try {
+    const statuses = await Status.find({
+      type: "domain",
+      is_custom: true,
+      is_active: true,
+    })
+      .select("_id name code type is_custom is_active")
+      .sort({ createdAt: -1 });
 
-
+    res.json(statuses);
+  } catch (err: any) {
+    res.status(500).json({
+      error: err.message,
+    });
+  }
+};
 // ===============================
 // UPDATE PLAN STATUS
 // ===============================
@@ -103,33 +128,105 @@ export const updatePlanStatus: RequestHandler = async (req, res) => {
 // ===============================
 export const updateOrderStatus: RequestHandler = async (req, res) => {
   try {
-    const { status } = req.body;
+    const {
+      order_status,
+      domain_status,
+    } = req.body;
 
+    // At least one status should be provided
+    if (!order_status && !domain_status) {
+      res.status(400).json({
+        success: false,
+        message: "order_status or domain_status is required",
+      });
+      return;
+    }
+
+    const updateData: any = {};
+
+    // ============================
+    // ORDER STATUS
+    // ============================
+    if (order_status) {
+      updateData.order_status = order_status;
+    }
+
+    // ============================
+    // DOMAIN STATUS
+    // ============================
+    if (domain_status) {
+      updateData.domain_status = domain_status;
+
+      // Check selected domain status
+      const selectedDomainStatus = await Status.findById(domain_status);
+
+      if (!selectedDomainStatus) {
+        res.status(400).json({
+          success: false,
+          message: "Invalid domain status",
+        });
+        return;
+      }
+
+      // If domain status is TRANSFERRED
+      if (
+        selectedDomainStatus.code?.toUpperCase() === "TRANSFERRED" ||
+        selectedDomainStatus.name?.toUpperCase() === "TRANSFERRED"
+      ) {
+        updateData.managedBy = "Customer";
+        updateData.domainSource = null;
+      }
+    }
+
+    // ============================
+    // UPDATE ORDER
+    // ============================
     const order = await Order.findByIdAndUpdate(
       req.params.id,
-      { status },
+      {
+        $set: updateData,
+      },
       {
         new: true,
         runValidators: true,
       }
-    ).populate("status", "name type");
+    )
+      .populate(
+        "order_status",
+        "_id name code type is_custom is_active"
+      )
+      .populate(
+        "domain_status",
+        "_id name code type is_custom is_active"
+      )
+      .populate(
+        "domainSource",
+        "_id name code image"
+      );
 
     if (!order) {
       res.status(404).json({
+        success: false,
         message: "Order not found",
       });
       return;
     }
 
-    res.status(200).json(order);
+    res.status(200).json({
+      success: true,
+      data: order,
+    });
+
   } catch (error: any) {
+    console.error("Order status update error:", error);
+
     res.status(400).json({
+      success: false,
       message: "Failed to update order status",
       error: error.message,
     });
   }
 };
-
 
 // ===============================
 // GET ALL STATUSES

@@ -9,6 +9,7 @@ import Client from "../models/Client";
 import { OrderPlan } from "../models/OrderPlan";
 import { PlanEmail } from "../models/PlanEmail";
 import { TypeEmail } from "../models/TypeEmail";
+import Status from "../models/Status";
 import State from "../models/State";
 import Country from "../models/Country";
 import ActivityLog from "../models/ActivityLog";
@@ -206,76 +207,37 @@ router.get(
 
 
       const orders: any[] = await Order.find({
-
         $or: [
-
-
-          // Domain expiry
-
           {
-
             expiryDate: {
-
               $gte: startDate,
-
               $lte: endDate
-
             }
-
           },
-
-
-
-          // Email / Hosting / SSL plan expiry
-
           {
-
             _id: {
-
               $in: planOrderIds
-
             }
-
           }
-
-
         ]
-
       })
-
         .populate({
-
           path: "customer",
-
           select: "name email mobile"
-
         })
-
         .populate({
-
           path: "client",
-
           select: "_id c_name c_company c_email c_phone"
-
         })
-
         .populate({
-
           path: "domainSource",
-
           select: "name code image"
-
         })
-
+        .populate({
+          path: "order_status",
+          select: "_id name code type is_custom is_active"
+        })
         .lean();
-
-
-
-
-
-
-
-
       // =================================================
       // MAP PLANS WITH ORDER
       // =================================================
@@ -442,15 +404,60 @@ router.get(
       // UPDATE ORDER STATUS
       // Same logic as Orders API
       // Domain expiry OR Plan expiry
+      // Skip TRANSFERRED / CANCELLED
       // =================================================
 
       const today = new Date();
-
       today.setHours(0, 0, 0, 0);
 
       const bulkOps: any[] = [];
 
+      // ================= GET STATUS IDS =================
+
+      const activeStatus = await Status.findOne({
+        type: "order",
+        code: "ACTIVE",
+        is_active: true,
+      }).select("_id name code");
+
+      const expiredStatus = await Status.findOne({
+        type: "order",
+        code: "EXPIRED",
+        is_active: true,
+      }).select("_id name code");
+
+      if (!activeStatus || !expiredStatus) {
+        throw new Error(
+          "ACTIVE or EXPIRED status not found in Status collection"
+        );
+      }
+
+      // ================= CHECK EACH ORDER =================
+
       finalOrders.forEach((order: any) => {
+
+        // ==========================================
+        // SKIP MANUAL STATUSES
+        // ==========================================
+
+        const currentStatusCode =
+          order.order_status?.code?.toUpperCase();
+
+        const currentStatusName =
+          order.order_status?.name?.toUpperCase();
+
+        if (
+          currentStatusCode === "TRANSFERRED" ||
+          currentStatusName === "TRANSFERRED" ||
+          currentStatusCode === "CANCELLED" ||
+          currentStatusName === "CANCELLED"
+        ) {
+          return;
+        }
+
+        // ==========================================
+        // EXPIRY CHECK
+        // ==========================================
 
         let isExpired = false;
 
@@ -459,13 +466,11 @@ router.get(
         if (order.expiryDate) {
 
           const expiry = new Date(order.expiryDate);
-
           expiry.setHours(0, 0, 0, 0);
 
           if (expiry < today) {
             isExpired = true;
           }
-
         }
 
         // ================= PLAN EXPIRY =================
@@ -482,66 +487,68 @@ router.get(
                 return false;
               }
 
-              const expiry = new Date(
-                plan.expiryDate
-              );
-
+              const expiry = new Date(plan.expiryDate);
               expiry.setHours(0, 0, 0, 0);
 
               return expiry < today;
-
             }
           );
 
           if (planExpired) {
             isExpired = true;
           }
-
         }
 
-        // ================= NEW STATUS =================
+        // ==========================================
+        // NEW STATUS OBJECT
+        // ==========================================
 
         const newStatus = isExpired
-          ? "EXPIRED"
-          : "ACTIVE";
+          ? expiredStatus
+          : activeStatus;
 
-        if (order.order_status !== newStatus) {
+        const currentStatusId =
+          order.order_status?._id?.toString() ||
+          order.order_status?.toString();
+
+        const newStatusId =
+          newStatus._id.toString();
+
+        // ==========================================
+        // UPDATE ONLY IF STATUS CHANGED
+        // ==========================================
+
+        if (currentStatusId !== newStatusId) {
 
           bulkOps.push({
-
             updateOne: {
-
               filter: {
-                _id: order._id
+                _id: order._id,
               },
-
               update: {
                 $set: {
-                  order_status: newStatus
-                }
-              }
-
-            }
-
+                  order_status: newStatus._id,
+                },
+              },
+            },
           });
 
-          // Response-ilum updated status kaanikkum
-          order.order_status = newStatus;
-
+          // Response-il updated status kaanikkum
+          order.order_status = {
+            _id: newStatus._id,
+            name: newStatus.name,
+            code: newStatus.code,
+          };
         }
-
       });
-
 
       // ================= DB UPDATE =================
 
-      if (bulkOps.length) {
-
-        await Order.bulkWrite(
-          bulkOps
-        );
-
+      if (bulkOps.length > 0) {
+        await Order.bulkWrite(bulkOps);
       }
+
+
 
       // =================================================
       // SORT BY NEAREST EXPIRY
@@ -2108,6 +2115,15 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
       typeof req.query.search === "string"
         ? req.query.search.trim()
         : "";
+    const activeStatus = await Status.findOne({
+      type: "order",
+      code: "ACTIVE"
+    }).select("_id");
+
+    const expiredStatus = await Status.findOne({
+      type: "order",
+      code: "EXPIRED"
+    }).select("_id");
 
     const emailType =
       typeof req.query.emailType === "string"
@@ -2295,21 +2311,56 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
 
 
     // ================= STATUS UPDATE =================
-
+    // ================= STATUS UPDATE =================
 
     const updateOrderStatuses = async (orders: any[]) => {
 
       const today = new Date();
-
       today.setHours(0, 0, 0, 0);
 
       const bulkOps: any[] = [];
 
+      // Get ACTIVE status from Status master
+      const activeStatus = await Status.findOne({
+        type: "order",
+        code: "ACTIVE",
+        is_active: true,
+      }).select("_id");
 
-      orders.forEach(order => {
+      // Get EXPIRED status from Status master
+      const expiredStatus = await Status.findOne({
+        type: "order",
+        code: "EXPIRED",
+        is_active: true,
+      }).select("_id");
+
+      if (!activeStatus || !expiredStatus) {
+        throw new Error(
+          "ACTIVE or EXPIRED status not found in Status collection"
+        );
+      }
+
+      orders.forEach((order: any) => {
+
+        // ================= SKIP MANUAL STATUSES =================
+
+        const currentStatusCode =
+          order.order_status?.code?.toUpperCase();
+
+        const currentStatusName =
+          order.order_status?.name?.toUpperCase();
+
+        if (
+          currentStatusCode === "TRANSFERRED" ||
+          currentStatusName === "TRANSFERRED" ||
+          currentStatusCode === "CANCELLED" ||
+          currentStatusName === "CANCELLED"
+        ) {
+          return;
+        }
 
         let isExpired = false;
-
+        // ================= ORDER EXPIRY CHECK =================
 
         if (order.expiryDate) {
 
@@ -2323,26 +2374,28 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
 
         }
 
+        // ================= PLAN EXPIRY CHECK =================
 
-        if (order.Plans && order.Plans.length > 0) {
+        if (
+          order.Plans &&
+          order.Plans.length > 0
+        ) {
 
           const planExpired = order.Plans.some(
             (plan: any) => {
 
-              if (!plan.expiryDate)
+              if (!plan.expiryDate) {
                 return false;
-
+              }
 
               const expiry = new Date(plan.expiryDate);
 
               expiry.setHours(0, 0, 0, 0);
 
-
               return expiry < today;
 
             }
           );
-
 
           if (planExpired) {
             isExpired = true;
@@ -2350,47 +2403,56 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
 
         }
 
-
+        // ================= NEW STATUS =================
 
         const newStatus = isExpired
-          ? "EXPIRED"
-          : "ACTIVE";
+          ? expiredStatus._id
+          : activeStatus._id;
 
+        // ================= UPDATE ONLY IF CHANGED =================
 
-        if (order.order_status !== newStatus) {
+        const currentStatusId =
+          order.order_status?.toString();
+
+        const newStatusId =
+          newStatus._id.toString();
+
+        if (currentStatusId !== newStatusId) {
 
           bulkOps.push({
-
             updateOne: {
-
               filter: {
                 _id: order._id
               },
-
               update: {
                 $set: {
-                  order_status: newStatus
+                  order_status: newStatus._id
                 }
               }
-
             }
-
           });
 
-
-          order.order_status = newStatus;
-
+          order.order_status = {
+            _id: newStatus._id,
+            name: isExpired ? "EXPIRED" : "ACTIVE",
+            code: isExpired ? "EXPIRED" : "ACTIVE",
+            type: "order",
+            is_active: true
+          };
         }
+
+
+
 
       });
 
+      // ================= DATABASE UPDATE =================
 
-      if (bulkOps.length) {
+      if (bulkOps.length > 0) {
 
         await Order.bulkWrite(bulkOps);
 
       }
-
 
       return orders;
 
@@ -2661,10 +2723,13 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
           "_id c_name c_company"
         )
         .populate(
+          "order_status",
+          "_id name code type is_active"
+        )
+        .populate(
           "domainSource",
           "name code image"
         );
-
       if (!emailType) {
         orderQuery = orderQuery
           .skip(skip)
@@ -2785,6 +2850,10 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
         .populate(
           "client",
           "_id c_name c_company"
+        )
+        .populate(
+          "order_status",
+          "_id name code type is_active"
         )
         .populate(
           "domainSource",
@@ -2917,9 +2986,14 @@ router.get(
           ],
         })
         .populate({
-          path: "status",
+          path: "order_status",
           model: "Status",
-          select: "name",
+          select: "_id name code type is_active",
+        })
+        .populate({
+          path: "domain_status",
+          model: "Status",
+          select: "_id name code type is_active",
         })
         .populate({
           path: "domainSource",
@@ -2998,30 +3072,30 @@ router.get(
           // PLAN STATUS
           status: p.status
             ? {
-                _id: p.status._id,
-                name: p.status.name,
-              }
+              _id: p.status._id,
+              name: p.status.name,
+            }
             : null,
 
           hostType: p.hostTypeId
             ? {
-                _id: p.hostTypeId._id,
-                name: p.hostTypeId.type,
-              }
+              _id: p.hostTypeId._id,
+              name: p.hostTypeId.type,
+            }
             : null,
 
           hostSubType: p.hostSubTypeId
             ? {
-                _id: p.hostSubTypeId._id,
-                name: p.hostSubTypeId.name,
-              }
+              _id: p.hostSubTypeId._id,
+              name: p.hostSubTypeId.name,
+            }
             : null,
 
           storage: p.storageId
             ? {
-                _id: p.storageId._id,
-                name: p.storageId.storage,
-              }
+              _id: p.storageId._id,
+              name: p.storageId.storage,
+            }
             : null,
 
           registrationDate: p.registrationDate,
@@ -3057,15 +3131,16 @@ router.get(
         data: {
           _id: orderObj._id,
           domainName: orderObj.domainName,
-          status: orderObj.status,
+          order_status: orderObj.order_status,
+          domain_status:orderObj.domain_status,
           managedBy: orderObj.managedBy,
 
           // Registrar / Domain Source
           domainSource: orderObj.domainSource
             ? {
-                ...orderObj.domainSource,
-                image: domainSourceImage,
-              }
+              ...orderObj.domainSource,
+              image: domainSourceImage,
+            }
             : null,
 
           registrationDate: orderObj.registrationDate,
@@ -5007,32 +5082,23 @@ router.get("/customer_order_details/:customerId", async (req, res) => {
         "domainSource",
         "name image code"
       )
-
+      .populate(
+        "order_status",
+        "_id name code type is_active"
+      )
       .select(`
-      domainName
-      domainSource
-      order_status
-      expiryDate
-      status
-
-      // google_email
-      // microsoft_email
-
-      // hosting
-      // website_flag
-
-      // msoffice_services_flag
-      // storage_services_flag
-
-      email_expiryDate
-
-      createdAt
-    `)
+    domainName
+    domainSource
+    order_status
+    expiryDate
+    status
+    email_expiryDate
+    createdAt
+  `)
       .sort({
         createdAt: -1
       })
       .lean();
-
 
 
     // ================= ADD PLANS =================
@@ -5260,64 +5326,149 @@ router.get("/customer_order_details/:customerId", async (req, res) => {
 
     // ================= STATUS UPDATE =================
 
+    // ================= STATUS UPDATE =================
 
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
+    // ================= GET STATUS IDS =================
+
+    const activeStatus = await Status.findOne({
+      type: "order",
+      code: "ACTIVE",
+      is_active: true,
+    }).select("_id name code");
+
+    const expiredStatus = await Status.findOne({
+      type: "order",
+      code: "EXPIRED",
+      is_active: true,
+    }).select("_id name code");
+
+    if (!activeStatus || !expiredStatus) {
+      throw new Error(
+        "ACTIVE or EXPIRED status not found in Status collection"
+      );
+    }
+
+    // ================= UPDATE ORDERS =================
 
     orders = await Promise.all(
 
       orders.map(async (order: any) => {
 
+        // ==========================================
+        // SKIP TRANSFERRED / CANCELLED
+        // ==========================================
 
-        let newStatus = order.status || "";
+        const currentStatusCode =
+          order.order_status?.code?.toUpperCase();
 
+        const currentStatusName =
+          order.order_status?.name?.toUpperCase();
 
+        if (
+          currentStatusCode === "TRANSFERRED" ||
+          currentStatusName === "TRANSFERRED" ||
+          currentStatusCode === "CANCELLED" ||
+          currentStatusName === "CANCELLED"
+        ) {
+          return order;
+        }
+
+        // ==========================================
+        // EXPIRY CHECK
+        // ==========================================
+
+        let isExpired = false;
+
+        // ================= DOMAIN EXPIRY =================
 
         if (order.expiryDate) {
 
-          newStatus =
-            new Date(order.expiryDate) < today
-              ?
-              "EXPIRED"
-              :
-              "ACTIVE";
+          const expiry = new Date(order.expiryDate);
+          expiry.setHours(0, 0, 0, 0);
 
+          if (expiry < today) {
+            isExpired = true;
+          }
         }
 
+        // ================= PLAN EXPIRY =================
 
+        if (
+          order.Plans &&
+          order.Plans.length > 0
+        ) {
 
+          const planExpired = order.Plans.some(
+            (plan: any) => {
 
-        if (order.status !== newStatus) {
+              if (!plan.expiryDate) {
+                return false;
+              }
 
+              const expiry = new Date(plan.expiryDate);
+              expiry.setHours(0, 0, 0, 0);
+
+              return expiry < today;
+            }
+          );
+
+          if (planExpired) {
+            isExpired = true;
+          }
+        }
+
+        // ==========================================
+        // SELECT STATUS OBJECT
+        // ==========================================
+
+        const newStatus = isExpired
+          ? expiredStatus
+          : activeStatus;
+
+        const currentStatusId =
+          order.order_status?._id?.toString() ||
+          (
+            typeof order.order_status === "string"
+              ? order.order_status
+              : ""
+          );
+
+        const newStatusId =
+          newStatus._id.toString();
+
+        // ==========================================
+        // UPDATE ONLY IF STATUS CHANGED
+        // ==========================================
+
+        if (currentStatusId !== newStatusId) {
 
           await Order.updateOne(
-
             {
               _id: order._id
             },
-
             {
-              status: newStatus
+              $set: {
+                order_status: newStatus._id
+              }
             }
-
           );
 
-
-          order.status = newStatus;
-
+          // Response-il populated status maintain cheyyan
+          order.order_status = {
+            _id: newStatus._id,
+            name: newStatus.name,
+            code: newStatus.code,
+            type: "order",
+            is_active: true
+          };
         }
 
-
-
         return order;
-
-
       })
-
     );
-
-
-
 
 
     // orders = orders.map((order:any)=>({

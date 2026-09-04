@@ -10,6 +10,7 @@ import {
   getOrderStatuses,
   getPlanStatuses,
   updatePlanStatus,
+  getDomainStatuses
 } from "../controllers/statusController";
 
 const router = express.Router();
@@ -20,6 +21,7 @@ router.get("/", getStatuses);
 
 // Specific routes FIRST
 router.get("/order/:orderId", getOrderStatuses);
+router.get("/domain/:orderId", getDomainStatuses);
 router.get("/plan/:planId", getPlanStatuses);
 
 // Status update routes

@@ -2,7 +2,12 @@ import mongoose, { Document } from "mongoose";
 
 export interface IOrder extends Document {
   domainName: string;
-status?: mongoose.Types.ObjectId;
+
+  // Master Status references
+  // status?: mongoose.Types.ObjectId;        // Overall order status
+  order_status?: mongoose.Types.ObjectId;  // Order-specific status
+  domain_status?: mongoose.Types.ObjectId; // Domain-specific status
+
   customer?: mongoose.Types.ObjectId;
   client?: mongoose.Types.ObjectId;
   emailtypeid?: mongoose.Types.ObjectId;
@@ -11,43 +16,39 @@ status?: mongoose.Types.ObjectId;
   subHostTypeId?: mongoose.Types.ObjectId;
   hoststorageId?: mongoose.Types.ObjectId;
   registrarName?: mongoose.Types.ObjectId;
+
   managedBy: "Signroots" | "Customer";
+
+  // External server/registrar status
   server_status?: string;
-  is_active:{
-  type:Boolean,
-  default:true
-},
-order_status: {
-  type: String,
-  enum: ["ACTIVE", "EXPIRED"],
-  default: "ACTIVE"
-},
-archived_status: {
-  type: String,
-  enum: [
-    "REDEMPTION PERIOD",
-    "PENDING DELETE RESTORABLE",
-  ],
-},
+
+  is_active?: boolean;
+
   registrationDate?: Date;
   expiryDate?: Date;
   originalRegistrar?: string;
+
   reseller_outside_inside?: "SubReseller" | "MainReseller" | "Unknown";
   reseller_id?: number;
+
   nameServers: string[];
   dnsDetails: string[];
+
   lockStatus?: string;
   domainSource?: mongoose.Types.ObjectId;
   resellerCustomerId?: string;
+
   businessEmail?: boolean;
   hosting?: boolean;
   subResellerName?: string;
   subResellerEmail?: string;
   cloudflareRegistered?: boolean;
+
   modified_on?: string;
   created_on?: string;
   activated_on?: string;
   order_id?: string;
+
   google_email?: boolean;
   microsoft_email?: boolean;
   email_flag?: boolean;
@@ -55,9 +56,10 @@ archived_status: {
   domain_flag?: boolean;
   ssl_flag?: boolean;
   host_flag?: boolean;
-  storage_services_flag?:boolean;
-  msoffice_services_flag?:boolean;
-  dns_flag?:boolean;
+  storage_services_flag?: boolean;
+  msoffice_services_flag?: boolean;
+  dns_flag?: boolean;
+
   subscription?: string;
   email_status?: string;
   username?: string;
@@ -67,7 +69,6 @@ archived_status: {
   email_expiryDate?: Date | null;
   email_customer?: string;
   provider?: string;
-  
 }
 
 const orderSchema = new mongoose.Schema<IOrder>(
@@ -75,113 +76,285 @@ const orderSchema = new mongoose.Schema<IOrder>(
     // ========================
     // Basic Domain Information
     // ========================
-    domainName: { type: String, required: true, index: true, unique: true },
-status: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: "Status",
-},
-    order_status: {
-    type: String,
-    enum: ["ACTIVE", "EXPIRED"],
-    default: "ACTIVE"
-  },
-   archived_status:{
-    type: String,
-    enum:["REDEMPTION PERIOD","PENDING DELETE RESTORABLE"]
-   },
-    customer: { type: mongoose.Schema.Types.ObjectId, ref: "Customer" },
-    client: { type: mongoose.Schema.Types.ObjectId, ref: "Client" },
-    registrarName: { type: mongoose.Schema.Types.ObjectId, ref: "Registrar" },
-    managedBy: { type: String, enum: ["Signroots", "Customer"] },
 
-  is_active:{
-    type:Boolean,
-    default:true
-  },
+    domainName: {
+      type: String,
+      required: true,
+      index: true,
+      unique: true,
+    },
+
+    // Overall Order Status
+    // status: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "Status",
+    // },
+
+    // Order-specific Status
+    order_status: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Status",
+    },
+
+    // Domain-specific Status
+    domain_status: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Status",
+    },
+
+    customer: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Customer",
+    },
+
+    client: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Client",
+    },
+
+    registrarName: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Registrar",
+    },
+
+    managedBy: {
+      type: String,
+      enum: ["Signroots", "Customer"],
+    },
+
+    // External registrar/server status
+    server_status: {
+      type: String,
+    },
+
+    is_active: {
+      type: Boolean,
+      default: true,
+    },
 
     // ========================
     // Dates
     // ========================
-    registrationDate: { type: Date },
-    expiryDate: { type: Date },
-    creationDate: { type: Date },
-    email_expiryDate: { type: Date },
+
+    registrationDate: {
+      type: Date,
+    },
+
+    expiryDate: {
+      type: Date,
+    },
+
+    creationDate: {
+      type: Date,
+    },
+
+    email_expiryDate: {
+      type: Date,
+    },
 
     // ========================
     // Reseller Info
     // ========================
-    originalRegistrar: { type: String },
+
+    originalRegistrar: {
+      type: String,
+    },
+
     reseller_outside_inside: {
       type: String,
       enum: ["SubReseller", "MainReseller", "Unknown"],
     },
-    reseller_id: { type: Number },
-    subResellerName: { type: String },
-    subResellerEmail: { type: String },
+
+    reseller_id: {
+      type: Number,
+    },
+
+    subResellerName: {
+      type: String,
+    },
+
+    subResellerEmail: {
+      type: String,
+    },
 
     // ========================
     // Domain Config
     // ========================
+
     nameServers: [{ type: String }],
+
     dnsDetails: [{ type: String }],
-    lockStatus: { type: String },
+
+    lockStatus: {
+      type: String,
+    },
+
     domainSource: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: "DomainSource"
-},
-    resellerCustomerId: { type: String },
-    cloudflareRegistered: { type: Boolean, default: false },
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "DomainSource",
+    },
+
+    resellerCustomerId: {
+      type: String,
+    },
+
+    cloudflareRegistered: {
+      type: Boolean,
+      default: false,
+    },
 
     // ========================
     // Flags
     // ========================
-    businessEmail: { type: Boolean, default: false },
-    hosting: { type: Boolean, default: false },
-    google_email: { type: Boolean, default: false },
-    microsoft_email: { type: Boolean, default: false },
-    email_flag: { type: Boolean, default: false },
-    website_flag: { type: Boolean, default: false },
-    domain_flag: { type: Boolean, default: false },
-    ssl_flag: { type: Boolean, default: false },
-    host_flag: { type: Boolean, default: false },
-    storage_services_flag:{type:Boolean,default:false},
-    msoffice_services_flag:{type:Boolean,default:false},
-    dns_flag:{type:Boolean,default:false},
-    // ========================
-    // References to Other Models
-    // ========================
-    emailtypeid: { type: mongoose.Schema.Types.ObjectId, ref: "TypeEmail" },
-    planid: { type: mongoose.Schema.Types.ObjectId, ref: "EmailPlan" },
-    hosttypeid: { type: mongoose.Schema.Types.ObjectId, ref: "HostType" },
-    subHostTypeId: { type: mongoose.Schema.Types.ObjectId, ref: "HostSubType" },
-hoststorageId: { type: mongoose.Schema.Types.ObjectId, ref: "Storage" },
 
+    businessEmail: {
+      type: Boolean,
+      default: false,
+    },
+
+    hosting: {
+      type: Boolean,
+      default: false,
+    },
+
+    google_email: {
+      type: Boolean,
+      default: false,
+    },
+
+    microsoft_email: {
+      type: Boolean,
+      default: false,
+    },
+
+    email_flag: {
+      type: Boolean,
+      default: false,
+    },
+
+    website_flag: {
+      type: Boolean,
+      default: false,
+    },
+
+    domain_flag: {
+      type: Boolean,
+      default: false,
+    },
+
+    ssl_flag: {
+      type: Boolean,
+      default: false,
+    },
+
+    host_flag: {
+      type: Boolean,
+      default: false,
+    },
+
+    storage_services_flag: {
+      type: Boolean,
+      default: false,
+    },
+
+    msoffice_services_flag: {
+      type: Boolean,
+      default: false,
+    },
+
+    dns_flag: {
+      type: Boolean,
+      default: false,
+    },
+
+    // ========================
+    // References
+    // ========================
+
+    emailtypeid: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "TypeEmail",
+    },
+
+    planid: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "EmailPlan",
+    },
+
+    hosttypeid: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "HostType",
+    },
+
+    subHostTypeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "HostSubType",
+    },
+
+    hoststorageId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Storage",
+    },
 
     // ========================
     // Email Service Details
     // ========================
-    subscription: { type: String },
-    email_status: { type: String },
-    server_status: { type: String },
-    username: { type: String },
-    password: { type: String },
-    users: { type: Number },
-    email_customer: { type: String },
-    provider: { type: String },
+
+    subscription: {
+      type: String,
+    },
+
+    email_status: {
+      type: String,
+    },
+
+    username: {
+      type: String,
+    },
+
+    password: {
+      type: String,
+    },
+
+    users: {
+      type: Number,
+    },
+
+    email_customer: {
+      type: String,
+    },
+
+    provider: {
+      type: String,
+    },
 
     // ========================
     // Metadata
     // ========================
-    modified_on: { type: String },
-    created_on: { type: String },
-    activated_on: { type: String },
-    order_id: { type: String },
+
+    modified_on: {
+      type: String,
+    },
+
+    created_on: {
+      type: String,
+    },
+
+    activated_on: {
+      type: String,
+    },
+
+    order_id: {
+      type: String,
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
-// ✅ Prevent model overwrite in hot-reload environments
 export const Order =
-  mongoose.models.Order || mongoose.model<IOrder>("Order", orderSchema);
+  mongoose.models.Order ||
+  mongoose.model<IOrder>("Order", orderSchema);
 
 export default Order;

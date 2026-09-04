@@ -129,7 +129,7 @@ if (expiryDate) {
           domainName,
           customer: customer._id,
           // status: d["entity.currentstatus"],
-          status: domainStatus,
+          server_status: domainStatus,
 
           is_active: isActive,
           managedBy: "Signroots",
