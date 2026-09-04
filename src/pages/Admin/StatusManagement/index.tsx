@@ -1,239 +1,770 @@
 import React, { useEffect, useState } from "react";
+
 import {
   fetchStatuses,
   createStatus,
   updateStatus,
   deleteStatus,
 } from "./api";
-import { fetchTypeEmails } from "../DataManagement/api";
+
 import {
   Button,
   Input,
-  Checkbox,
+  Switch,
   Table,
   Space,
   Form,
   Card,
   Select,
+  Tag,
+  Typography,
+  Popconfirm,
+  message,
+  Empty,
+  Divider,
 } from "antd";
+
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  ReloadOutlined,
+  SaveOutlined,
+  CloseOutlined,
+} from "@ant-design/icons";
+
+const { Title, Text } = Typography;
+
+// =====================================================
+// STATUS TYPE
+// =====================================================
+
+type StatusType = "order" | "plan" | "domain";
+
+// =====================================================
+// STATUS INTERFACE
+// =====================================================
 
 interface Status {
   _id: string;
   name: string;
+  code: string;
+  type: StatusType;
+  is_custom: boolean;
   is_active: boolean;
-  typeEmail: {
-    _id: string;
-    name: string;
-  };
 }
 
-interface TypeEmail {
-  _id: string;
-  name: string;
-}
+// =====================================================
+// COMPONENT
+// =====================================================
 
 const StatusManager: React.FC = () => {
   const [statuses, setStatuses] = useState<Status[]>([]);
-  const [typeEmails, setTypeEmails] = useState<TypeEmail[]>([]);
 
   const [name, setName] = useState("");
+  const [code, setCode] = useState("");
+  const [type, setType] = useState<StatusType>("order");
+  const [isCustom, setIsCustom] = useState(false);
   const [isActive, setIsActive] = useState(true);
-  const [typeEmail, setTypeEmail] = useState("");
 
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  // Load Statuses
+  // =====================================================
+  // LOAD STATUSES
+  // =====================================================
+
   const loadStatuses = async () => {
     try {
+      setLoading(true);
+
       const data = await fetchStatuses();
-      setStatuses(data);
+
+      setStatuses(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error(error);
+      console.error("Failed to load statuses:", error);
+
+      message.error("Failed to load statuses");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Load Type Emails
-const loadTypeEmails = async () => {
-  try {
-    const response = await fetchTypeEmails();
+  // =====================================================
+  // INITIAL LOAD
+  // =====================================================
 
-    console.log("Type Emails API:", response);
-
-    setTypeEmails(
-      Array.isArray(response)
-        ? response
-        : response.data || response.typeEmails || []
-    );
-
-  } catch (error) {
-    console.error(error);
-  }
-};
-
-  // Initial Load
   useEffect(() => {
     loadStatuses();
-    loadTypeEmails();
   }, []);
 
-  // Submit
+  // =====================================================
+  // RESET FORM
+  // =====================================================
+
+  const resetForm = () => {
+    setName("");
+    setCode("");
+    setType("order");
+    setIsCustom(false);
+    setIsActive(true);
+    setEditingId(null);
+  };
+
+  // =====================================================
+  // SUBMIT
+  // =====================================================
+
   const handleSubmit = async () => {
-    if (!name.trim()) {
-      alert("Please enter status name");
+    const trimmedName = name.trim();
+    const trimmedCode = code.trim().toUpperCase();
+
+    if (!trimmedName) {
+      message.warning("Please enter status name");
       return;
     }
 
-    if (!typeEmail) {
-      alert("Please select Type Email");
+    if (!trimmedCode) {
+      message.warning("Please enter status code");
+      return;
+    }
+
+    if (!type) {
+      message.warning("Please select status type");
       return;
     }
 
     const payload = {
-      name,
+      name: trimmedName,
+      code: trimmedCode,
+      type,
+      is_custom: isCustom,
       is_active: isActive,
-      typeEmail,
     };
 
     try {
+      setSaving(true);
+
       if (editingId) {
         await updateStatus(editingId, payload);
+
+        message.success("Status updated successfully");
       } else {
         await createStatus(payload);
+
+        message.success("Status created successfully");
       }
 
-      // Reset form
-      setName("");
-      setIsActive(true);
-      setTypeEmail("");
-      setEditingId(null);
+      resetForm();
 
-      loadStatuses();
+      await loadStatuses();
     } catch (error) {
-      console.error(error);
+      console.error("Status save error:", error);
+
+      message.error(
+        editingId
+          ? "Failed to update status"
+          : "Failed to create status"
+      );
+    } finally {
+      setSaving(false);
     }
   };
 
-  // Edit
+  // =====================================================
+  // EDIT
+  // =====================================================
+
   const handleEdit = (status: Status) => {
     setName(status.name);
+    setCode(status.code || "");
+    setType(status.type);
+    setIsCustom(status.is_custom ?? false);
     setIsActive(status.is_active);
-    setTypeEmail(status.typeEmail?._id || "");
+
     setEditingId(status._id);
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   };
 
-  // Delete
+  // =====================================================
+  // DELETE
+  // =====================================================
+
   const handleDelete = async (id: string) => {
     try {
       await deleteStatus(id);
-      loadStatuses();
+
+      message.success("Status deleted successfully");
+
+      if (editingId === id) {
+        resetForm();
+      }
+
+      await loadStatuses();
     } catch (error) {
-      console.error(error);
+      console.error("Delete status error:", error);
+
+      message.error("Failed to delete status");
     }
   };
 
-  return (
-    <div style={{ padding: 24 }}>
-      {/* Form */}
-      <Card
-        title={editingId ? "Edit Status" : "Add Status"}
-        style={{ marginBottom: 24 }}
-      >
-        <Form layout="inline" onFinish={handleSubmit}>
-          <Form.Item>
-            <Input
-              placeholder="Enter status name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              style={{ width: 220 }}
-            />
-          </Form.Item>
+  // =====================================================
+  // TYPE TAG
+  // =====================================================
 
-          <Form.Item>
-            <Select
-              placeholder="Select Type Email"
-              style={{ width: 220 }}
-              value={typeEmail}
-              onChange={(value) => setTypeEmail(value)}
-            >
-              {typeEmails.map((item) => (
-                <Select.Option key={item._id} value={item._id}>
-                  {item.name}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
+  const renderType = (type: StatusType) => {
+    if (type === "order") {
+      return <Tag color="blue">Order</Tag>;
+    }
 
-          <Form.Item>
-            <Checkbox
-              checked={isActive}
-              onChange={(e) => setIsActive(e.target.checked)}
-            >
-              Active
-            </Checkbox>
-          </Form.Item>
+    if (type === "plan") {
+      return <Tag color="purple">Plan</Tag>;
+    }
 
-          <Form.Item>
+    return <Tag color="cyan">Domain</Tag>;
+  };
+
+  // =====================================================
+  // CUSTOM TAG
+  // =====================================================
+
+  const renderCustom = (isCustom: boolean) => {
+    return isCustom ? (
+      <Tag color="orange">Custom</Tag>
+    ) : (
+      <Tag color="default">Default</Tag>
+    );
+  };
+
+  // =====================================================
+  // TABLE COLUMNS
+  // =====================================================
+
+  const columns = [
+    {
+      title: "Status Name",
+      dataIndex: "name",
+      key: "name",
+      render: (value: string) => (
+        <Text strong style={{ fontSize: 14 }}>
+          {value}
+        </Text>
+      ),
+    },
+
+    {
+      title: "Code",
+      dataIndex: "code",
+      key: "code",
+      render: (value: string) => (
+        <Text code>{value}</Text>
+      ),
+    },
+
+    {
+      title: "Type",
+      dataIndex: "type",
+      key: "type",
+      width: 150,
+      render: (value: StatusType) =>
+        renderType(value),
+    },
+
+    {
+      title: "Custom",
+      dataIndex: "is_custom",
+      key: "is_custom",
+      width: 120,
+      render: (value: boolean) =>
+        renderCustom(value),
+    },
+
+    {
+      title: "Status",
+      dataIndex: "is_active",
+      key: "is_active",
+      width: 140,
+      render: (active: boolean) =>
+        active ? (
+          <Tag color="success">
+            Active
+          </Tag>
+        ) : (
+          <Tag color="default">
+            Inactive
+          </Tag>
+        ),
+    },
+
+    {
+      title: "Actions",
+      key: "actions",
+      width: 180,
+      render: (_: unknown, record: Status) => (
+        <Space size="small">
+
+          <Button
+            type="default"
+            icon={<EditOutlined />}
+            onClick={() =>
+              handleEdit(record)
+            }
+          >
+            Edit
+          </Button>
+
+          <Popconfirm
+            title="Delete this status?"
+            description="This action cannot be undone."
+            okText="Delete"
+            cancelText="Cancel"
+            okButtonProps={{
+              danger: true,
+            }}
+            onConfirm={() =>
+              handleDelete(record._id)
+            }
+          >
             <Button
-              htmlType="submit"
-              type="primary"
+              danger
+              icon={<DeleteOutlined />}
+            >
+              Delete
+            </Button>
+          </Popconfirm>
+
+        </Space>
+      ),
+    },
+  ];
+
+  // =====================================================
+  // UI
+  // =====================================================
+
+  return (
+    <div
+      style={{
+        padding: "24px",
+        background: "#f5f7fa",
+        minHeight: "100vh",
+      }}
+    >
+
+      {/* =================================================
+          PAGE HEADER
+      ================================================= */}
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 24,
+        }}
+      >
+
+        <div>
+
+          <Title
+            level={3}
+            style={{
+              margin: 0,
+              fontWeight: 600,
+            }}
+          >
+            Status Management
+          </Title>
+
+          <Text type="secondary">
+            Create and manage order, plan and
+            domain statuses.
+          </Text>
+
+        </div>
+
+        <Button
+          icon={<ReloadOutlined />}
+          onClick={loadStatuses}
+          loading={loading}
+        >
+          Refresh
+        </Button>
+
+      </div>
+
+      {/* =================================================
+          FORM CARD
+      ================================================= */}
+
+      <Card
+        bordered={false}
+        style={{
+          borderRadius: 12,
+          marginBottom: 24,
+          boxShadow:
+            "0 2px 8px rgba(0,0,0,0.06)",
+        }}
+      >
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 20,
+          }}
+        >
+
+          <div>
+
+            <Text
+              strong
               style={{
-                backgroundColor: "black",
-                borderColor: "black",
+                fontSize: 18,
               }}
             >
-              {editingId ? "Update" : "Add"}
+              {editingId
+                ? "Edit Status"
+                : "Add New Status"}
+            </Text>
+
+            <div>
+
+              <Text type="secondary">
+                {editingId
+                  ? "Update the selected status details."
+                  : "Create a new status for your system."}
+              </Text>
+
+            </div>
+
+          </div>
+
+          {editingId && (
+            <Button
+              icon={<CloseOutlined />}
+              onClick={resetForm}
+            >
+              Cancel Edit
             </Button>
-          </Form.Item>
+          )}
+
+        </div>
+
+        <Divider
+          style={{
+            margin: "0 0 24px",
+          }}
+        />
+
+        <Form
+          layout="vertical"
+          onFinish={handleSubmit}
+        >
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "minmax(220px, 1fr) minmax(180px, 220px) minmax(180px, 220px) auto auto",
+              gap: 20,
+              alignItems: "end",
+            }}
+          >
+
+            {/* STATUS NAME */}
+
+            <Form.Item
+              label={
+                <Text strong>
+                  Status Name
+                </Text>
+              }
+              style={{
+                marginBottom: 0,
+              }}
+            >
+
+              <Input
+                size="large"
+                placeholder="Enter status name"
+                value={name}
+                onChange={(e) =>
+                  setName(e.target.value)
+                }
+                maxLength={100}
+              />
+
+            </Form.Item>
+
+            {/* CODE */}
+
+            <Form.Item
+              label={
+                <Text strong>
+                  Code
+                </Text>
+              }
+              style={{
+                marginBottom: 0,
+              }}
+            >
+
+              <Input
+                size="large"
+                placeholder="Example: ACTIVE"
+                value={code}
+                onChange={(e) =>
+                  setCode(
+                    e.target.value.toUpperCase()
+                  )
+                }
+                maxLength={100}
+              />
+
+            </Form.Item>
+
+            {/* TYPE */}
+
+            <Form.Item
+              label={
+                <Text strong>
+                  Type
+                </Text>
+              }
+              style={{
+                marginBottom: 0,
+              }}
+            >
+
+              <Select
+                size="large"
+                value={type}
+                onChange={(value) =>
+                  setType(value)
+                }
+                style={{
+                  width: "100%",
+                }}
+              >
+
+                <Select.Option value="order">
+                  Order
+                </Select.Option>
+
+                <Select.Option value="plan">
+                  Plan
+                </Select.Option>
+
+                <Select.Option value="domain">
+                  Domain
+                </Select.Option>
+
+              </Select>
+
+            </Form.Item>
+
+            {/* CUSTOM */}
+
+            <Form.Item
+              label={
+                <Text strong>
+                  Custom
+                </Text>
+              }
+              style={{
+                marginBottom: 0,
+              }}
+            >
+
+              <div
+                style={{
+                  height: 40,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                }}
+              >
+
+                <Switch
+                  checked={isCustom}
+                  onChange={setIsCustom}
+                />
+
+                <Text>
+                  {isCustom
+                    ? "Custom"
+                    : "Default"}
+                </Text>
+
+              </div>
+
+            </Form.Item>
+
+            {/* ACTIVE */}
+
+            <Form.Item
+              label={
+                <Text strong>
+                  Status
+                </Text>
+              }
+              style={{
+                marginBottom: 0,
+              }}
+            >
+
+              <div
+                style={{
+                  height: 40,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                }}
+              >
+
+                <Switch
+                  checked={isActive}
+                  onChange={setIsActive}
+                />
+
+                <Text>
+                  {isActive
+                    ? "Active"
+                    : "Inactive"}
+                </Text>
+
+              </div>
+
+            </Form.Item>
+
+            {/* BUTTON */}
+
+            <Form.Item
+              style={{
+                marginBottom: 0,
+              }}
+            >
+
+              <Space>
+
+                {editingId && (
+                  <Button
+                    size="large"
+                    icon={<CloseOutlined />}
+                    onClick={resetForm}
+                  >
+                    Cancel
+                  </Button>
+                )}
+
+                <Button
+                  size="large"
+                  type="primary"
+                  htmlType="submit"
+                  loading={saving}
+                  icon={
+                    editingId ? (
+                      <SaveOutlined />
+                    ) : (
+                      <PlusOutlined />
+                    )
+                  }
+                  style={{
+                    background: "#000",
+                    borderColor: "#000",
+                  }}
+                >
+
+                  {editingId
+                    ? "Update Status"
+                    : "Add Status"}
+
+                </Button>
+
+              </Space>
+
+            </Form.Item>
+
+          </div>
+
         </Form>
+
       </Card>
 
-      {/* Table */}
-      <Card title="Statuses">
+      {/* =================================================
+          TABLE CARD
+      ================================================= */}
+
+      <Card
+        bordered={false}
+        style={{
+          borderRadius: 12,
+          boxShadow:
+            "0 2px 8px rgba(0,0,0,0.06)",
+        }}
+        title={
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+
+            <Text
+              strong
+              style={{
+                fontSize: 18,
+              }}
+            >
+              All Statuses
+            </Text>
+
+            <Tag>
+              {statuses.length}
+            </Tag>
+
+          </div>
+        }
+      >
+
         <Table
           rowKey="_id"
           dataSource={statuses}
-          columns={[
-            {
-              title: "Status Name",
-              dataIndex: "name",
-              key: "name",
-            },
-            {
-              title: "Type Email",
-              dataIndex: "typeEmail",
-              key: "typeEmail",
-              render: (typeEmail: any) => typeEmail?.name || "-",
-            },
-            {
-              title: "Active",
-              dataIndex: "is_active",
-              key: "is_active",
-              render: (active: boolean) =>
-                active ? "✅ Yes" : "❌ No",
-            },
-            {
-              title: "Actions",
-              key: "actions",
-              render: (_: any, record: Status) => (
-                <Space>
-                  <Button onClick={() => handleEdit(record)}>
-                    Edit
-                  </Button>
-
-                  <Button
-                    danger
-                    onClick={() => handleDelete(record._id)}
-                  >
-                    Delete
-                  </Button>
-                </Space>
-              ),
-            },
-          ]}
+          columns={columns}
+          loading={loading}
+          pagination={{
+            pageSize: 10,
+            showSizeChanger: true,
+            pageSizeOptions: [
+              "10",
+              "20",
+              "50",
+            ],
+            showTotal: (total) =>
+              `Total ${total} statuses`,
+          }}
+          locale={{
+            emptyText: (
+              <Empty
+                description="No statuses found"
+              />
+            ),
+          }}
         />
+
       </Card>
+
     </div>
   );
 };
 
 export default StatusManager;
+

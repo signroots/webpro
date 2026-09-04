@@ -598,29 +598,27 @@ setTotalOrders(response.total || 0);
 // ]);
   // const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
   const paginatedOrders = orders;
-const getStatusClass = (status?: string) => {
-  const value = status?.trim().toLowerCase();
+const getStatusClass = (
+  status?: {
+    _id: string;
+    name: string;
+    code: string;
+    type: "order" | "plan" | "domain";
+    is_active: boolean;
+  } | null
+) => {
+  const normalized = status?.code?.trim().toUpperCase();
 
-  // N/A or empty → YELLOW
-  if (!value) {
-    return "bg-blue-100 text-blue-800";
+  if (normalized === "ACTIVE") {
+    return "bg-green-100 text-green-700";
   }
 
-  // EXPIRED → RED
-  if (value === "expired") {
-    return "bg-red-600 text-white";
+  if (normalized === "EXPIRED") {
+    return "bg-orange-100 text-orange-700";
   }
 
-  // ACTIVE → GREEN
-  if (value === "active") {
-    return "bg-gray-100 text-green-700";
-  }
-
-  // fallback
-  return "bg-gray-200 text-gray-800";
+  return "bg-gray-100 text-gray-700";
 };
-
-
 
   useEffect(() => {
     if (!updatedOrderId) return;
@@ -1001,16 +999,16 @@ const getStatusClass = (status?: string) => {
 
 
                   <label className="block">
-                    Status:
-                    <select
-                      defaultValue={selectedOrder.order_status}
-                      className="border px-3 py-2 rounded w-full text-black"
-                    >
-                      <option>Active</option>
-                      <option>Inactive</option>
-                      <option>Expired</option>
-                    </select>
-                  </label>
+  Status:
+
+  <select
+    defaultValue={selectedOrder.order_status?.code || ""}
+    className="border px-3 py-2 rounded w-full text-black"
+  >
+    <option value="ACTIVE">Active</option>
+    <option value="EXPIRED">Expired</option>
+  </select>
+</label>
 
                   <label className="block">
                     Customer Name:

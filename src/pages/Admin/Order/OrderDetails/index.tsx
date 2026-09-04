@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { fetchOrderById, fetchStatuses, updateOrderStatus, updatePlanStatus, fetchOrderStatuses, fetchPlanStatuses } from "../api";
+import { fetchOrderById, fetchStatuses, updateOrderStatus, updatePlanStatus, fetchOrderStatuses, fetchPlanStatuses, fetchDomainStatuses } from "../api";
 import { FaArrowLeft, FaEdit, FaRedo } from "react-icons/fa";
 
 /* ===================== TYPES ===================== */
@@ -66,6 +66,20 @@ interface Order {
     _id: string;
     name: string;
   } | null;
+  order_status?: {
+    _id: string;
+    name: string;
+    code: string;
+    type: string;
+    is_active: boolean;
+  } | null;
+  domain_status?: {
+    _id: string;
+    name: string;
+    code: string;
+    type: string;
+    is_active: boolean;
+  } | null;
   managedBy?: string;
   registrationDate?: string;
   expiryDate?: string;
@@ -123,7 +137,7 @@ const OrderDetails: React.FC = () => {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  const [domainStatuses, setDomainStatuses] = useState<Status[]>([]);
   useEffect(() => {
     if (!orderId) return;
 
@@ -159,8 +173,10 @@ const OrderDetails: React.FC = () => {
         // ===============================
 
         const orderStatusData = await fetchOrderStatuses(orderId);
+        const domainStatusData = await fetchDomainStatuses(orderId);
 
         setStatuses(orderStatusData);
+        setDomainStatuses(domainStatusData);
 
         // ===============================
         // PLAN STATUSES
@@ -230,28 +246,23 @@ const OrderDetails: React.FC = () => {
       <div className="max-w-6xl mx-auto bg-white rounded-xl shadow p-6 space-y-8">
 
         {/* Header */}
+
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-800">
-            Domain Details – {order.domainName}
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-gray-800">
+              Order – {order.domainName}
+            </h1>
 
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
-          >
-            <FaArrowLeft /> Back
-          </button>
-        </div>
-
-        <Section
-          title="Domain Information"
-          rightContent={
+            {/* Order Status Dropdown */}
             <select
-              value={order.status?._id || ""}
+              value={order.order_status?._id || ""}
               onChange={async (e) => {
                 const newStatusId = e.target.value;
 
-                if (!newStatusId || newStatusId === order.status?._id) {
+                if (
+                  !newStatusId ||
+                  newStatusId === order.order_status?._id
+                ) {
                   return;
                 }
 
@@ -270,7 +281,78 @@ const OrderDetails: React.FC = () => {
                 try {
                   const updatedOrder = await updateOrderStatus(
                     order._id,
-                    newStatusId
+                    { order_status: newStatusId }
+                  );
+
+                  setOrder((prev) => {
+                    if (!prev) return prev;
+
+                    return {
+                      ...prev,
+                      order_status: updatedOrder.order_status,
+                    };
+                  });
+                } catch (error) {
+                  console.error("Order status update error:", error);
+                  alert("Failed to update order status");
+                }
+              }}
+              className="border border-gray-300 rounded-md px-3 py-1.5 text-sm font-medium text-gray-700"
+            >
+              {/* Current Status */}
+              <option value={order.order_status?._id || ""}>
+                {order.order_status?.name || "Select Order Status"}
+              </option>
+
+              {/* Other Statuses */}
+              {statuses
+                .filter(
+                  (status) =>
+                    status.is_active &&
+                    status._id !== order.order_status?._id
+                )
+                .map((status) => (
+                  <option key={status._id} value={status._id}>
+                    {status.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
+          >
+            <FaArrowLeft /> Back
+          </button>
+        </div>
+
+        <Section
+          title="Domain Information"
+          rightContent={
+            <select
+              value={order.domain_status?._id || ""}
+              onChange={async (e) => {
+                const newStatusId = e.target.value;
+
+                if (!newStatusId || newStatusId === order.status?._id) {
+                  return;
+                }
+
+                const selectedStatus = domainStatuses.find(
+  (status) => status._id === newStatusId
+);
+                const confirmed = window.confirm(
+                  `Are you sure you want to change the status to "${selectedStatus?.name}"?`
+                );
+
+                if (!confirmed) {
+                  return;
+                }
+
+                try {
+                  const updatedOrder = await updateOrderStatus(
+                    order._id,
+                    { domain_status: newStatusId }
                   );
 
                   setOrder((prev) => {
@@ -287,9 +369,11 @@ const OrderDetails: React.FC = () => {
               }}
               className="border border-gray-300 rounded-md px-3 py-1.5 text-sm font-medium text-gray-700"
             >
-              <option value="">Select Status</option>
+             <option value={order.domain_status?._id || ""}>
+  {order.domain_status?.name || "Select Domain Status"}
+</option>
 
-              {statuses
+              {domainStatuses
                 .filter((status) => status.is_active)
                 .map((status) => (
                   <option

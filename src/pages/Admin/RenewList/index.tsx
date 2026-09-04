@@ -109,8 +109,13 @@ interface Order {
 
 
   status?:string;
-
-order_status?:string;
+order_status?: {
+  _id: string;
+  name: string;
+  code: string;
+  type: "order" | "plan" |"domain";
+  is_active: boolean;
+} | null;
 
   expiryDate?:string;
 
@@ -208,7 +213,11 @@ const getDaysLeft = (expiryDate?: string) => {
   );
 };
 
-const getStatusClass = (status?: string) => {
+const getStatusClass = (status: any) => {
+  const statusName =
+    typeof status === "string"
+      ? status
+      : status?.name || status?.code || "";
   switch (status?.toUpperCase()) {
     case "EXPIRED":
       return "bg-red-100 text-red-700";
@@ -221,9 +230,9 @@ const getStatusClass = (status?: string) => {
 
     default:
       return "bg-gray-100 text-gray-600";
-  }
+  
 };
-
+};
   // ===============================
   // EXPIRY STATUS
   // ===============================
@@ -1000,10 +1009,10 @@ order.client.c_name
  
 <span
   className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${getStatusClass(
-    order.order_status
+    order.order_status?.name
   )}`}
 >
-  {order.order_status || "-"}
+  {order.order_status?.name || "-"}
 </span>
 
 </div>

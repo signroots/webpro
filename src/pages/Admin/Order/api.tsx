@@ -68,7 +68,17 @@ export const fetchOrderStatuses = async (orderId: string) => {
 
   return response.data;
 };
+// ===============================
+// DOMAIN STATUS
+// ===============================
 
+export const fetchDomainStatuses = async (orderId: string) => {
+  const response = await axios.get(
+    `${FULL_API_URL}/status/domain/${orderId}`
+  );
+
+  return response.data;
+};
 // ===============================
 // PLAN STATUSES
 // ===============================
@@ -82,13 +92,14 @@ export const fetchPlanStatuses = async (planId: string) => {
 };
 export const updateOrderStatus = async (
   orderId: string,
-  statusId: string
+  data: {
+    order_status?: string;
+    domain_status?: string;
+  }
 ) => {
   const response = await axios.put(
     `${FULL_API_URL}/status/order/${orderId}/status`,
-    {
-      status: statusId,
-    }
+    data
   );
 
   return response.data.data || response.data;

@@ -34,7 +34,13 @@ interface OrdersTableProps {
 
   handleEdit: (order: Order) => void;
 
-  getStatusClass: (status?: string) => string;
+getStatusClass: (status?: {
+  _id: string;
+  name: string;
+  code: string;
+  type: "order" | "plan" | "domain";
+  is_active: boolean;
+} | null) => string;
 
   navigate: NavigateFunction;
 }
@@ -214,12 +220,12 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
               <td className="px-3 py-4 text-center">
 
                 <span
-                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${getStatusClass(
-                    order.order_status
-                  )}`}
-                >
-                  {order.order_status || "N/A"}
-                </span>
+  className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${getStatusClass(
+    order.order_status
+  )}`}
+>
+  {order.order_status?.name || "N/A"}
+</span>
 
               </td>
 

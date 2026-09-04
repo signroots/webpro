@@ -99,28 +99,31 @@ const handleEdit = (order: any) => {
   });
 };
 
-const getStatusClass = (status?: string) => {
-  const value = status?.trim().toLowerCase();
+const getStatusClass = (
+  status?: {
+    _id: string;
+    name: string;
+    code: string;
+    type: "order" | "plan" | "domain";
+    is_active: boolean;
+  } | null
+): string => {
+  const value = status?.name?.trim().toLowerCase();
 
-  // Empty / N/A
   if (!value) {
     return "bg-blue-100 text-blue-800";
   }
 
-  // Expired
   if (value === "expired") {
     return "bg-red-600 text-white";
   }
 
-  // Active
   if (value === "active") {
     return "bg-gray-100 text-green-700";
   }
 
-  // Other status
   return "bg-gray-200 text-gray-800";
 };
-
   if (loading) {
 
     return (

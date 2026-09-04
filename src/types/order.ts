@@ -49,7 +49,13 @@ export interface Order {
     type: "order" | "plan";
   } | null;
 
-  order_status?: string;
+order_status?: {
+  _id: string;
+  name: string;
+  code: string;
+  type: "order" | "plan" |"domain";
+  is_active: boolean;
+} | null;
 
   users?: number;
   domain_flag?: boolean;
