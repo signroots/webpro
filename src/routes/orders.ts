@@ -3050,9 +3050,14 @@ router.get(
           model: "Storage",
         })
         .populate({
-          path: "status",
+          path: "primary_status",
           model: "Status",
-          select: "name",
+          select: "_id name code type category is_custom is_active",
+        })
+        .populate({
+          path: "secondary_status",
+          model: "Status",
+          select: "_id name code type category is_custom is_active",
         })
         .lean();
 
@@ -3074,6 +3079,29 @@ router.get(
             ? {
               _id: p.status._id,
               name: p.status.name,
+            }
+            : null,
+          primary_status: p.primary_status
+            ? {
+              _id: p.primary_status._id,
+              name: p.primary_status.name,
+              code: p.primary_status.code,
+              type: p.primary_status.type,
+              category: p.primary_status.category,
+              is_custom: p.primary_status.is_custom,
+              is_active: p.primary_status.is_active,
+            }
+            : null,
+
+          secondary_status: p.secondary_status
+            ? {
+              _id: p.secondary_status._id,
+              name: p.secondary_status.name,
+              code: p.secondary_status.code,
+              type: p.secondary_status.type,
+              category: p.secondary_status.category,
+              is_custom: p.secondary_status.is_custom,
+              is_active: p.secondary_status.is_active,
             }
             : null,
 
@@ -3132,7 +3160,7 @@ router.get(
           _id: orderObj._id,
           domainName: orderObj.domainName,
           order_status: orderObj.order_status,
-          domain_status:orderObj.domain_status,
+          domain_status: orderObj.domain_status,
           managedBy: orderObj.managedBy,
 
           // Registrar / Domain Source

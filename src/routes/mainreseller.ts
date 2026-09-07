@@ -10,6 +10,73 @@ const router = express.Router();
 /* ======================================================
    BACKGROUND IMPORT FUNCTION (LONG TASK)
 ====================================================== */
+export async function fetchResellerClubDomainMap() {
+  const {
+    MAIN_RESELLER_USER_ID,
+    MAIN_RESELLER_API_KEY,
+  } = process.env;
+
+  if (!MAIN_RESELLER_USER_ID || !MAIN_RESELLER_API_KEY) {
+    throw new Error("ResellerClub credentials missing");
+  }
+
+  const perPage = 100;
+  let page = 1;
+
+  const resellerDomainMap: Record<string, any> = {};
+
+  console.log("🔴 Fetching ResellerClub domains for Cloudflare priority check...");
+
+  while (true) {
+    console.log(`📄 ResellerClub page ${page}`);
+
+    const response = await axios.get(
+      "https://httpapi.com/api/domains/search.json",
+      {
+        params: {
+          "auth-userid": MAIN_RESELLER_USER_ID,
+          "api-key": MAIN_RESELLER_API_KEY,
+          "no-of-records": perPage,
+          "page-no": page,
+        },
+      }
+    );
+
+    const rawData = response.data;
+
+    const keys = Object.keys(rawData).filter(
+      (k) => /^\d+$/.test(k)
+    );
+
+    if (keys.length === 0) {
+      break;
+    }
+
+    keys.forEach((key) => {
+      const domain = rawData[key];
+
+      const domainName =
+        domain["entity.description"]
+          ?.toLowerCase()
+          .trim();
+
+      if (domainName) {
+        resellerDomainMap[domainName] = domain;
+      }
+    });
+
+    page++;
+  }
+
+  console.log(
+    "🔴 TOTAL RESELLERCLUB DOMAINS:",
+    Object.keys(resellerDomainMap).length
+  );
+
+  return resellerDomainMap;
+}
+
+
 export async function importMainResellerClubDomains(){
   try {
     const resellerSource = await DomainSource.findOne({

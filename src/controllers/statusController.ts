@@ -12,6 +12,7 @@ export const createStatus: RequestHandler = async (req, res) => {
       name,
       code,
       type,
+      category,
       is_custom,
       is_active,
     } = req.body;
@@ -20,6 +21,7 @@ export const createStatus: RequestHandler = async (req, res) => {
       name,
       code,
       type,
+      category,
       is_custom,
       is_active,
     });
@@ -34,15 +36,37 @@ export const createStatus: RequestHandler = async (req, res) => {
   }
 };
 
+
 // ===============================
 // GET PLAN STATUSES
 // ===============================
 export const getPlanStatuses: RequestHandler = async (req, res) => {
   try {
-    const statuses = await Status.find({
+    const { category } = req.query;
+
+    if (
+      category &&
+      category !== "primary" &&
+      category !== "secondary"
+    ) {
+      res.status(400).json({
+        error: "Invalid category. Use primary or secondary",
+      });
+      return;
+    }
+
+    const filter: any = {
       type: "plan",
       is_active: true,
-    }).sort({ createdAt: -1 });
+    };
+
+    if (category) {
+      filter.category = category;
+    }
+
+    const statuses = await Status.find(filter)
+      .select("_id name code type category is_custom is_active")
+      .sort({ createdAt: -1 });
 
     res.json(statuses);
   } catch (err: any) {
@@ -51,8 +75,6 @@ export const getPlanStatuses: RequestHandler = async (req, res) => {
     });
   }
 };
-
-
 // ===============================
 // GET ORDER STATUSES
 // ===============================
@@ -95,27 +117,103 @@ export const getDomainStatuses: RequestHandler = async (req, res) => {
 // ===============================
 export const updatePlanStatus: RequestHandler = async (req, res) => {
   try {
-    const { status } = req.body;
+    const {
+      primary_status,
+      secondary_status,
+    } = req.body;
+
+    if (!primary_status && secondary_status === undefined) {
+      res.status(400).json({
+        success: false,
+        message: "primary_status or secondary_status is required",
+      });
+      return;
+    }
+
+    const updateData: any = {};
+
+    // ============================
+    // PRIMARY STATUS
+    // ============================
+    if (primary_status) {
+      const primaryStatus = await Status.findOne({
+        _id: primary_status,
+        type: "plan",
+        category: "primary",
+        is_active: true,
+      });
+
+      if (!primaryStatus) {
+        res.status(400).json({
+          success: false,
+          message: "Invalid primary plan status",
+        });
+        return;
+      }
+
+      updateData.primary_status = primary_status;
+    }
+
+    // ============================
+    // SECONDARY STATUS
+    // ============================
+    if (secondary_status !== undefined) {
+      if (secondary_status === null || secondary_status === "") {
+        updateData.secondary_status = null;
+      } else {
+        const secondaryStatus = await Status.findOne({
+          _id: secondary_status,
+          type: "plan",
+          category: "secondary",
+          is_active: true,
+        });
+
+        if (!secondaryStatus) {
+          res.status(400).json({
+            success: false,
+            message: "Invalid secondary plan status",
+          });
+          return;
+        }
+
+        updateData.secondary_status = secondary_status;
+      }
+    }
 
     const plan = await OrderPlan.findByIdAndUpdate(
       req.params.id,
-      { status },
+      {
+        $set: updateData,
+      },
       {
         new: true,
         runValidators: true,
       }
-    ).populate("status", "name type");
+    )
+      .populate(
+        "primary_status",
+        "_id name code type category is_custom is_active"
+      )
+      .populate(
+        "secondary_status",
+        "_id name code type category is_custom is_active"
+      );
 
     if (!plan) {
       res.status(404).json({
+        success: false,
         message: "Plan not found",
       });
       return;
     }
 
-    res.status(200).json(plan);
+    res.status(200).json({
+      success: true,
+      data: plan,
+    });
   } catch (error: any) {
     res.status(400).json({
+      success: false,
       message: "Failed to update plan status",
       error: error.message,
     });

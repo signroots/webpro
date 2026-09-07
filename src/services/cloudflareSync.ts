@@ -5,6 +5,7 @@ import Order from "../models/Order";
 import Customer from "../models/Customer";
 import mongoose from "mongoose";
 import DomainSource from "../models/DomainSource";
+import { fetchResellerClubDomainMap } from "../routes/mainreseller";
 dotenv.config();
 
 let cloudflareSyncRunning = false;
@@ -44,25 +45,33 @@ export async function syncCloudflareDomains() {
     // =====================================
     // FETCH ALL REGISTRAR DOMAINS
     // =====================================
-
+const resellerDomainMap =
+  await fetchResellerClubDomainMap();
     const registrarDomainMap: Record<string, any> = {};
 
   let registrarPage = 0;
 let registrarTotalPages = 1;
 const dnsCloudflareSource =
- await DomainSource.findOne({
-   code:"DNS-CLOUDFLARE"
- });
-
+  await DomainSource.findOne({
+    code: "DNS-CLOUDFLARE"
+  });
 
 const cloudflareSource =
- await DomainSource.findOne({
-   code:"CLOUDFLARE"
- });
+  await DomainSource.findOne({
+    code: "CLOUDFLARE"
+  });
 
+const resellerClubSource =
+  await DomainSource.findOne({
+    code: "RESELLERCLUB"
+  });
 
-if(!dnsCloudflareSource || !cloudflareSource){
- throw new Error("Cloudflare domain sources missing");
+if (
+  !dnsCloudflareSource ||
+  !cloudflareSource ||
+  !resellerClubSource
+) {
+  throw new Error("Cloudflare/ResellerClub domain sources missing");
 }
 
 do {
@@ -220,22 +229,43 @@ console.log(
 
       for (const zone of zones) {
 
-        const registrarInfo =
-  registrarDomainMap[zone.name.toLowerCase().trim()];
+       const domainKey =
+  zone.name.toLowerCase().trim();
 
-        if (!registrarInfo) {
+const resellerInfo =
+  resellerDomainMap[domainKey];
+
+const registrarInfo =
+  registrarDomainMap[domainKey];
+
+let selectedDomainSource;
+
+if (resellerInfo) {
+
+  selectedDomainSource =
+    resellerClubSource._id;
 
   console.log(
-    `ℹ️ ${zone.name} DNS only - no registrar expiry`
+    `🔴 ${zone.name} → RESELLERCLUB`
   );
 
-}
-else {
+} else if (registrarInfo) {
+
+  selectedDomainSource =
+    cloudflareSource._id;
 
   console.log(
-    `✅ Registrar found: ${zone.name} expiry ${registrarInfo.expires_at}`
+    `☁️ ${zone.name} → CLOUDFLARE`
   );
 
+} else {
+
+  selectedDomainSource =
+    dnsCloudflareSource._id;
+
+  console.log(
+    `🌐 ${zone.name} → DNS-CLOUDFLARE`
+  );
 }
         const existingOrder =
           await Order.findOne({
@@ -354,11 +384,7 @@ else {
                 customer:
                   defaultCustomer._id,
 
-domainSource:
- registrarInfo
- ? cloudflareSource._id
- : dnsCloudflareSource._id,
-
+domainSource: selectedDomainSource,
 
                 cloudflareRegistered:
                   true,

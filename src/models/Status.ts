@@ -4,6 +4,7 @@ export interface IStatus extends Document {
   name: string;
   code: string;
   type: "order" | "plan" | "domain";
+  category: "primary" | "secondary";
   is_custom: boolean;
   is_active: boolean;
   createdAt: Date;
@@ -33,7 +34,11 @@ const StatusSchema: Schema = new Schema(
       enum: ["order", "plan", "domain"],
       required: true,
     },
-
+category: {
+  type: String,
+  enum: ["primary", "secondary"],
+  required: true,
+},
     // false = default/master status
     // true = customized status
     is_custom: {

@@ -56,7 +56,8 @@ export interface IOrderPlan extends Document {
   // ===============================
 
   status?: mongoose.Types.ObjectId | null;
-
+  primary_status?: mongoose.Types.ObjectId | null;
+secondary_status?: mongoose.Types.ObjectId | null;
   // ===============================
   // TIMESTAMPS
   // ===============================
@@ -104,6 +105,16 @@ const OrderPlanSchema = new Schema(
       ref: "Status",
       default: null,
     },
+    primary_status: {
+  type: Schema.Types.ObjectId,
+  ref: "Status",
+  default: null,
+},
+    secondary_status: {
+  type: Schema.Types.ObjectId,
+  ref: "Status",
+  default: null,
+},
 
     // ===============================
     // EMAIL / STORAGE / MS OFFICE
