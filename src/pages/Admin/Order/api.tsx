@@ -108,19 +108,26 @@ export const updateOrderStatus = async (
 // ===============================
 // UPDATE PLAN STATUS
 // ===============================
+
+// ===============================
+// UPDATE PLAN STATUS
+// ===============================
 export const updatePlanStatus = async (
   planId: string,
-  statusId: string
+  data: {
+    primary_status?: string;
+    secondary_status?: string | null;
+  }
 ) => {
   const response = await axios.put(
     `${FULL_API_URL}/status/plan/${planId}/status`,
-    {
-      status: statusId,
-    }
+    data
   );
 
   return response.data.data || response.data;
 };
+
+
 export interface OrderApiResponse {
   _id: string;
   domainName: string;

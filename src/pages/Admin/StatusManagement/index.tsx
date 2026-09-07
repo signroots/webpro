@@ -40,7 +40,7 @@ const { Title, Text } = Typography;
 // =====================================================
 
 type StatusType = "order" | "plan" | "domain";
-
+type StatusCategory = "primary" | "secondary";
 // =====================================================
 // STATUS INTERFACE
 // =====================================================
@@ -50,6 +50,7 @@ interface Status {
   name: string;
   code: string;
   type: StatusType;
+  category?: StatusCategory;
   is_custom: boolean;
   is_active: boolean;
 }
@@ -64,6 +65,8 @@ const StatusManager: React.FC = () => {
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [type, setType] = useState<StatusType>("order");
+  const [category, setCategory] =
+    useState<StatusCategory>("primary");
   const [isCustom, setIsCustom] = useState(false);
   const [isActive, setIsActive] = useState(true);
 
@@ -107,6 +110,7 @@ const StatusManager: React.FC = () => {
     setName("");
     setCode("");
     setType("order");
+    setCategory("primary");
     setIsCustom(false);
     setIsActive(true);
     setEditingId(null);
@@ -139,6 +143,9 @@ const StatusManager: React.FC = () => {
       name: trimmedName,
       code: trimmedCode,
       type,
+      ...(type === "plan" && {
+        category,
+      }),
       is_custom: isCustom,
       is_active: isActive,
     };
@@ -180,6 +187,11 @@ const StatusManager: React.FC = () => {
     setName(status.name);
     setCode(status.code || "");
     setType(status.type);
+
+    setCategory(
+      status.category || "primary"
+    );
+
     setIsCustom(status.is_custom ?? false);
     setIsActive(status.is_active);
 
@@ -190,7 +202,6 @@ const StatusManager: React.FC = () => {
       behavior: "smooth",
     });
   };
-
   // =====================================================
   // DELETE
   // =====================================================
@@ -274,7 +285,23 @@ const StatusManager: React.FC = () => {
       render: (value: StatusType) =>
         renderType(value),
     },
+    {
+      title: "Category",
+      dataIndex: "category",
+      key: "category",
+      width: 140,
+      render: (value: StatusCategory | undefined) => {
+        if (!value) {
+          return <Text type="secondary">-</Text>;
+        }
 
+        return value === "primary" ? (
+          <Tag color="blue">Primary</Tag>
+        ) : (
+          <Tag color="purple">Secondary</Tag>
+        );
+      },
+    },
     {
       title: "Custom",
       dataIndex: "is_custom",
@@ -472,7 +499,7 @@ const StatusManager: React.FC = () => {
             style={{
               display: "grid",
               gridTemplateColumns:
-                "minmax(220px, 1fr) minmax(180px, 220px) minmax(180px, 220px) auto auto",
+  "200px 180px 180px 180px auto auto",
               gap: 20,
               alignItems: "end",
             }}
@@ -498,7 +525,7 @@ const StatusManager: React.FC = () => {
                 onChange={(e) =>
                   setName(e.target.value)
                 }
-                maxLength={100}
+                maxLength={50}
               />
 
             </Form.Item>
@@ -569,6 +596,39 @@ const StatusManager: React.FC = () => {
               </Select>
 
             </Form.Item>
+            {/* CATEGORY */}
+
+            {type === "plan" && (
+              <Form.Item
+                label={
+                  <Text strong>
+                    Category
+                  </Text>
+                }
+                style={{
+                  marginBottom: 0,
+                }}
+              >
+                <Select
+                  size="large"
+                  value={category}
+                  onChange={(value) =>
+                    setCategory(value)
+                  }
+                  style={{
+                    width: "100%",
+                  }}
+                >
+                  <Select.Option value="primary">
+                    Primary
+                  </Select.Option>
+
+                  <Select.Option value="secondary">
+                    Secondary
+                  </Select.Option>
+                </Select>
+              </Form.Item>
+            )}
 
             {/* CUSTOM */}
 

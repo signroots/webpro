@@ -17,10 +17,15 @@ interface Plan {
   orderId: string;
   planId: string;
   emailType?: string;
-  status?: {
-    _id: string;
-    name: string;
-  } | null;
+  primary_status?: {
+  _id: string;
+  name: string;
+};
+
+secondary_status?: {
+  _id: string;
+  name: string;
+};
 }
 
 interface Customer {
@@ -53,6 +58,8 @@ interface DomainSource {
 interface Status {
   _id: string;
   name: string;
+  code?: string;
+  category?: "primary" | "secondary";
   is_active: boolean;
   typeEmail?: {
     _id: string;
@@ -533,81 +540,154 @@ const OrderDetails: React.FC = () => {
                         {formatDate(plan.expiryDate)}
                       </td>
 
-                      {/* STATUS */}
-                      <td className="border px-2 py-1 text-center">
-                        <select
-                          value={plan.status?._id || ""}
-                          onChange={async (e) => {
-                            const newStatusId = e.target.value;
+                    {/* STATUS */}
+<td className="border px-2 py-1 text-center">
+  <div className="flex flex-col gap-2">
 
-                            if (!newStatusId || newStatusId === plan.status?._id) {
-                              return;
-                            }
+    {/* PRIMARY STATUS */}
+   <select
+  value={plan.primary_status?._id || ""}
+  onChange={async (e) => {
+    const newStatusId = e.target.value;
 
-                            const availableStatuses =
-                              planStatuses[plan._id] || [];
+    if (!newStatusId || newStatusId === plan.primary_status?._id) {
+      return;
+    }
 
-                            const selectedStatus = availableStatuses.find(
-                              (status) => status._id === newStatusId
-                            );
+    const selectedStatus = (planStatuses[plan._id] || []).find(
+      (status) => status._id === newStatusId
+    );
 
-                            if (!selectedStatus) {
-                              return;
-                            }
+    const confirmed = window.confirm(
+      `Are you sure you want to change the status to "${selectedStatus?.name}"?`
+    );
 
-                            const confirmed = window.confirm(
-                              `Are you sure you want to change the status to "${selectedStatus.name}"?`
-                            );
+    if (!confirmed) {
+      return;
+    }
 
-                            if (!confirmed) {
-                              return;
-                            }
+    try {
+      const updatedPlan = await updatePlanStatus(
+  plan._id,
+  {
+    primary_status: newStatusId,
+  }
+);
 
-                            try {
-                              const updatedPlan = await updatePlanStatus(
-                                plan._id,
-                                newStatusId
-                              );
+console.log("UPDATED PLAN:", updatedPlan);
 
-                              setOrder((prev) => {
-                                if (!prev) return prev;
+setOrder((prev) => {
+  if (!prev) return prev;
 
-                                return {
-                                  ...prev,
-                                  plans: prev.plans?.map((item) =>
-                                    item._id === plan._id
-                                      ? {
-                                        ...item,
-                                        status: updatedPlan.status,
-                                      }
-                                      : item
-                                  ),
-                                };
-                              });
+  return {
+    ...prev,
+    plans: prev.plans?.map((p) =>
+      p._id === plan._id
+        ? {
+            ...p,
+            primary_status: updatedPlan?.primary_status,
+            secondary_status: updatedPlan?.secondary_status,
+          }
+        : p
+    ),
+  };
+});
+    } catch (error) {
+      console.error("Primary status update error:", error);
+      alert("Failed to update primary status");
+    }
+  }}
+  className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+>
+  <option value="">
+    Select Primary Status
+  </option>
 
-                            } catch (error) {
-                              console.error("Plan status update error:", error);
-                              alert("Failed to update plan status");
-                            }
-                          }}
-                          className="border border-gray-300 rounded-md px-2 py-1 text-sm font-medium text-gray-700"
-                        >
-                          <option value="">
-                            Select Status
-                          </option>
+  {(planStatuses[plan._id] || [])
+    .filter(
+      (status) =>
+        status.is_active &&
+        status.category === "primary"
+    )
+    .map((status) => (
+      <option key={status._id} value={status._id}>
+        {status.name}
+      </option>
+    ))}
+</select>
 
-                          {(planStatuses[plan._id] || [])
-                            .filter((status) => status.is_active)
-                            .map((status) => (
-                              <option
-                                key={status._id}
-                                value={status._id}
-                              >
-                                {status.name}
-                              </option>
-                            ))}
-                        </select>
-                      </td>
+    {/* SECONDARY STATUS */}
+    <select
+  value={plan.secondary_status?._id || ""}
+  onChange={async (e) => {
+    const newStatusId = e.target.value;
+
+    if (newStatusId === plan.secondary_status?._id) {
+      return;
+    }
+
+    const selectedStatus = (planStatuses[plan._id] || []).find(
+      (status) => status._id === newStatusId
+    );
+
+    const confirmed = window.confirm(
+      `Are you sure you want to change the status to "${selectedStatus?.name}"?`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const updatedPlan = await updatePlanStatus(
+        plan._id,
+        {
+          secondary_status: newStatusId || null,
+        }
+      );
+
+      setOrder((prev) => {
+        if (!prev) return prev;
+
+        return {
+          ...prev,
+          plans: prev.plans?.map((p) =>
+            p._id === plan._id
+              ? {
+                  ...p,
+                  primary_status: updatedPlan.primary_status,
+                  secondary_status: updatedPlan.secondary_status,
+                }
+              : p
+          ),
+        };
+      });
+    } catch (error) {
+      console.error("Secondary status update error:", error);
+      alert("Failed to update secondary status");
+    }
+  }}
+  className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+>
+  <option value="">
+    Select Secondary Status
+  </option>
+
+  {(planStatuses[plan._id] || [])
+    .filter(
+      (status) =>
+        status.is_active &&
+        status.category === "secondary"
+    )
+    .map((status) => (
+      <option key={status._id} value={status._id}>
+        {status.name}
+      </option>
+    ))}
+</select>
+
+  </div>
+</td>
                     </tr>
                   ))}
                 </tbody>
