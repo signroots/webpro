@@ -7,7 +7,7 @@ export interface IOrder extends Document {
   // status?: mongoose.Types.ObjectId;        // Overall order status
   order_status?: mongoose.Types.ObjectId;  // Order-specific status
   domain_status?: mongoose.Types.ObjectId; // Domain-specific status
-
+archived_status?: mongoose.Types.ObjectId;
   customer?: mongoose.Types.ObjectId;
   client?: mongoose.Types.ObjectId;
   emailtypeid?: mongoose.Types.ObjectId;
@@ -101,7 +101,10 @@ const orderSchema = new mongoose.Schema<IOrder>(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Status",
     },
-
+archived_status: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Status",
+},
     customer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Customer",

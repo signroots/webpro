@@ -8,9 +8,10 @@ import {
   deleteStatus,
   updateOrderStatus,
   getOrderStatuses,
-  getPlanStatuses,
+  getPrimaryPlanStatuses,
+  getSecondaryPlanStatuses,
   updatePlanStatus,
-  getDomainStatuses
+  getDomainStatuses,
 } from "../controllers/statusController";
 
 const router = express.Router();
@@ -19,18 +20,65 @@ router.post("/", createStatus);
 
 router.get("/", getStatuses);
 
-// Specific routes FIRST
-router.get("/order/:orderId", getOrderStatuses);
-router.get("/domain/:orderId", getDomainStatuses);
-router.get("/plan/:planId", getPlanStatuses);
+// =====================================================
+// SPECIFIC STATUS ROUTES
+// =====================================================
 
-// Status update routes
-router.put("/order/:id/status", updateOrderStatus);
-router.put("/plan/:id/status", updatePlanStatus);
+// ORDER STATUS
+router.get(
+  "/order/:orderId",
+  getOrderStatuses
+);
 
-// Generic :id route LAST
-router.get("/:id", getStatusById);
-router.put("/:id", updateStatus);
-router.delete("/:id", deleteStatus);
+// DOMAIN STATUS
+router.get(
+  "/domain/:orderId",
+  getDomainStatuses
+);
+
+// PLAN PRIMARY STATUS
+router.get(
+  "/plan/primary",
+  getPrimaryPlanStatuses
+);
+
+// PLAN SECONDARY STATUS
+router.get(
+  "/plan/secondary",
+  getSecondaryPlanStatuses
+);
+
+// =====================================================
+// STATUS UPDATE ROUTES
+// =====================================================
+
+router.put(
+  "/order/:id/status",
+  updateOrderStatus
+);
+
+router.put(
+  "/plan/:id/status",
+  updatePlanStatus
+);
+
+// =====================================================
+// GENERIC :id ROUTES - MUST BE LAST
+// =====================================================
+
+router.get(
+  "/:id",
+  getStatusById
+);
+
+router.put(
+  "/:id",
+  updateStatus
+);
+
+router.delete(
+  "/:id",
+  deleteStatus
+);
 
 export default router;

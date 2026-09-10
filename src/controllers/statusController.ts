@@ -40,37 +40,65 @@ export const createStatus: RequestHandler = async (req, res) => {
 // ===============================
 // GET PLAN STATUSES
 // ===============================
-export const getPlanStatuses: RequestHandler = async (req, res) => {
+export const getPrimaryPlanStatuses: RequestHandler = async (
+  req,
+  res
+) => {
   try {
-    const { category } = req.query;
-
-    if (
-      category &&
-      category !== "primary" &&
-      category !== "secondary"
-    ) {
-      res.status(400).json({
-        error: "Invalid category. Use primary or secondary",
-      });
-      return;
-    }
-
-    const filter: any = {
+    const statuses = await Status.find({
       type: "plan",
+      category: "primary",
       is_active: true,
-    };
-
-    if (category) {
-      filter.category = category;
-    }
-
-    const statuses = await Status.find(filter)
-      .select("_id name code type category is_custom is_active")
+      is_custom: true,
+    })
+      .select(
+        "_id name code type category is_custom is_active"
+      )
       .sort({ createdAt: -1 });
 
-    res.json(statuses);
+    res.status(200).json({
+      success: true,
+      data: statuses,
+    });
   } catch (err: any) {
+    console.error(
+      "GET PRIMARY PLAN STATUSES ERROR:",
+      err
+    );
+
     res.status(500).json({
+      success: false,
+      error: err.message,
+    });
+  }
+};
+export const getSecondaryPlanStatuses: RequestHandler = async (
+  req,
+  res
+) => {
+  try {
+    const statuses = await Status.find({
+      type: "plan",
+      category: "secondary",
+      is_active: true,
+    })
+      .select(
+        "_id name code type category is_custom is_active"
+      )
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      data: statuses,
+    });
+  } catch (err: any) {
+    console.error(
+      "GET SECONDARY PLAN STATUSES ERROR:",
+      err
+    );
+
+    res.status(500).json({
+      success: false,
       error: err.message,
     });
   }
