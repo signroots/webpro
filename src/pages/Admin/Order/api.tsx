@@ -83,12 +83,25 @@ export const fetchDomainStatuses = async (orderId: string) => {
 // PLAN STATUSES
 // ===============================
 
-export const fetchPlanStatuses = async (planId: string) => {
+// ===============================
+// PRIMARY PLAN STATUSES
+// ===============================
+// PRIMARY PLAN STATUSES
+export const fetchPrimaryPlanStatuses = async () => {
   const response = await axios.get(
-    `${FULL_API_URL}/status/plan/${planId}`
+    `${FULL_API_URL}/status/plan/primary`
   );
 
-  return response.data;
+  return response.data.data || response.data;
+};
+
+// SECONDARY PLAN STATUSES
+export const fetchSecondaryPlanStatuses = async () => {
+  const response = await axios.get(
+    `${FULL_API_URL}/status/plan/secondary`
+  );
+
+  return response.data.data || response.data;
 };
 export const updateOrderStatus = async (
   orderId: string,

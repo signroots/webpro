@@ -43,6 +43,7 @@ getStatusClass: (status?: {
 } | null) => string;
 
   navigate: NavigateFunction;
+  showDomainStatus?: boolean;
 }
 
 const OrdersTable: React.FC<OrdersTableProps> = ({
@@ -53,6 +54,7 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
   handleEdit,
   getStatusClass,
   navigate,
+   showDomainStatus = false,
   // isArchived = false,
 }) => {
   const { user } = useAuth();
@@ -215,21 +217,45 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
               </td>
 
 
-              {/* STATUS */}
 
-              <td className="px-3 py-4 text-center">
+             {/* ================= STATUS ================= */}
 
-                <span
+{/* ================= STATUS ================= */}
+
+<td className="px-3 py-4 text-center">
+  <div className="flex flex-col items-center gap-1">
+
+    {/* ORDER STATUS */}
+
+    <span
   className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${getStatusClass(
     order.order_status
   )}`}
 >
-  {order.order_status?.name || "N/A"}
+  {showDomainStatus
+    ? `Order: ${order.order_status?.name || "N/A"}`
+    : order.order_status?.name || "N/A"}
 </span>
 
-              </td>
 
+    {/* DOMAIN STATUS - ONLY WHEN ENABLED */}
 
+    {showDomainStatus && (
+      <span
+  className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${getStatusClass(
+    order.archived_status || order.domain_status
+  )}`}
+>
+  Domain:{" "}
+  {order.archived_status?.name ||
+    order.domain_status?.name ||
+    "N/A"}
+</span>
+
+    )}
+
+  </div>
+</td>
               {/* ACTIONS */}
 
               <td className="px-3 py-4">

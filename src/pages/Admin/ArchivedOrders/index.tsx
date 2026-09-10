@@ -166,12 +166,16 @@ const getStatusClass = (
     is_active: boolean;
   } | null
 ) => {
-  switch (status?.name) {
-    case "REDEMPTION PERIOD":
-      return "bg-yellow-100 text-yellow-700";
+  const statusName =
+    status?.name?.toUpperCase() ||
+    status?.code?.toUpperCase() ||
+    "";
 
-    case "PENDING DELETE RESTORABLE":
-      return "bg-red-100 text-red-700";
+  switch (statusName) {
+
+    // =========================
+    // ORDER STATUS
+    // =========================
 
     case "ACTIVE":
       return "bg-green-100 text-green-700";
@@ -179,11 +183,51 @@ const getStatusClass = (
     case "EXPIRED":
       return "bg-orange-100 text-orange-700";
 
+    case "TRANSFERRED":
+      return "bg-blue-100 text-blue-700";
+
+    case "CANCELLED":
+      return "bg-red-100 text-red-700";
+
+
+    // =========================
+    // ARCHIVED STATUS
+    // =========================
+
+    case "REDEMPTION PERIOD":
+      return "bg-yellow-100 text-yellow-700";
+
+    case "PENDING DELETE RESTORABLE":
+      return "bg-red-100 text-red-700";
+
+
+    // =========================
+    // DOMAIN STATUS
+    // =========================
+
+    case "INACTIVE":
+      return "bg-gray-100 text-gray-700";
+
+    case "PENDING":
+      return "bg-yellow-100 text-yellow-700";
+
+
+    // =========================
+    // N/A STATUS
+    // =========================
+
+    case "N/A":
+      return "bg-gray-100 text-gray-600";
+
+
+    // =========================
+    // DEFAULT
+    // =========================
+
     default:
       return "bg-gray-100 text-gray-600";
   }
 };
-
   // =====================================================
   // EDIT
   // =====================================================
@@ -385,7 +429,7 @@ const handleEdit = (order: Order) => {
               navigate={
                 navigate
               }
-
+  showDomainStatus={true}
               
             />
 

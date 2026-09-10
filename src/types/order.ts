@@ -48,7 +48,20 @@ export interface Order {
     name: string;
     type: "order" | "plan";
   } | null;
-
+domain_status?: {
+  _id: string;
+  name: string;
+  code: string;
+  type: "order" | "plan" | "domain";
+  is_active: boolean;
+} | null;
+archived_status?: {
+  _id: string;
+  name: string;
+  code: string;
+  type: "order" | "plan" | "domain";
+  is_active: boolean;
+} | null;
 order_status?: {
   _id: string;
   name: string;
