@@ -2799,9 +2799,14 @@ router.get(
 
       const activeOrderStatus =
         await Status.findOne({
-          type: "order",
-          code: "ACTIVE",
-          is_active: true,
+          type:
+            "order",
+
+          code:
+            "ACTIVE",
+
+          is_active:
+            true,
         }).select(
           "_id name code type is_active"
         );
@@ -2809,9 +2814,14 @@ router.get(
 
       const expiredOrderStatus =
         await Status.findOne({
-          type: "order",
-          code: "EXPIRED",
-          is_active: true,
+          type:
+            "order",
+
+          code:
+            "EXPIRED",
+
+          is_active:
+            true,
         }).select(
           "_id name code type is_active"
         );
@@ -2834,9 +2844,14 @@ router.get(
 
       const activePlanStatus =
         await Status.findOne({
-          type: "plan",
-          code: "ACTIVE",
-          is_active: true,
+          type:
+            "plan",
+
+          code:
+            "ACTIVE",
+
+          is_active:
+            true,
         }).select(
           "_id name code type is_active"
         );
@@ -2844,9 +2859,14 @@ router.get(
 
       const expiredPlanStatus =
         await Status.findOne({
-          type: "plan",
-          code: "EXPIRED",
-          is_active: true,
+          type:
+            "plan",
+
+          code:
+            "EXPIRED",
+
+          is_active:
+            true,
         }).select(
           "_id name code type is_active"
         );
@@ -2884,13 +2904,14 @@ router.get(
             dns_flag:
               false,
           },
+
         ],
 
       });
 
 
       // ========================================================
-      // SEARCH
+      // 7. SEARCH
       // ========================================================
 
       if (
@@ -2905,6 +2926,7 @@ router.get(
               domainName: {
                 $regex:
                   search,
+
                 $options:
                   "i",
               },
@@ -2914,6 +2936,7 @@ router.get(
               managedBy: {
                 $regex:
                   search,
+
                 $options:
                   "i",
               },
@@ -2926,7 +2949,7 @@ router.get(
 
 
       // ========================================================
-      // EMAIL TYPE
+      // 8. EMAIL TYPE
       // ========================================================
 
       if (
@@ -3003,7 +3026,7 @@ router.get(
 
 
       // ========================================================
-      // USER
+      // 9. USER
       // ========================================================
 
       const user =
@@ -3015,7 +3038,7 @@ router.get(
 
 
       // ========================================================
-      // COMMON ORDER FIELDS
+      // 10. COMMON ORDER FIELDS
       // ========================================================
 
       const orderFields = {
@@ -3059,7 +3082,7 @@ router.get(
 
 
       // ========================================================
-      // ATTACH PLANS
+      // 11. ATTACH PLANS
       // ========================================================
 
       const attachPlans =
@@ -3210,10 +3233,6 @@ router.get(
                 plan.orderId.toString();
 
 
-              // ----------------------------------------------
-              // CREATE ARRAY
-              // ----------------------------------------------
-
               if (
                 !planMap.has(key)
               ) {
@@ -3224,10 +3243,6 @@ router.get(
                 );
               }
 
-
-              // ----------------------------------------------
-              // PUSH PLAN
-              // ----------------------------------------------
 
               planMap
                 .get(key)!
@@ -3266,28 +3281,33 @@ router.get(
                   hostType:
                     plan.hostTypeId
                       ? {
+
                         _id:
                           plan.hostTypeId._id,
 
                         type:
                           plan.hostTypeId.type,
+
                       }
                       : null,
 
                   hostSubType:
                     plan.hostSubTypeId
                       ? {
+
                         _id:
                           plan.hostSubTypeId._id,
 
                         name:
                           plan.hostSubTypeId.name,
+
                       }
                       : null,
 
                   storage:
                     plan.storageId
                       ? {
+
                         _id:
                           plan.storageId._id,
 
@@ -3295,6 +3315,7 @@ router.get(
                           plan.storageId.name ||
                           plan.storageId.storage ||
                           null,
+
                       }
                       : null,
 
@@ -3305,6 +3326,7 @@ router.get(
                   secondary_status:
                     plan.secondary_status ||
                     null,
+
                 });
             }
           );
@@ -3330,8 +3352,8 @@ router.get(
 
 
       // ========================================================
-      // UPDATE PLAN PRIMARY STATUS
-      // BASED ON PLAN expiryDate
+      // 12. UPDATE PLAN PRIMARY STATUS
+      // BASED ON PLAN EXPIRY DATE
       // ========================================================
 
       const updatePlanStatuses =
@@ -3375,6 +3397,7 @@ router.get(
                   plan.primary_status
                 )
               ) {
+
                 continue;
               }
 
@@ -3386,6 +3409,7 @@ router.get(
               if (
                 !plan.expiryDate
               ) {
+
                 continue;
               }
 
@@ -3405,7 +3429,7 @@ router.get(
 
 
               // ------------------------------------------------
-              // ACTIVE / EXPIRED
+              // EXPIRED / ACTIVE
               // ------------------------------------------------
 
               const isExpired =
@@ -3421,6 +3445,7 @@ router.get(
               if (
                 !newStatus?._id
               ) {
+
                 continue;
               }
 
@@ -3438,7 +3463,7 @@ router.get(
 
 
               // ------------------------------------------------
-              // UPDATE IF DIFFERENT
+              // UPDATE DATABASE
               // ------------------------------------------------
 
               if (
@@ -3472,7 +3497,7 @@ router.get(
 
 
                 // ------------------------------------------------
-                // LOCAL RESPONSE UPDATE
+                // UPDATE LOCAL RESPONSE
                 // ------------------------------------------------
 
                 plan.primary_status = {
@@ -3517,8 +3542,17 @@ router.get(
 
 
       // ========================================================
-      // UPDATE ORDER STATUS
-      // ORDER EXPIRY OR PLAN EXPIRY
+      // 13. UPDATE ORDER STATUS
+      // ========================================================
+      //
+      // IMPORTANT:
+      //
+      // Order status is based on ORDER expiry.
+      //
+      // We DO NOT make the whole order expired just because
+      // one plan is expired.
+      //
+      // Plan-level availability is handled separately below.
       // ========================================================
 
       const updateOrderStatuses =
@@ -3533,7 +3567,8 @@ router.get(
             (order: any) => {
 
               // ------------------------------------------------
-              // TRANSFERRED / CANCELLED ORDER
+              // TRANSFERRED / CANCELLED
+              // DO NOT OVERWRITE
               // ------------------------------------------------
 
               if (
@@ -3541,6 +3576,7 @@ router.get(
                   order.order_status
                 )
               ) {
+
                 return;
               }
 
@@ -3550,7 +3586,7 @@ router.get(
 
 
               // ------------------------------------------------
-              // ORDER EXPIRY
+              // ORDER EXPIRY ONLY
               // ------------------------------------------------
 
               if (
@@ -3582,59 +3618,6 @@ router.get(
 
 
               // ------------------------------------------------
-              // PLAN EXPIRY
-              // ------------------------------------------------
-
-              const plans =
-                Array.isArray(
-                  order.Plans
-                )
-                  ? order.Plans
-                  : [];
-
-
-              const planExpired =
-                plans.some(
-                  (plan: any) => {
-
-                    if (
-                      !plan.expiryDate
-                    ) {
-                      return false;
-                    }
-
-
-                    const expiry =
-                      new Date(
-                        plan.expiryDate
-                      );
-
-
-                    expiry.setHours(
-                      0,
-                      0,
-                      0,
-                      0
-                    );
-
-
-                    return (
-                      expiry < today
-                    );
-                  }
-                );
-
-
-              if (
-                planExpired
-              ) {
-
-                isExpired =
-                  true;
-              }
-
-
-              // ------------------------------------------------
               // NEW STATUS
               // ------------------------------------------------
 
@@ -3647,6 +3630,7 @@ router.get(
               if (
                 !newStatus?._id
               ) {
+
                 return;
               }
 
@@ -3743,7 +3727,77 @@ router.get(
 
 
       // ========================================================
-      // UPDATE ARCHIVED STATUS
+      // 14. SAFE ARCHIVED STATUS VALUES
+      // ========================================================
+
+      const redemptionStatusSafe =
+        await Status.findOne({
+
+          type:
+            "domain",
+
+          $or: [
+
+            {
+              code:
+                "REDEMPTION PERIOD",
+            },
+
+            {
+              code:
+                "REDEMPTION_PERIOD",
+            },
+
+            {
+              name:
+                "REDEMPTION PERIOD",
+            },
+
+          ],
+
+          is_active:
+            true,
+
+        }).select(
+          "_id name code type is_active"
+        );
+
+
+      const pendingDeleteStatusSafe =
+        await Status.findOne({
+
+          type:
+            "domain",
+
+          $or: [
+
+            {
+              code:
+                "PENDING DELETE RESTORABLE",
+            },
+
+            {
+              code:
+                "PENDING_DELETE_RESTORABLE",
+            },
+
+            {
+              name:
+                "PENDING DELETE RESTORABLE",
+            },
+
+          ],
+
+          is_active:
+            true,
+
+        }).select(
+          "_id name code type is_active"
+        );
+
+
+      // ========================================================
+      // 15. UPDATE ARCHIVED STATUS
       // 36-65 / 66+
       // ========================================================
 
@@ -3758,13 +3812,10 @@ router.get(
           orders.forEach(
             (order: any) => {
 
-              // ------------------------------------------------
-              // NO EXPIRY
-              // ------------------------------------------------
-
               if (
                 !order.expiryDate
               ) {
+
                 return;
               }
 
@@ -3842,6 +3893,7 @@ router.get(
 
                 newArchivedStatus =
                   redemptionStatusSafe;
+
               }
 
 
@@ -3928,89 +3980,81 @@ router.get(
 
 
       // ========================================================
-      // SAFE ARCHIVED STATUS VALUES
+      // 16. PLAN ACTIVE CHECK
       // ========================================================
       //
-      // These are declared here because the status may not
-      // exist in DB. This prevents undefined problems.
+      // A plan is considered ACTIVE only when its
+      // primary_status code is ACTIVE.
       // ========================================================
 
-      const redemptionStatusSafe =
-        await Status.findOne({
+      const isPlanActive =
+        (
+          plan: any
+        ) => {
 
-          type:
-            "domain",
-
-          $or: [
-
-            {
-              code:
-                "REDEMPTION PERIOD",
-            },
-
-            {
-              code:
-                "REDEMPTION_PERIOD",
-            },
-
-            {
-              name:
-                "REDEMPTION PERIOD",
-            },
-
-          ],
-
-          is_active:
-            true,
-
-        }).select(
-          "_id name code type is_active"
-        );
+          const code =
+            plan?.primary_status?.code
+              ?.toString()
+              .trim()
+              .toUpperCase();
 
 
-      const pendingDeleteStatusSafe =
-        await Status.findOne({
-
-          type:
-            "domain",
-
-          $or: [
-
-            {
-              code:
-                "PENDING DELETE RESTORABLE",
-            },
-
-            {
-              code:
-                "PENDING_DELETE_RESTORABLE",
-            },
-
-            {
-              name:
-                "PENDING DELETE RESTORABLE",
-            },
-
-          ],
-
-          is_active:
-            true,
-
-        }).select(
-          "_id name code type is_active"
-        );
+          return (
+            code ===
+            "ACTIVE"
+          );
+        };
 
 
       // ========================================================
-      // SERVICE AVAILABILITY
+      // 17. PLAN EXPIRED CHECK
+      // ========================================================
+
+      const isPlanExpired =
+        (
+          plan: any
+        ) => {
+
+          const code =
+            plan?.primary_status?.code
+              ?.toString()
+              .trim()
+              .toUpperCase();
+
+
+          return (
+            code ===
+            "EXPIRED"
+          );
+        };
+
+
+      // ========================================================
+      // 18. FINAL SERVICE AVAILABILITY
       // ========================================================
       //
-      // Domain available OR any plan available
-      // => show order
+      // THIS IS THE IMPORTANT BUSINESS LOGIC.
       //
-      // Domain transferred/cancelled AND
-      // all plans transferred/cancelled
-      // => hide order
+      // STEP 1:
+      // Check DOMAIN status first.
+      //
+      // Domain NOT transferred/cancelled
+      //      => SHOW ORDER
+      //
+      // Domain transferred/cancelled
+      //      => Check PLANS
+      //
+      // Any ACTIVE plan
+      //      => SHOW ORDER
+      //
+      // All plans EXPIRED
+      //      => HIDE ORDER
+      //
+      // All plans transferred/cancelled
+      //      => HIDE ORDER
+      //
+      // No usable plan
+      //      => HIDE ORDER
       // ========================================================
 
       const filterUnavailableOrders =
@@ -4021,17 +4065,40 @@ router.get(
           return orders.filter(
             (order: any) => {
 
-              // ------------------------------------------------
-              // DOMAIN SERVICE
-              // ------------------------------------------------
+              // =================================================
+              // STEP 1: DOMAIN STATUS
+              // =================================================
 
-              const hasDomainService =
-                !!order.domainSource;
+              const domainIsTransferredOrCancelled =
+                isTransferredOrCancelled(
+                  order.domain_status
+                );
 
 
-              // ------------------------------------------------
-              // PLANS
-              // ------------------------------------------------
+              // =================================================
+              // DOMAIN IS AVAILABLE
+              // =================================================
+              //
+              // If domain is NOT transferred/cancelled,
+              // the order must be shown.
+              //
+              // Plans do NOT matter in this case.
+              // =================================================
+
+              if (
+                !domainIsTransferredOrCancelled
+              ) {
+
+                return true;
+              }
+
+
+              // =================================================
+              // DOMAIN IS TRANSFERRED / CANCELLED
+              // =================================================
+              //
+              // Now only plans can keep the order alive.
+              // =================================================
 
               const plans =
                 Array.isArray(
@@ -4041,75 +4108,40 @@ router.get(
                   : [];
 
 
-              const hasPlans =
-                plans.length >
-                0;
-
-
-              // ------------------------------------------------
-              // NO SERVICE
-              // ------------------------------------------------
+              // -------------------------------------------------
+              // NO PLANS
+              // -------------------------------------------------
 
               if (
-                !hasDomainService &&
-                !hasPlans
+                plans.length === 0
               ) {
-                return true;
+
+                return false;
               }
 
 
               // =================================================
-              // DOMAIN AVAILABLE
+              // STEP 2: CHECK ACTIVE PLAN
               // =================================================
 
-              let domainAvailable =
-                false;
+              const hasActivePlan =
+                plans.some(
+                  (
+                    plan: any
+                  ) =>
+                    isPlanActive(
+                      plan
+                    )
+                );
 
+
+              // -------------------------------------------------
+              // ANY ACTIVE PLAN
+              // => SHOW ORDER
+              // -------------------------------------------------
 
               if (
-                hasDomainService
-              ) {
-
-                domainAvailable =
-                  !isTransferredOrCancelled(
-                    order.domain_status
-                  );
-              }
-
-
-              // =================================================
-              // ANY PLAN AVAILABLE
-              // =================================================
-
-              let planAvailable =
-                false;
-
-
-              if (
-                hasPlans
-              ) {
-
-                planAvailable =
-                  plans.some(
-                    (plan: any) => {
-
-                      return (
-                        !isTransferredOrCancelled(
-                          plan.primary_status
-                        )
-                      );
-                    }
-                  );
-              }
-
-
-              // =================================================
-              // AT LEAST ONE SERVICE AVAILABLE
-              // =================================================
-
-              if (
-                domainAvailable ||
-                planAvailable
+                hasActivePlan
               ) {
 
                 return true;
@@ -4117,7 +4149,65 @@ router.get(
 
 
               // =================================================
-              // ALL SERVICES TRANSFERRED/CANCELLED
+              // STEP 3: ALL PLANS EXPIRED
+              // =================================================
+
+              const allPlansExpired =
+                plans.every(
+                  (
+                    plan: any
+                  ) =>
+                    isPlanExpired(
+                      plan
+                    )
+                );
+
+
+              // -------------------------------------------------
+              // ALL EXPIRED
+              // => HIDE ORDER
+              // -------------------------------------------------
+
+              if (
+                allPlansExpired
+              ) {
+
+                return false;
+              }
+
+
+              // =================================================
+              // STEP 4: ALL PLANS TRANSFERRED/CANCELLED
+              // =================================================
+
+              const allPlansTransferredOrCancelled =
+                plans.every(
+                  (
+                    plan: any
+                  ) =>
+                    isTransferredOrCancelled(
+                      plan.primary_status
+                    )
+                );
+
+
+              if (
+                allPlansTransferredOrCancelled
+              ) {
+
+                return false;
+              }
+
+
+              // =================================================
+              // IMPORTANT
+              // =================================================
+              //
+              // Domain is unavailable.
+              //
+              // No ACTIVE plan exists.
+              //
+              // Therefore order should NOT be shown.
               // =================================================
 
               return false;
@@ -4127,12 +4217,15 @@ router.get(
 
 
       // ========================================================
-      // NORMAL ORDER EXPIRY FILTER
+      // 19. NORMAL ORDER AGE FILTER
       // ========================================================
       //
-      // TODAY/FUTURE     -> SHOW
-      // 1-35 DAYS        -> SHOW
-      // 36+ DAYS         -> HIDE
+      // TODAY/FUTURE -> SHOW
+      // 1-35 DAYS    -> SHOW
+      // 36+ DAYS     -> HIDE
+      //
+      // NOTE:
+      // This remains as your existing normal-order rule.
       // ========================================================
 
       const filterNormalOrderAge =
@@ -4141,15 +4234,14 @@ router.get(
         ) => {
 
           return orders.filter(
-            (order: any) => {
-
-              // ------------------------------------------------
-              // NO ORDER EXPIRY
-              // ------------------------------------------------
+            (
+              order: any
+            ) => {
 
               if (
                 !order.expiryDate
               ) {
+
                 return true;
               }
 
@@ -4192,6 +4284,7 @@ router.get(
               if (
                 expiredDays <= 0
               ) {
+
                 return true;
               }
 
@@ -4203,6 +4296,7 @@ router.get(
               if (
                 expiredDays <= 35
               ) {
+
                 return true;
               }
 
@@ -4218,7 +4312,7 @@ router.get(
 
 
       // ========================================================
-      // LOAD ORDERS
+      // 20. LOAD ORDERS
       // ========================================================
 
       const loadOrders =
@@ -4315,7 +4409,7 @@ router.get(
 
 
           // ====================================================
-          // PLAN EXPIRY
+          // UPDATE PLAN STATUS
           // ====================================================
 
           orders =
@@ -4325,7 +4419,7 @@ router.get(
 
 
           // ====================================================
-          // ORDER EXPIRY
+          // UPDATE ORDER STATUS
           // ====================================================
 
           orders =
@@ -4335,7 +4429,7 @@ router.get(
 
 
           // ====================================================
-          // ARCHIVED STATUS
+          // UPDATE ARCHIVED STATUS
           // ====================================================
 
           orders =
@@ -4345,7 +4439,7 @@ router.get(
 
 
           // ====================================================
-          // SERVICE AVAILABILITY
+          // DOMAIN FIRST -> PLAN ACTIVE CHECK
           // ====================================================
 
           orders =
@@ -4355,8 +4449,7 @@ router.get(
 
 
           // ====================================================
-          // 36+ DAYS
-          // REMOVE FROM NORMAL ORDERS
+          // NORMAL 36+ DAY FILTER
           // ====================================================
 
           orders =
@@ -4370,7 +4463,7 @@ router.get(
 
 
       // ========================================================
-      // ADMIN
+      // 21. ADMIN
       // ========================================================
 
       const userTypeName =
@@ -4438,6 +4531,7 @@ router.get(
             emailType
               ? {}
               : {
+
                 pagination: {
 
                   page,
@@ -4451,15 +4545,18 @@ router.get(
                       total /
                       limit
                     ),
+
                 },
+
               }
           ),
+
         });
       }
 
 
       // ========================================================
-      // CUSTOMER
+      // 22. CUSTOMER
       // ========================================================
 
       const client =
@@ -4484,16 +4581,31 @@ router.get(
         "customer"
       ) {
 
-        if (!client) {
-          return res.status(404).json({
-            success: false,
-            error: "Client not found",
+        if (
+          !client
+        ) {
+
+          return res.status(
+            404
+          ).json({
+
+            success:
+              false,
+
+            error:
+              "Client not found",
+
           });
         }
 
+
         filters.push({
-          client: client._id,
+
+          client:
+            client._id,
+
         });
+
 
         const finalFilter = {
           $and:
@@ -4546,6 +4658,7 @@ router.get(
             emailType
               ? {}
               : {
+
                 pagination: {
 
                   page,
@@ -4559,15 +4672,18 @@ router.get(
                       total /
                       limit
                     ),
+
                 },
+
               }
           ),
+
         });
       }
 
 
       // ========================================================
-      // ACCESS DENIED
+      // 23. ACCESS DENIED
       // ========================================================
 
       return res.status(
@@ -4579,11 +4695,12 @@ router.get(
 
         message:
           "Access denied",
+
       });
 
 
     } catch (
-    error: any
+      error: any
     ) {
 
       console.error(
@@ -4610,10 +4727,12 @@ router.get(
         message:
           error?.message ||
           "Internal server error",
+
       });
     }
   }
 );
+
 
 
 // GET single order by ID
