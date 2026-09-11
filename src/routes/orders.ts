@@ -1335,8 +1335,6 @@ router.get(
 
       const skip = (page - 1) * limit;
 
-
-
       // =========================================================
       // STATUS LOOKUPS
       // =========================================================
@@ -1349,7 +1347,9 @@ router.get(
           { code: "REDEMPTION PERIOD" },
           { name: "REDEMPTION PERIOD" },
         ],
-      }).select("_id name code type is_active");
+      }).select(
+        "_id name code type is_active"
+      );
 
       const pendingDeleteStatus = await Status.findOne({
         type: "domain",
@@ -1359,34 +1359,22 @@ router.get(
           { code: "PENDING DELETE RESTORABLE" },
           { name: "PENDING DELETE RESTORABLE" },
         ],
-      }).select("_id name code type is_active");
-
-      const transferredStatus = await Status.findOne({
-        type: "order",
-        is_active: true,
-        $or: [
-          { code: "TRANSFERRED" },
-          { name: "TRANSFERRED" },
-        ],
-      }).select("_id name code type is_active");
-
-      const cancelledStatus = await Status.findOne({
-        type: "order",
-        is_active: true,
-        $or: [
-          { code: "CANCELLED" },
-          { name: "CANCELLED" },
-        ],
-      }).select("_id name code type is_active");
-
-    
+      }).select(
+        "_id name code type is_active"
+      );
 
       // =========================================================
       // TODAY
       // =========================================================
 
       const today = new Date();
-      today.setHours(0, 0, 0, 0);
+
+      today.setHours(
+        0,
+        0,
+        0,
+        0
+      );
 
       // =========================================================
       // BASE QUERY
@@ -1409,8 +1397,15 @@ router.get(
           });
         }
 
-        if (mongoose.Types.ObjectId.isValid(clientId)) {
-          query.client = new mongoose.Types.ObjectId(clientId);
+        if (
+          mongoose.Types.ObjectId.isValid(
+            clientId
+          )
+        ) {
+          query.client =
+            new mongoose.Types.ObjectId(
+              clientId
+            );
         } else {
           return res.status(400).json({
             success: false,
@@ -1463,133 +1458,152 @@ router.get(
       // =========================================================
 
       const orders = await Order.find(query)
+
         .populate({
           path: "order_status",
-          select: "_id name code type is_active",
+          select:
+            "_id name code type is_active",
         })
+
         .populate({
           path: "domain_status",
-          select: "_id name code type is_active",
+          select:
+            "_id name code type is_active",
         })
+
         .populate({
           path: "archived_status",
-          select: "_id name code type is_active",
+          select:
+            "_id name code type is_active",
         })
+
         .populate({
           path: "domainSource",
-          select: "_id name code image",
+          select:
+            "_id name code image",
         })
+
         .populate({
           path: "customer",
-          select: "_id name email",
+          select:
+            "_id name email",
         })
+
         .populate({
           path: "client",
-          select: "_id c_name c_email",
+          select:
+            "_id c_name c_email",
         })
+
         .sort({
           expiryDate: -1,
           createdAt: -1,
         });
 
-     
       // =========================================================
       // FETCH ALL ORDER PLANS
       // =========================================================
 
       const orderIds = orders.map(
-        (order: any) => order._id
+        (order: any) =>
+          order._id
       );
 
-      const orderPlans = await OrderPlan.find({
-        orderId: {
-          $in: orderIds,
-        },
-      })
-        .populate({
-          path: "primary_status",
-          select:
-            "_id name code type category is_active is_custom",
+      const orderPlans =
+        await OrderPlan.find({
+          orderId: {
+            $in: orderIds,
+          },
         })
-        .populate({
-          path: "secondary_status",
-          select:
-            "_id name code type category is_active is_custom",
-        })
-        .populate({
-          path: "planId",
-          select:
-            "_id planName image provider serviceType type",
-        })
-        .populate({
-          path: "emailTypeId",
-          select: "_id name image",
-        })
-        .lean();
 
-     
+          .populate({
+            path: "primary_status",
+            select:
+              "_id name code type category is_active is_custom",
+          })
 
-      // =========================================================
-      // ADD EMAIL TYPE IMAGE
-      // =========================================================
-      //
-      // emailTypeId.image
-      //        ↓
-      // emailTypeImage
-      //
-      // Example:
-      //
-      // emailTypeId: {
-      //   _id: "...",
-      //   name: "Google Workspace",
-      //   image: "/uploads/typeemails/1783938806008.png"
-      // }
-      //
-      // Response:
-      //
-      // emailType: "Google Workspace",
-      // emailTypeImage: "/uploads/typeemails/1783938806008.png"
-      //
-      // =========================================================
+          .populate({
+            path: "secondary_status",
+            select:
+              "_id name code type category is_active is_custom",
+          })
 
-      const formattedOrderPlans = orderPlans.map(
-        (plan: any) => {
-          const emailType = plan.emailTypeId;
+          .populate({
+            path: "planId",
+            select:
+              "_id planName image provider serviceType type",
+          })
 
-          return {
-            ...plan,
+          .populate({
+            path: "emailTypeId",
+            select:
+              "_id name image",
+          })
 
-            emailType:
-              emailType?.name || "",
-
-            emailTypeImage:
-              emailType?.image || "",
-
-            // Keep emailTypeId also in response
-            emailTypeId: emailType
-              ? {
-                  _id: emailType._id,
-                  name: emailType.name,
-                  image: emailType.image,
-                }
-              : null,
-          };
-        }
-      );
+          .lean();
 
       // =========================================================
-      // GROUP PLANS BY ORDER ID
+      // FORMAT PLANS
       // =========================================================
 
-      const planMap = new Map<string, any[]>();
+      const formattedOrderPlans =
+        orderPlans.map(
+          (plan: any) => {
 
-      for (const plan of formattedOrderPlans) {
-        const key = plan.orderId.toString();
+            const emailType =
+              plan.emailTypeId;
+
+            return {
+              ...plan,
+
+              emailType:
+                emailType?.name ||
+                "",
+
+              emailTypeImage:
+                emailType?.image ||
+                "",
+
+              emailTypeId:
+                emailType
+                  ? {
+                      _id:
+                        emailType._id,
+
+                      name:
+                        emailType.name,
+
+                      image:
+                        emailType.image,
+                    }
+                  : null,
+            };
+          }
+        );
+
+      // =========================================================
+      // GROUP PLANS BY ORDER
+      // =========================================================
+
+      const planMap =
+        new Map<
+          string,
+          any[]
+        >();
+
+      for (
+        const plan of formattedOrderPlans
+      ) {
+
+        const key =
+          plan.orderId.toString();
 
         const existingPlans =
           planMap.get(key) ?? [];
 
-        existingPlans.push(plan);
+        existingPlans.push(
+          plan
+        );
 
         planMap.set(
           key,
@@ -1607,8 +1621,12 @@ router.get(
       // PROCESS EACH ORDER
       // =========================================================
 
-      for (const order of orders) {
+      for (
+        const order of orders
+      ) {
+
         try {
+
           const orderId =
             order._id.toString();
 
@@ -1622,61 +1640,70 @@ router.get(
           // ORDER STATUS CODE
           // =====================================================
 
-          const orderStatusCode = (
-            orderStatus?.code ||
-            orderStatus?.name ||
-            ""
-          )
-            .toString()
-            .toUpperCase()
-            .trim();
+          const orderStatusCode =
+            (
+              orderStatus?.code ||
+              orderStatus?.name ||
+              ""
+            )
+              .toString()
+              .toUpperCase()
+              .trim();
 
           // =====================================================
           // DOMAIN STATUS CODE
           // =====================================================
 
-          const domainStatusCode = (
-            domainStatus?.code ||
-            domainStatus?.name ||
-            ""
-          )
-            .toString()
-            .toUpperCase()
-            .trim();
+          const domainStatusCode =
+            (
+              domainStatus?.code ||
+              domainStatus?.name ||
+              ""
+            )
+              .toString()
+              .toUpperCase()
+              .trim();
 
           // =====================================================
-          // ORDER STATUS
+          // ORDER TRANSFERRED / CANCELLED
           // =====================================================
 
           const orderTransferredOrCancelled =
-            orderStatusCode === "TRANSFERRED" ||
-            orderStatusCode === "CANCELLED";
+            orderStatusCode ===
+              "TRANSFERRED" ||
+            orderStatusCode ===
+              "CANCELLED";
 
           // =====================================================
-          // DOMAIN STATUS
+          // DOMAIN TRANSFERRED / CANCELLED
           // =====================================================
 
           const domainTransferredOrCancelled =
-            domainStatusCode === "TRANSFERRED" ||
-            domainStatusCode === "CANCELLED";
+            domainStatusCode ===
+              "TRANSFERRED" ||
+            domainStatusCode ===
+              "CANCELLED";
 
           // =====================================================
           // PLANS
           // =====================================================
 
           const plans =
-            planMap.get(orderId) ?? [];
+            planMap.get(
+              orderId
+            ) ?? [];
 
           // =====================================================
-          // PLAN STATUS
+          // PLAN STATUS HELPERS
           // =====================================================
 
-          const planTransferredOrCancelled =
-            plans.some((plan: any) => {
+          const getPlanPrimaryCode =
+            (plan: any) => {
+
               const primaryStatus =
                 plan.primary_status;
 
-              const primaryCode = (
+              return (
                 primaryStatus?.code ||
                 primaryStatus?.name ||
                 ""
@@ -1684,44 +1711,209 @@ router.get(
                 .toString()
                 .toUpperCase()
                 .trim();
-
-              return (
-                primaryCode === "TRANSFERRED" ||
-                primaryCode === "CANCELLED"
-              );
-            });
+            };
 
           // =====================================================
-          // SERVICE STATUS ARCHIVE
+          // PLAN COUNT
           // =====================================================
 
-          const serviceStatusArchive =
-            orderTransferredOrCancelled ||
-            domainTransferredOrCancelled ||
-            planTransferredOrCancelled;
+          const hasPlans =
+            plans.length > 0;
+
+          // =====================================================
+          // ANY ACTIVE PLAN
+          //
+          // IMPORTANT:
+          //
+          // If even ONE plan is active,
+          // the order should NOT be archived
+          // merely because another plan is expired.
+          //
+          // Example:
+          //
+          // spunic.com
+          //
+          // Microsoft plan => ACTIVE
+          // Other plan     => EXPIRED
+          //
+          // Result:
+          // spunic.com MUST NOT be archived.
+          // =====================================================
+
+          const hasActivePlan =
+            plans.some(
+              (plan: any) => {
+
+                const code =
+                  getPlanPrimaryCode(
+                    plan
+                  );
+
+                return (
+                  code ===
+                    "ACTIVE"
+                );
+              }
+            );
+
+          // =====================================================
+          // ALL PLANS EXPIRED
+          //
+          // IMPORTANT:
+          //
+          // every() is used here.
+          //
+          // NOT:
+          // plans.some(EXPIRED)
+          //
+          // Because one expired plan does NOT mean
+          // the whole order is expired.
+          // =====================================================
+
+          const allPlansExpired =
+            hasPlans &&
+            plans.every(
+              (plan: any) => {
+
+                const code =
+                  getPlanPrimaryCode(
+                    plan
+                  );
+
+                return (
+                  code ===
+                    "EXPIRED"
+                );
+              }
+            );
+
+          // =====================================================
+          // ALL PLANS TRANSFERRED / CANCELLED
+          //
+          // IMPORTANT:
+          //
+          // Again use every().
+          //
+          // One cancelled plan alone should NOT archive
+          // the complete order if another plan is active.
+          // =====================================================
+
+          const allPlansTransferredOrCancelled =
+            hasPlans &&
+            plans.every(
+              (plan: any) => {
+
+                const code =
+                  getPlanPrimaryCode(
+                    plan
+                  );
+
+                return (
+                  code ===
+                    "TRANSFERRED" ||
+                  code ===
+                    "CANCELLED"
+                );
+              }
+            );
+
+          // =====================================================
+          // ANY PLAN TRANSFERRED / CANCELLED
+          //
+          // Used only for logging/debugging.
+          //
+          // This is NO LONGER used to archive the order.
+          // =====================================================
+
+          const anyPlanTransferredOrCancelled =
+            plans.some(
+              (plan: any) => {
+
+                const code =
+                  getPlanPrimaryCode(
+                    plan
+                  );
+
+                return (
+                  code ===
+                    "TRANSFERRED" ||
+                  code ===
+                    "CANCELLED"
+                );
+              }
+            );
+
+          // =====================================================
+          // PLAN SERVICE ARCHIVE
+          //
+          // Archive only when:
+          //
+          // 1. ALL plans are transferred/cancelled
+          //
+          // OR
+          //
+          // 2. ALL plans are expired
+          //
+          // If ANY plan is ACTIVE:
+          // do NOT archive.
+          // =====================================================
+
+          const allPlansArchived =
+            hasPlans &&
+            (
+              allPlansTransferredOrCancelled ||
+              allPlansExpired
+            );
+
+          // =====================================================
+          // DEBUG LOG
+          // =====================================================
+
+          console.log(
+            `[ARCHIVED] ${order.domainName}`,
+            {
+              plans: plans.length,
+
+              hasActivePlan,
+
+              allPlansExpired,
+
+              allPlansTransferredOrCancelled,
+
+              anyPlanTransferredOrCancelled,
+
+              orderTransferredOrCancelled,
+
+              domainTransferredOrCancelled,
+            }
+          );
 
           // =====================================================
           // CASE 1
           //
-          // ORDER / DOMAIN / PLAN
-          // TRANSFERRED OR CANCELLED
+          // ORDER ITSELF TRANSFERRED / CANCELLED
           //
-          // EXPIRY DATE DOES NOT MATTER
+          // This has priority.
+          //
+          // Even if plan is active, if the whole order is
+          // transferred/cancelled, archive it.
           // =====================================================
 
-          if (serviceStatusArchive) {
+          if (
+            orderTransferredOrCancelled
+          ) {
+
             console.log(
-              `[ARCHIVED] ${order.domainName} => SERVICE STATUS ARCHIVED`
+              `[ARCHIVED] ${order.domainName} => ORDER TRANSFERRED/CANCELLED`
             );
 
             finalOrders.push({
+
               ...order.toObject(),
 
-              // =================================================
-              // PLANS WITH EMAIL TYPE IMAGE
-              // =================================================
+              Plans:
+                plans,
 
-              Plans: plans,
             });
 
             continue;
@@ -1730,10 +1922,195 @@ router.get(
           // =====================================================
           // CASE 2
           //
-          // NO EXPIRY DATE
+          // DOMAIN TRANSFERRED / CANCELLED
+          //
+          // IMPORTANT:
+          //
+          // If this order has an active email/hosting plan,
+          // the order should STILL be available because
+          // another service is active.
+          //
+          // Therefore:
+          //
+          // DOMAIN transferred/cancelled
+          // +
+          // ACTIVE PLAN
+          //
+          // => DO NOT ARCHIVE.
+          //
+          // DOMAIN transferred/cancelled
+          // +
+          // ALL PLANS expired/transferred/cancelled
+          //
+          // => ARCHIVE.
           // =====================================================
 
-          if (!order.expiryDate) {
+          if (
+            domainTransferredOrCancelled
+          ) {
+
+            if (
+              hasPlans &&
+              hasActivePlan
+            ) {
+
+              console.log(
+                `[ARCHIVED] ${order.domainName} => DOMAIN TRANSFERRED/CANCELLED BUT ACTIVE PLAN EXISTS => NOT ARCHIVED`
+              );
+
+              continue;
+            }
+
+            if (
+              !hasPlans
+            ) {
+
+              console.log(
+                `[ARCHIVED] ${order.domainName} => DOMAIN TRANSFERRED/CANCELLED + NO PLANS => ARCHIVED`
+              );
+
+              finalOrders.push({
+
+                ...order.toObject(),
+
+                Plans:
+                  plans,
+
+              });
+
+              continue;
+            }
+
+            if (
+              allPlansArchived
+            ) {
+
+              console.log(
+                `[ARCHIVED] ${order.domainName} => DOMAIN TRANSFERRED/CANCELLED + ALL PLANS EXPIRED/TRANSFERRED/CANCELLED => ARCHIVED`
+              );
+
+              finalOrders.push({
+
+                ...order.toObject(),
+
+                Plans:
+                  plans,
+
+              });
+
+              continue;
+            }
+          }
+
+          // =====================================================
+          // CASE 3
+          //
+          // ALL PLANS EXPIRED
+          //
+          // If the order has plans and every plan is expired,
+          // it is an archived service.
+          //
+          // Example:
+          //
+          // Plan 1 => EXPIRED
+          // Plan 2 => EXPIRED
+          //
+          // => ARCHIVE
+          //
+          // But:
+          //
+          // Plan 1 => EXPIRED
+          // Plan 2 => ACTIVE
+          //
+          // => DO NOT ARCHIVE
+          // =====================================================
+
+          if (
+            allPlansExpired
+          ) {
+
+            console.log(
+              `[ARCHIVED] ${order.domainName} => ALL PLANS EXPIRED`
+            );
+
+            finalOrders.push({
+
+              ...order.toObject(),
+
+              Plans:
+                plans,
+
+            });
+
+            continue;
+          }
+
+          // =====================================================
+          // CASE 4
+          //
+          // ALL PLANS TRANSFERRED / CANCELLED
+          // =====================================================
+
+          if (
+            allPlansTransferredOrCancelled
+          ) {
+
+            console.log(
+              `[ARCHIVED] ${order.domainName} => ALL PLANS TRANSFERRED/CANCELLED`
+            );
+
+            finalOrders.push({
+
+              ...order.toObject(),
+
+              Plans:
+                plans,
+
+            });
+
+            continue;
+          }
+
+          // =====================================================
+          // CASE 5
+          //
+          // ACTIVE PLAN EXISTS
+          //
+          // VERY IMPORTANT:
+          //
+          // If at least one plan is ACTIVE,
+          // do NOT archive based on order/domain expiry.
+          //
+          // This is the key fix for:
+          //
+          // spunic.com
+          //
+          // Microsoft/email plan => ACTIVE
+          // =====================================================
+
+          if (
+            hasPlans &&
+            hasActivePlan
+          ) {
+
+            console.log(
+              `[ARCHIVED] ${order.domainName} => ACTIVE PLAN EXISTS => NOT ARCHIVED`
+            );
+
+            continue;
+          }
+
+          // =====================================================
+          // CASE 6
+          //
+          // NO EXPIRY DATE
+          //
+          // =====================================================
+
+          if (
+            !order.expiryDate
+          ) {
+
             console.log(
               `[ARCHIVED] ${order.domainName} => NO EXPIRY DATE`
             );
@@ -1742,11 +2119,13 @@ router.get(
           }
 
           // =====================================================
-          // EXPIRY DATE
+          // ORDER EXPIRY DATE
           // =====================================================
 
           const expiryDate =
-            new Date(order.expiryDate);
+            new Date(
+              order.expiryDate
+            );
 
           expiryDate.setHours(
             0,
@@ -1762,7 +2141,12 @@ router.get(
           const daysAfterExpiry =
             Math.floor(
               diffTime /
-                (1000 * 60 * 60 * 24)
+                (
+                  1000 *
+                  60 *
+                  60 *
+                  24
+                )
             );
 
           console.log(
@@ -1770,12 +2154,15 @@ router.get(
           );
 
           // =====================================================
-          // CASE 3
+          // CASE 7
           //
           // TODAY / FUTURE
           // =====================================================
 
-          if (daysAfterExpiry <= 0) {
+          if (
+            daysAfterExpiry <= 0
+          ) {
+
             console.log(
               `[ARCHIVED] ${order.domainName} => ACTIVE / FUTURE`
             );
@@ -1784,9 +2171,9 @@ router.get(
           }
 
           // =====================================================
-          // CASE 4
+          // CASE 8
           //
-          // 1 - 35 DAYS AFTER EXPIRY
+          // 1 - 35 DAYS
           //
           // NORMAL ORDERS PAGE
           // =====================================================
@@ -1795,15 +2182,16 @@ router.get(
             daysAfterExpiry >= 1 &&
             daysAfterExpiry <= 35
           ) {
+
             console.log(
-              `[ARCHIVED] ${order.domainName} => 1-35 DAYS, NOT ARCHIVED`
+              `[ARCHIVED] ${order.domainName} => 1-35 DAYS => NOT ARCHIVED`
             );
 
             continue;
           }
 
           // =====================================================
-          // CASE 5
+          // CASE 9
           //
           // 36 - 65 DAYS
           //
@@ -1814,21 +2202,29 @@ router.get(
             daysAfterExpiry >= 36 &&
             daysAfterExpiry <= 65
           ) {
-            if (redemptionStatus?._id) {
+
+            if (
+              redemptionStatus?._id
+            ) {
+
               const currentArchivedStatus =
                 order.archived_status as any;
 
               const currentArchivedStatusId =
-                currentArchivedStatus?._id?.toString() ||
-                currentArchivedStatus?.toString();
+                currentArchivedStatus?._id
+                  ?.toString() ||
+                currentArchivedStatus
+                  ?.toString();
 
               if (
                 currentArchivedStatusId !==
                 redemptionStatus._id.toString()
               ) {
+
                 await Order.updateOne(
                   {
-                    _id: order._id,
+                    _id:
+                      order._id,
                   },
                   {
                     $set: {
@@ -1848,42 +2244,51 @@ router.get(
             );
 
             finalOrders.push({
+
               ...order.toObject(),
 
-              // =================================================
-              // PLANS WITH EMAIL TYPE IMAGE
-              // =================================================
+              Plans:
+                plans,
 
-              Plans: plans,
             });
 
             continue;
           }
 
           // =====================================================
-          // CASE 6
+          // CASE 10
           //
           // 66+ DAYS
           //
           // PENDING DELETE RESTORABLE
           // =====================================================
 
-          if (daysAfterExpiry >= 66) {
-            if (pendingDeleteStatus?._id) {
+          if (
+            daysAfterExpiry >= 66
+          ) {
+
+            if (
+              pendingDeleteStatus?._id
+            ) {
+
               const currentArchivedStatus =
                 order.archived_status as any;
 
               const currentArchivedStatusId =
-                currentArchivedStatus?._id?.toString() ||
-                currentArchivedStatus?.toString();
+                currentArchivedStatus?._id
+                  ?.toString() ||
+                currentArchivedStatus
+                  ?.toString();
 
               if (
                 currentArchivedStatusId !==
                 pendingDeleteStatus._id.toString()
               ) {
+
                 await Order.updateOne(
                   {
-                    _id: order._id,
+                    _id:
+                      order._id,
                   },
                   {
                     $set: {
@@ -1903,18 +2308,21 @@ router.get(
             );
 
             finalOrders.push({
+
               ...order.toObject(),
 
-              // =================================================
-              // PLANS WITH EMAIL TYPE IMAGE
-              // =================================================
+              Plans:
+                plans,
 
-              Plans: plans,
             });
 
             continue;
           }
-        } catch (statusError) {
+
+        } catch (
+          statusError
+        ) {
+
           console.error(
             "[ARCHIVED] STATUS UPDATE ERROR:",
             statusError
@@ -1954,21 +2362,35 @@ router.get(
       // =========================================================
 
       return res.status(200).json({
-        success: true,
 
-        data: paginatedOrders,
+        success:
+          true,
+
+        data:
+          paginatedOrders,
 
         pagination: {
+
           total,
+
           page,
+
           limit,
+
           totalPages:
             Math.ceil(
-              total / limit
+              total /
+              limit
             ),
+
         },
+
       });
-    } catch (error: any) {
+
+    } catch (
+      error: any
+    ) {
+
       console.error(
         "================================="
       );
@@ -1983,10 +2405,14 @@ router.get(
       );
 
       return res.status(500).json({
-        success: false,
+
+        success:
+          false,
+
         error:
           error?.message ||
           "Failed to fetch archived orders",
+
       });
     }
   }
