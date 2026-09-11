@@ -15,28 +15,18 @@ import OrdersTable from "../../Admin/Order/OrdersTable";
 
 import { Order } from "../../../types/order";
 
-
-// =====================================================
-// ARCHIVED ORDER TYPE
-// =====================================================
-
-
-
 // =====================================================
 // PAGE
 // =====================================================
 
 const ArchivedOrders: React.FC = () => {
-
   const navigate = useNavigate();
-
 
   // =====================================================
   // STATE
   // =====================================================
 
-const [orders, setOrders] = useState<Order[]>([]);
-
+  const [orders, setOrders] = useState<Order[]>([]);
 
   const [loading, setLoading] =
     useState(true);
@@ -53,90 +43,138 @@ const [orders, setOrders] = useState<Order[]>([]);
   const [total, setTotal] =
     useState(0);
 
+  // User's actual input
   const [search, setSearch] =
+    useState("");
+
+  // Debounced search value
+  const [debouncedSearch, setDebouncedSearch] =
     useState("");
 
   const [highlightedOrderId] =
     useState<string | null>(null);
 
+  // =====================================================
+  // SEARCH DEBOUNCE
+  // =====================================================
+  //
+  // User types:
+  //
+  // s
+  // sp
+  // spu
+  // spun
+  // spunic
+  //
+  // API will NOT be called for every character.
+  //
+  // It waits 400ms after typing stops.
+  // =====================================================
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(
+        search.trim()
+      );
+    }, 400);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [search]);
+
+  // =====================================================
+  // RESET PAGE WHEN SEARCH CHANGES
+  // =====================================================
+  //
+  // Important:
+  //
+  // If user is on page 5 and searches "spunic",
+  // search should start from page 1.
+  // =====================================================
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
 
   // =====================================================
   // FETCH ARCHIVED ORDERS
   // =====================================================
 
-  const fetchArchivedOrders = async () => {
+  useEffect(() => {
+    let cancelled = false;
 
-    try {
+    const fetchArchivedOrders = async () => {
+      try {
+        setLoading(true);
+        setError("");
 
-      setLoading(true);
-      setError("");
+        const response =
+          await getArchivedOrders(
+            page,
+            limit,
+            debouncedSearch
+          );
 
-      const response =
-        await getArchivedOrders(
-          page,
-          limit,
-          search
+        // Ignore old API response if another request
+        // has already started.
+        if (cancelled) {
+          return;
+        }
+
+        if (response?.success) {
+          setOrders(
+            response.data || []
+          );
+
+          setTotal(
+            response.pagination?.total || 0
+          );
+        } else {
+          setOrders([]);
+
+          setTotal(0);
+
+          setError(
+            response?.message ||
+              "Failed to load archived orders"
+          );
+        }
+      } catch (error: any) {
+        if (cancelled) {
+          return;
+        }
+
+        console.error(
+          "ARCHIVED ORDERS ERROR:",
+          error
         );
-
-
-      if (response?.success) {
-
-        setOrders(
-          response.data || []
-        );
-
-        setTotal(
-          response.pagination?.total || 0
-        );
-
-      } else {
 
         setOrders([]);
 
         setTotal(0);
 
         setError(
-          response?.message ||
-          "Failed to load archived orders"
+          error?.message ||
+            "Failed to load archived orders"
         );
-
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
-
-    } catch (error: any) {
-
-      console.error(
-        "ARCHIVED ORDERS ERROR:",
-        error
-      );
-
-      setOrders([]);
-
-      setTotal(0);
-
-      setError(
-        error?.message ||
-        "Failed to load archived orders"
-      );
-
-    } finally {
-
-      setLoading(false);
-
-    }
-
-  };
-
-
-  // =====================================================
-  // LOAD DATA
-  // =====================================================
-
-  useEffect(() => {
+    };
 
     fetchArchivedOrders();
 
-  }, [page]);
-
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    page,
+    limit,
+    debouncedSearch,
+  ]);
 
   // =====================================================
   // SEARCH
@@ -145,101 +183,101 @@ const [orders, setOrders] = useState<Order[]>([]);
   const handleSearch = (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-
-    setSearch(e.target.value);
-
-    setPage(1);
-
+    setSearch(
+      e.target.value
+    );
   };
-
 
   // =====================================================
   // STATUS CLASS
   // =====================================================
 
-const getStatusClass = (
-  status?: {
-    _id: string;
-    name: string;
-    code: string;
-    type: "order" | "plan" | "domain";
-    is_active: boolean;
-  } | null
-) => {
-  const statusName =
-    status?.name?.toUpperCase() ||
-    status?.code?.toUpperCase() ||
-    "";
+  const getStatusClass = (
+    status?: {
+      _id: string;
+      name: string;
+      code: string;
+      type:
+        | "order"
+        | "plan"
+        | "domain";
+      is_active: boolean;
+    } | null
+  ) => {
+    const statusName =
+      status?.name?.toUpperCase() ||
+      status?.code?.toUpperCase() ||
+      "";
 
-  switch (statusName) {
+    switch (statusName) {
+      // =========================
+      // ORDER STATUS
+      // =========================
 
-    // =========================
-    // ORDER STATUS
-    // =========================
+      case "ACTIVE":
+        return "bg-green-100 text-green-700";
 
-    case "ACTIVE":
-      return "bg-green-100 text-green-700";
+      case "EXPIRED":
+        return "bg-orange-100 text-orange-700";
 
-    case "EXPIRED":
-      return "bg-orange-100 text-orange-700";
+      case "TRANSFERRED":
+        return "bg-blue-100 text-blue-700";
 
-    case "TRANSFERRED":
-      return "bg-blue-100 text-blue-700";
+      case "CANCELLED":
+        return "bg-red-100 text-red-700";
 
-    case "CANCELLED":
-      return "bg-red-100 text-red-700";
+      // =========================
+      // ARCHIVED STATUS
+      // =========================
 
+      case "REDEMPTION PERIOD":
+        return "bg-yellow-100 text-yellow-700";
 
-    // =========================
-    // ARCHIVED STATUS
-    // =========================
+      case "PENDING DELETE RESTORABLE":
+        return "bg-red-100 text-red-700";
 
-    case "REDEMPTION PERIOD":
-      return "bg-yellow-100 text-yellow-700";
+      // =========================
+      // DOMAIN STATUS
+      // =========================
 
-    case "PENDING DELETE RESTORABLE":
-      return "bg-red-100 text-red-700";
+      case "INACTIVE":
+        return "bg-gray-100 text-gray-700";
 
+      case "PENDING":
+        return "bg-yellow-100 text-yellow-700";
 
-    // =========================
-    // DOMAIN STATUS
-    // =========================
+      // =========================
+      // N/A STATUS
+      // =========================
 
-    case "INACTIVE":
-      return "bg-gray-100 text-gray-700";
+      case "N/A":
+        return "bg-gray-100 text-gray-600";
 
-    case "PENDING":
-      return "bg-yellow-100 text-yellow-700";
+      // =========================
+      // DEFAULT
+      // =========================
 
+      default:
+        return "bg-gray-100 text-gray-600";
+    }
+  };
 
-    // =========================
-    // N/A STATUS
-    // =========================
-
-    case "N/A":
-      return "bg-gray-100 text-gray-600";
-
-
-    // =========================
-    // DEFAULT
-    // =========================
-
-    default:
-      return "bg-gray-100 text-gray-600";
-  }
-};
   // =====================================================
   // EDIT
   // =====================================================
 
-const handleEdit = (order: Order) => {
-  navigate(`/admin/orders/update/${order._id}`, {
-    state: {
-      from: "archived",
-    },
-  });
-};
-
+  const handleEdit = (
+    order: Order
+  ) => {
+    navigate(
+      `/admin/orders/update/${order._id}`,
+      {
+        state: {
+          from: "archived",
+        },
+      }
+    );
+  };
 
   // =====================================================
   // PAGINATION
@@ -250,52 +288,53 @@ const handleEdit = (order: Order) => {
       total / limit
     );
 
+  // =====================================================
+  // PREVIOUS PAGE
+  // =====================================================
 
   const goToPreviousPage = () => {
-
-    if (page > 1) {
-
-      setPage(
-        page - 1
-      );
-
+    if (loading) {
+      return;
     }
 
+    if (page > 1) {
+      setPage(
+        (prev) => prev - 1
+      );
+    }
   };
 
+  // =====================================================
+  // NEXT PAGE
+  // =====================================================
 
   const goToNextPage = () => {
+    if (loading) {
+      return;
+    }
 
     if (
       page < totalPages
     ) {
-
       setPage(
-        page + 1
+        (prev) => prev + 1
       );
-
     }
-
   };
-
 
   // =====================================================
   // RENDER
   // =====================================================
 
   return (
-
     <div className="p-6">
-
 
       {/* =================================================
           HEADER
       ================================================= */}
 
       <div className="flex items-center justify-between mb-6">
-
         <div>
-
           <h1 className="text-2xl font-bold text-gray-800">
             Archived Orders
           </h1>
@@ -303,11 +342,8 @@ const handleEdit = (order: Order) => {
           <p className="text-sm text-gray-500 mt-1">
             Expired orders and deletion status
           </p>
-
         </div>
-
       </div>
-
 
       {/* =================================================
           SEARCH
@@ -315,62 +351,99 @@ const handleEdit = (order: Order) => {
 
       <div className="bg-white rounded-lg shadow p-4 mb-5">
 
-        <input
-          type="text"
-          value={search}
-          onChange={handleSearch}
-          placeholder="Search domain or customer..."
-          className="
-            w-full
-            md:w-96
-            border
-            border-gray-300
-            rounded-lg
-            px-4
-            py-2
-            text-sm
-            outline-none
-            focus:ring-2
-            focus:ring-blue-500
-          "
-        />
+        <div className="relative w-full md:w-96">
+
+          <input
+            type="text"
+            value={search}
+            onChange={handleSearch}
+            placeholder="Search domain or customer..."
+            className="
+              w-full
+              border
+              border-gray-300
+              rounded-lg
+              px-4
+              py-2
+              pr-10
+              text-sm
+              outline-none
+              focus:ring-2
+              focus:ring-blue-500
+            "
+          />
+
+          {/* Search loading indicator */}
+          {search !== debouncedSearch && (
+            <div
+              className="
+                absolute
+                right-3
+                top-1/2
+                -translate-y-1/2
+                text-gray-400
+              "
+            >
+              <div
+                className="
+                  w-4
+                  h-4
+                  border-2
+                  border-gray-300
+                  border-t-blue-500
+                  rounded-full
+                  animate-spin
+                "
+              />
+            </div>
+          )}
+
+        </div>
 
       </div>
-
 
       {/* =================================================
           LOADING
       ================================================= */}
 
       {loading && (
-
         <div className="bg-white rounded-lg shadow p-10 text-center">
+
+          <div
+            className="
+              inline-block
+              w-6
+              h-6
+              border-2
+              border-gray-300
+              border-t-blue-500
+              rounded-full
+              animate-spin
+              mb-3
+            "
+          />
 
           <p className="text-gray-500">
             Loading archived orders...
           </p>
 
         </div>
-
       )}
-
 
       {/* =================================================
           ERROR
       ================================================= */}
 
-      {!loading && error && (
+      {!loading &&
+        error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
 
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-red-600">
+              {error}
+            </p>
 
-          <p className="text-red-600">
-            {error}
-          </p>
-
-        </div>
-
-      )}
-
+          </div>
+        )}
 
       {/* =================================================
           EMPTY
@@ -379,17 +452,16 @@ const handleEdit = (order: Order) => {
       {!loading &&
         !error &&
         orders.length === 0 && (
-
           <div className="bg-white rounded-lg shadow p-10 text-center">
 
             <p className="text-gray-500">
-              No archived orders found.
+              {debouncedSearch
+                ? `No archived orders found for "${debouncedSearch}".`
+                : "No archived orders found."}
             </p>
 
           </div>
-
         )}
-
 
       {/* =================================================
           TABLE
@@ -398,7 +470,6 @@ const handleEdit = (order: Order) => {
       {!loading &&
         !error &&
         orders.length > 0 && (
-
           <>
 
             <OrdersTable
@@ -429,10 +500,11 @@ const handleEdit = (order: Order) => {
               navigate={
                 navigate
               }
-  showDomainStatus={true}
-              
-            />
 
+              showDomainStatus={
+                true
+              }
+            />
 
             {/* =============================================
                 PAGINATION
@@ -440,13 +512,19 @@ const handleEdit = (order: Order) => {
 
             <div className="flex items-center justify-between mt-5">
 
+              {/* =========================================
+                  SHOWING
+              ========================================= */}
+
               <div className="text-sm text-gray-500">
 
                 Showing{" "}
 
                 {total === 0
                   ? 0
-                  : (page - 1) * limit + 1}
+                  : (page - 1) *
+                      limit +
+                    1}
 
                 {" "}–{" "}
 
@@ -461,15 +539,20 @@ const handleEdit = (order: Order) => {
 
               </div>
 
+              {/* =========================================
+                  PAGINATION BUTTONS
+              ========================================= */}
 
               <div className="flex items-center gap-2">
 
                 <button
+                  type="button"
                   onClick={
                     goToPreviousPage
                   }
                   disabled={
-                    page === 1
+                    page === 1 ||
+                    loading
                   }
                   className="
                     px-4
@@ -485,21 +568,24 @@ const handleEdit = (order: Order) => {
                   Previous
                 </button>
 
-
                 <span className="px-3 text-sm">
 
-                  Page {page} of{" "}
+                  Page{" "}
+                  {page}{" "}
+                  of{" "}
                   {totalPages || 1}
 
                 </span>
 
-
                 <button
+                  type="button"
                   onClick={
                     goToNextPage
                   }
                   disabled={
-                    page >= totalPages
+                    page >=
+                      totalPages ||
+                    loading
                   }
                   className="
                     px-4
@@ -520,14 +606,10 @@ const handleEdit = (order: Order) => {
             </div>
 
           </>
-
         )}
 
     </div>
-
   );
-
 };
-
 
 export default ArchivedOrders;
