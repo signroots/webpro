@@ -2676,7 +2676,6 @@ router.get(
   }
 );
 
-
 // ============================================================
 // NORMAL ORDERS
 // ============================================================
@@ -2908,6 +2907,7 @@ router.get(
                     .trim()
                     .toLowerCase()
                 );
+
               }
             )
             .map(
@@ -3193,6 +3193,8 @@ router.get(
                         }
                       : null,
 
+                  // IMPORTANT:
+                  // This is the source of truth
                   primary_status:
                     plan.primary_status ||
                     null,
@@ -3432,6 +3434,7 @@ router.get(
 
               // ------------------------------------------------
               // TRANSFERRED / CANCELLED ORDER
+              // DO NOT OVERWRITE
               // ------------------------------------------------
 
               if (
@@ -3481,6 +3484,12 @@ router.get(
 
               // ------------------------------------------------
               // PLAN EXPIRY
+              //
+              // IMPORTANT:
+              // This checks OrderPlan expiryDate only
+              // for changing order status.
+              // The response filtering below uses
+              // primary_status.
               // ------------------------------------------------
 
               const plans =
@@ -3646,8 +3655,7 @@ router.get(
 
 
       // ========================================================
-      // 14. UPDATE ARCHIVED STATUS
-      // 36-65 / 66+
+      // 14. ARCHIVED STATUS
       // ========================================================
 
       const redemptionStatusSafe =
@@ -3872,21 +3880,27 @@ router.get(
       // 15. SERVICE AVAILABILITY
       // ========================================================
       //
+      // IMPORTANT:
+      // ONLY OrderPlan.primary_status is checked here.
+      //
+      // email_status / email_flag / provider / etc.
+      // are NOT used.
+      //
       // RULE:
       //
-      // A) DOMAIN AVAILABLE
+      // 1. DOMAIN AVAILABLE
       //    -> SHOW ORDER
-      //    even if ALL plans are expired
       //
-      // B) DOMAIN TRANSFERRED/CANCELLED
-      //    -> Need at least ONE usable plan
+      // 2. DOMAIN TRANSFERRED/CANCELLED
+      //    + ANY PLAN NOT EXPIRED/TRANSFERRED/CANCELLED
+      //    -> SHOW ORDER
       //
-      // C) DOMAIN TRANSFERRED/CANCELLED
-      //    + ALL plans EXPIRED
+      // 3. DOMAIN TRANSFERRED/CANCELLED
+      //    + ALL PLANS EXPIRED
       //    -> HIDE ORDER
       //
-      // D) DOMAIN TRANSFERRED/CANCELLED
-      //    + no plans
+      // 4. DOMAIN TRANSFERRED/CANCELLED
+      //    + NO PLANS
       //    -> HIDE ORDER
       //
       // ========================================================
@@ -3896,32 +3910,67 @@ router.get(
           orders: any[]
         ) => {
 
+          if (!orders.length) {
+            return orders;
+          }
+
+
           return orders.filter(
             (order: any) => {
 
-              // =================================================
-              // DOMAIN SERVICE
-              // =================================================
+              // ==================================================
+              // DOMAIN STATUS
+              // ==================================================
 
-              const hasDomainService =
-                !!order.domainSource;
+              const domainStatusCode =
+                order.domain_status?.code
+                  ?.toString()
+                  .trim()
+                  .toUpperCase() ||
+                order.domain_status?.name
+                  ?.toString()
+                  .trim()
+                  .toUpperCase() ||
+                "";
 
 
               const domainUnavailable =
-                hasDomainService &&
-                isTransferredOrCancelled(
-                  order.domain_status
+                [
+                  "TRANSFERRED",
+                  "CANCELLED",
+                ].includes(
+                  domainStatusCode
                 );
 
 
-              const domainAvailable =
-                hasDomainService &&
-                !domainUnavailable;
+              // ==================================================
+              // DOMAIN AVAILABLE
+              //
+              // If domain itself is available,
+              // we don't care whether plans are expired.
+              //
+              // Example:
+              //
+              // domain = ACTIVE
+              // plan = EXPIRED
+              //
+              // => SHOW
+              // ==================================================
+
+              if (
+                !domainUnavailable
+              ) {
+
+                return true;
+
+              }
 
 
-              // =================================================
-              // PLANS
-              // =================================================
+              // ==================================================
+              // DOMAIN TRANSFERRED / CANCELLED
+              //
+              // Now ONLY OrderPlan.primary_status matters.
+              // ==================================================
 
               const plans =
                 Array.isArray(
@@ -3931,153 +3980,103 @@ router.get(
                   : [];
 
 
-              // =================================================
-              // RULE 1
+              // ==================================================
+              // NO PLANS
               //
-              // DOMAIN AVAILABLE
-              //
-              // No matter whether plans are expired,
-              // order should be shown.
-              // =================================================
+              // Domain unavailable + no plans
+              // => HIDE
+              // ==================================================
 
               if (
-                domainAvailable
+                plans.length === 0
               ) {
 
-                return true;
+                return false;
 
               }
 
 
-              // =================================================
-              // RULE 2
+              // ==================================================
+              // ANY USABLE PLAN
               //
-              // DOMAIN TRANSFERRED / CANCELLED
-              //
-              // Need at least one plan that is NOT:
-              // - EXPIRED
-              // - TRANSFERRED
-              // - CANCELLED
-              // =================================================
+              // PRIMARY_STATUS IS SOURCE OF TRUTH
+              // ==================================================
 
-              if (
-                domainUnavailable
-              ) {
+              const hasUsablePlan =
+                plans.some(
+                  (plan: any) => {
 
-                const hasUsablePlan =
-                  plans.some(
-                    (plan: any) => {
-
-                      const planStatus =
-                        plan.primary_status;
-
-
-                      // -----------------------------------------
-                      // EXPIRED PLAN
-                      // -----------------------------------------
-
-                      const isExpired =
-                        planStatus?.code ===
-                          "EXPIRED" ||
-                        planStatus?.name ===
-                          "EXPIRED";
+                    const statusCode =
+                      plan.primary_status?.code
+                        ?.toString()
+                        .trim()
+                        .toUpperCase() ||
+                      plan.primary_status?.name
+                        ?.toString()
+                        .trim()
+                        .toUpperCase() ||
+                      "";
 
 
-                      if (
-                        isExpired
-                      ) {
-                        return false;
-                      }
+                    // ------------------------------------------
+                    // EXPIRED
+                    // ------------------------------------------
 
+                    if (
+                      statusCode === "EXPIRED"
+                    ) {
 
-                      // -----------------------------------------
-                      // TRANSFERRED / CANCELLED PLAN
-                      // -----------------------------------------
-
-                      if (
-                        isTransferredOrCancelled(
-                          planStatus
-                        )
-                      ) {
-                        return false;
-                      }
-
-
-                      // -----------------------------------------
-                      // USABLE PLAN
-                      // -----------------------------------------
-
-                      return true;
+                      return false;
 
                     }
-                  );
 
 
-                return hasUsablePlan;
+                    // ------------------------------------------
+                    // TRANSFERRED / CANCELLED
+                    // ------------------------------------------
 
-              }
+                    if (
+                      [
+                        "TRANSFERRED",
+                        "CANCELLED",
+                      ].includes(
+                        statusCode
+                      )
+                    ) {
 
-
-              // =================================================
-              // RULE 3
-              //
-              // NO DOMAIN SERVICE
-              //
-              // If there is a usable plan -> SHOW
-              // If all plans expired -> HIDE
-              // =================================================
-
-              if (
-                !hasDomainService
-              ) {
-
-                const hasUsablePlan =
-                  plans.some(
-                    (plan: any) => {
-
-                      const planStatus =
-                        plan.primary_status;
-
-
-                      const isExpired =
-                        planStatus?.code ===
-                          "EXPIRED" ||
-                        planStatus?.name ===
-                          "EXPIRED";
-
-
-                      if (
-                        isExpired
-                      ) {
-                        return false;
-                      }
-
-
-                      if (
-                        isTransferredOrCancelled(
-                          planStatus
-                        )
-                      ) {
-                        return false;
-                      }
-
-
-                      return true;
+                      return false;
 
                     }
-                  );
 
 
-                return hasUsablePlan;
+                    // ------------------------------------------
+                    // ANY OTHER PRIMARY STATUS
+                    //
+                    // ACTIVE, etc.
+                    // => usable
+                    // ------------------------------------------
 
-              }
+                    return true;
+
+                  }
+                );
 
 
-              // =================================================
-              // DEFAULT
-              // =================================================
+              // ==================================================
+              // FINAL RESULT
+              // ==================================================
+              //
+              // Domain unavailable:
+              //
+              // ANY usable plan
+              // => SHOW
+              //
+              // ALL plans expired / transferred / cancelled
+              // => HIDE
+              //
+              // ==================================================
 
-              return false;
+              return hasUsablePlan;
 
             }
           );
@@ -4264,6 +4263,15 @@ router.get(
 
           // ====================================================
           // UPDATE PLAN STATUS
+          //
+          // IMPORTANT:
+          // This happens BEFORE filtering.
+          //
+          // So if expiryDate is already expired,
+          // primary_status becomes EXPIRED in both:
+          //
+          // 1. DB
+          // 2. order.Plans response object
           // ====================================================
 
           orders =
@@ -4294,6 +4302,8 @@ router.get(
 
           // ====================================================
           // SERVICE AVAILABILITY
+          //
+          // Uses order.Plans[].primary_status
           // ====================================================
 
           orders =
@@ -4386,11 +4396,11 @@ router.get(
               : {
                   pagination: {
 
+                    total,
+
                     page,
 
                     limit,
-
-                    total,
 
                     totalPages:
                       Math.ceil(
@@ -4510,11 +4520,11 @@ router.get(
               : {
                   pagination: {
 
+                    total,
+
                     page,
 
                     limit,
-
-                    total,
 
                     totalPages:
                       Math.ceil(
