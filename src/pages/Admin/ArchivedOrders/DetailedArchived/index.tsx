@@ -4,10 +4,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   fetchOrderById,
   updateOrderStatus,
-  fetchOrderStatuses,
-  fetchPrimaryPlanStatuses,
-  fetchSecondaryPlanStatuses,
-  fetchDomainStatuses,
   activatePlanStatus,
 } from "../../Order/api";
 
@@ -15,6 +11,7 @@ import {
   FaArrowLeft,
   FaEdit,
   FaRedo,
+  FaCheckCircle,
 } from "react-icons/fa";
 
 /* ===================== TYPES ===================== */
@@ -82,19 +79,6 @@ interface DomainSource {
   image?: string;
 }
 
-interface Status {
-  _id: string;
-  name: string;
-  code?: string;
-  category?: "primary" | "secondary";
-  is_active: boolean;
-
-  typeEmail?: {
-    _id: string;
-    name: string;
-  } | null;
-}
-
 interface Order {
   _id: string;
   domainName: string;
@@ -127,8 +111,6 @@ interface Order {
 
   domainSource?: DomainSource | null;
 
-  /* FLAGS */
-
   domain_flag?: boolean;
   email_flag?: boolean;
   host_flag?: boolean;
@@ -152,9 +134,7 @@ interface Order {
   plans?: Plan[];
 }
 
-/* ===================== SMALL COMPONENTS ===================== */
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+/* ===================== INFO COMPONENT ===================== */
 
 const Info: React.FC<{
   label: string;
@@ -173,6 +153,29 @@ const Info: React.FC<{
   </div>
 );
 
+/* ===================== ACTIVE STATUS ===================== */
+
+const ActiveStatus: React.FC = () => (
+  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-green-50 text-green-700 border border-green-200">
+    <FaCheckCircle className="text-xs" />
+    Active
+  </span>
+);
+
+/* ===================== ACTIVATE BUTTON ===================== */
+
+const ActivateButton: React.FC<{
+  onClick: () => void;
+}> = ({ onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="inline-flex items-center justify-center px-3.5 py-1.5 text-sm font-medium rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors"
+  >
+    Active
+  </button>
+);
+
 /* ===================== MAIN COMPONENT ===================== */
 
 const ArchivedOrderDetails: React.FC = () => {
@@ -183,18 +186,6 @@ const ArchivedOrderDetails: React.FC = () => {
   const navigate = useNavigate();
 
   /* ===================== STATES ===================== */
-
-  const [statuses, setStatuses] =
-    useState<Status[]>([]);
-
-  const [domainStatuses, setDomainStatuses] =
-    useState<Status[]>([]);
-
-  const [primaryPlanStatuses, setPrimaryPlanStatuses] =
-    useState<Record<string, Status[]>>({});
-
-  const [secondaryPlanStatuses, setSecondaryPlanStatuses] =
-    useState<Record<string, Status[]>>({});
 
   const [order, setOrder] =
     useState<Order | null>(null);
@@ -215,16 +206,8 @@ const ArchivedOrderDetails: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        /* ===============================
-           FETCH ORDER
-        =============================== */
-
         const data =
           await fetchOrderById(orderId);
-
-        /* ===============================
-           MAP CUSTOMER / CLIENT
-        =============================== */
 
         const mapPerson = (source: any) =>
           source
@@ -256,78 +239,6 @@ const ArchivedOrderDetails: React.FC = () => {
         };
 
         setOrder(mappedOrder);
-
-        /* ===============================
-           ORDER STATUS
-        =============================== */
-
-        const orderStatusData =
-          await fetchOrderStatuses(orderId);
-
-        setStatuses(
-          Array.isArray(orderStatusData)
-            ? orderStatusData
-            : []
-        );
-
-        /* ===============================
-           DOMAIN STATUS
-        =============================== */
-
-        const domainStatusData =
-          await fetchDomainStatuses(orderId);
-
-        setDomainStatuses(
-          Array.isArray(domainStatusData)
-            ? domainStatusData
-            : []
-        );
-
-        /* ===============================
-           PLAN STATUSES
-        =============================== */
-
-        const primaryStatuses =
-          await fetchPrimaryPlanStatuses();
-
-        const secondaryStatuses =
-          await fetchSecondaryPlanStatuses();
-
-        const primaryStatusMap: Record<
-          string,
-          Status[]
-        > = {};
-
-        const secondaryStatusMap: Record<
-          string,
-          Status[]
-        > = {};
-
-        /* ===============================
-           ASSIGN STATUS LISTS TO PLANS
-        =============================== */
-
-        for (
-          const plan of mappedOrder.plans || []
-        ) {
-          primaryStatusMap[plan._id] =
-            Array.isArray(primaryStatuses)
-              ? primaryStatuses
-              : [];
-
-          secondaryStatusMap[plan._id] =
-            Array.isArray(secondaryStatuses)
-              ? secondaryStatuses
-              : [];
-        }
-
-        setPrimaryPlanStatuses(
-          primaryStatusMap
-        );
-
-        setSecondaryPlanStatuses(
-          secondaryStatusMap
-        );
       } catch (error) {
         console.error(
           "Failed to load order details:",
@@ -345,7 +256,7 @@ const ArchivedOrderDetails: React.FC = () => {
     loadOrderDetails();
   }, [orderId]);
 
-  /* ===================== SECTION COMPONENT ===================== */
+  /* ===================== SECTION ===================== */
 
   const Section: React.FC<{
     title: string;
@@ -359,15 +270,12 @@ const ArchivedOrderDetails: React.FC = () => {
     rightContent,
   }) => (
     <section className="mb-6">
-
       <div className="flex items-center justify-between mb-3 border-b pb-2">
-
-        <h2 className="text-lg font-semibold">
+        <h2 className="text-lg font-semibold text-gray-800">
           {title}
         </h2>
 
         {rightContent}
-
       </div>
 
       <div
@@ -379,7 +287,6 @@ const ArchivedOrderDetails: React.FC = () => {
       >
         {children}
       </div>
-
     </section>
   );
 
@@ -413,7 +320,7 @@ const ArchivedOrderDetails: React.FC = () => {
     );
   }
 
-  /* ===================== DATE FORMAT ===================== */
+  /* ===================== DATE ===================== */
 
   const formatDate = (date?: string) =>
     date
@@ -426,13 +333,23 @@ const ArchivedOrderDetails: React.FC = () => {
           .replaceAll(" ", "-")
       : "-";
 
-  /* ===================== DOMAIN ACTIVE CHECK ===================== */
+  /* ===================== STATUS CHECK ===================== */
 
-  const isDomainActive =
-    order.domain_status?.code?.toUpperCase() ===
-      "ACTIVE" ||
-    order.domain_status?.name?.toUpperCase() ===
-      "ACTIVE";
+  const isActiveStatus = (
+    status?: {
+      name?: string;
+      code?: string;
+    } | null
+  ) => {
+    const value =
+      status?.code ||
+      status?.name ||
+      "";
+
+    return value
+      .trim()
+      .toUpperCase() === "ACTIVE";
+  };
 
   /* ===================== PLAN ACTIVATE ===================== */
 
@@ -444,9 +361,7 @@ const ArchivedOrderDetails: React.FC = () => {
         "Are you sure you want to make this plan Active?"
       );
 
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
     try {
       const updatedPlan =
@@ -457,11 +372,6 @@ const ArchivedOrderDetails: React.FC = () => {
             type: "plan",
           }
         );
-
-      console.log(
-        "PLAN ACTIVATED:",
-        updatedPlan
-      );
 
       setOrder((prev) => {
         if (!prev) return prev;
@@ -474,10 +384,8 @@ const ArchivedOrderDetails: React.FC = () => {
               p._id === plan._id
                 ? {
                     ...p,
-
                     primary_status:
                       updatedPlan.primary_status,
-
                     secondary_status:
                       updatedPlan.secondary_status,
                   }
@@ -494,6 +402,98 @@ const ArchivedOrderDetails: React.FC = () => {
       alert(
         error?.response?.data?.message ||
           "Failed to activate plan"
+      );
+    }
+  };
+
+  /* ===================== ORDER ACTIVATE ===================== */
+
+  const handleActivateOrder = async () => {
+    if (!order._id) {
+      return;
+    }
+
+    const confirmed =
+      window.confirm(
+        "Are you sure you want to make this order Active?"
+      );
+
+    if (!confirmed) return;
+
+    try {
+      const updatedOrder =
+        await updateOrderStatus(
+          order._id,
+          {
+            status: "ACTIVE",
+            type: "order",
+          }
+        );
+
+      setOrder((prev) => {
+        if (!prev) return prev;
+
+        return {
+          ...prev,
+          order_status:
+            updatedOrder.order_status,
+        };
+      });
+    } catch (error: any) {
+      console.error(
+        "Failed to activate order:",
+        error
+      );
+
+      alert(
+        error?.response?.data?.message ||
+          "Failed to activate order"
+      );
+    }
+  };
+
+  /* ===================== DOMAIN ACTIVATE ===================== */
+
+  const handleActivateDomain = async () => {
+    if (!order._id) {
+      return;
+    }
+
+    const confirmed =
+      window.confirm(
+        "Are you sure you want to make this domain Active?"
+      );
+
+    if (!confirmed) return;
+
+    try {
+      const updatedOrder =
+        await updateOrderStatus(
+          order._id,
+          {
+            status: "ACTIVE",
+            type: "domain",
+          }
+        );
+
+      setOrder((prev) => {
+        if (!prev) return prev;
+
+        return {
+          ...prev,
+          domain_status:
+            updatedOrder.domain_status,
+        };
+      });
+    } catch (error: any) {
+      console.error(
+        "Failed to activate domain:",
+        error
+      );
+
+      alert(
+        error?.response?.data?.message ||
+          "Failed to activate domain"
       );
     }
   };
@@ -515,99 +515,19 @@ const ArchivedOrderDetails: React.FC = () => {
               Order – {order.domainName}
             </h1>
 
-            {/* ===============================
-                ORDER STATUS
-            =============================== */}
+            {/* ORDER STATUS */}
 
-            <select
-              value={
-                order.order_status?._id || ""
-              }
-              onChange={async (e) => {
-                const newStatusId =
-                  e.target.value;
-
-                if (
-                  !newStatusId ||
-                  newStatusId ===
-                    order.order_status?._id
-                ) {
-                  return;
+            {isActiveStatus(
+              order.order_status
+            ) ? (
+              <ActiveStatus />
+            ) : (
+              <ActivateButton
+                onClick={
+                  handleActivateOrder
                 }
-
-                const selectedStatus =
-                  statuses.find(
-                    (status) =>
-                      status._id ===
-                      newStatusId
-                  );
-
-                const confirmed =
-                  window.confirm(
-                    `Are you sure you want to change the status to "${selectedStatus?.name}"?`
-                  );
-
-                if (!confirmed) return;
-
-                try {
-                  const updatedOrder =
-                    await updateOrderStatus(
-                      order._id,
-                      {
-                        order_status:
-                          newStatusId,
-                      }
-                    );
-
-                  setOrder((prev) => {
-                    if (!prev) return prev;
-
-                    return {
-                      ...prev,
-                      order_status:
-                        updatedOrder.order_status,
-                    };
-                  });
-                } catch (error) {
-                  console.error(
-                    "Order status update error:",
-                    error
-                  );
-
-                  alert(
-                    "Failed to update order status"
-                  );
-                }
-              }}
-              className="border border-gray-300 rounded-md px-3 py-1.5 text-sm font-medium text-gray-700"
-            >
-
-              <option
-                value={
-                  order.order_status?._id || ""
-                }
-              >
-                {order.order_status?.name ||
-                  "Select Order Status"}
-              </option>
-
-              {statuses
-                .filter(
-                  (status) =>
-                    status.is_active &&
-                    status._id !==
-                      order.order_status?._id
-                )
-                .map((status) => (
-                  <option
-                    key={status._id}
-                    value={status._id}
-                  >
-                    {status.name}
-                  </option>
-                ))}
-
-            </select>
+              />
+            )}
 
           </div>
 
@@ -615,7 +535,7 @@ const ArchivedOrderDetails: React.FC = () => {
 
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
+            className="flex items-center gap-2 bg-gray-200 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors"
           >
             <FaArrowLeft />
             Back
@@ -627,69 +547,17 @@ const ArchivedOrderDetails: React.FC = () => {
 
         <Section
           title="Domain Information"
-
           rightContent={
-            !isDomainActive && (
-              <button
-                type="button"
-
-                onClick={async () => {
-                  if (!order._id) return;
-
-                  if (isDomainActive) {
-                    return;
-                  }
-
-                  const confirmed =
-                    window.confirm(
-                      "Are you sure you want to make this domain Active?"
-                    );
-
-                  if (!confirmed) {
-                    return;
-                  }
-
-                  try {
-                    const updatedOrder =
-                      await updateOrderStatus(
-                        order._id,
-                        {
-                          status: "ACTIVE",
-                          type: "domain",
-                        }
-                      );
-
-                    console.log(
-                      "UPDATED ORDER AFTER ACTIVE:",
-                      updatedOrder
-                    );
-
-                    setOrder((prev) => {
-                      if (!prev) return prev;
-
-                      return {
-                        ...prev,
-                        domain_status:
-                          updatedOrder.domain_status,
-                      };
-                    });
-                  } catch (error: any) {
-                    console.error(
-                      "Failed to activate domain:",
-                      error
-                    );
-
-                    alert(
-                      error?.response?.data?.message ||
-                        "Failed to activate domain"
-                    );
-                  }
-                }}
-
-                className="px-4 py-2 rounded text-white bg-green-600 hover:bg-green-700"
-              >
-                Active
-              </button>
+            isActiveStatus(
+              order.domain_status
+            ) ? (
+              <ActiveStatus />
+            ) : (
+              <ActivateButton
+                onClick={
+                  handleActivateDomain
+                }
+              />
             )
           }
         >
@@ -708,7 +576,7 @@ const ArchivedOrderDetails: React.FC = () => {
 
           <div className="flex items-center gap-2">
 
-            <label className="text-sm font-medium">
+            <label className="text-sm font-medium text-gray-700">
               Registrar:
             </label>
 
@@ -720,8 +588,8 @@ const ArchivedOrderDetails: React.FC = () => {
                     order.domainSource.image.startsWith(
                       "/"
                     )
-                      ? `${API_BASE_URL}${order.domainSource.image}`
-                      : `${API_BASE_URL}/${order.domainSource.image}`
+                      ? `${import.meta.env.VITE_API_BASE_URL}${order.domainSource.image}`
+                      : `${import.meta.env.VITE_API_BASE_URL}/${order.domainSource.image}`
                   }
                   className="w-6 h-6 object-contain"
                   alt={
@@ -770,77 +638,45 @@ const ArchivedOrderDetails: React.FC = () => {
         {order.customer && (
           <Section title="Customer Details">
 
-            {order.customer.name && (
-              <Info
-                label="Name"
-                value={
-                  order.customer.name
-                }
-              />
-            )}
+            <Info
+              label="Name"
+              value={order.customer.name}
+            />
 
-            {order.customer.company && (
-              <Info
-                label="Company"
-                value={
-                  order.customer.company
-                }
-              />
-            )}
+            <Info
+              label="Company"
+              value={order.customer.company}
+            />
 
-            {order.customer.email && (
-              <Info
-                label="Email"
-                value={
-                  order.customer.email
-                }
-              />
-            )}
+            <Info
+              label="Email"
+              value={order.customer.email}
+            />
 
-            {order.customer.phone && (
-              <Info
-                label="Phone"
-                value={
-                  order.customer.phone
-                }
-              />
-            )}
+            <Info
+              label="Phone"
+              value={order.customer.phone}
+            />
 
-            {order.customer.address && (
-              <Info
-                label="Address"
-                value={
-                  order.customer.address
-                }
-              />
-            )}
+            <Info
+              label="Address"
+              value={order.customer.address}
+            />
 
-            {order.customer.city && (
-              <Info
-                label="City"
-                value={
-                  order.customer.city
-                }
-              />
-            )}
+            <Info
+              label="City"
+              value={order.customer.city}
+            />
 
-            {order.customer.state && (
-              <Info
-                label="State"
-                value={
-                  order.customer.state
-                }
-              />
-            )}
+            <Info
+              label="State"
+              value={order.customer.state}
+            />
 
-            {order.customer.country && (
-              <Info
-                label="Country"
-                value={
-                  order.customer.country
-                }
-              />
-            )}
+            <Info
+              label="Country"
+              value={order.customer.country}
+            />
 
           </Section>
         )}
@@ -910,31 +746,31 @@ const ArchivedOrderDetails: React.FC = () => {
 
                     <tr>
 
-                      <th className="border px-2 py-1">
+                      <th className="border px-2 py-2 text-left">
                         Email Type
                       </th>
 
-                      <th className="border px-2 py-1">
+                      <th className="border px-2 py-2 text-left">
                         Plan Name
                       </th>
 
-                      <th className="border px-2 py-1">
+                      <th className="border px-2 py-2 text-left">
                         Type
                       </th>
 
-                      <th className="border px-2 py-1">
+                      <th className="border px-2 py-2 text-left">
                         Users
                       </th>
 
-                      <th className="border px-2 py-1">
+                      <th className="border px-2 py-2 text-left">
                         Reg Date
                       </th>
 
-                      <th className="border px-2 py-1">
+                      <th className="border px-2 py-2 text-left">
                         Exp Date
                       </th>
 
-                      <th className="border px-2 py-1">
+                      <th className="border px-2 py-2 text-center">
                         Status
                       </th>
 
@@ -947,111 +783,64 @@ const ArchivedOrderDetails: React.FC = () => {
                     {order.plans.map(
                       (plan) => {
 
-                        /* ===============================
-                           PLAN PRIMARY STATUS
-                        =============================== */
-
-                        const currentPrimaryStatus =
-                          String(
-                            plan.primary_status?.code ||
-                              plan.primary_status?.name ||
-                              ""
-                          )
-                            .trim()
-                            .toUpperCase();
-
-                        const isPlanActive =
-                          currentPrimaryStatus ===
-                          "ACTIVE";
+                        const planIsActive =
+                          isActiveStatus(
+                            plan.primary_status
+                          );
 
                         return (
-                          <tr key={plan._id}>
+                          <tr
+                            key={plan._id}
+                            className="hover:bg-gray-50"
+                          >
 
-                            {/* EMAIL TYPE */}
-
-                            <td className="border px-2 py-1">
+                            <td className="border px-2 py-2">
                               {plan.emailType ||
                                 "-"}
                             </td>
 
-                            {/* PLAN NAME */}
-
-                            <td className="border px-2 py-1">
+                            <td className="border px-2 py-2">
                               {plan.planName}
                             </td>
 
-                            {/* TYPE */}
-
-                            <td className="border px-2 py-1">
+                            <td className="border px-2 py-2">
                               {plan.type}
                             </td>
 
-                            {/* USERS */}
-
-                            <td className="border px-2 py-1">
+                            <td className="border px-2 py-2">
                               {plan.noOfUsers ??
                                 "-"}
                             </td>
 
-                            {/* REG DATE */}
-
-                            <td className="border px-2 py-1">
+                            <td className="border px-2 py-2">
                               {formatDate(
                                 plan.registrationDate
                               )}
                             </td>
 
-                            {/* EXP DATE */}
-
-                            <td className="border px-2 py-1">
+                            <td className="border px-2 py-2">
                               {formatDate(
                                 plan.expiryDate
                               )}
                             </td>
 
                             {/* ===============================
-                                STATUS
-                            =============================== */}
+                                PLAN STATUS / ACTION
+                            ================================ */}
 
-                            <td className="border px-2 py-1">
+                            <td className="border px-2 py-2 text-center">
 
-                              <div className="flex flex-col gap-2">
-
-                                {/* PRIMARY STATUS */}
-
-                                <div className="flex items-center gap-2">
-
-                                  <span className="border border-gray-300 rounded-md px-2 py-1 text-sm bg-gray-50">
-                                    {plan.primary_status?.name ||
-                                      "-"}
-                                  </span>
-
-                                  {/* =====================================
-                                      ACTIVE BUTTON
-
-                                      ACTIVE STATUS -> NO BUTTON
-                                      NON ACTIVE -> SHOW BUTTON
-                                  ====================================== */}
-
-                                  {!isPlanActive && (
-                                    <button
-                                      type="button"
-
-                                      onClick={() =>
-                                        handleActivatePlan(
-                                          plan
-                                        )
-                                      }
-
-                                      className="px-3 py-1 text-sm rounded-md text-white bg-green-600 hover:bg-green-700"
-                                    >
-                                      Active
-                                    </button>
-                                  )}
-
-                                </div>
-
-                              </div>
+                              {planIsActive ? (
+                                <ActiveStatus />
+                              ) : (
+                                <ActivateButton
+                                  onClick={() =>
+                                    handleActivatePlan(
+                                      plan
+                                    )
+                                  }
+                                />
+                              )}
 
                             </td>
 
@@ -1073,21 +862,17 @@ const ArchivedOrderDetails: React.FC = () => {
 
         <div className="flex justify-end gap-3">
 
-          {/* EDIT */}
-
           <button
             onClick={() =>
               navigate(
                 `/admin/orders/update/${order._id}`
               )
             }
-            className="flex items-center gap-2 bg-yellow-500 text-white px-4 py-2 rounded"
+            className="flex items-center gap-2 bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600 transition-colors"
           >
             <FaEdit />
             Edit
           </button>
-
-          {/* RENEW */}
 
           <button
             onClick={() =>
@@ -1095,7 +880,7 @@ const ArchivedOrderDetails: React.FC = () => {
                 `/admin/orders/renew/${order._id}`
               )
             }
-            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded"
+            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
           >
             <FaRedo />
             Renew
@@ -1104,10 +889,8 @@ const ArchivedOrderDetails: React.FC = () => {
         </div>
 
       </div>
-
     </div>
   );
 };
 
 export default ArchivedOrderDetails;
-
