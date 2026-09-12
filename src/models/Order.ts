@@ -46,7 +46,11 @@ archived_status?: mongoose.Types.ObjectId;
 
   modified_on?: string;
   created_on?: string;
-  activated_on?: string;
+  activated_on?: Date;
+domain_transferred_on?: Date;
+order_transferred_on?: Date;
+domain_status_updated_on?: Date;
+order_status_updated_on?: Date;
   order_id?: string;
 
   google_email?: boolean;
@@ -343,9 +347,29 @@ archived_status: {
       type: String,
     },
 
-    activated_on: {
-      type: String,
-    },
+    // ========================
+// Status Date / Time
+// ========================
+
+activated_on: {
+  type: Date,
+},
+
+domain_transferred_on: {
+  type: Date,
+},
+
+order_transferred_on: {
+  type: Date,
+},
+
+domain_status_updated_on: {
+  type: Date,
+},
+
+order_status_updated_on: {
+  type: Date,
+},
 
     order_id: {
       type: String,

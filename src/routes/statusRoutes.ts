@@ -11,6 +11,7 @@ import {
   getPrimaryPlanStatuses,
   getSecondaryPlanStatuses,
   updatePlanStatus,
+  activatePlanStatus,
   getDomainStatuses,
 } from "../controllers/statusController";
 
@@ -61,7 +62,10 @@ router.put(
   "/plan/:id/status",
   updatePlanStatus
 );
-
+router.put(
+  "/plan/:id/activate",
+  activatePlanStatus
+);
 // =====================================================
 // GENERIC :id ROUTES - MUST BE LAST
 // =====================================================

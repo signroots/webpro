@@ -1378,8 +1378,7 @@ router.get(
         100
       );
 
-      const skip =
-        (page - 1) * limit;
+      const skip = (page - 1) * limit;
 
       // ========================================================
       // 3. TODAY
@@ -1499,6 +1498,28 @@ router.get(
         );
 
       // --------------------------------------------------------
+      // DOMAIN - ACTIVE
+      // IMPORTANT:
+      // ACTIVE domain should NOT appear in archived page
+      // --------------------------------------------------------
+
+      const domainActiveStatus =
+        await Status.findOne({
+          type: "domain",
+          is_active: true,
+          $or: [
+            {
+              code: "ACTIVE",
+            },
+            {
+              name: "ACTIVE",
+            },
+          ],
+        }).select(
+          "_id name code type is_active"
+        );
+
+      // --------------------------------------------------------
       // DOMAIN - TRANSFERRED
       // --------------------------------------------------------
 
@@ -1597,6 +1618,9 @@ router.get(
           pendingDelete:
             pendingDeleteStatus?._id,
 
+          domainActive:
+            domainActiveStatus?._id,
+
           domainTransferred:
             domainTransferredStatus?._id,
 
@@ -1657,7 +1681,8 @@ router.get(
       // primary_status = CANCELLED
       // ========================================================
 
-      const planStatusIds: mongoose.Types.ObjectId[] = [];
+      const planStatusIds:
+        mongoose.Types.ObjectId[] = [];
 
       if (
         planTransferredStatus?._id
@@ -1695,9 +1720,7 @@ router.get(
               (plan: any) =>
                 plan.orderId
             )
-            .filter(
-              Boolean
-            );
+            .filter(Boolean);
       }
 
       console.log(
@@ -1822,21 +1845,11 @@ router.get(
       // 10. SEARCH CONDITION
       //
       // SEARCH AND ARCHIVE CONDITION
-      //
-      // NOT:
-      //
-      // search OR archive
-      //
-      // Correct:
-      //
-      // search AND (
-      //    condition1 OR
-      //    condition2 OR
-      //    ...
-      // )
       // ========================================================
 
-      if (archiveConditions.length === 0) {
+      if (
+        archiveConditions.length === 0
+      ) {
         return res.status(200).json({
           success: true,
           data: [],
@@ -1855,7 +1868,32 @@ router.get(
       });
 
       // ========================================================
-      // SEARCH
+      // IMPORTANT
+      // ========================================================
+      // If domain status is ACTIVE,
+      // the order MUST NOT appear in archived page.
+      //
+      // This condition is added AFTER the archive $or,
+      // so the logic becomes:
+      //
+      // archived condition
+      // AND
+      // domain_status != ACTIVE
+      // ========================================================
+
+      // if (
+      //   domainActiveStatus?._id
+      // ) {
+      //   baseConditions.push({
+      //     domain_status: {
+      //       $ne:
+      //         domainActiveStatus._id,
+      //     },
+      //   });
+      // }
+
+      // ========================================================
+      // 11. SEARCH
       // ========================================================
 
       if (search) {
@@ -1914,7 +1952,7 @@ router.get(
       }
 
       // ========================================================
-      // 11. FINAL QUERY
+      // 12. FINAL QUERY
       // ========================================================
 
       const query: any = {
@@ -1932,7 +1970,7 @@ router.get(
       );
 
       // ========================================================
-      // 12. FETCH ORDERS
+      // 13. FETCH ORDERS
       // ========================================================
 
       const orders: any[] =
@@ -1978,6 +2016,7 @@ router.get(
             expiryDate: -1,
             createdAt: -1,
           })
+
           .lean();
 
       console.log(
@@ -1986,11 +2025,9 @@ router.get(
       );
 
       // ========================================================
-      // 13. FETCH PLANS FOR RETURN DATA
+      // 14. FETCH PLANS FOR RETURN DATA
       //
-      // We already queried matching plan IDs above.
-      // Here we fetch ALL plans belonging to returned orders
-      // so OrdersTable gets complete Plans data.
+      // Fetch ALL plans belonging to returned orders
       // ========================================================
 
       const orderIds =
@@ -2040,13 +2077,12 @@ router.get(
           : [];
 
       // ========================================================
-      // 14. FORMAT PLANS
+      // 15. FORMAT PLANS
       // ========================================================
 
       const formattedOrderPlans =
         orderPlans.map(
           (plan: any) => {
-
             const emailType =
               plan.emailTypeId;
 
@@ -2079,7 +2115,7 @@ router.get(
         );
 
       // ========================================================
-      // 15. GROUP PLANS BY ORDER
+      // 16. GROUP PLANS BY ORDER
       // ========================================================
 
       const planMap =
@@ -2089,7 +2125,8 @@ router.get(
         >();
 
       for (
-        const plan of formattedOrderPlans
+        const plan of
+          formattedOrderPlans
       ) {
         if (!plan.orderId) {
           continue;
@@ -2099,7 +2136,8 @@ router.get(
           plan.orderId.toString();
 
         const existing =
-          planMap.get(key) || [];
+          planMap.get(key) ||
+          [];
 
         existing.push(
           plan
@@ -2112,7 +2150,7 @@ router.get(
       }
 
       // ========================================================
-      // 16. FINAL RESPONSE ORDERS
+      // 17. FINAL RESPONSE ORDERS
       // ========================================================
 
       const finalOrders =
@@ -2128,7 +2166,7 @@ router.get(
         );
 
       // ========================================================
-      // 17. PAGINATION
+      // 18. PAGINATION
       // ========================================================
 
       const total =
@@ -2141,7 +2179,7 @@ router.get(
         );
 
       // ========================================================
-      // 18. LOG
+      // 19. LOG
       // ========================================================
 
       console.log(
@@ -2165,7 +2203,7 @@ router.get(
       );
 
       // ========================================================
-      // 19. RESPONSE
+      // 20. RESPONSE
       // ========================================================
 
       return res.status(200).json({
@@ -2184,7 +2222,7 @@ router.get(
           totalPages:
             Math.ceil(
               total /
-              limit
+                limit
             ),
         },
       });
@@ -2192,7 +2230,6 @@ router.get(
     } catch (
       error: any
     ) {
-
       console.error(
         "================================="
       );
@@ -2216,9 +2253,6 @@ router.get(
     }
   }
 );
-
-
-
 // ============================================================
 // NORMAL ORDERS
 // ============================================================
@@ -4364,7 +4398,9 @@ router.get(
     try {
       const { id } = req.params;
 
+      // ============================================
       // Validate ObjectId
+      // ============================================
       if (!mongoose.Types.ObjectId.isValid(id)) {
         res.status(400).json({
           success: false,
@@ -4373,7 +4409,9 @@ router.get(
         return;
       }
 
-      // Fetch order
+      // ============================================
+      // Fetch Order
+      // ============================================
       const order = await Order.findById(id)
         .populate({
           path: "customer",
@@ -4417,6 +4455,9 @@ router.get(
         .populate("hoststorageId")
         .exec();
 
+      // ============================================
+      // Order Not Found
+      // ============================================
       if (!order) {
         res.status(404).json({
           success: false,
@@ -4425,7 +4466,9 @@ router.get(
         return;
       }
 
-      // Access check
+      // ============================================
+      // Access Check
+      // ============================================
       if (
         req.user?.role?.toLowerCase() !== "admin" &&
         order.client?._id?.toString() !== req.user?._id
@@ -4437,7 +4480,9 @@ router.get(
         return;
       }
 
-      // Fetch related plans
+      // ============================================
+      // Fetch Related Plans
+      // ============================================
       const orderPlansRaw = await OrderPlan.find({
         orderId: order._id,
       })
@@ -4464,90 +4509,122 @@ router.get(
         .populate({
           path: "primary_status",
           model: "Status",
-          select: "_id name code type category is_custom is_active",
+          select:
+            "_id name code type category is_custom is_active",
         })
         .populate({
           path: "secondary_status",
           model: "Status",
-          select: "_id name code type category is_custom is_active",
+          select:
+            "_id name code type category is_custom is_active",
         })
         .lean();
 
+      // ============================================
+      // Format Plans
+      // ============================================
       const orderPlans: IOrderPlanResponse[] = orderPlansRaw.map(
         (p: any) => ({
           _id: p._id.toString(),
+
           orderId: p.orderId.toString(),
 
           serviceType: p.type,
+
           type: p.type,
 
           planName: p.planId?.plan || "",
+
           planId: p.planId?._id?.toString() || "",
 
           emailType: p.emailTypeId?.name || "",
 
-          // PLAN STATUS
+          // ========================================
+          // OLD PLAN STATUS
+          // ========================================
           status: p.status
             ? {
-              _id: p.status._id,
-              name: p.status.name,
-            }
+                _id: p.status._id,
+                name: p.status.name,
+              }
             : null,
+
+          // ========================================
+          // PRIMARY STATUS
+          // ========================================
           primary_status: p.primary_status
             ? {
-              _id: p.primary_status._id,
-              name: p.primary_status.name,
-              code: p.primary_status.code,
-              type: p.primary_status.type,
-              category: p.primary_status.category,
-              is_custom: p.primary_status.is_custom,
-              is_active: p.primary_status.is_active,
-            }
+                _id: p.primary_status._id,
+                name: p.primary_status.name,
+                code: p.primary_status.code,
+                type: p.primary_status.type,
+                category: p.primary_status.category,
+                is_custom: p.primary_status.is_custom,
+                is_active: p.primary_status.is_active,
+              }
             : null,
 
+          // ========================================
+          // SECONDARY STATUS
+          // ========================================
           secondary_status: p.secondary_status
             ? {
-              _id: p.secondary_status._id,
-              name: p.secondary_status.name,
-              code: p.secondary_status.code,
-              type: p.secondary_status.type,
-              category: p.secondary_status.category,
-              is_custom: p.secondary_status.is_custom,
-              is_active: p.secondary_status.is_active,
-            }
+                _id: p.secondary_status._id,
+                name: p.secondary_status.name,
+                code: p.secondary_status.code,
+                type: p.secondary_status.type,
+                category: p.secondary_status.category,
+                is_custom: p.secondary_status.is_custom,
+                is_active: p.secondary_status.is_active,
+              }
             : null,
 
+          // ========================================
+          // HOST TYPE
+          // ========================================
           hostType: p.hostTypeId
             ? {
-              _id: p.hostTypeId._id,
-              name: p.hostTypeId.type,
-            }
+                _id: p.hostTypeId._id,
+                name: p.hostTypeId.type,
+              }
             : null,
 
+          // ========================================
+          // HOST SUB TYPE
+          // ========================================
           hostSubType: p.hostSubTypeId
             ? {
-              _id: p.hostSubTypeId._id,
-              name: p.hostSubTypeId.name,
-            }
+                _id: p.hostSubTypeId._id,
+                name: p.hostSubTypeId.name,
+              }
             : null,
 
+          // ========================================
+          // STORAGE
+          // ========================================
           storage: p.storageId
             ? {
-              _id: p.storageId._id,
-              name: p.storageId.storage,
-            }
+                _id: p.storageId._id,
+                name: p.storageId.storage,
+              }
             : null,
 
           registrationDate: p.registrationDate,
+
           expiryDate: p.expiryDate,
+
           noOfUsers: p.noOfUsers,
         })
       );
 
-      // Convert order to plain object
+      // ============================================
+      // Convert Order to Plain Object
+      // ============================================
       const orderObj = order.toObject();
 
-      // Clean image path
+      // ============================================
+      // Clean Domain Source Image Path
+      // ============================================
       let domainSourceImage: string | null = null;
 
       if (orderObj.domainSource?.image) {
@@ -4565,35 +4642,84 @@ router.get(
         }
       }
 
-      // Final response
+      // ============================================
+      // Final Response
+      // ============================================
       res.status(200).json({
         success: true,
+
         data: {
+          // ========================================
+          // BASIC ORDER INFORMATION
+          // ========================================
           _id: orderObj._id,
+
           domainName: orderObj.domainName,
-          order_status: orderObj.order_status,
-          domain_status: orderObj.domain_status,
+
           managedBy: orderObj.managedBy,
 
-          // Registrar / Domain Source
-          domainSource: orderObj.domainSource
-            ? {
-              ...orderObj.domainSource,
-              image: domainSourceImage,
-            }
-            : null,
-
           registrationDate: orderObj.registrationDate,
+
           expiryDate: orderObj.expiryDate,
+
+          // ========================================
+          // STATUS
+          // ========================================
+          order_status: orderObj.order_status,
+
+          domain_status: orderObj.domain_status,
+
+          // ========================================
+          // STATUS / DATE TRACKING
+          // ========================================
+          activated_on: orderObj.activated_on,
+
+          domain_transferred_on:
+            orderObj.domain_transferred_on,
+
+          order_transferred_on:
+            orderObj.order_transferred_on,
+
+          domain_status_updated_on:
+            orderObj.domain_status_updated_on,
+
+          order_status_updated_on:
+            orderObj.order_status_updated_on,
+
+          // ========================================
+          // DOMAIN INFORMATION
+          // ========================================
           lockStatus: orderObj.lockStatus,
+
           domain_flag: orderObj.domain_flag,
+
           nameServers: orderObj.nameServers,
 
+          // ========================================
+          // DOMAIN SOURCE / REGISTRAR
+          // ========================================
+          domainSource: orderObj.domainSource
+            ? {
+                ...orderObj.domainSource,
+                image: domainSourceImage,
+              }
+            : null,
+
+          // ========================================
+          // CLIENT / CUSTOMER
+          // ========================================
           client: orderObj.client,
+
           customer: orderObj.customer,
 
+          // ========================================
+          // PLANS
+          // ========================================
           plans: orderPlans,
 
+          // ========================================
+          // VERSION
+          // ========================================
           __v: orderObj.__v,
         },
       });
@@ -4607,6 +4733,7 @@ router.get(
     }
   }
 );
+
 
 // POST create order
 // router.post(

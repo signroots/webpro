@@ -248,7 +248,79 @@ export const updatePlanStatus: RequestHandler = async (req, res) => {
   }
 };
 
+export const activatePlanStatus: RequestHandler = async (req, res) => {
+  try {
+    const { status, type } = req.body;
 
+    if (status?.toUpperCase() !== "ACTIVE" || type !== "plan") {
+      res.status(400).json({
+        success: false,
+        message: "Invalid activation request",
+      });
+      return;
+    }
+
+    // Find ACTIVE primary plan status
+    const activeStatus = await Status.findOne({
+      type: "plan",
+      category: "primary",
+      code: "ACTIVE",
+      is_active: true,
+    });
+
+    if (!activeStatus) {
+      res.status(404).json({
+        success: false,
+        message: "Active plan status not found",
+      });
+      return;
+    }
+
+    const plan = await OrderPlan.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: {
+          primary_status: activeStatus._id,
+        },
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    )
+      .populate(
+        "primary_status",
+        "_id name code type category is_custom is_active"
+      )
+      .populate(
+        "secondary_status",
+        "_id name code type category is_custom is_active"
+      );
+
+    if (!plan) {
+      res.status(404).json({
+        success: false,
+        message: "Plan not found",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: plan,
+    });
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      message: "Failed to activate plan",
+      error: error.message,
+    });
+  }
+};
+
+// ===============================
+// UPDATE ORDER STATUS
+// ===============================
 // ===============================
 // UPDATE ORDER STATUS
 // ===============================
@@ -257,34 +329,160 @@ export const updateOrderStatus: RequestHandler = async (req, res) => {
     const {
       order_status,
       domain_status,
+
+      // Archived page → Active button
+      status,
+      type,
     } = req.body;
 
-    // At least one status should be provided
+    const now = new Date();
+
+    // ==========================================
+    // ARCHIVED PAGE → ACTIVE DOMAIN
+    // ==========================================
+    if (status && type === "domain") {
+      console.log("ARCHIVED ACTIVE REQUEST:", {
+        status,
+        type,
+        orderId: req.params.id,
+      });
+
+      const selectedDomainStatus = await Status.findOne({
+        type: "domain",
+        $or: [
+          { code: status.toUpperCase() },
+          { name: status.toUpperCase() },
+        ],
+        is_active: true,
+      });
+
+      console.log(
+        "FOUND DOMAIN STATUS:",
+        selectedDomainStatus
+      );
+
+      if (!selectedDomainStatus) {
+        res.status(400).json({
+          success: false,
+          message: `${status} domain status not found`,
+        });
+        return;
+      }
+
+      console.log(
+        "STATUS ID TO UPDATE:",
+        selectedDomainStatus._id
+      );
+
+      // ==========================================
+      // ACTIVE DOMAIN → STORE ACTIVE DATE & TIME
+      // ==========================================
+      const order = await Order.findByIdAndUpdate(
+        req.params.id,
+        {
+          $set: {
+            domain_status: selectedDomainStatus._id,
+
+            // Active date & time
+            activated_on: now,
+          },
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      )
+        .populate(
+          "order_status",
+          "_id name code type is_custom is_active"
+        )
+        .populate(
+          "domain_status",
+          "_id name code type is_custom is_active"
+        )
+        .populate(
+          "domainSource",
+          "_id name code image"
+        );
+
+      console.log("UPDATED ORDER:", order);
+
+      if (!order) {
+        res.status(404).json({
+          success: false,
+          message: "Order not found",
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: order,
+      });
+
+      return;
+    }
+
+    // ==========================================
+    // EXISTING LOGIC
+    // ==========================================
+
     if (!order_status && !domain_status) {
       res.status(400).json({
         success: false,
-        message: "order_status or domain_status is required",
+        message:
+          "order_status or domain_status is required",
       });
       return;
     }
 
     const updateData: any = {};
 
-    // ============================
+    // ==========================================
     // ORDER STATUS
-    // ============================
+    // ==========================================
     if (order_status) {
       updateData.order_status = order_status;
+
+      // Find selected order status
+      const selectedOrderStatus =
+        await Status.findById(order_status);
+
+      if (!selectedOrderStatus) {
+        res.status(400).json({
+          success: false,
+          message: "Invalid order status",
+        });
+        return;
+      }
+
+      const orderStatusCode =
+        selectedOrderStatus.code?.toUpperCase() ||
+        selectedOrderStatus.name?.toUpperCase();
+
+      // ==========================================
+      // ORDER → ACTIVE
+      // ==========================================
+      if (orderStatusCode === "ACTIVE") {
+        updateData.activated_on = now;
+      }
+
+      // ==========================================
+      // ORDER → TRANSFERRED
+      // ==========================================
+      if (orderStatusCode === "TRANSFERRED") {
+        updateData.order_transferred_on = now;
+      }
     }
 
-    // ============================
+    // ==========================================
     // DOMAIN STATUS
-    // ============================
+    // ==========================================
     if (domain_status) {
       updateData.domain_status = domain_status;
 
-      // Check selected domain status
-      const selectedDomainStatus = await Status.findById(domain_status);
+      const selectedDomainStatus =
+        await Status.findById(domain_status);
 
       if (!selectedDomainStatus) {
         res.status(400).json({
@@ -294,19 +492,34 @@ export const updateOrderStatus: RequestHandler = async (req, res) => {
         return;
       }
 
-      // If domain status is TRANSFERRED
-      if (
-        selectedDomainStatus.code?.toUpperCase() === "TRANSFERRED" ||
-        selectedDomainStatus.name?.toUpperCase() === "TRANSFERRED"
-      ) {
+      const domainStatusCode =
+        selectedDomainStatus.code?.toUpperCase() ||
+        selectedDomainStatus.name?.toUpperCase();
+
+      // ==========================================
+      // DOMAIN → ACTIVE
+      // ==========================================
+      if (domainStatusCode === "ACTIVE") {
+        updateData.activated_on = now;
+      }
+
+      // ==========================================
+      // DOMAIN → TRANSFERRED
+      // ==========================================
+      if (domainStatusCode === "TRANSFERRED") {
+        updateData.domain_transferred_on = now;
+
+        // Existing logic
         updateData.managedBy = "Customer";
-        updateData.domainSource = null;
+
+        // Keep your existing decision here
+        // updateData.domainSource = null;
       }
     }
 
-    // ============================
+    // ==========================================
     // UPDATE ORDER
-    // ============================
+    // ==========================================
     const order = await Order.findByIdAndUpdate(
       req.params.id,
       {
@@ -342,9 +555,11 @@ export const updateOrderStatus: RequestHandler = async (req, res) => {
       success: true,
       data: order,
     });
-
   } catch (error: any) {
-    console.error("Order status update error:", error);
+    console.error(
+      "Order status update error:",
+      error
+    );
 
     res.status(400).json({
       success: false,
@@ -353,7 +568,6 @@ export const updateOrderStatus: RequestHandler = async (req, res) => {
     });
   }
 };
-
 // ===============================
 // GET ALL STATUSES
 // ===============================
