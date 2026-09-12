@@ -3658,141 +3658,211 @@ router.get(
       // 16. SERVICE AVAILABILITY
       // ========================================================
 
-      const filterUnavailableOrders =
-        (
-          orders: any[]
-        ) => {
+   // ========================================================
+// 16. SERVICE AVAILABILITY
+// ========================================================
 
-          return orders.filter(
-            (order: any) => {
+const filterUnavailableOrders =
+  (
+    orders: any[]
+  ) => {
 
-              // ------------------------------------------------
-              // EXTRA SAFETY:
-              // TRANSFERRED / CANCELLED ORDER
-              // MUST NEVER COME TO NORMAL ORDERS
-              // ------------------------------------------------
+    return orders.filter(
+      (order: any) => {
 
-              if (
-                isTransferredOrCancelled(
-                  order.order_status
-                )
-              ) {
+        // ------------------------------------------------
+        // EXTRA SAFETY:
+        // TRANSFERRED / CANCELLED ORDER
+        // MUST NEVER COME TO NORMAL ORDERS
+        // ------------------------------------------------
 
-                console.log(
-                  `[ORDERS] EXCLUDED ORDER ${order.domainName} => TRANSFERRED/CANCELLED`
+        if (
+          isTransferredOrCancelled(
+            order.order_status
+          )
+        ) {
+
+          console.log(
+            `[ORDERS] EXCLUDED ORDER ${order.domainName} => TRANSFERRED/CANCELLED`
+          );
+
+          return false;
+        }
+
+
+        // ------------------------------------------------
+        // DOMAIN SOURCE
+        // ------------------------------------------------
+
+        const hasDomainService =
+          !!order.domainSource;
+
+
+        // ------------------------------------------------
+        // PLANS
+        // ------------------------------------------------
+
+        const plans =
+          Array.isArray(
+            order.Plans
+          )
+            ? order.Plans
+            : [];
+
+
+        const hasPlans =
+          plans.length > 0;
+
+
+        // =================================================
+        // CASE 1:
+        // NO DOMAIN SOURCE + NO PLANS
+        //
+        // No service information available.
+        // Keep the order visible.
+        // =================================================
+
+        if (
+          !hasDomainService &&
+          !hasPlans
+        ) {
+
+          return true;
+        }
+
+
+        // =================================================
+        // CASE 2:
+        // DOMAIN SOURCE EXISTS
+        //
+        // Here BOTH domain status and plan status
+        // must be considered.
+        // =================================================
+
+        if (
+          hasDomainService
+        ) {
+
+          // ------------------------------------------------
+          // DOMAIN AVAILABLE
+          // ------------------------------------------------
+
+          const domainAvailable =
+            !isTransferredOrCancelled(
+              order.domain_status
+            );
+
+
+          // ------------------------------------------------
+          // ANY PLAN AVAILABLE
+          // ------------------------------------------------
+
+          const planAvailable =
+            hasPlans &&
+            plans.some(
+              (plan: any) => {
+
+                return (
+                  !isTransferredOrCancelled(
+                    plan.primary_status
+                  )
                 );
 
-                return false;
               }
+            );
 
 
-              // ------------------------------------------------
-              // DOMAIN SERVICE
-              // ------------------------------------------------
+          // ------------------------------------------------
+          // AT LEAST ONE SERVICE AVAILABLE
+          //
+          // Domain ACTIVE/available
+          // OR
+          // Any plan available
+          // ------------------------------------------------
 
-              const hasDomainService =
-                !!order.domainSource;
+          if (
+            domainAvailable ||
+            planAvailable
+          ) {
 
-
-              // ------------------------------------------------
-              // PLANS
-              // ------------------------------------------------
-
-              const plans =
-                Array.isArray(
-                  order.Plans
-                )
-                  ? order.Plans
-                  : [];
+            return true;
+          }
 
 
-              const hasPlans =
-                plans.length >
-                0;
+          // ------------------------------------------------
+          // DOMAIN + ALL PLANS
+          // TRANSFERRED/CANCELLED
+          //
+          // => Hide
+          // ------------------------------------------------
+
+          return false;
+        }
 
 
-              // ------------------------------------------------
-              // NO SERVICE
-              // ------------------------------------------------
+        // =================================================
+        // CASE 3:
+        // DOMAIN SOURCE IS NULL
+        //
+        // IMPORTANT:
+        // Do NOT consider domain_status.
+        //
+        // Only plans are considered.
+        // =================================================
 
-              if (
-                !hasDomainService &&
-                !hasPlans
-              ) {
+        if (
+          !hasDomainService
+        ) {
 
-                return true;
-              }
+          // ------------------------------------------------
+          // Plans exist
+          // ------------------------------------------------
 
+          if (
+            hasPlans
+          ) {
 
-              // =================================================
-              // DOMAIN AVAILABLE
-              // =================================================
+            const planAvailable =
+              plans.some(
+                (plan: any) => {
 
-              let domainAvailable =
-                false;
-
-
-              if (
-                hasDomainService
-              ) {
-
-                domainAvailable =
-                  !isTransferredOrCancelled(
-                    order.domain_status
+                  return (
+                    !isTransferredOrCancelled(
+                      plan.primary_status
+                    )
                   );
-              }
+
+                }
+              );
 
 
-              // =================================================
-              // ANY PLAN AVAILABLE
-              // =================================================
+            // At least one plan is available
+            if (
+              planAvailable
+            ) {
 
-              let planAvailable =
-                false;
-
-
-              if (
-                hasPlans
-              ) {
-
-                planAvailable =
-                  plans.some(
-                    (plan: any) => {
-
-                      return (
-                        !isTransferredOrCancelled(
-                          plan.primary_status
-                        )
-                      );
-
-                    }
-                  );
-              }
-
-
-              // =================================================
-              // AT LEAST ONE SERVICE AVAILABLE
-              // =================================================
-
-              if (
-                domainAvailable ||
-                planAvailable
-              ) {
-
-                return true;
-              }
-
-
-              // =================================================
-              // ALL SERVICES TRANSFERRED/CANCELLED
-              // =================================================
-
-              return false;
+              return true;
             }
-          );
-        };
 
 
+            // All plans are
+            // TRANSFERRED / CANCELLED
+            return false;
+          }
+
+
+          // ------------------------------------------------
+          // No domain source + no plans
+          // ------------------------------------------------
+
+          return true;
+        }
+
+
+        return false;
+      }
+    );
+  };
       // ========================================================
       // 17. NORMAL ORDER EXPIRY FILTER
       // ========================================================
