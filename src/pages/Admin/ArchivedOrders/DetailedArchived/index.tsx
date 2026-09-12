@@ -546,21 +546,19 @@ const ArchivedOrderDetails: React.FC = () => {
         {/* ===================== DOMAIN INFORMATION ===================== */}
 
         <Section
-          title="Domain Information"
-          rightContent={
-            isActiveStatus(
-              order.domain_status
-            ) ? (
-              <ActiveStatus />
-            ) : (
-              <ActivateButton
-                onClick={
-                  handleActivateDomain
-                }
-              />
-            )
-          }
-        >
+  title="Domain Information"
+  rightContent={
+    order.domainSource ? (
+      isActiveStatus(order.domain_status) ? (
+        <ActiveStatus />
+      ) : (
+        <ActivateButton
+          onClick={handleActivateDomain}
+        />
+      )
+    ) : null
+  }
+>
 
           <Info
             label="Domain Name"
