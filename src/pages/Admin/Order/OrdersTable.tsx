@@ -267,16 +267,18 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
                   <button
                     className="hover:text-blue-600"
                     title="View"
-                    onClick={() =>
-                      navigate(
-                        `/admin/orders/order-details/${order._id}`,
-                        {
-                          state: {
-                            fromPage: currentPage,
-                          },
-                        }
-                      )
-                    }
+                   onClick={() =>
+  navigate(
+    showDomainStatus
+      ? `/admin/archived/order-details/${order._id}`
+      : `/admin/orders/order-details/${order._id}`,
+    {
+      state: {
+        fromPage: currentPage,
+      },
+    }
+  )
+}
                   >
                     <FaEye className="w-4 h-4" />
                   </button>

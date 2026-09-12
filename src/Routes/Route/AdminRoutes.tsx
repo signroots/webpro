@@ -20,6 +20,7 @@ import Dashboard from "../../pages/Admin/Dashboard";
 import DomainSource from "../../pages/Admin/DomainSource"
 import ArchivedOrders from "../../pages/Admin/ArchivedOrders";
 import UserActivity from "../../pages/Admin/UserActivity";
+import ArchivedOrderDetails from "../../pages/Admin/ArchivedOrders/DetailedArchived";
 
 export default function AdminRoutes() {
   return (
@@ -35,6 +36,10 @@ export default function AdminRoutes() {
         <Route path="status" element={<StatusManager />} />
         <Route path="data-management" element={<DataManagement />} />
         <Route path="orders/order-details/:orderId" element={<OrderDetails />} />
+<Route
+  path="archived/order-details/:orderId"
+  element={<ArchivedOrderDetails />}
+/>
         <Route path="dashboard_management" element={<Dashboard />} />
         <Route path="orders" element={<Order />} />
         <Route path="archived-orders" element={<ArchivedOrders />} />

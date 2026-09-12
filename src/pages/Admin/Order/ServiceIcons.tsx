@@ -4,374 +4,611 @@ import {
   FaLock,
   FaLaptopCode,
   FaGlobe,
-  FaMicrosoft
 } from "react-icons/fa";
 
 import { useState } from "react";
 
 import { useAuth } from "../../../Common/AuthContext/Auth";
+
 export default function ServiceIcons({
   order,
-  fetchOrderById
+  fetchOrderById,
 }: any) {
+  const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL;
 
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const [selectedOrderId, setSelectedOrderId] =
+    useState<string | null>(null);
 
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-  const [isHovering, setIsHovering] = useState(false);
-  const [msofficeCache, setMsofficeCache] = useState<any>({});
-const formatDate = (date:any) => {
-  if(!date) return "-";
+  const [isHovering, setIsHovering] =
+    useState(false);
 
-  return new Date(date).toLocaleDateString();
-};
-const { user } = useAuth();
+  const [msofficeCache, setMsofficeCache] =
+    useState<any>({});
 
-const loggedInUserType =
-  user?.type?.toLowerCase() ||
-  user?.role?.toLowerCase() ||
-  "";
+  const formatDate = (date: any) => {
+    if (!date) return "-";
 
-const isClientOrCustomer =
-  loggedInUserType === "client" ||
-  loggedInUserType === "customer";
+    return new Date(date).toLocaleDateString();
+  };
+
+  const { user } = useAuth();
+
+  const loggedInUserType =
+    user?.type?.toLowerCase() ||
+    user?.role?.toLowerCase() ||
+    "";
+
+  const isClientOrCustomer =
+    loggedInUserType === "client" ||
+    loggedInUserType === "customer";
+
+  // ========================================================
+  // DOMAIN STATUS
+  // ========================================================
+
+  const domainStatus =
+    String(
+      order?.domain_status?.code ||
+        order?.domain_status?.name ||
+        ""
+    )
+      .trim()
+      .toUpperCase();
+
+  const isDomainDisabled =
+    domainStatus === "TRANSFERRED" ||
+    domainStatus === "CANCELLED";
+
+  // ========================================================
+  // PLAN STATUS
+  // ========================================================
+
+  const isPlanDisabled = (plan: any) => {
+    const primaryStatus =
+      String(
+        plan?.primary_status?.code ||
+          plan?.primary_status?.name ||
+          ""
+      )
+        .trim()
+        .toUpperCase();
+
+    return (
+      primaryStatus === "TRANSFERRED" ||
+      primaryStatus === "CANCELLED"
+    );
+  };
+
+  // ========================================================
+  // MS OFFICE HOVER
+  // ========================================================
 
   const handleMsofficeHover = async () => {
-
     setSelectedOrderId(order._id);
     setIsHovering(true);
 
     if (msofficeCache[order._id]) return;
 
-
     try {
+      const fullOrder =
+        await fetchOrderById(order._id);
 
-      const fullOrder = await fetchOrderById(order._id);
+      const plans =
+        fullOrder?.data?.plans || [];
 
-      const plans = fullOrder?.data?.plans || [];
+      const msofficePlans =
+        plans.filter(
+          (p: any) =>
+            p?.serviceType
+              ?.toLowerCase() === "msoffice" ||
+            p?.type
+              ?.toLowerCase() === "msoffice"
+        );
 
-
-      const msofficePlans = plans.filter(
-        (p:any)=>
-          p?.serviceType?.toLowerCase() === "msoffice" ||
-          p?.type?.toLowerCase() === "msoffice"
+      setMsofficeCache(
+        (prev: any) => ({
+          ...prev,
+          [order._id]:
+            msofficePlans,
+        })
       );
-
-
-      setMsofficeCache((prev:any)=>({
-        ...prev,
-        [order._id]:msofficePlans
-      }));
-
-
-    } catch(err){
-
+    } catch (err) {
       console.error(
         "MS Office fetch error",
         err
       );
-
     }
-
   };
 
-
   return (
-<div className="flex items-center justify-center gap-3 whitespace-nowrap">
+    <div className="flex items-center justify-center gap-3 whitespace-nowrap">
 
-
-{/* ================= DOMAIN SOURCE ================= */}
-
-{isClientOrCustomer ? (
-  // ==========================================
-  // CLIENT / CUSTOMER USER
-  // ==========================================
-  String(order.managedBy || "").trim().toLowerCase() === "signroots" ? (
-    // SignRoots → ALWAYS BLUE
-    // domainSource ഉണ്ടോ ഇല്ലയോ എന്നത് നോക്കേണ്ട
-    <FaGlobe
-      className="w-6 h-6 text-blue-500"
-      title="Managed by SignRoots"
-    />
-  ) : String(order.managedBy || "").trim().toLowerCase() === "customer" ? (
-    // Customer managed
-    order.domainSource?.image ? (
-      // Customer + Domain Source → DNS Image
-      <img
-        src={
-          order.domainSource.image.startsWith("/")
-            ? `${API_BASE_URL}${order.domainSource.image}`
-            : `${API_BASE_URL}/uploads/domainsources/${order.domainSource.image}`
-        }
-        className="w-6 h-6 object-contain"
-        title={order.domainSource.name || "Domain Source"}
-      />
-    ) : (
-      // Customer + No Domain Source → Gray
-      <FaGlobe
-        className="w-6 h-6 text-gray-400"
-        title="No Domain Source"
-      />
-    )
-  ) : (
-    // Unknown managedBy → Gray
-    <FaGlobe
-      className="w-6 h-6 text-gray-400"
-      title="No Domain Source"
-    />
-  )
-) : (
-  // ==========================================
-  // ADMIN USER
-  // Existing behavior
-  // ==========================================
-  order.domainSource?.image ? (
-    <img
-      src={
-        order.domainSource.image.startsWith("/")
-          ? `${API_BASE_URL}${order.domainSource.image}`
-          : `${API_BASE_URL}/uploads/domainsources/${order.domainSource.image}`
-      }
-      className="w-6 h-6 object-contain"
-      title={order.domainSource.name || "Domain Source"}
-    />
-  ) : (
-    <FaGlobe
-      className="w-6 h-6 text-gray-400"
-      title="No Domain Source"
-    />
-  )
-)}
-{/* ================= EMAIL ================= */}
-
-{
-  order.Plans?.some(
-    (plan: any) => plan.type?.toLowerCase() === "email"
-  )
-
-  ?
-
-  order.Plans
-    .filter(
-      (plan: any) => plan.type?.toLowerCase() === "email"
-    )
-    .map(
-      (plan: any, index: number) => (
-
-        <div
-          key={index}
-          className="relative group"
-        >
-
-          {/* Email Image + User Badge */}
-          <div className="relative inline-block">
-
-            <img
-              src={
-                plan.emailTypeImage
-                  ? `${API_BASE_URL}${plan.emailTypeImage}`
-                  : "/email.png"
-              }
-              className="w-6 h-6 cursor-pointer"
-              title={plan.emailType}
-            />
-
-            {/* No. of Users Badge */}
-          <span
-  className="
-    absolute
-    -top-2
-    -right-2
-    min-w-[16px]
-    h-4
-    px-1
-    flex
-    items-center
-    justify-center
-    rounded-full
-    bg-red-500
-    text-white
-    text-[10px]
-    font-[300]
-    border
-    border-white
-  "
->
-              {plan.noOfUsers ?? 0}
-            </span>
-
-          </div>
-
-          {/* Hover Details
-          <div
-            className="
-              hidden group-hover:block
-              absolute left-0 top-full mt-2
-              bg-gray-900 text-white
-              text-xs p-3
-              rounded-lg
-              w-64
-              shadow-xl
-              z-50
-            "
-          >
-
-            <p>
-              <b>Email:</b> {plan.emailType}
-            </p>
-
-            <p>
-              <b>No. of Users:</b>{" "}
-              {plan.noOfUsers ?? "-"}
-            </p>
-
-            <p>
-              <b>Expiry:</b>{" "}
-              {
-                plan.expiryDate
-                  ? new Date(plan.expiryDate).toLocaleDateString()
-                  : "-"
-              }
-            </p>
-
-          </div> */}
-
-        </div>
-
-      )
-    )
-
-  :
-
-  <FaEnvelope
-    className="w-6 h-6 text-gray-300"
-    title="No Email"
-  />
-}
-
-{/* ================= HOSTING ================= */}
-
-
-<FaServer
-
-className={
-order.Plans?.some(
-(plan:any)=>plan.type==="hosting"
-)
-
-?
-
-"w-6 h-6 text-purple-500"
-
-:
-
-"w-6 h-6 text-gray-300"
-
-}
-
-title="Hosting"
-
-/>
-
-
-
-{/* ================= WEBSITE ================= */}
-
-
-<FaLaptopCode
-
-className={
-order.Plans?.some(
-(plan:any)=>plan.type==="website"
-)
-
-?
-
-"w-6 h-6 text-blue-500"
-
-:
-
-"w-6 h-6 text-gray-300"
-
-}
-
-title="Website"
-
-/>
-
-
-{/* ================= MS OFFICE ================= */}
-
-{
-  order.Plans
-    ?.filter(
-      (plan: any) =>
-        plan.type?.toLowerCase() === "msoffice"
-    )
-    .map((plan: any, index: number) => (
+      {/* ================================================== */}
+      {/* DOMAIN SOURCE */}
+      {/* ================================================== */}
 
       <div
-        key={index}
-        className="relative inline-block"
+        className={
+          isDomainDisabled
+            ? "opacity-40 grayscale pointer-events-none"
+            : ""
+        }
+        title={
+          isDomainDisabled
+            ? `Domain ${domainStatus}`
+            : undefined
+        }
       >
-
-        {/* MS Office Icon */}
-        <img
-          src={
-            plan.emailTypeImage
-              ? `${API_BASE_URL}${plan.emailTypeImage}`
-              : "/MSOffice.png"
-          }
-          className="w-6 h-6 object-contain"
-          title={plan.emailType}
-        />
-
-        {/* No. of Users Badge */}
-        <span
-          className="
-            absolute
-            -top-2
-            -right-2
-            min-w-[16px]
-            h-4
-            px-1
-            flex
-            items-center
-            justify-center
-            rounded-full
-            bg-red-500
-            text-white
-            text-[10px]
-            font-[300]
-            border
-            border-white
-          "
-        >
-          {plan.noOfUsers ?? 0}
-        </span>
-
+        {isClientOrCustomer ? (
+          // ================================================
+          // CLIENT / CUSTOMER USER
+          // ================================================
+          String(order.managedBy || "")
+            .trim()
+            .toLowerCase() === "signroots" ? (
+            // SignRoots → BLUE
+            <FaGlobe
+              className={`w-6 h-6 ${
+                isDomainDisabled
+                  ? "text-gray-400"
+                  : "text-blue-500"
+              }`}
+              title={
+                isDomainDisabled
+                  ? `Domain ${domainStatus}`
+                  : "Managed by SignRoots"
+              }
+            />
+          ) : String(
+              order.managedBy || ""
+            )
+              .trim()
+              .toLowerCase() ===
+            "customer" ? (
+            // Customer managed
+            order.domainSource?.image ? (
+              <img
+                src={
+                  order.domainSource.image.startsWith(
+                    "/"
+                  )
+                    ? `${API_BASE_URL}${order.domainSource.image}`
+                    : `${API_BASE_URL}/uploads/domainsources/${order.domainSource.image}`
+                }
+                className={`w-6 h-6 object-contain ${
+                  isDomainDisabled
+                    ? "grayscale opacity-40"
+                    : ""
+                }`}
+                title={
+                  isDomainDisabled
+                    ? `Domain ${domainStatus}`
+                    : order.domainSource.name ||
+                      "Domain Source"
+                }
+              />
+            ) : (
+              <FaGlobe
+                className={`w-6 h-6 ${
+                  isDomainDisabled
+                    ? "text-gray-400"
+                    : "text-gray-400"
+                }`}
+                title="No Domain Source"
+              />
+            )
+          ) : (
+            // Unknown managedBy
+            <FaGlobe
+              className="w-6 h-6 text-gray-400"
+              title="No Domain Source"
+            />
+          )
+        ) : (
+          // ================================================
+          // ADMIN USER
+          // ================================================
+          order.domainSource?.image ? (
+            <img
+              src={
+                order.domainSource.image.startsWith(
+                  "/"
+                )
+                  ? `${API_BASE_URL}${order.domainSource.image}`
+                  : `${API_BASE_URL}/uploads/domainsources/${order.domainSource.image}`
+              }
+              className={`w-6 h-6 object-contain ${
+                isDomainDisabled
+                  ? "grayscale opacity-40"
+                  : ""
+              }`}
+              title={
+                isDomainDisabled
+                  ? `Domain ${domainStatus}`
+                  : order.domainSource.name ||
+                    "Domain Source"
+              }
+            />
+          ) : (
+            <FaGlobe
+              className={`w-6 h-6 ${
+                isDomainDisabled
+                  ? "text-gray-400"
+                  : "text-gray-400"
+              }`}
+              title="No Domain Source"
+            />
+          )
+        )}
       </div>
 
-    ))
-}
-{/* ================= SSL ================= */}
+      {/* ================================================== */}
+      {/* EMAIL */}
+      {/* ================================================== */}
 
+      {
+        order.Plans?.some(
+          (plan: any) =>
+            plan.type
+              ?.toLowerCase() === "email"
+        ) ? (
+          order.Plans
+            .filter(
+              (plan: any) =>
+                plan.type
+                  ?.toLowerCase() ===
+                "email"
+            )
+            .map(
+              (
+                plan: any,
+                index: number
+              ) => {
+                const disabled =
+                  isPlanDisabled(plan);
 
-{
-  order.Plans?.some(
-    (plan: any) => plan.type?.toLowerCase() === "ssl"
-  ) && (
-    <FaLock
-      className="w-6 h-6 text-yellow-500"
-      title="SSL"
-    />
-  )
-}
+                return (
+                  <div
+                    key={index}
+                    className={`relative group ${
+                      disabled
+                        ? "opacity-40 grayscale pointer-events-none"
+                        : ""
+                    }`}
+                    title={
+                      disabled
+                        ? `Email ${String(
+                            plan
+                              ?.primary_status
+                              ?.name ||
+                              plan
+                                ?.primary_status
+                                ?.code ||
+                              ""
+                          ).toUpperCase()}`
+                        : plan.emailType
+                    }
+                  >
+                    {/* Email Image + User Badge */}
+                    <div className="relative inline-block">
 
+                      <img
+                        src={
+                          plan.emailTypeImage
+                            ? `${API_BASE_URL}${plan.emailTypeImage}`
+                            : "/email.png"
+                        }
+                        className="w-6 h-6 cursor-pointer"
+                        title={
+                          disabled
+                            ? `Email ${String(
+                                plan
+                                  ?.primary_status
+                                  ?.name ||
+                                  plan
+                                    ?.primary_status
+                                    ?.code ||
+                                  ""
+                              ).toUpperCase()}`
+                            : plan.emailType
+                        }
+                      />
 
+                      {/* User Badge */}
+                      <span
+                        className="
+                          absolute
+                          -top-2
+                          -right-2
+                          min-w-[16px]
+                          h-4
+                          px-1
+                          flex
+                          items-center
+                          justify-center
+                          rounded-full
+                          bg-red-500
+                          text-white
+                          text-[10px]
+                          font-[300]
+                          border
+                          border-white
+                        "
+                      >
+                        {plan.noOfUsers ?? 0}
+                      </span>
 
-</div>
+                    </div>
+                  </div>
+                );
+              }
+            )
+        ) : (
+          <FaEnvelope
+            className="w-6 h-6 text-gray-300"
+            title="No Email"
+          />
+        )
+      }
 
+      {/* ================================================== */}
+      {/* HOSTING */}
+      {/* ================================================== */}
+
+      {(() => {
+        const hostingPlans =
+          order.Plans?.filter(
+            (plan: any) =>
+              plan.type?.toLowerCase() ===
+              "hosting"
+          ) || [];
+
+        if (hostingPlans.length === 0) {
+          return (
+            <FaServer
+              className="w-6 h-6 text-gray-300"
+              title="Hosting"
+            />
+          );
+        }
+
+        return hostingPlans.map(
+          (
+            plan: any,
+            index: number
+          ) => {
+            const disabled =
+              isPlanDisabled(plan);
+
+            return (
+              <FaServer
+                key={index}
+                className={`w-6 h-6 ${
+                  disabled
+                    ? "text-gray-400 opacity-40 grayscale"
+                    : "text-purple-500"
+                }`}
+                title={
+                  disabled
+                    ? `Hosting ${String(
+                        plan
+                          ?.primary_status
+                          ?.name ||
+                          plan
+                            ?.primary_status
+                            ?.code ||
+                          ""
+                      ).toUpperCase()}`
+                    : "Hosting"
+                }
+              />
+            );
+          }
+        );
+      })()}
+
+      {/* ================================================== */}
+      {/* WEBSITE */}
+      {/* ================================================== */}
+
+      {(() => {
+        const websitePlans =
+          order.Plans?.filter(
+            (plan: any) =>
+              plan.type?.toLowerCase() ===
+              "website"
+          ) || [];
+
+        if (websitePlans.length === 0) {
+          return (
+            <FaLaptopCode
+              className="w-6 h-6 text-gray-300"
+              title="Website"
+            />
+          );
+        }
+
+        return websitePlans.map(
+          (
+            plan: any,
+            index: number
+          ) => {
+            const disabled =
+              isPlanDisabled(plan);
+
+            return (
+              <FaLaptopCode
+                key={index}
+                className={`w-6 h-6 ${
+                  disabled
+                    ? "text-gray-400 opacity-40 grayscale"
+                    : "text-blue-500"
+                }`}
+                title={
+                  disabled
+                    ? `Website ${String(
+                        plan
+                          ?.primary_status
+                          ?.name ||
+                          plan
+                            ?.primary_status
+                            ?.code ||
+                          ""
+                      ).toUpperCase()}`
+                    : "Website"
+                }
+              />
+            );
+          }
+        );
+      })()}
+
+      {/* ================================================== */}
+      {/* MS OFFICE */}
+      {/* ================================================== */}
+
+      {
+        order.Plans
+          ?.filter(
+            (plan: any) =>
+              plan.type
+                ?.toLowerCase() ===
+              "msoffice"
+          )
+          .map(
+            (
+              plan: any,
+              index: number
+            ) => {
+              const disabled =
+                isPlanDisabled(plan);
+
+              return (
+                <div
+                  key={index}
+                  className={`relative inline-block ${
+                    disabled
+                      ? "opacity-40 grayscale pointer-events-none"
+                      : ""
+                  }`}
+                  onMouseEnter={
+                    handleMsofficeHover
+                  }
+                  onMouseLeave={() =>
+                    setIsHovering(false)
+                  }
+                  title={
+                    disabled
+                      ? `MS Office ${String(
+                          plan
+                            ?.primary_status
+                            ?.name ||
+                            plan
+                              ?.primary_status
+                              ?.code ||
+                            ""
+                        ).toUpperCase()}`
+                      : plan.emailType
+                  }
+                >
+                  {/* MS Office Icon */}
+                  <img
+                    src={
+                      plan.emailTypeImage
+                        ? `${API_BASE_URL}${plan.emailTypeImage}`
+                        : "/MSOffice.png"
+                    }
+                    className="w-6 h-6 object-contain"
+                    title={
+                      disabled
+                        ? `MS Office ${String(
+                            plan
+                              ?.primary_status
+                              ?.name ||
+                              plan
+                                ?.primary_status
+                                ?.code ||
+                              ""
+                          ).toUpperCase()}`
+                        : plan.emailType
+                    }
+                  />
+
+                  {/* No. of Users Badge */}
+                  <span
+                    className="
+                      absolute
+                      -top-2
+                      -right-2
+                      min-w-[16px]
+                      h-4
+                      px-1
+                      flex
+                      items-center
+                      justify-center
+                      rounded-full
+                      bg-red-500
+                      text-white
+                      text-[10px]
+                      font-[300]
+                      border
+                      border-white
+                    "
+                  >
+                    {plan.noOfUsers ?? 0}
+                  </span>
+                </div>
+              );
+            }
+          )
+      }
+
+      {/* ================================================== */}
+      {/* SSL */}
+      {/* ================================================== */}
+
+      {
+        order.Plans?.filter(
+          (plan: any) =>
+            plan.type
+              ?.toLowerCase() === "ssl"
+        ).map(
+          (
+            plan: any,
+            index: number
+          ) => {
+            const disabled =
+              isPlanDisabled(plan);
+
+            return (
+              <FaLock
+                key={index}
+                className={`w-6 h-6 ${
+                  disabled
+                    ? "text-gray-400 opacity-40 grayscale"
+                    : "text-yellow-500"
+                }`}
+                title={
+                  disabled
+                    ? `SSL ${String(
+                        plan
+                          ?.primary_status
+                          ?.name ||
+                          plan
+                            ?.primary_status
+                            ?.code ||
+                          ""
+                      ).toUpperCase()}`
+                    : "SSL"
+                }
+              />
+            );
+          }
+        )
+      }
+
+    </div>
   );
-
 }
+

@@ -108,6 +108,8 @@ export const updateOrderStatus = async (
   data: {
     order_status?: string;
     domain_status?: string;
+    status?: string;
+    type?: string;
   }
 ) => {
   const response = await axios.put(
@@ -139,7 +141,20 @@ export const updatePlanStatus = async (
 
   return response.data.data || response.data;
 };
+export const activatePlanStatus = async (
+  planId: string,
+  data: {
+    status: string;
+    type: string;
+  }
+) => {
+  const response = await axios.put(
+    `${FULL_API_URL}/status/plan/${planId}/activate`,
+    data
+  );
 
+  return response.data.data || response.data;
+};
 
 export interface OrderApiResponse {
   _id: string;
