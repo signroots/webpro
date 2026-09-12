@@ -337,18 +337,18 @@ export const updateOrderStatus: RequestHandler = async (req, res) => {
 
     const now = new Date();
 
-    // ==========================================
-    // ARCHIVED PAGE → ACTIVE DOMAIN
-    // ==========================================
-    if (status && type === "domain") {
-      console.log("ARCHIVED ACTIVE REQUEST:", {
+    // =========================================================
+    // ARCHIVED PAGE → ACTIVE ORDER
+    // =========================================================
+    if (status && type === "order") {
+      console.log("ARCHIVED ACTIVE ORDER REQUEST:", {
         status,
         type,
         orderId: req.params.id,
       });
 
-      const selectedDomainStatus = await Status.findOne({
-        type: "domain",
+      const selectedOrderStatus = await Status.findOne({
+        type: "order",
         $or: [
           { code: status.toUpperCase() },
           { name: status.toUpperCase() },
@@ -357,34 +357,37 @@ export const updateOrderStatus: RequestHandler = async (req, res) => {
       });
 
       console.log(
-        "FOUND DOMAIN STATUS:",
-        selectedDomainStatus
+        "FOUND ORDER STATUS:",
+        selectedOrderStatus
       );
 
-      if (!selectedDomainStatus) {
+      if (!selectedOrderStatus) {
         res.status(400).json({
           success: false,
-          message: `${status} domain status not found`,
+          message: `${status} order status not found`,
         });
         return;
       }
 
       console.log(
-        "STATUS ID TO UPDATE:",
-        selectedDomainStatus._id
+        "ORDER STATUS ID TO UPDATE:",
+        selectedOrderStatus._id
       );
 
-      // ==========================================
-      // ACTIVE DOMAIN → STORE ACTIVE DATE & TIME
-      // ==========================================
+      // =========================================================
+      // ACTIVE ORDER → STORE ACTIVE DATE & TIME
+      // =========================================================
       const order = await Order.findByIdAndUpdate(
         req.params.id,
         {
           $set: {
-            domain_status: selectedDomainStatus._id,
+            order_status: selectedOrderStatus._id,
 
-            // Active date & time
+            // General activation date
             activated_on: now,
+
+            // Order status updated date
+            order_status_updated_on: now,
           },
         },
         {
@@ -423,9 +426,98 @@ export const updateOrderStatus: RequestHandler = async (req, res) => {
       return;
     }
 
-    // ==========================================
+    // =========================================================
+    // ARCHIVED PAGE → ACTIVE DOMAIN
+    // =========================================================
+    if (status && type === "domain") {
+      console.log("ARCHIVED ACTIVE DOMAIN REQUEST:", {
+        status,
+        type,
+        orderId: req.params.id,
+      });
+
+      const selectedDomainStatus = await Status.findOne({
+        type: "domain",
+        $or: [
+          { code: status.toUpperCase() },
+          { name: status.toUpperCase() },
+        ],
+        is_active: true,
+      });
+
+      console.log(
+        "FOUND DOMAIN STATUS:",
+        selectedDomainStatus
+      );
+
+      if (!selectedDomainStatus) {
+        res.status(400).json({
+          success: false,
+          message: `${status} domain status not found`,
+        });
+        return;
+      }
+
+      console.log(
+        "DOMAIN STATUS ID TO UPDATE:",
+        selectedDomainStatus._id
+      );
+
+      // =========================================================
+      // ACTIVE DOMAIN → STORE ACTIVE DATE & TIME
+      // =========================================================
+      const order = await Order.findByIdAndUpdate(
+        req.params.id,
+        {
+          $set: {
+            domain_status: selectedDomainStatus._id,
+
+            // General activation date
+            activated_on: now,
+
+            // Domain status updated date
+            domain_status_updated_on: now,
+          },
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      )
+        .populate(
+          "order_status",
+          "_id name code type is_custom is_active"
+        )
+        .populate(
+          "domain_status",
+          "_id name code type is_custom is_active"
+        )
+        .populate(
+          "domainSource",
+          "_id name code image"
+        );
+
+      console.log("UPDATED ORDER:", order);
+
+      if (!order) {
+        res.status(404).json({
+          success: false,
+          message: "Order not found",
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: order,
+      });
+
+      return;
+    }
+
+    // =========================================================
     // EXISTING LOGIC
-    // ==========================================
+    // =========================================================
 
     if (!order_status && !domain_status) {
       res.status(400).json({
@@ -438,9 +530,9 @@ export const updateOrderStatus: RequestHandler = async (req, res) => {
 
     const updateData: any = {};
 
-    // ==========================================
+    // =========================================================
     // ORDER STATUS
-    // ==========================================
+    // =========================================================
     if (order_status) {
       updateData.order_status = order_status;
 
@@ -460,27 +552,37 @@ export const updateOrderStatus: RequestHandler = async (req, res) => {
         selectedOrderStatus.code?.toUpperCase() ||
         selectedOrderStatus.name?.toUpperCase();
 
-      // ==========================================
+      // =======================================================
       // ORDER → ACTIVE
-      // ==========================================
+      // =======================================================
       if (orderStatusCode === "ACTIVE") {
         updateData.activated_on = now;
+        updateData.order_status_updated_on = now;
       }
 
-      // ==========================================
+      // =======================================================
       // ORDER → TRANSFERRED
-      // ==========================================
+      // =======================================================
       if (orderStatusCode === "TRANSFERRED") {
         updateData.order_transferred_on = now;
+        updateData.order_status_updated_on = now;
+      }
+
+      // =======================================================
+      // ORDER → CANCELLED
+      // =======================================================
+      if (orderStatusCode === "CANCELLED") {
+        updateData.order_status_updated_on = now;
       }
     }
 
-    // ==========================================
+    // =========================================================
     // DOMAIN STATUS
-    // ==========================================
+    // =========================================================
     if (domain_status) {
       updateData.domain_status = domain_status;
 
+      // Find selected domain status
       const selectedDomainStatus =
         await Status.findById(domain_status);
 
@@ -496,18 +598,20 @@ export const updateOrderStatus: RequestHandler = async (req, res) => {
         selectedDomainStatus.code?.toUpperCase() ||
         selectedDomainStatus.name?.toUpperCase();
 
-      // ==========================================
+      // =======================================================
       // DOMAIN → ACTIVE
-      // ==========================================
+      // =======================================================
       if (domainStatusCode === "ACTIVE") {
         updateData.activated_on = now;
+        updateData.domain_status_updated_on = now;
       }
 
-      // ==========================================
+      // =======================================================
       // DOMAIN → TRANSFERRED
-      // ==========================================
+      // =======================================================
       if (domainStatusCode === "TRANSFERRED") {
         updateData.domain_transferred_on = now;
+        updateData.domain_status_updated_on = now;
 
         // Existing logic
         updateData.managedBy = "Customer";
@@ -515,11 +619,18 @@ export const updateOrderStatus: RequestHandler = async (req, res) => {
         // Keep your existing decision here
         // updateData.domainSource = null;
       }
+
+      // =======================================================
+      // DOMAIN → CANCELLED
+      // =======================================================
+      if (domainStatusCode === "CANCELLED") {
+        updateData.domain_status_updated_on = now;
+      }
     }
 
-    // ==========================================
+    // =========================================================
     // UPDATE ORDER
-    // ==========================================
+    // =========================================================
     const order = await Order.findByIdAndUpdate(
       req.params.id,
       {
