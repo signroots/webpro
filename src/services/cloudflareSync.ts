@@ -153,28 +153,7 @@ console.log(
 // TO DNS-CLOUDFLARE
 // =====================================
 
-const registrarDomainNames =
-  Object.keys(registrarDomainMap);
 
-
-await Order.updateMany(
-  {
-    domainSource: cloudflareSource._id,
-    domainName: {
-      $nin: registrarDomainNames
-    }
-  },
-  {
-    $set: {
-      domainSource: dnsCloudflareSource._id
-    }
-  }
-);
-
-
-console.log(
-  "✅ Non registrar Cloudflare domains moved to DNS-CLOUDFLARE"
-);
     // =====================================
     // FETCH DEFAULT CUSTOMER
     // =====================================
@@ -341,93 +320,40 @@ if (resellerInfo) {
             },
 
 
-            update: {
+         update: {
+  $set: {
+    domainName: zone.name,
+    server_status: domainStatus,
+    is_active: isActive,
+    nameServers: zone.name_servers,
+    registrationDate: zone.created_on
+      ? new Date(zone.created_on)
+      : existingOrder?.registrationDate || null,
+    originalRegistrar: zone.original_registrar,
+    expiryDate,
+    managedBy: "Signroots",
+    customer: defaultCustomer._id,
+    cloudflareRegistered: true,
+    provider,
+    google_email:
+      existingOrder?.google_email ||
+      providerLower.includes("google workspace"),
+    microsoft_email:
+      existingOrder?.microsoft_email ||
+      providerLower.includes("microsoft 365"),
+    email_flag:
+      existingOrder?.email_flag || false,
+    email_customer:
+      existingOrder?.email_customer || "",
+    users:
+      existingOrder?.users || 0,
+  },
 
-              $set: {
-
-
-                domainName:
-                  zone.name,
-
-
-                server_status:
-                  domainStatus,
-
-
-                is_active:
-                  isActive,
-
-
-                nameServers:
-                  zone.name_servers,
-
-
-                registrationDate:
-                  zone.created_on
-                    ?
-                    new Date(zone.created_on)
-                    :
-                    existingOrder?.registrationDate || null,
-
-
-                originalRegistrar:
-                  zone.original_registrar,
-
-
-                expiryDate,
-
-
-                managedBy:
-                  "Signroots",
-
-
-                customer:
-                  defaultCustomer._id,
-
-domainSource: selectedDomainSource,
-
-                cloudflareRegistered:
-                  true,
-
-
-                provider,
-
-
-                google_email:
-                  existingOrder?.google_email ||
-                  providerLower.includes(
-                    "google workspace"
-                  ),
-
-
-                microsoft_email:
-                  existingOrder?.microsoft_email ||
-                  providerLower.includes(
-                    "microsoft 365"
-                  ),
-
-
-                email_flag:
-                  existingOrder?.email_flag ||
-                  false,
-
-
-                email_customer:
-                  existingOrder?.email_customer ||
-                  "",
-
-
-                users:
-                  existingOrder?.users ||
-                  0,
-
-
-              }
-
-            },
-
-
-            upsert: true
+  $setOnInsert: {
+    domainSource: selectedDomainSource,
+  }
+},
+upsert: true
 
           }
 
