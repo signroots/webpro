@@ -15,6 +15,7 @@ import {
   FaArrowLeft,
   FaEdit,
   FaRedo,
+  FaTimes,
 } from "react-icons/fa";
 
 /* ===================== TYPES ===================== */
@@ -32,8 +33,7 @@ interface Plan {
   planId: string;
   emailType?: string;
 
-  primary_status?:
-  {
+  primary_status?: {
     _id: string;
     name: string;
     code?: string;
@@ -42,8 +42,8 @@ interface Plan {
     is_active?: boolean;
     is_custom?: boolean;
   } | null;
-  secondary_status?:
-  {
+
+  secondary_status?: {
     _id: string;
     name: string;
     code?: string;
@@ -206,6 +206,228 @@ const OrderDetails: React.FC = () => {
   const [error, setError] =
     useState<string | null>(null);
 
+  /* ===================== STATUS MODAL ===================== */
+
+  const [statusModalOpen, setStatusModalOpen] =
+    useState(false);
+
+  const [updateOrderStatusChecked, setUpdateOrderStatusChecked] =
+    useState(false);
+
+  const [updateDomainStatusChecked, setUpdateDomainStatusChecked] =
+    useState(false);
+
+  const [updatePlanStatusChecked, setUpdatePlanStatusChecked] =
+    useState(false);
+
+  const [selectedOrderStatus, setSelectedOrderStatus] =
+    useState("");
+
+  const [selectedDomainStatus, setSelectedDomainStatus] =
+    useState("");
+
+  const [selectedPrimaryPlanStatuses, setSelectedPrimaryPlanStatuses] =
+    useState<Record<string, string>>({});
+
+  const [selectedSecondaryPlanStatuses, setSelectedSecondaryPlanStatuses] =
+    useState<Record<string, string>>({});
+
+  const [statusUpdating, setStatusUpdating] =
+    useState(false);
+
+  /* ===================== OPEN STATUS MODAL ===================== */
+
+  const openStatusModal = () => {
+    setSelectedOrderStatus(
+      order?.order_status?._id || ""
+    );
+
+    setSelectedDomainStatus(
+      order?.domain_status?._id || ""
+    );
+
+    const primary: Record<string, string> = {};
+    const secondary: Record<string, string> = {};
+
+    (order?.plans || []).forEach((plan) => {
+      primary[plan._id] =
+        plan.primary_status?._id || "";
+
+      secondary[plan._id] =
+        plan.secondary_status?._id || "";
+    });
+
+    setSelectedPrimaryPlanStatuses(primary);
+    setSelectedSecondaryPlanStatuses(secondary);
+
+    setUpdateOrderStatusChecked(false);
+    setUpdateDomainStatusChecked(false);
+    setUpdatePlanStatusChecked(false);
+
+    setStatusModalOpen(true);
+  };
+
+  /* ===================== HANDLE STATUS UPDATE ===================== */
+
+  const handleStatusUpdate = async () => {
+    if (!order) return;
+
+    if (
+      !updateOrderStatusChecked &&
+      !updateDomainStatusChecked &&
+      !updatePlanStatusChecked
+    ) {
+      alert("Please select at least one status to update");
+      return;
+    }
+
+    try {
+      setStatusUpdating(true);
+
+      /* ===================== ORDER STATUS ===================== */
+
+      if (
+        updateOrderStatusChecked &&
+        selectedOrderStatus &&
+        selectedOrderStatus !== order.order_status?._id
+      ) {
+        const updatedOrder = await updateOrderStatus(
+          order._id,
+          {
+            order_status: selectedOrderStatus,
+          }
+        );
+
+        setOrder((prev) =>
+          prev
+            ? {
+                ...prev,
+                order_status:
+                  updatedOrder.order_status,
+              }
+            : prev
+        );
+      }
+
+      /* ===================== DOMAIN STATUS ===================== */
+
+      if (
+        updateDomainStatusChecked &&
+        selectedDomainStatus &&
+        selectedDomainStatus !== order.domain_status?._id
+      ) {
+        const updatedOrder = await updateOrderStatus(
+          order._id,
+          {
+            domain_status: selectedDomainStatus,
+          }
+        );
+
+        setOrder((prev) =>
+          prev
+            ? {
+                ...prev,
+                domain_status:
+                  updatedOrder.domain_status,
+              }
+            : prev
+        );
+      }
+
+      /* ===================== PLAN STATUS ===================== */
+
+      if (updatePlanStatusChecked) {
+        for (const plan of order.plans || []) {
+
+          /*
+           * Only email plans are allowed
+           * to be updated from this popup.
+           */
+          if (!plan.emailType) {
+            continue;
+          }
+
+          const primaryStatus =
+            selectedPrimaryPlanStatuses[plan._id] || "";
+
+          const secondaryStatus =
+            selectedSecondaryPlanStatuses[plan._id] || "";
+
+          const primaryChanged =
+            primaryStatus !==
+            (plan.primary_status?._id || "");
+
+          const secondaryChanged =
+            secondaryStatus !==
+            (plan.secondary_status?._id || "");
+
+          if (!primaryChanged && !secondaryChanged) {
+            continue;
+          }
+
+          const payload: {
+            primary_status?: string;
+            secondary_status?: string | null;
+          } = {};
+
+          if (
+            primaryChanged &&
+            primaryStatus
+          ) {
+            payload.primary_status =
+              primaryStatus;
+          }
+
+          if (secondaryChanged) {
+            payload.secondary_status =
+              secondaryStatus || null;
+          }
+
+          const updatedPlan =
+            await updatePlanStatus(
+              plan._id,
+              payload
+            );
+
+          setOrder((prev) => {
+            if (!prev) return prev;
+
+            return {
+              ...prev,
+
+              plans: prev.plans?.map((p) =>
+                p._id === plan._id
+                  ? {
+                      ...p,
+                      primary_status:
+                        updatedPlan.primary_status,
+                      secondary_status:
+                        updatedPlan.secondary_status,
+                    }
+                  : p
+              ),
+            };
+          });
+        }
+      }
+
+      setStatusModalOpen(false);
+
+      alert("Status updated successfully");
+
+    } catch (error) {
+      console.error(
+        "Status update error:",
+        error
+      );
+
+      alert("Failed to update status");
+
+    } finally {
+      setStatusUpdating(false);
+    }
+  };
+
   /* ===================== LOAD ORDER ===================== */
 
   useEffect(() => {
@@ -216,29 +438,27 @@ const OrderDetails: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        /* ===============================
-           FETCH ORDER
-        =============================== */
+        /* ===================== FETCH ORDER ===================== */
 
         const data =
           await fetchOrderById(orderId);
 
-        /* ===============================
-           MAP CUSTOMER / CLIENT
-        =============================== */
+        /* ===================== MAP CUSTOMER / CLIENT ===================== */
 
         const mapPerson = (source: any) =>
           source
             ? {
-              name: source.c_name,
-              email: source.c_email,
-              phone: source.c_phone,
-              company: source.c_company,
-              address: source.c_address,
-              city: source.c_city,
-              state: source.c_state?.name,
-              country: source.c_country?.name,
-            }
+                name: source.c_name,
+                email: source.c_email,
+                phone: source.c_phone,
+                company: source.c_company,
+                address: source.c_address,
+                city: source.c_city,
+                state:
+                  source.c_state?.name,
+                country:
+                  source.c_country?.name,
+              }
             : undefined;
 
         const mappedOrder: Order = {
@@ -258,9 +478,7 @@ const OrderDetails: React.FC = () => {
 
         setOrder(mappedOrder);
 
-        /* ===============================
-           ORDER STATUS
-        =============================== */
+        /* ===================== ORDER STATUS ===================== */
 
         const orderStatusData =
           await fetchOrderStatuses(orderId);
@@ -271,9 +489,7 @@ const OrderDetails: React.FC = () => {
             : []
         );
 
-        /* ===============================
-           DOMAIN STATUS
-        =============================== */
+        /* ===================== DOMAIN STATUS ===================== */
 
         const domainStatusData =
           await fetchDomainStatuses(orderId);
@@ -284,9 +500,7 @@ const OrderDetails: React.FC = () => {
             : []
         );
 
-        /* ===============================
-           PLAN STATUSES
-        =============================== */
+        /* ===================== PLAN STATUSES ===================== */
 
         const primaryStatuses =
           await fetchPrimaryPlanStatuses();
@@ -303,10 +517,6 @@ const OrderDetails: React.FC = () => {
           string,
           Status[]
         > = {};
-
-        /* ===============================
-           ASSIGN STATUS LISTS TO PLANS
-        =============================== */
 
         for (
           const plan of mappedOrder.plans || []
@@ -329,6 +539,7 @@ const OrderDetails: React.FC = () => {
         setSecondaryPlanStatuses(
           secondaryStatusMap
         );
+
       } catch (error) {
         console.error(
           "Failed to load order details:",
@@ -338,12 +549,14 @@ const OrderDetails: React.FC = () => {
         setError(
           "Failed to load order details"
         );
+
       } finally {
         setLoading(false);
       }
     };
 
     loadOrderDetails();
+
   }, [orderId]);
 
   /* ===================== SECTION COMPONENT ===================== */
@@ -359,30 +572,30 @@ const OrderDetails: React.FC = () => {
     fullWidth,
     rightContent,
   }) => (
-      <section className="mb-6">
+    <section className="mb-6">
 
-        <div className="flex items-center justify-between mb-3 border-b pb-2">
+      <div className="flex items-center justify-between mb-3 border-b pb-2">
 
-          <h2 className="text-lg font-semibold">
-            {title}
-          </h2>
+        <h2 className="text-lg font-semibold">
+          {title}
+        </h2>
 
-          {rightContent}
+        {rightContent}
 
-        </div>
+      </div>
 
-        <div
-          className={
-            fullWidth
-              ? ""
-              : "grid grid-cols-1 md:grid-cols-2 gap-4"
-          }
-        >
-          {children}
-        </div>
+      <div
+        className={
+          fullWidth
+            ? ""
+            : "grid grid-cols-1 md:grid-cols-2 gap-4"
+        }
+      >
+        {children}
+      </div>
 
-      </section>
-    );
+    </section>
+  );
 
   /* ===================== LOADING ===================== */
 
@@ -419,12 +632,12 @@ const OrderDetails: React.FC = () => {
   const formatDate = (date?: string) =>
     date
       ? new Date(date)
-        .toLocaleDateString("en-GB", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        })
-        .replaceAll(" ", "-")
+          .toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })
+          .replaceAll(" ", "-")
       : "-";
 
   /* ===================== RETURN ===================== */
@@ -444,101 +657,16 @@ const OrderDetails: React.FC = () => {
               Order – {order.domainName}
             </h1>
 
-            {/* ===============================
-                ORDER STATUS
-            =============================== */}
-
-            <select
-              value={
-                order.order_status?._id || ""
-              }
-              onChange={async (e) => {
-                const newStatusId =
-                  e.target.value;
-
-                if (
-                  !newStatusId ||
-                  newStatusId ===
-                  order.order_status?._id
-                ) {
-                  return;
-                }
-
-                const selectedStatus =
-                  statuses.find(
-                    (status) =>
-                      status._id ===
-                      newStatusId
-                  );
-
-                const confirmed =
-                  window.confirm(
-                    `Are you sure you want to change the status to "${selectedStatus?.name}"?`
-                  );
-
-                if (!confirmed) return;
-
-                try {
-                  const updatedOrder =
-                    await updateOrderStatus(
-                      order._id,
-                      {
-                        order_status:
-                          newStatusId,
-                      }
-                    );
-
-                  setOrder((prev) => {
-                    if (!prev) return prev;
-
-                    return {
-                      ...prev,
-                      order_status:
-                        updatedOrder.order_status,
-                    };
-                  });
-                } catch (error) {
-                  console.error(
-                    "Order status update error:",
-                    error
-                  );
-
-                  alert(
-                    "Failed to update order status"
-                  );
-                }
-              }}
-              className="border border-gray-300 rounded-md px-3 py-1.5 text-sm font-medium text-gray-700"
+            <button
+              type="button"
+              onClick={openStatusModal}
+              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium"
             >
-              <option
-                value={
-                  order.order_status?._id || ""
-                }
-              >
-                {order.order_status?.name ||
-                  "Select Order Status"}
-              </option>
-
-              {statuses
-                .filter(
-                  (status) =>
-                    status.is_active &&
-                    status._id !==
-                    order.order_status?._id
-                )
-                .map((status) => (
-                  <option
-                    key={status._id}
-                    value={status._id}
-                  >
-                    {status.name}
-                  </option>
-                ))}
-            </select>
+              <FaEdit />
+              Status Update
+            </button>
 
           </div>
-
-          {/* BACK */}
 
           <button
             onClick={() => navigate(-1)}
@@ -554,93 +682,7 @@ const OrderDetails: React.FC = () => {
 
         <Section
           title="Domain Information"
-          rightContent={
-            <select
-              value={
-                order.domain_status?._id || ""
-              }
-              onChange={async (e) => {
-                const newStatusId =
-                  e.target.value;
-
-                if (
-                  !newStatusId ||
-                  newStatusId ===
-                  order.domain_status?._id
-                ) {
-                  return;
-                }
-
-                const selectedStatus =
-                  domainStatuses.find(
-                    (status) =>
-                      status._id ===
-                      newStatusId
-                  );
-
-                const confirmed =
-                  window.confirm(
-                    `Are you sure you want to change the status to "${selectedStatus?.name}"?`
-                  );
-
-                if (!confirmed) return;
-
-                try {
-                  const updatedOrder =
-                    await updateOrderStatus(
-                      order._id,
-                      {
-                        domain_status:
-                          newStatusId,
-                      }
-                    );
-
-                  setOrder((prev) => {
-                    if (!prev) return prev;
-
-                    return {
-                      ...prev,
-                      domain_status:
-                        updatedOrder.domain_status,
-                    };
-                  });
-                } catch (error) {
-                  console.error(
-                    "Domain status update error:",
-                    error
-                  );
-
-                  alert(
-                    "Failed to update domain status"
-                  );
-                }
-              }}
-              className="border border-gray-300 rounded-md px-3 py-1.5 text-sm font-medium text-gray-700"
-            >
-              <option
-                value={
-                  order.domain_status?._id || ""
-                }
-              >
-                {order.domain_status?.name ||
-                  "Select Domain Status"}
-              </option>
-
-              {domainStatuses
-                .filter(
-                  (status) =>
-                    status.is_active
-                )
-                .map((status) => (
-                  <option
-                    key={status._id}
-                    value={status._id}
-                  >
-                    {status.name}
-                  </option>
-                ))}
-            </select>
-          }
+          rightContent={null}
         >
 
           <Info
@@ -666,25 +708,21 @@ const OrderDetails: React.FC = () => {
               {order.domainSource?.image && (
                 <img
                   src={
-                    order.domainSource.image.startsWith(
-                      "/"
-                    )
+                    order.domainSource.image.startsWith("/")
                       ? `${API_BASE_URL}${order.domainSource.image}`
                       : `${API_BASE_URL}/${order.domainSource.image}`
                   }
                   className="w-6 h-6 object-contain"
-                  alt={
-                    order.domainSource.name
-                  }
+                  alt={order.domainSource.name}
                 />
               )}
 
               <span className="text-sm text-gray-700">
-                {order.domainSource?.name ||
-                  "-"}
+                {order.domainSource?.name || "-"}
               </span>
 
             </div>
+
           </div>
 
           <Info
@@ -721,72 +759,56 @@ const OrderDetails: React.FC = () => {
             {order.customer.name && (
               <Info
                 label="Name"
-                value={
-                  order.customer.name
-                }
+                value={order.customer.name}
               />
             )}
 
             {order.customer.company && (
               <Info
                 label="Company"
-                value={
-                  order.customer.company
-                }
+                value={order.customer.company}
               />
             )}
 
             {order.customer.email && (
               <Info
                 label="Email"
-                value={
-                  order.customer.email
-                }
+                value={order.customer.email}
               />
             )}
 
             {order.customer.phone && (
               <Info
                 label="Phone"
-                value={
-                  order.customer.phone
-                }
+                value={order.customer.phone}
               />
             )}
 
             {order.customer.address && (
               <Info
                 label="Address"
-                value={
-                  order.customer.address
-                }
+                value={order.customer.address}
               />
             )}
 
             {order.customer.city && (
               <Info
                 label="City"
-                value={
-                  order.customer.city
-                }
+                value={order.customer.city}
               />
             )}
 
             {order.customer.state && (
               <Info
                 label="State"
-                value={
-                  order.customer.state
-                }
+                value={order.customer.state}
               />
             )}
 
             {order.customer.country && (
               <Info
                 label="Country"
-                value={
-                  order.customer.country
-                }
+                value={order.customer.country}
               />
             )}
 
@@ -845,349 +867,571 @@ const OrderDetails: React.FC = () => {
 
         {order.plans &&
           order.plans.length > 0 && (
-            <Section
-              title="Plans & Services"
-              fullWidth
-            >
 
-              <div className="overflow-x-auto">
+          <Section
+            title="Plans & Services"
+            fullWidth
+          >
 
-                <table className="w-full border border-gray-300">
+            <div className="overflow-x-auto">
 
-                  <thead className="bg-gray-100">
+              <table className="w-full border border-gray-300">
 
-                    <tr>
+                <thead className="bg-gray-100">
 
-                      <th className="border px-2 py-1">
-                        Email Type
-                      </th>
+                  <tr>
 
-                      <th className="border px-2 py-1">
-                        Plan Name
-                      </th>
+                    <th className="border px-2 py-1">
+                      Email Type
+                    </th>
 
-                      <th className="border px-2 py-1">
-                        Type
-                      </th>
+                    <th className="border px-2 py-1">
+                      Plan Name
+                    </th>
 
-                      <th className="border px-2 py-1">
-                        Users
-                      </th>
+                    <th className="border px-2 py-1">
+                      Type
+                    </th>
 
-                      <th className="border px-2 py-1">
-                        Reg Date
-                      </th>
+                    <th className="border px-2 py-1">
+                      Users
+                    </th>
 
-                      <th className="border px-2 py-1">
-                        Exp Date
-                      </th>
+                    <th className="border px-2 py-1">
+                      Reg Date
+                    </th>
 
-                      <th className="border px-2 py-1">
-                        Status
-                      </th>
+                    <th className="border px-2 py-1">
+                      Exp Date
+                    </th>
+
+                    <th className="border px-2 py-1">
+                      Status
+                    </th>
+
+                  </tr>
+
+                </thead>
+
+                <tbody>
+
+                  {order.plans.map(
+                    (plan) => (
+
+                    <tr key={plan._id}>
+
+                      <td className="border px-2 py-1">
+                        {plan.emailType || "-"}
+                      </td>
+
+                      <td className="border px-2 py-1">
+                        {plan.planName}
+                      </td>
+
+                      <td className="border px-2 py-1">
+                        {plan.type}
+                      </td>
+
+                      <td className="border px-2 py-1">
+                        {plan.noOfUsers ?? "-"}
+                      </td>
+
+                      <td className="border px-2 py-1">
+                        {formatDate(
+                          plan.registrationDate
+                        )}
+                      </td>
+
+                      <td className="border px-2 py-1">
+                        {formatDate(
+                          plan.expiryDate
+                        )}
+                      </td>
+
+                      <td className="border px-2 py-1">
+
+                        <div className="flex flex-col gap-1">
+
+                          <span className="text-sm font-medium text-gray-700">
+                            Primary:{" "}
+                            {plan.primary_status?.name || "-"}
+                          </span>
+
+                          <span className="text-sm text-gray-600">
+                            Secondary:{" "}
+                            {plan.secondary_status?.name || "-"}
+                          </span>
+
+                        </div>
+
+                      </td>
 
                     </tr>
 
-                  </thead>
+                  ))}
 
-                  <tbody>
+                </tbody>
 
-                    {order.plans.map(
-                      (plan) => (
-                        <tr key={plan._id}>
+              </table>
 
-                          {/* EMAIL TYPE */}
+            </div>
 
-                          <td className="border px-2 py-1">
-                            {plan.emailType ||
-                              "-"}
-                          </td>
-
-                          {/* PLAN NAME */}
-
-                          <td className="border px-2 py-1">
-                            {plan.planName}
-                          </td>
-
-                          {/* TYPE */}
-
-                          <td className="border px-2 py-1">
-                            {plan.type}
-                          </td>
-
-                          {/* USERS */}
-
-                          <td className="border px-2 py-1">
-                            {plan.noOfUsers ??
-                              "-"}
-                          </td>
-
-                          {/* REG DATE */}
-
-                          <td className="border px-2 py-1">
-                            {formatDate(
-                              plan.registrationDate
-                            )}
-                          </td>
-
-                          {/* EXP DATE */}
-
-                          <td className="border px-2 py-1">
-                            {formatDate(
-                              plan.expiryDate
-                            )}
-                          </td>
-
-                          {/* ===================== STATUS ===================== */}
-
-              
-{/* ===================== STATUS ===================== */}
-<td className="border px-2 py-1">
-<div className="flex flex-col gap-2">
-
-    {/* ===============================
-        PRIMARY STATUS
-    =============================== */}
-
-    <select
-      value={plan.primary_status?._id || ""}
-      onChange={async (e) => {
-        const newStatusId = e.target.value;
-
-        if (
-          !newStatusId ||
-          newStatusId === plan.primary_status?._id
-        ) {
-          return;
-        }
-
-        const selectedStatus = (
-          primaryPlanStatuses[plan._id] || []
-        ).find(
-          (status) => status._id === newStatusId
-        );
-
-        const confirmed = window.confirm(
-          `Are you sure you want to change the primary status to "${selectedStatus?.name}"?`
-        );
-
-        if (!confirmed) {
-          return;
-        }
-
-        try {
-          const updatedPlan = await updatePlanStatus(
-            plan._id,
-            {
-              primary_status: newStatusId,
-            }
-          );
-
-          console.log(
-            "UPDATED PLAN:",
-            updatedPlan
-          );
-
-          setOrder((prev) => {
-            if (!prev) return prev;
-
-            return {
-              ...prev,
-
-              plans: prev.plans?.map((p) =>
-                p._id === plan._id
-                  ? {
-                      ...p,
-                      primary_status:
-                        updatedPlan.primary_status,
-                      secondary_status:
-                        updatedPlan.secondary_status,
-                    }
-                  : p
-              ),
-            };
-          });
-        } catch (error) {
-          console.error(
-            "Primary status update error:",
-            error
-          );
-
-          alert(
-            "Failed to update primary status"
-          );
-        }
-      }}
-      className="border border-gray-300 rounded-md px-2 py-1 text-sm"
-    >
-      <option value="">
-        Select Primary Status
-      </option>
-
-      {/* CURRENT PRIMARY STATUS */}
-      {plan.primary_status &&
-        !(
-          primaryPlanStatuses[plan._id] || []
-        ).some(
-          (status) =>
-            status._id ===
-            plan.primary_status?._id
-        ) && (
-          <option
-            value={plan.primary_status._id}
-          >
-            {plan.primary_status.name}
-          </option>
+          </Section>
         )}
 
-      {/* AVAILABLE PRIMARY STATUSES */}
-      {(
-        primaryPlanStatuses[plan._id] || []
-      )
-        .filter(
-          (status) => status.is_active
-        )
-        .map((status) => (
-          <option
-            key={status._id}
-            value={status._id}
-          >
-            {status.name}
-          </option>
-        ))}
-    </select>
+        {/* ===================== STATUS UPDATE MODAL ===================== */}
 
-    {/* ===============================
-        SECONDARY STATUS
-    =============================== */}
+        {statusModalOpen && (
 
-    <select
-      value={plan.secondary_status?._id || ""}
-      onChange={async (e) => {
-        const newStatusId = e.target.value;
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
 
-        if (
-          newStatusId ===
-          plan.secondary_status?._id
-        ) {
-          return;
-        }
+            <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-xl shadow-2xl">
 
-        const selectedStatus = (
-          secondaryPlanStatuses[plan._id] || []
-        ).find(
-          (status) => status._id === newStatusId
-        );
+              {/* ===================== MODAL HEADER ===================== */}
 
-        const confirmed = window.confirm(
-          `Are you sure you want to change the secondary status to "${selectedStatus?.name || "None"}"?`
-        );
+              <div className="flex items-center justify-between border-b px-5 py-4">
 
-        if (!confirmed) {
-          return;
-        }
+                <div>
 
-        try {
-          const updatedPlan =
-            await updatePlanStatus(
-              plan._id,
-              {
-                secondary_status:
-                  newStatusId || null,
-              }
-            );
+                  <h2 className="text-lg font-semibold text-gray-800">
+                    Update Status
+                  </h2>
 
-          console.log(
-            "UPDATED PLAN:",
-            updatedPlan
-          );
+                  <p className="text-sm text-gray-500 mt-1">
+                    Select the status you want to update.
+                  </p>
 
-          setOrder((prev) => {
-            if (!prev) return prev;
+                </div>
 
-            return {
-              ...prev,
-
-              plans: prev.plans?.map((p) =>
-                p._id === plan._id
-                  ? {
-                      ...p,
-                      primary_status:
-                        updatedPlan.primary_status,
-                      secondary_status:
-                        updatedPlan.secondary_status,
-                    }
-                  : p
-              ),
-            };
-          });
-        } catch (error) {
-          console.error(
-            "Secondary status update error:",
-            error
-          );
-
-          alert(
-            "Failed to update secondary status"
-          );
-        }
-      }}
-      className="border border-gray-300 rounded-md px-2 py-1 text-sm"
-    >
-      <option value="">
-        Select Secondary Status
-      </option>
-
-      {/* CURRENT SECONDARY STATUS */}
-      {plan.secondary_status &&
-        !(
-          secondaryPlanStatuses[plan._id] || []
-        ).some(
-          (status) =>
-            status._id ===
-            plan.secondary_status?._id
-        ) && (
-          <option
-            value={plan.secondary_status._id}
-          >
-            {plan.secondary_status.name}
-          </option>
-        )}
-
-      {/* AVAILABLE SECONDARY STATUSES */}
-      {(
-        secondaryPlanStatuses[plan._id] || []
-      )
-        .filter(
-          (status) => status.is_active
-        )
-        .map((status) => (
-          <option
-            key={status._id}
-            value={status._id}
-          >
-            {status.name}
-          </option>
-        ))}
-    </select>
-
-  </div>
-</td>
-
-
-
-                        </tr>
-                      )
-                    )}
-
-                  </tbody>
-
-                </table>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setStatusModalOpen(false)
+                  }
+                  disabled={statusUpdating}
+                  className="text-gray-500 hover:text-gray-800"
+                >
+                  <FaTimes size={18} />
+                </button>
 
               </div>
 
-            </Section>
-          )}
+              <div className="p-5 space-y-4">
+
+                {/* ===================== ORDER STATUS ===================== */}
+
+                <div className="border rounded-lg p-4">
+
+                  <label className="flex items-center gap-3 cursor-pointer">
+
+                    <input
+                      type="checkbox"
+                      checked={
+                        updateOrderStatusChecked
+                      }
+                      onChange={(e) =>
+                        setUpdateOrderStatusChecked(
+                          e.target.checked
+                        )
+                      }
+                      className="w-4 h-4"
+                    />
+
+                    <span className="font-medium text-gray-800">
+                      Order Status
+                    </span>
+
+                  </label>
+
+                  {updateOrderStatusChecked && (
+
+                    <div className="mt-3 ml-7">
+
+                      <select
+                        value={selectedOrderStatus}
+                        onChange={(e) =>
+                          setSelectedOrderStatus(
+                            e.target.value
+                          )
+                        }
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                      >
+
+                        <option value="">
+                          Select Order Status
+                        </option>
+
+                        {statuses
+                          .filter(
+                            (status) =>
+                              status.is_active ||
+                              status._id ===
+                                order.order_status?._id
+                          )
+                          .map((status) => (
+
+                            <option
+                              key={status._id}
+                              value={status._id}
+                            >
+                              {status.name}
+                            </option>
+
+                          ))}
+
+                      </select>
+
+                    </div>
+
+                  )}
+
+                </div>
+
+                {/* ===================== DOMAIN STATUS ===================== */}
+
+                <div className="border rounded-lg p-4">
+
+                  <label className="flex items-center gap-3 cursor-pointer">
+
+                    <input
+                      type="checkbox"
+                      checked={
+                        updateDomainStatusChecked
+                      }
+                      onChange={(e) =>
+                        setUpdateDomainStatusChecked(
+                          e.target.checked
+                        )
+                      }
+                      className="w-4 h-4"
+                    />
+
+                    <span className="font-medium text-gray-800">
+                      Domain Status
+                    </span>
+
+                  </label>
+
+                  {updateDomainStatusChecked && (
+
+                    <div className="mt-3 ml-7">
+
+                      <select
+                        value={selectedDomainStatus}
+                        onChange={(e) =>
+                          setSelectedDomainStatus(
+                            e.target.value
+                          )
+                        }
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                      >
+
+                        <option value="">
+                          Select Domain Status
+                        </option>
+
+                        {domainStatuses
+                          .filter(
+                            (status) =>
+                              status.is_active ||
+                              status._id ===
+                                order.domain_status?._id
+                          )
+                          .map((status) => (
+
+                            <option
+                              key={status._id}
+                              value={status._id}
+                            >
+                              {status.name}
+                            </option>
+
+                          ))}
+
+                      </select>
+
+                    </div>
+
+                  )}
+
+                </div>
+
+                {/* ===================== PLAN STATUS ===================== */}
+
+                <div className="border rounded-lg p-4">
+
+                  <label className="flex items-center gap-3 cursor-pointer">
+
+                    <input
+                      type="checkbox"
+                      checked={
+                        updatePlanStatusChecked
+                      }
+                      onChange={(e) =>
+                        setUpdatePlanStatusChecked(
+                          e.target.checked
+                        )
+                      }
+                      className="w-4 h-4"
+                    />
+
+                    <span className="font-medium text-gray-800">
+                      Plan Status
+                    </span>
+
+                  </label>
+
+                  {updatePlanStatusChecked && (
+
+                    <div className="mt-4 ml-7 space-y-4">
+
+                      {/* ONLY EMAIL TYPE PLANS */}
+
+                      {(order.plans || [])
+                        .filter(
+                          (plan) =>
+                            !!plan.emailType
+                        )
+                        .map((plan) => (
+
+                          <div
+                            key={plan._id}
+                            className="border rounded-lg p-3 bg-gray-50"
+                          >
+
+                            {/* EMAIL TYPE */}
+
+                            <p className="font-medium text-gray-800 mb-3">
+                              {plan.emailType}
+                            </p>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+                              {/* ================= PRIMARY STATUS ================= */}
+
+                              <div>
+
+                                <label className="block text-xs font-medium text-gray-600 mb-1">
+                                  Primary Status
+                                </label>
+
+                                <select
+                                  value={
+                                    selectedPrimaryPlanStatuses[
+                                      plan._id
+                                    ] || ""
+                                  }
+                                  onChange={(e) =>
+                                    setSelectedPrimaryPlanStatuses(
+                                      (prev) => ({
+                                        ...prev,
+                                        [plan._id]:
+                                          e.target.value,
+                                      })
+                                    )
+                                  }
+                                  className="w-full border border-gray-300 rounded-md px-2 py-2 text-sm bg-white"
+                                >
+
+                                  <option value="">
+                                    Select Primary Status
+                                  </option>
+
+                                  {/* CURRENT STATUS */}
+
+                                  {plan.primary_status &&
+                                    !(
+                                      primaryPlanStatuses[
+                                        plan._id
+                                      ] || []
+                                    ).some(
+                                      (status) =>
+                                        status._id ===
+                                        plan.primary_status?._id
+                                    ) && (
+
+                                      <option
+                                        value={
+                                          plan.primary_status._id
+                                        }
+                                      >
+                                        {
+                                          plan.primary_status.name
+                                        }
+                                      </option>
+
+                                    )}
+
+                                  {/* ACTIVE STATUS LIST */}
+
+                                  {(
+                                    primaryPlanStatuses[
+                                      plan._id
+                                    ] || []
+                                  )
+                                    .filter(
+                                      (status) =>
+                                        status.is_active ||
+                                        status._id ===
+                                          plan.primary_status?._id
+                                    )
+                                    .map((status) => (
+
+                                      <option
+                                        key={status._id}
+                                        value={status._id}
+                                      >
+                                        {status.name}
+                                      </option>
+
+                                    ))}
+
+                                </select>
+
+                              </div>
+
+                              {/* ================= SECONDARY STATUS ================= */}
+
+                              <div>
+
+                                <label className="block text-xs font-medium text-gray-600 mb-1">
+                                  Secondary Status
+                                </label>
+
+                                <select
+                                  value={
+                                    selectedSecondaryPlanStatuses[
+                                      plan._id
+                                    ] || ""
+                                  }
+                                  onChange={(e) =>
+                                    setSelectedSecondaryPlanStatuses(
+                                      (prev) => ({
+                                        ...prev,
+                                        [plan._id]:
+                                          e.target.value,
+                                      })
+                                    )
+                                  }
+                                  className="w-full border border-gray-300 rounded-md px-2 py-2 text-sm bg-white"
+                                >
+
+                                  <option value="">
+                                    None / Select Secondary Status
+                                  </option>
+
+                                  {/* CURRENT STATUS */}
+
+                                  {plan.secondary_status &&
+                                    !(
+                                      secondaryPlanStatuses[
+                                        plan._id
+                                      ] || []
+                                    ).some(
+                                      (status) =>
+                                        status._id ===
+                                        plan.secondary_status?._id
+                                    ) && (
+
+                                      <option
+                                        value={
+                                          plan.secondary_status._id
+                                        }
+                                      >
+                                        {
+                                          plan.secondary_status.name
+                                        }
+                                      </option>
+
+                                    )}
+
+                                  {/* ACTIVE STATUS LIST */}
+
+                                  {(
+                                    secondaryPlanStatuses[
+                                      plan._id
+                                    ] || []
+                                  )
+                                    .filter(
+                                      (status) =>
+                                        status.is_active ||
+                                        status._id ===
+                                          plan.secondary_status?._id
+                                    )
+                                    .map((status) => (
+
+                                      <option
+                                        key={status._id}
+                                        value={status._id}
+                                      >
+                                        {status.name}
+                                      </option>
+
+                                    ))}
+
+                                </select>
+
+                              </div>
+
+                            </div>
+
+                          </div>
+
+                        ))}
+
+                      {/* NO EMAIL PLAN MESSAGE */}
+
+                      {(order.plans || []).filter(
+                        (plan) => !!plan.emailType
+                      ).length === 0 && (
+
+                        <p className="text-sm text-gray-500">
+                          No email plans available.
+                        </p>
+
+                      )}
+
+                    </div>
+
+                  )}
+
+                </div>
+
+              </div>
+
+              {/* ===================== MODAL FOOTER ===================== */}
+
+              <div className="flex justify-end gap-3 border-t px-5 py-4">
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setStatusModalOpen(false)
+                  }
+                  disabled={statusUpdating}
+                  className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleStatusUpdate}
+                  disabled={statusUpdating}
+                  className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {statusUpdating
+                    ? "Updating..."
+                    : "Update Status"}
+                </button>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        )}
 
         {/* ===================== ACTIONS ===================== */}
 
