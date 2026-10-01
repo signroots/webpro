@@ -49,6 +49,8 @@ archived_status?: mongoose.Types.ObjectId;
   activated_on?: Date;
 domain_transferred_on?: Date;
 order_transferred_on?: Date;
+domain_cancelled_on?: Date;
+order_cancelled_on?: Date;
 domain_status_updated_on?: Date;
 order_status_updated_on?: Date;
   order_id?: string;
@@ -358,7 +360,12 @@ activated_on: {
 domain_transferred_on: {
   type: Date,
 },
-
+domain_cancelled_on :{
+  type: Date,
+} ,
+order_cancelled_on:{
+  type: Date,
+} ,
 order_transferred_on: {
   type: Date,
 },

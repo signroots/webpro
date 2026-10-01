@@ -24,6 +24,8 @@ export interface IOrderPlan extends Document {
   registrationDate?: Date | null;
 
   expiryDate?: Date | null;
+  plan_transferred_on?: Date;
+  plan_cancelled_on?:Date;
 
   // ===============================
   // HOSTING
@@ -156,7 +158,12 @@ const OrderPlanSchema = new Schema(
       ref: "HostType",
       default: null,
     },
-
+plan_cancelled_on:{
+  type: Date,
+} ,
+plan_transferred_on: {
+  type: Date,
+},
     hostSubTypeId: {
       type: Schema.Types.ObjectId,
       ref: "HostSubType",
