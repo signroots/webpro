@@ -18,19 +18,26 @@ import {
   FaTimes,
 } from "react-icons/fa";
 
-/* ===================== TYPES ===================== */
+/* =========================================================
+   TYPES
+========================================================= */
 
 interface Plan {
   _id: string;
+
   planName: string;
   serviceType: string;
   type: string;
+
   registrationDate: string;
   expiryDate: string;
+
   provider?: string;
   noOfUsers?: number;
+
   orderId: string;
   planId: string;
+
   emailType?: string;
 
   primary_status?: {
@@ -87,8 +94,12 @@ interface Status {
   _id: string;
   name: string;
   code?: string;
+
   category?: "primary" | "secondary";
+
   is_active: boolean;
+
+  type?: string;
 
   typeEmail?: {
     _id: string;
@@ -98,6 +109,7 @@ interface Status {
 
 interface Order {
   _id: string;
+
   domainName: string;
 
   status?: {
@@ -122,8 +134,10 @@ interface Order {
   } | null;
 
   managedBy?: string;
+
   registrationDate?: string;
   expiryDate?: string;
+
   provider?: string;
 
   domainSource?: DomainSource | null;
@@ -139,12 +153,14 @@ interface Order {
 
   lockStatus?: string;
   email_status?: string;
+
   businessEmail?: boolean;
   cloudflareRegistered?: boolean;
   google_email?: boolean;
   microsoft_email?: boolean;
 
   username?: string;
+
   nameServers?: string[];
 
   customer?: Customer;
@@ -153,9 +169,15 @@ interface Order {
   plans?: Plan[];
 }
 
-/* ===================== SMALL COMPONENTS ===================== */
+/* =========================================================
+   API BASE URL
+========================================================= */
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+/* =========================================================
+   SMALL COMPONENT
+========================================================= */
 
 const Info: React.FC<{
   label: string;
@@ -174,7 +196,9 @@ const Info: React.FC<{
   </div>
 );
 
-/* ===================== MAIN COMPONENT ===================== */
+/* =========================================================
+   MAIN COMPONENT
+========================================================= */
 
 const OrderDetails: React.FC = () => {
   const { orderId } = useParams<{
@@ -183,7 +207,9 @@ const OrderDetails: React.FC = () => {
 
   const navigate = useNavigate();
 
-  /* ===================== STATES ===================== */
+  /* =======================================================
+     STATES
+  ======================================================= */
 
   const [statuses, setStatuses] =
     useState<Status[]>([]);
@@ -206,7 +232,9 @@ const OrderDetails: React.FC = () => {
   const [error, setError] =
     useState<string | null>(null);
 
-  /* ===================== STATUS MODAL ===================== */
+  /* =======================================================
+     STATUS MODAL
+  ======================================================= */
 
   const [statusModalOpen, setStatusModalOpen] =
     useState(false);
@@ -235,7 +263,42 @@ const OrderDetails: React.FC = () => {
   const [statusUpdating, setStatusUpdating] =
     useState(false);
 
-  /* ===================== OPEN STATUS MODAL ===================== */
+  /* =======================================================
+     MAP PERSON
+  ======================================================= */
+
+  const mapPerson = (source: any) =>
+    source
+      ? {
+          name: source.c_name,
+          email: source.c_email,
+          phone: source.c_phone,
+          company: source.c_company,
+          address: source.c_address,
+          city: source.c_city,
+          state: source.c_state?.name,
+          country: source.c_country?.name,
+        }
+      : undefined;
+
+  /* =======================================================
+     MAP ORDER RESPONSE
+  ======================================================= */
+
+  const mapOrderResponse = (data: any): Order => ({
+    ...data,
+
+    domainSource:
+      data.domainSource || null,
+
+    customer: mapPerson(data.customer),
+
+    client: mapPerson(data.client),
+  });
+
+  /* =======================================================
+     OPEN STATUS MODAL
+  ======================================================= */
 
   const openStatusModal = () => {
     setSelectedOrderStatus(
@@ -267,7 +330,9 @@ const OrderDetails: React.FC = () => {
     setStatusModalOpen(true);
   };
 
-  /* ===================== HANDLE STATUS UPDATE ===================== */
+  /* =======================================================
+     HANDLE STATUS UPDATE
+  ======================================================= */
 
   const handleStatusUpdate = async () => {
     if (!order) return;
@@ -277,91 +342,192 @@ const OrderDetails: React.FC = () => {
       !updateDomainStatusChecked &&
       !updatePlanStatusChecked
     ) {
-      alert("Please select at least one status to update");
+      alert(
+        "Please select at least one status to update"
+      );
       return;
     }
 
     try {
       setStatusUpdating(true);
 
-      /* ===================== ORDER STATUS ===================== */
+      /* =====================================================
+         1. ORDER STATUS UPDATE
+
+         ONLY order_status is sent.
+
+         Backend automatically handles:
+
+         CANCELLED:
+           Order -> CANCELLED
+           Domain -> CANCELLED
+           Email Primary -> CANCELLED
+           Secondary -> unchanged
+
+         TRANSFERRED:
+           Order -> TRANSFERRED
+           Domain -> TRANSFERRED
+           Email Primary -> TRANSFERRED
+           Secondary -> unchanged
+           managedBy -> Customer
+      ===================================================== */
 
       if (
         updateOrderStatusChecked &&
         selectedOrderStatus &&
-        selectedOrderStatus !== order.order_status?._id
+        selectedOrderStatus !==
+          order.order_status?._id
       ) {
-        const updatedOrder = await updateOrderStatus(
-          order._id,
-          {
-            order_status: selectedOrderStatus,
-          }
+        const payload = {
+          order_status:
+            selectedOrderStatus,
+        };
+
+        console.log(
+          "ORDER STATUS UPDATE PAYLOAD:",
+          payload
         );
 
-        setOrder((prev) =>
-          prev
-            ? {
-                ...prev,
-                order_status:
-                  updatedOrder.order_status,
-              }
-            : prev
+        await updateOrderStatus(
+          order._id,
+          payload
+        );
+
+        /* Refresh complete order */
+
+        const refreshedOrder =
+          await fetchOrderById(order._id);
+
+        const mappedRefreshedOrder =
+          mapOrderResponse(
+            refreshedOrder
+          );
+
+        setOrder(
+          mappedRefreshedOrder
+        );
+
+        console.log(
+          "ORDER STATUS UPDATE COMPLETED:",
+          mappedRefreshedOrder
         );
       }
 
-      /* ===================== DOMAIN STATUS ===================== */
+      /* =====================================================
+         2. DOMAIN STATUS UPDATE
+
+         Domain status is updated ONLY when
+         Order Status checkbox is NOT selected.
+
+         Therefore an order status ID can never
+         accidentally be sent as domain_status.
+      ===================================================== */
 
       if (
+        !updateOrderStatusChecked &&
         updateDomainStatusChecked &&
         selectedDomainStatus &&
-        selectedDomainStatus !== order.domain_status?._id
+        selectedDomainStatus !==
+          order.domain_status?._id
       ) {
-        const updatedOrder = await updateOrderStatus(
-          order._id,
-          {
-            domain_status: selectedDomainStatus,
-          }
+        const payload = {
+          domain_status:
+            selectedDomainStatus,
+        };
+
+        console.log(
+          "DOMAIN STATUS UPDATE PAYLOAD:",
+          payload
         );
 
-        setOrder((prev) =>
-          prev
-            ? {
-                ...prev,
-                domain_status:
-                  updatedOrder.domain_status,
-              }
-            : prev
+        await updateOrderStatus(
+          order._id,
+          payload
+        );
+
+        /* Refresh complete order */
+
+        const refreshedOrder =
+          await fetchOrderById(order._id);
+
+        const mappedRefreshedOrder =
+          mapOrderResponse(
+            refreshedOrder
+          );
+
+        setOrder(
+          mappedRefreshedOrder
+        );
+
+        console.log(
+          "DOMAIN STATUS UPDATE COMPLETED:",
+          mappedRefreshedOrder
         );
       }
 
-      /* ===================== PLAN STATUS ===================== */
+      /* =====================================================
+         3. MANUAL PLAN STATUS UPDATE
 
-      if (updatePlanStatusChecked) {
-        for (const plan of order.plans || []) {
+         IMPORTANT:
 
-          /*
-           * Only email plans are allowed
-           * to be updated from this popup.
-           */
-          if (!plan.emailType) {
-            continue;
-          }
+         - This executes ONLY when Order Status
+           checkbox is NOT selected.
+         - ALL PLAN TYPES ARE EDITABLE.
+         - Each selected plan is updated individually.
+         - Other plans remain unchanged.
+      ===================================================== */
+
+      if (
+        !updateOrderStatusChecked &&
+        updatePlanStatusChecked
+      ) {
+        for (
+          const plan of order.plans || []
+        ) {
+          /* =================================================
+             NO EMAIL-ONLY CONDITION HERE.
+
+             Every plan type can be updated:
+               email
+               storage
+               msoffice
+               hosting
+               website
+               ssl
+          ================================================= */
 
           const primaryStatus =
-            selectedPrimaryPlanStatuses[plan._id] || "";
+            selectedPrimaryPlanStatuses[
+              plan._id
+            ] || "";
 
           const secondaryStatus =
-            selectedSecondaryPlanStatuses[plan._id] || "";
+            selectedSecondaryPlanStatuses[
+              plan._id
+            ] || "";
+
+          const currentPrimaryStatus =
+            plan.primary_status?._id || "";
+
+          const currentSecondaryStatus =
+            plan.secondary_status?._id || "";
 
           const primaryChanged =
             primaryStatus !==
-            (plan.primary_status?._id || "");
+            currentPrimaryStatus;
 
           const secondaryChanged =
             secondaryStatus !==
-            (plan.secondary_status?._id || "");
+            currentSecondaryStatus;
 
-          if (!primaryChanged && !secondaryChanged) {
+          /* =================================================
+             NOTHING CHANGED
+          ================================================= */
+
+          if (
+            !primaryChanged &&
+            !secondaryChanged
+          ) {
             continue;
           }
 
@@ -369,6 +535,10 @@ const OrderDetails: React.FC = () => {
             primary_status?: string;
             secondary_status?: string | null;
           } = {};
+
+          /* =================================================
+             PRIMARY STATUS
+          ================================================= */
 
           if (
             primaryChanged &&
@@ -378,188 +548,224 @@ const OrderDetails: React.FC = () => {
               primaryStatus;
           }
 
-          if (secondaryChanged) {
+          /* =================================================
+             SECONDARY STATUS
+
+             Empty value means clear secondary status.
+          ================================================= */
+
+          if (
+            secondaryChanged
+          ) {
             payload.secondary_status =
               secondaryStatus || null;
           }
 
-          const updatedPlan =
-            await updatePlanStatus(
-              plan._id,
-              payload
-            );
+          /* =================================================
+             UPDATE ONLY THIS PLAN
+          ================================================= */
 
-          setOrder((prev) => {
-            if (!prev) return prev;
+          console.log(
+            `PLAN STATUS UPDATE PAYLOAD - ${plan._id}:`,
+            {
+              planId: plan._id,
+              planType: plan.type,
+              payload,
+            }
+          );
 
-            return {
-              ...prev,
-
-              plans: prev.plans?.map((p) =>
-                p._id === plan._id
-                  ? {
-                      ...p,
-                      primary_status:
-                        updatedPlan.primary_status,
-                      secondary_status:
-                        updatedPlan.secondary_status,
-                    }
-                  : p
-              ),
-            };
-          });
+          await updatePlanStatus(
+            plan._id,
+            payload
+          );
         }
+
+        /* =================================================
+           REFRESH COMPLETE ORDER
+        ================================================= */
+
+        const refreshedOrder =
+          await fetchOrderById(order._id);
+
+        const mappedRefreshedOrder =
+          mapOrderResponse(
+            refreshedOrder
+          );
+
+        setOrder(
+          mappedRefreshedOrder
+        );
+
+        console.log(
+          "PLAN STATUS UPDATE COMPLETED:",
+          mappedRefreshedOrder
+        );
       }
+
+      /* =====================================================
+         CLOSE MODAL
+      ===================================================== */
 
       setStatusModalOpen(false);
 
-      alert("Status updated successfully");
+      alert(
+        "Status updated successfully"
+      );
 
-    } catch (error) {
+    } catch (error: any) {
       console.error(
-        "Status update error:",
+        "STATUS UPDATE ERROR:",
         error
       );
 
-      alert("Failed to update status");
+      const backendMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to update status";
+
+      alert(
+        backendMessage
+      );
 
     } finally {
       setStatusUpdating(false);
     }
   };
 
-  /* ===================== LOAD ORDER ===================== */
+  /* =======================================================
+     LOAD ORDER DETAILS
+  ======================================================= */
 
   useEffect(() => {
     if (!orderId) return;
 
-    const loadOrderDetails = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+    const loadOrderDetails =
+      async () => {
+        try {
+          setLoading(true);
+          setError(null);
 
-        /* ===================== FETCH ORDER ===================== */
+          /* ================= FETCH ORDER ================= */
 
-        const data =
-          await fetchOrderById(orderId);
+          const data =
+            await fetchOrderById(
+              orderId
+            );
 
-        /* ===================== MAP CUSTOMER / CLIENT ===================== */
+          const mappedOrder =
+            mapOrderResponse(data);
 
-        const mapPerson = (source: any) =>
-          source
-            ? {
-                name: source.c_name,
-                email: source.c_email,
-                phone: source.c_phone,
-                company: source.c_company,
-                address: source.c_address,
-                city: source.c_city,
-                state:
-                  source.c_state?.name,
-                country:
-                  source.c_country?.name,
-              }
-            : undefined;
+          setOrder(
+            mappedOrder
+          );
 
-        const mappedOrder: Order = {
-          ...data,
+          /* ================= ORDER STATUS ================= */
 
-          domainSource:
-            data.domainSource || null,
+          const orderStatusData =
+            await fetchOrderStatuses(
+              orderId
+            );
 
-          customer: mapPerson(
-            data.customer
-          ),
+          setStatuses(
+            Array.isArray(
+              orderStatusData
+            )
+              ? orderStatusData
+              : []
+          );
 
-          client: mapPerson(
-            data.client
-          ),
-        };
+          /* ================= DOMAIN STATUS ================= */
 
-        setOrder(mappedOrder);
+          const domainStatusData =
+            await fetchDomainStatuses(
+              orderId
+            );
 
-        /* ===================== ORDER STATUS ===================== */
+          setDomainStatuses(
+            Array.isArray(
+              domainStatusData
+            )
+              ? domainStatusData
+              : []
+          );
 
-        const orderStatusData =
-          await fetchOrderStatuses(orderId);
+          /* ================= PLAN STATUS ================= */
 
-        setStatuses(
-          Array.isArray(orderStatusData)
-            ? orderStatusData
-            : []
-        );
+          const primaryStatuses =
+            await fetchPrimaryPlanStatuses();
 
-        /* ===================== DOMAIN STATUS ===================== */
+          const secondaryStatuses =
+            await fetchSecondaryPlanStatuses();
 
-        const domainStatusData =
-          await fetchDomainStatuses(orderId);
+          const primaryStatusMap: Record<
+            string,
+            Status[]
+          > = {};
 
-        setDomainStatuses(
-          Array.isArray(domainStatusData)
-            ? domainStatusData
-            : []
-        );
+          const secondaryStatusMap: Record<
+            string,
+            Status[]
+          > = {};
 
-        /* ===================== PLAN STATUSES ===================== */
+          /* =================================================
+             ASSIGN STATUS LIST TO EVERY PLAN
 
-        const primaryStatuses =
-          await fetchPrimaryPlanStatuses();
+             No type restriction here.
+          ================================================= */
 
-        const secondaryStatuses =
-          await fetchSecondaryPlanStatuses();
+          for (
+            const plan of
+              mappedOrder.plans || []
+          ) {
+            primaryStatusMap[
+              plan._id
+            ] =
+              Array.isArray(
+                primaryStatuses
+              )
+                ? primaryStatuses
+                : [];
 
-        const primaryStatusMap: Record<
-          string,
-          Status[]
-        > = {};
+            secondaryStatusMap[
+              plan._id
+            ] =
+              Array.isArray(
+                secondaryStatuses
+              )
+                ? secondaryStatuses
+                : [];
+          }
 
-        const secondaryStatusMap: Record<
-          string,
-          Status[]
-        > = {};
+          setPrimaryPlanStatuses(
+            primaryStatusMap
+          );
 
-        for (
-          const plan of mappedOrder.plans || []
-        ) {
-          primaryStatusMap[plan._id] =
-            Array.isArray(primaryStatuses)
-              ? primaryStatuses
-              : [];
+          setSecondaryPlanStatuses(
+            secondaryStatusMap
+          );
 
-          secondaryStatusMap[plan._id] =
-            Array.isArray(secondaryStatuses)
-              ? secondaryStatuses
-              : [];
+        } catch (error) {
+          console.error(
+            "Failed to load order details:",
+            error
+          );
+
+          setError(
+            "Failed to load order details"
+          );
+
+        } finally {
+          setLoading(false);
         }
-
-        setPrimaryPlanStatuses(
-          primaryStatusMap
-        );
-
-        setSecondaryPlanStatuses(
-          secondaryStatusMap
-        );
-
-      } catch (error) {
-        console.error(
-          "Failed to load order details:",
-          error
-        );
-
-        setError(
-          "Failed to load order details"
-        );
-
-      } finally {
-        setLoading(false);
-      }
-    };
+      };
 
     loadOrderDetails();
 
   }, [orderId]);
 
-  /* ===================== SECTION COMPONENT ===================== */
+  /* =======================================================
+     SECTION COMPONENT
+  ======================================================= */
 
   const Section: React.FC<{
     title: string;
@@ -597,7 +803,9 @@ const OrderDetails: React.FC = () => {
     </section>
   );
 
-  /* ===================== LOADING ===================== */
+  /* =======================================================
+     LOADING
+  ======================================================= */
 
   if (loading) {
     return (
@@ -607,7 +815,9 @@ const OrderDetails: React.FC = () => {
     );
   }
 
-  /* ===================== ERROR ===================== */
+  /* =======================================================
+     ERROR
+  ======================================================= */
 
   if (error) {
     return (
@@ -617,7 +827,9 @@ const OrderDetails: React.FC = () => {
     );
   }
 
-  /* ===================== NO ORDER ===================== */
+  /* =======================================================
+     NO ORDER
+  ======================================================= */
 
   if (!order) {
     return (
@@ -627,27 +839,41 @@ const OrderDetails: React.FC = () => {
     );
   }
 
-  /* ===================== DATE FORMAT ===================== */
+  /* =======================================================
+     DATE FORMAT
+  ======================================================= */
 
-  const formatDate = (date?: string) =>
+  const formatDate = (
+    date?: string
+  ) =>
     date
       ? new Date(date)
-          .toLocaleDateString("en-GB", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          })
-          .replaceAll(" ", "-")
+          .toLocaleDateString(
+            "en-GB",
+            {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            }
+          )
+          .replaceAll(
+            " ",
+            "-"
+          )
       : "-";
 
-  /* ===================== RETURN ===================== */
+  /* =======================================================
+     RETURN
+  ======================================================= */
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
 
       <div className="max-w-6xl mx-auto bg-white rounded-xl shadow p-6 space-y-8">
 
-        {/* ===================== HEADER ===================== */}
+        {/* =================================================
+            HEADER
+        ================================================= */}
 
         <div className="flex justify-between items-center">
 
@@ -659,7 +885,9 @@ const OrderDetails: React.FC = () => {
 
             <button
               type="button"
-              onClick={openStatusModal}
+              onClick={
+                openStatusModal
+              }
               className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium"
             >
               <FaEdit />
@@ -669,7 +897,9 @@ const OrderDetails: React.FC = () => {
           </div>
 
           <button
-            onClick={() => navigate(-1)}
+            onClick={() =>
+              navigate(-1)
+            }
             className="flex items-center gap-2 bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
           >
             <FaArrowLeft />
@@ -678,7 +908,9 @@ const OrderDetails: React.FC = () => {
 
         </div>
 
-        {/* ===================== DOMAIN INFORMATION ===================== */}
+        {/* =================================================
+            DOMAIN INFORMATION
+        ================================================= */}
 
         <Section
           title="Domain Information"
@@ -687,12 +919,16 @@ const OrderDetails: React.FC = () => {
 
           <Info
             label="Domain Name"
-            value={order.domainName}
+            value={
+              order.domainName
+            }
           />
 
           <Info
             label="Managed By"
-            value={order.managedBy}
+            value={
+              order.managedBy
+            }
           />
 
           {/* REGISTRAR */}
@@ -708,17 +944,24 @@ const OrderDetails: React.FC = () => {
               {order.domainSource?.image && (
                 <img
                   src={
-                    order.domainSource.image.startsWith("/")
+                    order.domainSource.image.startsWith(
+                      "/"
+                    )
                       ? `${API_BASE_URL}${order.domainSource.image}`
                       : `${API_BASE_URL}/${order.domainSource.image}`
                   }
                   className="w-6 h-6 object-contain"
-                  alt={order.domainSource.name}
+                  alt={
+                    order.domainSource.name
+                  }
                 />
               )}
 
               <span className="text-sm text-gray-700">
-                {order.domainSource?.name || "-"}
+                {
+                  order.domainSource?.name ||
+                  "-"
+                }
               </span>
 
             </div>
@@ -741,129 +984,175 @@ const OrderDetails: React.FC = () => {
 
           <Info
             label="Lock Status"
-            value={order.lockStatus}
+            value={
+              order.lockStatus
+            }
           />
 
           <Info
             label="Name Servers"
-            value={order.nameServers}
+            value={
+              order.nameServers
+            }
           />
 
         </Section>
 
-        {/* ===================== CUSTOMER ===================== */}
+        {/* =================================================
+            CUSTOMER
+        ================================================= */}
 
         {order.customer && (
-          <Section title="Customer Details">
+          <Section
+            title="Customer Details"
+          >
 
             {order.customer.name && (
               <Info
                 label="Name"
-                value={order.customer.name}
+                value={
+                  order.customer.name
+                }
               />
             )}
 
             {order.customer.company && (
               <Info
                 label="Company"
-                value={order.customer.company}
+                value={
+                  order.customer.company
+                }
               />
             )}
 
             {order.customer.email && (
               <Info
                 label="Email"
-                value={order.customer.email}
+                value={
+                  order.customer.email
+                }
               />
             )}
 
             {order.customer.phone && (
               <Info
                 label="Phone"
-                value={order.customer.phone}
+                value={
+                  order.customer.phone
+                }
               />
             )}
 
             {order.customer.address && (
               <Info
                 label="Address"
-                value={order.customer.address}
+                value={
+                  order.customer.address
+                }
               />
             )}
 
             {order.customer.city && (
               <Info
                 label="City"
-                value={order.customer.city}
+                value={
+                  order.customer.city
+                }
               />
             )}
 
             {order.customer.state && (
               <Info
                 label="State"
-                value={order.customer.state}
+                value={
+                  order.customer.state
+                }
               />
             )}
 
             {order.customer.country && (
               <Info
                 label="Country"
-                value={order.customer.country}
+                value={
+                  order.customer.country
+                }
               />
             )}
 
           </Section>
         )}
 
-        {/* ===================== CLIENT ===================== */}
+        {/* =================================================
+            CLIENT
+        ================================================= */}
 
         {order.client && (
-          <Section title="Client Details">
+          <Section
+            title="Client Details"
+          >
 
             <Info
               label="Name"
-              value={order.client.name}
+              value={
+                order.client.name
+              }
             />
 
             <Info
               label="Company"
-              value={order.client.company}
+              value={
+                order.client.company
+              }
             />
 
             <Info
               label="Email"
-              value={order.client.email}
+              value={
+                order.client.email
+              }
             />
 
             <Info
               label="Phone"
-              value={order.client.phone}
+              value={
+                order.client.phone
+              }
             />
 
             <Info
               label="Address"
-              value={order.client.address}
+              value={
+                order.client.address
+              }
             />
 
             <Info
               label="City"
-              value={order.client.city}
+              value={
+                order.client.city
+              }
             />
 
             <Info
               label="State"
-              value={order.client.state}
+              value={
+                order.client.state
+              }
             />
 
             <Info
               label="Country"
-              value={order.client.country}
+              value={
+                order.client.country
+              }
             />
 
           </Section>
         )}
 
-        {/* ===================== PLANS ===================== */}
+        {/* =================================================
+            PLANS
+        ================================================= */}
 
         {order.plans &&
           order.plans.length > 0 && (
@@ -918,22 +1207,36 @@ const OrderDetails: React.FC = () => {
                   {order.plans.map(
                     (plan) => (
 
-                    <tr key={plan._id}>
+                    <tr
+                      key={
+                        plan._id
+                      }
+                    >
 
                       <td className="border px-2 py-1">
-                        {plan.emailType || "-"}
+                        {
+                          plan.emailType ||
+                          "-"
+                        }
                       </td>
 
                       <td className="border px-2 py-1">
-                        {plan.planName}
+                        {
+                          plan.planName
+                        }
                       </td>
 
                       <td className="border px-2 py-1">
-                        {plan.type}
+                        {
+                          plan.type
+                        }
                       </td>
 
                       <td className="border px-2 py-1">
-                        {plan.noOfUsers ?? "-"}
+                        {
+                          plan.noOfUsers ??
+                          "-"
+                        }
                       </td>
 
                       <td className="border px-2 py-1">
@@ -954,12 +1257,18 @@ const OrderDetails: React.FC = () => {
 
                           <span className="text-sm font-medium text-gray-700">
                             Primary:{" "}
-                            {plan.primary_status?.name || "-"}
+                            {
+                              plan.primary_status?.name ||
+                              "-"
+                            }
                           </span>
 
                           <span className="text-sm text-gray-600">
                             Secondary:{" "}
-                            {plan.secondary_status?.name || "-"}
+                            {
+                              plan.secondary_status?.name ||
+                              "-"
+                            }
                           </span>
 
                         </div>
@@ -979,7 +1288,9 @@ const OrderDetails: React.FC = () => {
           </Section>
         )}
 
-        {/* ===================== STATUS UPDATE MODAL ===================== */}
+        {/* =================================================
+            STATUS UPDATE MODAL
+        ================================================= */}
 
         {statusModalOpen && (
 
@@ -987,7 +1298,7 @@ const OrderDetails: React.FC = () => {
 
             <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-xl shadow-2xl">
 
-              {/* ===================== MODAL HEADER ===================== */}
+              {/* MODAL HEADER */}
 
               <div className="flex items-center justify-between border-b px-5 py-4">
 
@@ -1006,19 +1317,29 @@ const OrderDetails: React.FC = () => {
                 <button
                   type="button"
                   onClick={() =>
-                    setStatusModalOpen(false)
+                    setStatusModalOpen(
+                      false
+                    )
                   }
-                  disabled={statusUpdating}
+                  disabled={
+                    statusUpdating
+                  }
                   className="text-gray-500 hover:text-gray-800"
                 >
-                  <FaTimes size={18} />
+                  <FaTimes
+                    size={18}
+                  />
                 </button>
 
               </div>
 
+              {/* MODAL CONTENT */}
+
               <div className="p-5 space-y-4">
 
-                {/* ===================== ORDER STATUS ===================== */}
+                {/* =================================================
+                    ORDER STATUS
+                ================================================= */}
 
                 <div className="border rounded-lg p-4">
 
@@ -1048,7 +1369,9 @@ const OrderDetails: React.FC = () => {
                     <div className="mt-3 ml-7">
 
                       <select
-                        value={selectedOrderStatus}
+                        value={
+                          selectedOrderStatus
+                        }
                         onChange={(e) =>
                           setSelectedOrderStatus(
                             e.target.value
@@ -1068,13 +1391,20 @@ const OrderDetails: React.FC = () => {
                               status._id ===
                                 order.order_status?._id
                           )
-                          .map((status) => (
+                          .map(
+                            (status) => (
 
                             <option
-                              key={status._id}
-                              value={status._id}
+                              key={
+                                status._id
+                              }
+                              value={
+                                status._id
+                              }
                             >
-                              {status.name}
+                              {
+                                status.name
+                              }
                             </option>
 
                           ))}
@@ -1087,127 +1417,173 @@ const OrderDetails: React.FC = () => {
 
                 </div>
 
-                {/* ===================== DOMAIN STATUS ===================== */}
+                {/* =================================================
+                    DOMAIN STATUS
+                ================================================= */}
 
-                <div className="border rounded-lg p-4">
+                {order.domainSource && (
 
-                  <label className="flex items-center gap-3 cursor-pointer">
+                  <div className="border rounded-lg p-4">
 
-                    <input
-                      type="checkbox"
-                      checked={
-                        updateDomainStatusChecked
-                      }
-                      onChange={(e) =>
-                        setUpdateDomainStatusChecked(
-                          e.target.checked
-                        )
-                      }
-                      className="w-4 h-4"
-                    />
+                    <label className="flex items-center gap-3 cursor-pointer">
 
-                    <span className="font-medium text-gray-800">
-                      Domain Status
-                    </span>
-
-                  </label>
-
-                  {updateDomainStatusChecked && (
-
-                    <div className="mt-3 ml-7">
-
-                      <select
-                        value={selectedDomainStatus}
+                      <input
+                        type="checkbox"
+                        checked={
+                          updateDomainStatusChecked
+                        }
                         onChange={(e) =>
-                          setSelectedDomainStatus(
-                            e.target.value
+                          setUpdateDomainStatusChecked(
+                            e.target.checked
                           )
                         }
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                      >
+                        className="w-4 h-4"
+                      />
 
-                        <option value="">
-                          Select Domain Status
-                        </option>
+                      <span className="font-medium text-gray-800">
+                        Domain Status
+                      </span>
 
-                        {domainStatuses
-                          .filter(
-                            (status) =>
-                              status.is_active ||
-                              status._id ===
-                                order.domain_status?._id
+                    </label>
+
+                    {updateDomainStatusChecked && (
+
+                      <div className="mt-3 ml-7">
+
+                        <select
+                          value={
+                            selectedDomainStatus
+                          }
+                          onChange={(e) =>
+                            setSelectedDomainStatus(
+                              e.target.value
+                            )
+                          }
+                          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                        >
+
+                          <option value="">
+                            Select Domain Status
+                          </option>
+
+                          {domainStatuses
+                            .filter(
+                              (status) =>
+                                status.is_active ||
+                                status._id ===
+                                  order.domain_status?._id
+                            )
+                            .map(
+                              (status) => (
+
+                              <option
+                                key={
+                                  status._id
+                                }
+                                value={
+                                  status._id
+                                }
+                              >
+                                {
+                                  status.name
+                                }
+                              </option>
+
+                            ))}
+
+                        </select>
+
+                      </div>
+
+                    )}
+
+                  </div>
+
+                )}
+
+                {/* =================================================
+                    PLAN STATUS
+                ================================================= */}
+
+                {(order.plans || [])
+                  .length > 0 && (
+
+                  <div className="border rounded-lg p-4">
+
+                    <label className="flex items-center gap-3 cursor-pointer">
+
+                      <input
+                        type="checkbox"
+                        checked={
+                          updatePlanStatusChecked
+                        }
+                        onChange={(e) =>
+                          setUpdatePlanStatusChecked(
+                            e.target.checked
                           )
-                          .map((status) => (
+                        }
+                        className="w-4 h-4"
+                      />
 
-                            <option
-                              key={status._id}
-                              value={status._id}
-                            >
-                              {status.name}
-                            </option>
+                      <span className="font-medium text-gray-800">
+                        Plan Status
+                      </span>
 
-                          ))}
+                    </label>
 
-                      </select>
+                    {updatePlanStatusChecked && (
 
-                    </div>
+                      <div className="mt-4 ml-7 space-y-4">
 
-                  )}
-
-                </div>
-
-                {/* ===================== PLAN STATUS ===================== */}
-
-                <div className="border rounded-lg p-4">
-
-                  <label className="flex items-center gap-3 cursor-pointer">
-
-                    <input
-                      type="checkbox"
-                      checked={
-                        updatePlanStatusChecked
-                      }
-                      onChange={(e) =>
-                        setUpdatePlanStatusChecked(
-                          e.target.checked
-                        )
-                      }
-                      className="w-4 h-4"
-                    />
-
-                    <span className="font-medium text-gray-800">
-                      Plan Status
-                    </span>
-
-                  </label>
-
-                  {updatePlanStatusChecked && (
-
-                    <div className="mt-4 ml-7 space-y-4">
-
-                      {/* ONLY EMAIL TYPE PLANS */}
-
-                      {(order.plans || [])
-                        .filter(
-                          (plan) =>
-                            !!plan.emailType
-                        )
-                        .map((plan) => (
+                        {(order.plans || []).map(
+                          (plan) => (
 
                           <div
-                            key={plan._id}
+                            key={
+                              plan._id
+                            }
                             className="border rounded-lg p-3 bg-gray-50"
                           >
 
-                            {/* EMAIL TYPE */}
+                            {/* =================================================
+                                PLAN HEADER
+                            ================================================= */}
 
-                            <p className="font-medium text-gray-800 mb-3">
-                              {plan.emailType}
-                            </p>
+                            <div className="mb-3">
+
+                              <p className="font-medium text-gray-800">
+                                {
+                                  plan.emailType ||
+                                  plan.planName ||
+                                  "-"
+                                }
+                              </p>
+
+                              <p className="text-xs text-gray-500 mt-1">
+                                Type:{" "}
+                                {plan.type || "-"}
+                              </p>
+
+                              {plan.emailType && (
+                                <p className="text-xs text-gray-500">
+                                  Email Type:{" "}
+                                  {plan.emailType}
+                                </p>
+                              )}
+
+                            </div>
+
+                            {/* =================================================
+                                ALL PLAN TYPES
+
+                                No email-only condition.
+                            ================================================= */}
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 
-                              {/* ================= PRIMARY STATUS ================= */}
+                              {/* =================================================
+                                  PRIMARY STATUS
+                              ================================================= */}
 
                               <div>
 
@@ -1275,22 +1651,34 @@ const OrderDetails: React.FC = () => {
                                         status._id ===
                                           plan.primary_status?._id
                                     )
-                                    .map((status) => (
+                                    .map(
+                                      (
+                                        status
+                                      ) => (
 
-                                      <option
-                                        key={status._id}
-                                        value={status._id}
-                                      >
-                                        {status.name}
-                                      </option>
+                                        <option
+                                          key={
+                                            status._id
+                                          }
+                                          value={
+                                            status._id
+                                          }
+                                        >
+                                          {
+                                            status.name
+                                          }
+                                        </option>
 
-                                    ))}
+                                      )
+                                    )}
 
                                 </select>
 
                               </div>
 
-                              {/* ================= SECONDARY STATUS ================= */}
+                              {/* =================================================
+                                  SECONDARY STATUS
+                              ================================================= */}
 
                               <div>
 
@@ -1358,16 +1746,26 @@ const OrderDetails: React.FC = () => {
                                         status._id ===
                                           plan.secondary_status?._id
                                     )
-                                    .map((status) => (
+                                    .map(
+                                      (
+                                        status
+                                      ) => (
 
-                                      <option
-                                        key={status._id}
-                                        value={status._id}
-                                      >
-                                        {status.name}
-                                      </option>
+                                        <option
+                                          key={
+                                            status._id
+                                          }
+                                          value={
+                                            status._id
+                                          }
+                                        >
+                                          {
+                                            status.name
+                                          }
+                                        </option>
 
-                                    ))}
+                                      )
+                                    )}
 
                                 </select>
 
@@ -1379,51 +1777,51 @@ const OrderDetails: React.FC = () => {
 
                         ))}
 
-                      {/* NO EMAIL PLAN MESSAGE */}
+                      </div>
 
-                      {(order.plans || []).filter(
-                        (plan) => !!plan.emailType
-                      ).length === 0 && (
+                    )}
 
-                        <p className="text-sm text-gray-500">
-                          No email plans available.
-                        </p>
+                  </div>
 
-                      )}
+                )}
 
-                    </div>
+                {/* =================================================
+                    MODAL ACTIONS
+                ================================================= */}
 
-                  )}
+                <div className="flex justify-end gap-3 pt-3 border-t">
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setStatusModalOpen(
+                        false
+                      )
+                    }
+                    disabled={
+                      statusUpdating
+                    }
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={
+                      handleStatusUpdate
+                    }
+                    disabled={
+                      statusUpdating
+                    }
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {statusUpdating
+                      ? "Updating..."
+                      : "Update Status"}
+                  </button>
 
                 </div>
-
-              </div>
-
-              {/* ===================== MODAL FOOTER ===================== */}
-
-              <div className="flex justify-end gap-3 border-t px-5 py-4">
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setStatusModalOpen(false)
-                  }
-                  disabled={statusUpdating}
-                  className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleStatusUpdate}
-                  disabled={statusUpdating}
-                  className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {statusUpdating
-                    ? "Updating..."
-                    : "Update Status"}
-                </button>
 
               </div>
 
@@ -1433,7 +1831,9 @@ const OrderDetails: React.FC = () => {
 
         )}
 
-        {/* ===================== ACTIONS ===================== */}
+        {/* =================================================
+            PAGE ACTIONS
+        ================================================= */}
 
         <div className="flex justify-end gap-3">
 

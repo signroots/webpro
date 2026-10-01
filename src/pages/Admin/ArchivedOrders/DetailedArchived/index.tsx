@@ -28,15 +28,27 @@ interface Status {
 
 interface Plan {
   _id: string;
+
   planName: string;
   serviceType: string;
   type: string;
+
   registrationDate: string;
   expiryDate: string;
+
+  /* =================================================
+     PLAN STATUS DATES
+  ================================================= */
+
+  plan_transferred_on?: string | null;
+  plan_cancelled_on?: string | null;
+
   provider?: string;
   noOfUsers?: number;
+
   orderId: string;
   planId: string;
+
   emailType?: string;
 
   primary_status?: Status | null;
@@ -74,11 +86,18 @@ interface DomainSource {
 
 interface Order {
   _id: string;
+
   domainName: string;
 
   status?: Status | null;
   order_status?: Status | null;
   domain_status?: Status | null;
+
+  order_transferred_on?: string | null;
+  order_cancelled_on?: string | null;
+
+  domain_transferred_on?: string | null;
+  domain_cancelled_on?: string | null;
 
   managedBy?: string;
 
@@ -137,14 +156,6 @@ const Info: React.FC<{
   </div>
 );
 
-/* ===================== ACTIVE STATUS ===================== */
-
-const ActiveStatus: React.FC = () => (
-  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-50 text-green-700 border border-green-200">
-    Active
-  </span>
-);
-
 /* ===================== MAIN COMPONENT ===================== */
 
 const ArchivedOrderDetails: React.FC = () => {
@@ -163,7 +174,8 @@ const ArchivedOrderDetails: React.FC = () => {
     id?: string;
   }>();
 
-  const orderId = params.orderId || params.id;
+  const orderId =
+    params.orderId || params.id;
 
   const navigate = useNavigate();
 
@@ -239,7 +251,9 @@ const ArchivedOrderDetails: React.FC = () => {
     };
   };
 
-  /* ===================== LOAD ORDER ===================== */
+  /* =========================================================
+     LOAD ORDER
+  ========================================================= */
 
   useEffect(() => {
     if (!orderId) {
@@ -248,36 +262,66 @@ const ArchivedOrderDetails: React.FC = () => {
       return;
     }
 
-    const loadOrderDetails = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+    const loadOrderDetails =
+      async () => {
+        try {
+          setLoading(true);
+          setError(null);
 
-        const data =
-          await fetchOrderById(orderId);
+          const data =
+            await fetchOrderById(
+              orderId
+            );
 
-        const mappedOrder =
-          mapApiOrder(data);
+          const mappedOrder =
+            mapApiOrder(data);
 
-        setOrder(mappedOrder);
-      } catch (error) {
-        console.error(
-          "Failed to load order details:",
-          error
-        );
+          setOrder(mappedOrder);
 
-        setError(
-          "Failed to load order details"
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
+        } catch (error) {
+          console.error(
+            "Failed to load order details:",
+            error
+          );
+
+          setError(
+            "Failed to load order details"
+          );
+        } finally {
+          setLoading(false);
+        }
+      };
 
     loadOrderDetails();
+
   }, [orderId]);
 
-  /* ===================== DATE ===================== */
+  /* =========================================================
+     DATE FORMAT
+  ========================================================= */
+
+  const formatDateTime = (
+    date?: string | null
+  ) => {
+    if (!date) {
+      return "-";
+    }
+
+    const parsedDate = new Date(date);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return "-";
+    }
+
+    return parsedDate.toLocaleString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
 
   const formatDate = (
     date?: string
@@ -306,10 +350,15 @@ const ArchivedOrderDetails: React.FC = () => {
           year: "numeric",
         }
       )
-      .replaceAll(" ", "-");
+      .replaceAll(
+        " ",
+        "-"
+      );
   };
 
-  /* ===================== STATUS HELPERS ===================== */
+  /* =========================================================
+     STATUS HELPERS
+  ========================================================= */
 
   const getStatusValue = (
     status?: Status | null
@@ -336,6 +385,11 @@ const ArchivedOrderDetails: React.FC = () => {
     );
   };
 
+  /*
+   * Any status other than ACTIVE
+   * can be activated.
+   */
+
   const isInactiveStatus = (
     status?: Status | null
   ) => {
@@ -343,142 +397,292 @@ const ArchivedOrderDetails: React.FC = () => {
       getStatusValue(status);
 
     return (
-      value === "TRANSFERRED" ||
-      value === "CANCELLED"
+      value !== "" &&
+      value !== "ACTIVE"
     );
+  };
+
+  /* =========================================================
+     GET PLAN DISPLAY NAME
+  ========================================================= */
+
+  const getPlanDisplayName = (
+    plan: Plan
+  ) => {
+    if (plan.emailType) {
+      return plan.emailType;
+    }
+
+    if (plan.planName) {
+      return plan.planName;
+    }
+
+    if (plan.serviceType) {
+      return plan.serviceType;
+    }
+
+    return "Plan";
+  };
+
+  /* =========================================================
+     GET PLAN TYPE DISPLAY
+  ========================================================= */
+
+  const getPlanType = (
+    plan: Plan
+  ) => {
+    return (
+      plan.type ||
+      plan.serviceType ||
+      "-"
+    );
+  };
+
+  /* =========================================================
+     GET PLAN STATUS DATE
+     
+     CANCELLED    -> plan_cancelled_on
+     TRANSFERRED  -> plan_transferred_on
+     Other        -> -
+  ========================================================= */
+
+  const getPlanStatusDate = (
+    plan: Plan
+  ) => {
+    const status =
+      getStatusValue(
+        plan.primary_status
+      );
+
+    if (
+      status === "CANCELLED"
+    ) {
+      return plan.plan_cancelled_on
+        ? formatDateTime(
+            plan.plan_cancelled_on
+          )
+        : "-";
+    }
+
+    if (
+      status === "TRANSFERRED"
+    ) {
+      return plan.plan_transferred_on
+        ? formatDateTime(
+            plan.plan_transferred_on
+          )
+        : "-";
+    }
+
+    return "-";
+  };
+
+  /* =========================================================
+     GET PLAN STATUS DATE LABEL
+  ========================================================= */
+
+  const getPlanStatusDateLabel = (
+    plan: Plan
+  ) => {
+    const status =
+      getStatusValue(
+        plan.primary_status
+      );
+
+    if (
+      status === "CANCELLED"
+    ) {
+      return "Cancelled On";
+    }
+
+    if (
+      status === "TRANSFERRED"
+    ) {
+      return "Transferred On";
+    }
+
+    return "Status Date";
   };
 
   /* =========================================================
      REFRESH ORDER
   ========================================================= */
 
-  const refreshOrder = async () => {
-    if (!order) {
-      return;
-    }
+  const refreshOrder =
+    async () => {
+      if (!order) {
+        return;
+      }
 
-    const data =
-      await fetchOrderById(
-        order._id
+      const data =
+        await fetchOrderById(
+          order._id
+        );
+
+      const mappedOrder =
+        mapApiOrder(data);
+
+      setOrder(
+        mappedOrder
       );
-
-    const mappedOrder =
-      mapApiOrder(data);
-
-    setOrder(mappedOrder);
-  };
+    };
 
   /* =========================================================
      SAVE SELECTED STATUSES
   ========================================================= */
 
-  const handleSaveStatus = async () => {
-    if (!order) {
-      return;
-    }
-
-    const {
-      order: orderSelected,
-      domain: domainSelected,
-      plans: selectedPlanIds,
-    } = selectedStatuses;
-
-    const hasSelection =
-      orderSelected ||
-      domainSelected ||
-      selectedPlanIds.length > 0;
-
-    if (!hasSelection) {
-      alert(
-        "Please select at least one status."
-      );
-      return;
-    }
-
-    try {
-      setStatusUpdating(true);
-
-      /* =====================
-         UPDATE ORDER
-      ===================== */
-
-      if (orderSelected) {
-        await updateOrderStatus(
-          order._id,
-          {
-            status: "ACTIVE",
-            type: "order",
-          }
-        );
+  const handleSaveStatus =
+    async () => {
+      if (!order) {
+        return;
       }
 
-      /* =====================
-         UPDATE DOMAIN
-      ===================== */
+      const {
+        order: orderSelected,
+        domain: domainSelected,
+        plans: selectedPlanIds,
+      } = selectedStatuses;
 
-      if (domainSelected) {
-        await updateOrderStatus(
-          order._id,
-          {
-            status: "ACTIVE",
-            type: "domain",
-          }
+      const hasSelection =
+        orderSelected ||
+        domainSelected ||
+        selectedPlanIds.length > 0;
+
+      if (!hasSelection) {
+        alert(
+          "Please select at least one status."
         );
+        return;
       }
 
-      /* =====================
-         UPDATE PLANS
-      ===================== */
+      try {
+        setStatusUpdating(true);
 
-      for (
-        const planId of selectedPlanIds
-      ) {
-        await activatePlanStatus(
-          planId,
-          {
-            status: "ACTIVE",
-            type: "plan",
-          }
+        /* =================================================
+           1. UPDATE ORDER
+
+           ONLY ORDER STATUS IS UPDATED.
+
+           No domain or plan status is
+           changed here.
+        ================================================= */
+
+        if (orderSelected) {
+          console.log(
+            "ARCHIVED ORDER ACTIVATION:",
+            {
+              orderId: order._id,
+              status: "ACTIVE",
+              type: "order",
+            }
+          );
+
+          await updateOrderStatus(
+            order._id,
+            {
+              status: "ACTIVE",
+              type: "order",
+            }
+          );
+        }
+
+        /* =================================================
+           2. UPDATE DOMAIN
+
+           ONLY DOMAIN STATUS IS UPDATED.
+
+           Order and plans remain unchanged.
+        ================================================= */
+
+        if (domainSelected) {
+          console.log(
+            "ARCHIVED DOMAIN ACTIVATION:",
+            {
+              orderId: order._id,
+              status: "ACTIVE",
+              type: "domain",
+            }
+          );
+
+          await updateOrderStatus(
+            order._id,
+            {
+              status: "ACTIVE",
+              type: "domain",
+            }
+          );
+        }
+
+        /* =================================================
+           3. UPDATE SELECTED PLANS
+
+           Only selected plan is activated.
+           Other plans remain unchanged.
+        ================================================= */
+
+        for (
+          const planId of selectedPlanIds
+        ) {
+          console.log(
+            "ARCHIVED PLAN ACTIVATION:",
+            {
+              planId,
+              status: "ACTIVE",
+              type: "plan",
+            }
+          );
+
+          await activatePlanStatus(
+            planId,
+            {
+              status: "ACTIVE",
+              type: "plan",
+            }
+          );
+        }
+
+        /* =================================================
+           4. REFRESH ORDER
+        ================================================= */
+
+        await refreshOrder();
+
+        alert(
+          "Selected statuses activated successfully."
         );
-      }
 
-      /* =====================
-         REFRESH ORDER
-      ===================== */
+        /* =================================================
+           5. RESET
+        ================================================= */
 
-      await refreshOrder();
+        setSelectedStatuses({
+          order: false,
+          domain: false,
+          plans: [],
+        });
 
-      alert(
-        "Selected statuses activated successfully."
-      );
+        setStatusModalOpen(false);
 
-      /* =====================
-         RESET
-      ===================== */
+      } catch (error: any) {
+        console.error(
+          "Failed to update statuses:",
+          error
+        );
 
-      setSelectedStatuses({
-        order: false,
-        domain: false,
-        plans: [],
-      });
-
-      setStatusModalOpen(false);
-    } catch (error: any) {
-      console.error(
-        "Failed to update statuses:",
-        error
-      );
-
-      alert(
-        error?.response?.data?.message ||
+        alert(
+          error?.response?.data?.message ||
+          error?.message ||
           "Failed to update statuses."
-      );
-    } finally {
-      setStatusUpdating(false);
-    }
-  };
+        );
 
-  /* ===================== SECTION ===================== */
+      } finally {
+        setStatusUpdating(false);
+      }
+    };
+
+  /* =========================================================
+     SECTION COMPONENT
+  ========================================================= */
 
   const Section: React.FC<{
     title: string;
@@ -490,10 +694,13 @@ const ArchivedOrderDetails: React.FC = () => {
     fullWidth,
   }) => (
     <section className="mb-6">
+
       <div className="flex items-center justify-between mb-3 border-b pb-2">
+
         <h2 className="text-lg font-semibold text-gray-800">
           {title}
         </h2>
+
       </div>
 
       <div
@@ -505,55 +712,70 @@ const ArchivedOrderDetails: React.FC = () => {
       >
         {children}
       </div>
+
     </section>
   );
 
-  /* ===================== OPEN MODAL ===================== */
+  /* =========================================================
+     OPEN MODAL
+  ========================================================= */
 
-  const openStatusModal = () => {
-    setSelectedStatuses({
-      order: false,
-      domain: false,
-      plans: [],
-    });
+  const openStatusModal =
+    () => {
+      setSelectedStatuses({
+        order: false,
+        domain: false,
+        plans: [],
+      });
 
-    setStatusModalOpen(true);
-  };
+      setStatusModalOpen(true);
+    };
 
-  /* ===================== CLOSE MODAL ===================== */
+  /* =========================================================
+     CLOSE MODAL
+  ========================================================= */
 
-  const closeStatusModal = () => {
-    if (statusUpdating) {
-      return;
-    }
+  const closeStatusModal =
+    () => {
+      if (statusUpdating) {
+        return;
+      }
 
-    setStatusModalOpen(false);
+      setStatusModalOpen(false);
 
-    setSelectedStatuses({
-      order: false,
-      domain: false,
-      plans: [],
-    });
-  };
+      setSelectedStatuses({
+        order: false,
+        domain: false,
+        plans: [],
+      });
+    };
 
-  /* ===================== LOADING ===================== */
+  /* =========================================================
+     LOADING
+  ========================================================= */
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+
         <p className="text-gray-600">
           Loading order details...
         </p>
+
       </div>
     );
   }
 
-  /* ===================== ERROR ===================== */
+  /* =========================================================
+     ERROR
+  ========================================================= */
 
   if (error) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+
         <div className="bg-white rounded-xl shadow p-6 text-center">
+
           <p className="text-red-600 mb-4">
             {error}
           </p>
@@ -568,17 +790,23 @@ const ArchivedOrderDetails: React.FC = () => {
             <FaArrowLeft />
             Back
           </button>
+
         </div>
+
       </div>
     );
   }
 
-  /* ===================== NO ORDER ===================== */
+  /* =========================================================
+     NO ORDER
+  ========================================================= */
 
   if (!order) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+
         <div className="bg-white rounded-xl shadow p-6 text-center">
+
           <p className="text-gray-600 mb-4">
             Order not found
           </p>
@@ -593,12 +821,16 @@ const ArchivedOrderDetails: React.FC = () => {
             <FaArrowLeft />
             Back
           </button>
+
         </div>
+
       </div>
     );
   }
 
-  /* ===================== RETURN ===================== */
+  /* =========================================================
+     RETURN
+  ========================================================= */
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -703,21 +935,65 @@ const ArchivedOrderDetails: React.FC = () => {
 
           <Info
             label="Registration Date"
-            value={
-              formatDate(
-                order.registrationDate
-              )
-            }
+            value={formatDate(
+              order.registrationDate
+            )}
           />
 
           <Info
             label="Expiry Date"
-            value={
-              formatDate(
-                order.expiryDate
-              )
-            }
+            value={formatDate(
+              order.expiryDate
+            )}
           />
+
+          {/* =================================================
+              ORDER STATUS DATE
+          ================================================= */}
+
+          {getStatusValue(order.order_status) === "TRANSFERRED" &&
+            order.order_transferred_on && (
+              <Info
+                label="Order Transferred On"
+                value={formatDateTime(
+                  order.order_transferred_on
+                )}
+              />
+            )}
+
+          {getStatusValue(order.order_status) === "CANCELLED" &&
+            order.order_cancelled_on && (
+              <Info
+                label="Order Cancelled On"
+                value={formatDateTime(
+                  order.order_cancelled_on
+                )}
+              />
+            )}
+
+          {/* =================================================
+              DOMAIN STATUS DATE
+          ================================================= */}
+
+          {getStatusValue(order.domain_status) === "TRANSFERRED" &&
+            order.domain_transferred_on && (
+              <Info
+                label="Domain Transferred On"
+                value={formatDateTime(
+                  order.domain_transferred_on
+                )}
+              />
+            )}
+
+          {getStatusValue(order.domain_status) === "CANCELLED" &&
+            order.domain_cancelled_on && (
+              <Info
+                label="Domain Cancelled On"
+                value={formatDateTime(
+                  order.domain_cancelled_on
+                )}
+              />
+            )}
 
           <Info
             label="Lock Status"
@@ -873,112 +1149,206 @@ const ArchivedOrderDetails: React.FC = () => {
 
         {order.plans &&
           order.plans.length > 0 && (
-            <Section
-              title="Plans & Services"
-              fullWidth
-            >
 
-              <div className="overflow-x-auto">
+          <Section
+            title="Plans & Services"
+            fullWidth
+          >
 
-                <table className="w-full border border-gray-300">
+            <div className="overflow-x-auto">
 
-                  <thead className="bg-gray-100">
+              <table className="w-full border border-gray-300">
 
-                    <tr>
+                <thead className="bg-gray-100">
 
-                      <th className="border px-2 py-2 text-left">
-                        Email Type
-                      </th>
+                  <tr>
 
-                      <th className="border px-2 py-2 text-left">
-                        Plan Name
-                      </th>
+                    <th className="border px-2 py-2 text-left">
+                      Email Type
+                    </th>
 
-                      <th className="border px-2 py-2 text-left">
-                        Type
-                      </th>
+                    <th className="border px-2 py-2 text-left">
+                      Plan Name
+                    </th>
 
-                      <th className="border px-2 py-2 text-left">
-                        Users
-                      </th>
+                    <th className="border px-2 py-2 text-left">
+                      Type
+                    </th>
 
-                      <th className="border px-2 py-2 text-left">
-                        Reg Date
-                      </th>
+                    <th className="border px-2 py-2 text-left">
+                      Users
+                    </th>
 
-                      <th className="border px-2 py-2 text-left">
-                        Exp Date
-                      </th>
+                    <th className="border px-2 py-2 text-left">
+                      Reg Date
+                    </th>
+
+                    <th className="border px-2 py-2 text-left">
+                      Exp Date
+                    </th>
+
+                    <th className="border px-2 py-2 text-left">
+                      Primary Status
+                    </th>
+
+                    <th className="border px-2 py-2 text-left">
+                      Secondary Status
+                    </th>
+
+                    <th className="border px-2 py-2 text-left">
+                      Status Date
+                    </th>
+
+                  </tr>
+
+                </thead>
+
+                <tbody>
+
+                  {order.plans.map(
+                    (plan) => (
+
+                    <tr
+                      key={
+                        plan._id
+                      }
+                      className="hover:bg-gray-50"
+                    >
+
+                      <td className="border px-2 py-2">
+                        {
+                          plan.emailType ||
+                          "-"
+                        }
+                      </td>
+
+                      <td className="border px-2 py-2">
+                        {
+                          plan.planName ||
+                          "-"
+                        }
+                      </td>
+
+                      <td className="border px-2 py-2">
+                        {
+                          getPlanType(plan)
+                        }
+                      </td>
+
+                      <td className="border px-2 py-2">
+                        {
+                          plan.noOfUsers ??
+                          "-"
+                        }
+                      </td>
+
+                      <td className="border px-2 py-2">
+                        {formatDate(
+                          plan.registrationDate
+                        )}
+                      </td>
+
+                      <td className="border px-2 py-2">
+                        {formatDate(
+                          plan.expiryDate
+                        )}
+                      </td>
+
+                      <td className="border px-2 py-2">
+                        {
+                          plan.primary_status?.name ||
+                          plan.primary_status?.code ||
+                          "-"
+                        }
+                      </td>
+
+                      <td className="border px-2 py-2">
+                        {
+                          plan.secondary_status?.name ||
+                          plan.secondary_status?.code ||
+                          "-"
+                        }
+                      </td>
+
+                      {/* =================================================
+                          PLAN STATUS DATE
+
+                          CANCELLED
+                          -> plan_cancelled_on
+
+                          TRANSFERRED
+                          -> plan_transferred_on
+                      ================================================= */}
+
+                      <td className="border px-2 py-2">
+
+                        {getStatusValue(
+                          plan.primary_status
+                        ) === "TRANSFERRED" && (
+
+                          <div>
+
+                            <p className="font-medium text-gray-800">
+                              Transferred On
+                            </p>
+
+                            <p className="text-sm text-gray-600">
+                              {plan.plan_transferred_on
+                                ? formatDateTime(
+                                    plan.plan_transferred_on
+                                  )
+                                : "-"}
+                            </p>
+
+                          </div>
+
+                        )}
+
+                        {getStatusValue(
+                          plan.primary_status
+                        ) === "CANCELLED" && (
+
+                          <div>
+
+                            <p className="font-medium text-gray-800">
+                              Cancelled On
+                            </p>
+
+                            <p className="text-sm text-gray-600">
+                              {plan.plan_cancelled_on
+                                ? formatDateTime(
+                                    plan.plan_cancelled_on
+                                  )
+                                : "-"}
+                            </p>
+
+                          </div>
+
+                        )}
+
+                        {getStatusValue(
+                          plan.primary_status
+                        ) !== "TRANSFERRED" &&
+                          getStatusValue(
+                            plan.primary_status
+                          ) !== "CANCELLED" && (
+                            "-"
+                          )}
+
+                      </td>
 
                     </tr>
 
-                  </thead>
+                  ))}
 
-                  <tbody>
+                </tbody>
 
-                    {order.plans.map(
-                      (plan) => (
-                        <tr
-                          key={plan._id}
-                          className="hover:bg-gray-50"
-                        >
+              </table>
 
-                          <td className="border px-2 py-2">
-                            {
-                              plan.emailType ||
-                              "-"
-                            }
-                          </td>
+            </div>
 
-                          <td className="border px-2 py-2">
-                            {
-                              plan.planName ||
-                              "-"
-                            }
-                          </td>
-
-                          <td className="border px-2 py-2">
-                            {
-                              plan.type ||
-                              "-"
-                            }
-                          </td>
-
-                          <td className="border px-2 py-2">
-                            {
-                              plan.noOfUsers ??
-                              "-"
-                            }
-                          </td>
-
-                          <td className="border px-2 py-2">
-                            {
-                              formatDate(
-                                plan.registrationDate
-                              )
-                            }
-                          </td>
-
-                          <td className="border px-2 py-2">
-                            {
-                              formatDate(
-                                plan.expiryDate
-                              )
-                            }
-                          </td>
-
-                        </tr>
-                      )
-                    )}
-
-                  </tbody>
-
-                </table>
-
-              </div>
-
-            </Section>
-          )}
+          </Section>
+        )}
 
         {/* =================================================
             ACTIONS
@@ -1032,9 +1402,17 @@ const ArchivedOrderDetails: React.FC = () => {
 
             <div className="flex items-center justify-between px-6 py-4 border-b">
 
-              <h2 className="text-xl font-semibold text-gray-800">
-                Status Update
-              </h2>
+              <div>
+
+                <h2 className="text-xl font-semibold text-gray-800">
+                  Status Update
+                </h2>
+
+                <p className="text-sm text-gray-500 mt-1">
+                  Select the status you want to activate.
+                </p>
+
+              </div>
 
               <button
                 type="button"
@@ -1086,15 +1464,23 @@ const ArchivedOrderDetails: React.FC = () => {
                         ) ||
                         statusUpdating
                       }
-                      onChange={(e) =>
+                      onChange={(e) => {
+
+                        const checked =
+                          e.target.checked;
+
                         setSelectedStatuses(
                           (prev) => ({
                             ...prev,
+
                             order:
-                              e.target.checked,
+                              checked ||
+                              prev.domain ||
+                              prev.plans.length > 0,
                           })
-                        )
-                      }
+                        );
+
+                      }}
                       className="w-4 h-4"
                     />
 
@@ -1113,9 +1499,11 @@ const ArchivedOrderDetails: React.FC = () => {
                         : "font-semibold text-green-600"
                     }
                   >
-                    {order.order_status?.name ||
+                    {
+                      order.order_status?.name ||
                       order.order_status?.code ||
-                      "-"}
+                      "-"
+                    }
                   </span>
 
                 </div>
@@ -1126,207 +1514,293 @@ const ArchivedOrderDetails: React.FC = () => {
                   DOMAIN STATUS
               ================================================= */}
 
-              <div className="border rounded-lg p-4">
+              {order.domainSource && (
 
-                <div className="flex items-center justify-between gap-4">
+                <div className="border rounded-lg p-4">
 
-                  <label
-                    className={`flex items-center gap-3 ${
-                      isInactiveStatus(
-                        order.domain_status
-                      )
-                        ? "cursor-pointer"
-                        : "cursor-not-allowed"
-                    }`}
-                  >
+                  <div className="flex items-center justify-between gap-4">
 
-                    <input
-                      type="checkbox"
-                      checked={
-                        selectedStatuses.domain
-                      }
-                      disabled={
-                        !isInactiveStatus(
+                    <label
+                      className={`flex items-center gap-3 ${
+                        isInactiveStatus(
                           order.domain_status
-                        ) ||
-                        statusUpdating
-                      }
-                      onChange={(e) =>
-                        setSelectedStatuses(
-                          (prev) => ({
-                            ...prev,
-                            domain:
-                              e.target.checked,
-                          })
                         )
-                      }
-                      className="w-4 h-4"
-                    />
+                          ? "cursor-pointer"
+                          : "cursor-not-allowed"
+                      }`}
+                    >
 
-                    <span className="font-semibold text-gray-800">
-                      Domain Status
+                      <input
+                        type="checkbox"
+                        checked={
+                          selectedStatuses.domain
+                        }
+                        disabled={
+                          !isInactiveStatus(
+                            order.domain_status
+                          ) ||
+                          statusUpdating
+                        }
+                        onChange={(e) => {
+
+                          const checked =
+                            e.target.checked;
+
+                          setSelectedStatuses(
+                            (prev) => ({
+                              ...prev,
+
+                              domain:
+                                checked,
+
+                              order:
+                                checked ||
+                                prev.plans.length > 0,
+                            })
+                          );
+
+                        }}
+                        className="w-4 h-4"
+                      />
+
+                      <span className="font-semibold text-gray-800">
+                        Domain Status
+                      </span>
+
+                    </label>
+
+                    <span
+                      className={
+                        isInactiveStatus(
+                          order.domain_status
+                        )
+                          ? "font-semibold text-red-600"
+                          : "font-semibold text-green-600"
+                      }
+                    >
+                      {
+                        order.domain_status?.name ||
+                        order.domain_status?.code ||
+                        "-"
+                      }
                     </span>
 
-                  </label>
-
-                  <span
-                    className={
-                      isInactiveStatus(
-                        order.domain_status
-                      )
-                        ? "font-semibold text-red-600"
-                        : "font-semibold text-green-600"
-                    }
-                  >
-                    {order.domain_status?.name ||
-                      order.domain_status?.code ||
-                      "-"}
-                  </span>
+                  </div>
 
                 </div>
 
-              </div>
+              )}
 
               {/* =================================================
                   PLAN STATUS
               ================================================= */}
 
-              <div className="border rounded-lg p-4">
+              {order.plans &&
+                order.plans.length > 0 && (
 
-                <div className="mb-4">
+                <div className="border rounded-lg p-4">
 
-                  <span className="font-semibold text-gray-800">
-                    Plan Status
-                  </span>
+                  <div className="mb-4">
 
-                </div>
+                    <span className="font-semibold text-gray-800">
+                      Plan Status
+                    </span>
 
-                <div className="space-y-3">
+                    <p className="text-xs text-gray-500 mt-1">
+                      Select individual plans to activate.
+                    </p>
 
-                  {(order.plans || [])
-                    .filter(
-                      (plan) =>
-                        !!plan.emailType
-                    )
-                    .map((plan) => {
+                  </div>
 
-                      const inactive =
-                        isInactiveStatus(
-                          plan.primary_status
-                        );
+                  <div className="space-y-3">
 
-                      const selected =
-                        selectedStatuses.plans.includes(
-                          plan._id
-                        );
+                    {order.plans.map(
+                      (plan) => {
 
-                      return (
-                        <div
-                          key={plan._id}
-                          className="bg-gray-50 border rounded-lg p-4"
-                        >
+                        const inactive =
+                          isInactiveStatus(
+                            plan.primary_status
+                          );
 
-                          <div className="flex items-center justify-between gap-4">
+                        const selected =
+                          selectedStatuses.plans.includes(
+                            plan._id
+                          );
 
-                            <label
-                              className={`flex items-start gap-3 ${
-                                inactive
-                                  ? "cursor-pointer"
-                                  : "cursor-not-allowed"
-                              }`}
-                            >
+                        return (
 
-                              <input
-                                type="checkbox"
-                                checked={selected}
-                                disabled={
-                                  !inactive ||
-                                  statusUpdating
-                                }
-                                onChange={(e) => {
+                          <div
+                            key={
+                              plan._id
+                            }
+                            className="bg-gray-50 border rounded-lg p-4"
+                          >
 
-                                  setSelectedStatuses(
-                                    (prev) => ({
-                                      ...prev,
+                            {/* =================================================
+                                PLAN HEADER
+                            ================================================= */}
 
-                                      plans:
-                                        e.target.checked
-                                          ? [
-                                              ...prev.plans,
-                                              plan._id,
-                                            ]
-                                          : prev.plans.filter(
-                                              (id) =>
-                                                id !==
-                                                plan._id
-                                            ),
-                                    })
-                                  );
-                                }}
-                                className="w-4 h-4 mt-1"
-                              />
+                            <div className="flex items-start justify-between gap-4">
 
-                              <div>
+                              <label
+                                className={`flex items-start gap-3 ${
+                                  inactive
+                                    ? "cursor-pointer"
+                                    : "cursor-not-allowed"
+                                }`}
+                              >
 
-                                <p className="font-semibold text-gray-800">
-                                  {
-                                    plan.emailType ||
-                                    plan.planName ||
-                                    "Email Plan"
+                                <input
+                                  type="checkbox"
+                                  checked={
+                                    selected
                                   }
-                                </p>
+                                  disabled={
+                                    !inactive ||
+                                    statusUpdating
+                                  }
+                                  onChange={(e) => {
 
-                                {plan.planName && (
-                                  <p className="text-sm text-gray-500 mt-1">
+                                    const checked =
+                                      e.target.checked;
+
+                                    setSelectedStatuses(
+                                      (prev) => {
+
+                                        const updatedPlans =
+                                          checked
+                                            ? prev.plans.includes(
+                                                plan._id
+                                              )
+                                              ? prev.plans
+                                              : [
+                                                  ...prev.plans,
+                                                  plan._id,
+                                                ]
+                                            : prev.plans.filter(
+                                                (id) =>
+                                                  id !==
+                                                  plan._id
+                                              );
+
+                                        return {
+                                          ...prev,
+
+                                          plans:
+                                            updatedPlans,
+
+                                          order:
+                                            checked ||
+                                            prev.domain ||
+                                            updatedPlans.length >
+                                              0,
+                                        };
+
+                                      }
+                                    );
+
+                                  }}
+                                  className="w-4 h-4 mt-1"
+                                />
+
+                                <div>
+
+                                  <p className="font-semibold text-gray-800">
                                     {
-                                      plan.planName
+                                      getPlanDisplayName(
+                                        plan
+                                      )
                                     }
                                   </p>
-                                )}
 
-                              </div>
+                                  <p className="text-sm text-gray-500 mt-1">
+                                    Type:{" "}
+                                    {
+                                      getPlanType(
+                                        plan
+                                      )
+                                    }
+                                  </p>
 
-                            </label>
+                                  {plan.planName && (
+                                    <p className="text-sm text-gray-500">
+                                      Plan:{" "}
+                                      {
+                                        plan.planName
+                                      }
+                                    </p>
+                                  )}
 
-                            <span
-                              className={
-                                inactive
-                                  ? "font-semibold text-red-600"
-                                  : "font-semibold text-green-600"
-                              }
-                            >
-                              {plan.primary_status
-                                ?.name ||
-                                plan.primary_status
-                                  ?.code ||
-                                "ACTIVE"}
-                            </span>
+                                  {plan.emailType && (
+                                    <p className="text-xs text-gray-400 mt-1">
+                                      Email Type:{" "}
+                                      {
+                                        plan.emailType
+                                      }
+                                    </p>
+                                  )}
+
+                                </div>
+
+                              </label>
+
+                              {/* =================================================
+                                  CURRENT PRIMARY STATUS
+                              ================================================= */}
+
+                              <span
+                                className={
+                                  inactive
+                                    ? "font-semibold text-red-600"
+                                    : "font-semibold text-green-600"
+                                }
+                              >
+                                {
+                                  plan.primary_status?.name ||
+                                  plan.primary_status?.code ||
+                                  "ACTIVE"
+                                }
+                              </span>
+
+                            </div>
+
+                            {/* =================================================
+                                SECONDARY STATUS
+                            ================================================= */}
+
+                            <div className="mt-3 ml-7">
+
+                              <p className="text-xs text-gray-500">
+
+                                Secondary Status:
+
+                                {" "}
+
+                                <span className="font-medium text-gray-700">
+
+                                  {
+                                    plan.secondary_status?.name ||
+                                    plan.secondary_status?.code ||
+                                    "-"
+                                  }
+
+                                </span>
+
+                              </p>
+
+                            </div>
 
                           </div>
 
-                        </div>
-                      );
-                    })}
+                        );
+                      }
+                    )}
 
-                  {/* NO EMAIL PLANS */}
-
-                  {(order.plans || [])
-                    .filter(
-                      (plan) =>
-                        !!plan.emailType
-                    ).length === 0 && (
-                    <div className="bg-gray-50 border rounded-lg p-4">
-
-                      <p className="text-sm text-gray-500">
-                        No email plans available.
-                      </p>
-
-                    </div>
-                  )}
+                  </div>
 
                 </div>
 
-              </div>
+              )}
 
             </div>
 
@@ -1359,8 +1833,7 @@ const ArchivedOrderDetails: React.FC = () => {
                   (
                     !selectedStatuses.order &&
                     !selectedStatuses.domain &&
-                    selectedStatuses.plans
-                      .length === 0
+                    selectedStatuses.plans.length === 0
                   )
                 }
                 className="px-5 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1383,3 +1856,4 @@ const ArchivedOrderDetails: React.FC = () => {
 };
 
 export default ArchivedOrderDetails;
+
