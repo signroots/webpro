@@ -26,7 +26,7 @@ import { toast } from "react-toastify";
 import ExpiryBadge from "./ExpiryBadge";
 import ServiceIcons from "../Order/ServiceIcons";
 import OrdersTable from "./OrdersTable";
-import type { Order,Client,Customer,MSOfficeDetails} from "../../../types/order";
+import type { Order,Client,Customer,MSOfficeDetails, Status} from "../../../types/order";
 
 // -------------------- Types --------------------
 
@@ -598,15 +598,7 @@ setTotalOrders(response.total || 0);
 // ]);
   // const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
   const paginatedOrders = orders;
-const getStatusClass = (
-  status?: {
-    _id: string;
-    name: string;
-    code: string;
-    type: "order" | "plan" | "domain";
-    is_active: boolean;
-  } | null
-) => {
+const getStatusClass = (status?: Status | null): string => {
   const normalized = status?.code?.trim().toUpperCase();
 
   if (normalized === "ACTIVE") {

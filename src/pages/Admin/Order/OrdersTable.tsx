@@ -1,50 +1,61 @@
 import React from "react";
-import { FaEye, FaEdit, FaLock, FaExternalLinkAlt,FaCopy } from "react-icons/fa";
-import { Link, NavigateFunction } from "react-router-dom";
-// import { Order } from "./index";
-import { Order } from "../../../types/order";
+import {
+  FaEye,
+  FaEdit,
+  FaLock,
+  FaExternalLinkAlt,
+  FaCopy,
+} from "react-icons/fa";
+import {
+  Link,
+  NavigateFunction,
+} from "react-router-dom";
+
+import {
+  Order,
+  Status,
+} from "../../../types/order";
+
 import ServiceIcons from "./ServiceIcons";
 import ExpiryBadge from "./ExpiryBadge";
 import { useAuth } from "../../../Common/AuthContext/Auth";
-// interface Order {
-//   _id: string;
-//   domainName: string;
-//   lockStatus?: string;
-//   order_status?: string;
 
-//   client?: {
-//     _id: string;
-//     c_company?: string;
-//     c_name?: string;
-//   };
-// }
+/* =========================================================
+   PROPS
+========================================================= */
 
 interface OrdersTableProps {
   paginatedOrders: Order[];
-  currentPage?: number;
-  itemsPerPage?: number;
-  highlightedOrderId?: string | null;
-  userType?: string;
-  //  isArchived?: boolean;
-  // setSelectedOrder: (order: Order) => void;
 
-  // setModalType: (
-  //   type: "view" | "edit" | "addCustomer" | null
-  // ) => void;
+  currentPage?: number;
+
+  itemsPerPage?: number;
+
+  highlightedOrderId?: string | null;
+
+  userType?: string;
 
   handleEdit: (order: Order) => void;
 
-getStatusClass: (status?: {
-  _id: string;
-  name: string;
-  code: string;
-  type: "order" | "plan" | "domain";
-  is_active: boolean;
-} | null) => string;
+  /*
+   * Use the same Status type from types/order.ts
+   */
+  getStatusClass: (
+    status?: Status | null
+  ) => string;
 
   navigate: NavigateFunction;
+
+  /*
+   * false / undefined = Normal Orders page
+   * true = Archived Orders page
+   */
   showDomainStatus?: boolean;
 }
+
+/* =========================================================
+   COMPONENT
+========================================================= */
 
 const OrdersTable: React.FC<OrdersTableProps> = ({
   paginatedOrders,
@@ -54,22 +65,47 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
   handleEdit,
   getStatusClass,
   navigate,
-   showDomainStatus = false,
-  // isArchived = false,
+  showDomainStatus = false,
 }) => {
   const { user } = useAuth();
 
   const userType = user?.type;
 
-  console.log("AUTH USER:", user);
-  console.log("USER TYPE:", userType);
+  /*
+   * IMPORTANT
+   *
+   * Normal Orders:
+   * showDomainStatus = false
+   *
+   * Archived Orders:
+   * showDomainStatus = true
+   */
+  const isArchivedPage =
+    showDomainStatus === true;
+
+  console.log(
+    "AUTH USER:",
+    user
+  );
+
+  console.log(
+    "USER TYPE:",
+    userType
+  );
+
+  console.log(
+    "ORDERS TABLE - isArchivedPage:",
+    isArchivedPage
+  );
 
   return (
     <div className="bg-white shadow rounded-lg overflow-x-auto">
 
       <table className="w-full table-fixed divide-y divide-gray-200 text-sm">
 
-        {/* ================= HEADER ================= */}
+        {/* =================================================
+            HEADER
+        ================================================= */}
 
         <thead className="bg-gray-100 text-gray-600 uppercase text-xs tracking-wider">
 
@@ -103,204 +139,275 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
 
         </thead>
 
-
-        {/* ================= BODY ================= */}
+        {/* =================================================
+            BODY
+        ================================================= */}
 
         <tbody className="divide-y divide-gray-100 text-gray-900">
 
-          {paginatedOrders.map((order, idx) => (
+          {paginatedOrders.map(
+            (order, idx) => (
 
-            <tr
-              key={order._id}
-              className={`transition-all duration-500 ${
-                highlightedOrderId === order._id
-                  ? "bg-blue-50 border-l-4 border-blue-500"
-                  : "hover:bg-gray-50"
-              }`}
-            >
+              <tr
+                key={order._id}
+                className={`transition-all duration-500 ${
+                  highlightedOrderId ===
+                  order._id
+                    ? "bg-blue-50 border-l-4 border-blue-500"
+                    : "hover:bg-gray-50"
+                }`}
+              >
 
-              {/* SL NO */}
+                {/* =================================================
+                    SL NO
+                ================================================= */}
 
-              <td className="px-3 py-4 text-center">
+                <td className="px-3 py-4 text-center">
 
-       {currentPage && itemsPerPage
-  ? (currentPage - 1) * itemsPerPage + idx + 1
-  : idx + 1}
+                  {currentPage &&
+                  itemsPerPage
+                    ? (currentPage - 1) *
+                        itemsPerPage +
+                      idx +
+                      1
+                    : idx + 1}
 
-              </td>
+                </td>
 
+                {/* =================================================
+                    DOMAIN
+                ================================================= */}
 
-              {/* DOMAIN */}
-<td className="px-3 py-4">
-  <div className="flex items-center">
+                <td className="px-3 py-4">
 
-    {/* LOCK - vertically centered between domain & customer */}
-    {order.lockStatus === "Locked" ? (
-      <FaLock className="text-red-500 w-4 h-4 shrink-0 mr-1.5" />
-    ) : (
-      <FaLock className="text-green-500 w-4 h-4 shrink-0 mr-1.5" />
-    )}
+                  <div className="flex items-center">
 
-    {/* DOMAIN + CUSTOMER */}
-    <div className="flex flex-col">
+                    {/* LOCK */}
 
-      {/* Domain */}
-      <div className="flex items-center gap-1">
-        <span className="font-medium text-[16px] leading-5">
-          {order.domainName}
-        </span>
- {/* Copy Domain */}
-          <button
-            type="button"
-            title="Copy Domain"
-            className="text-gray-400 hover:text-blue-600"
-            onClick={(e) => {
-              e.stopPropagation();
+                    {order.lockStatus ===
+                    "Locked" ? (
+                      <FaLock
+                        className="text-red-500 w-4 h-4 shrink-0 mr-1.5"
+                        title="Locked"
+                      />
+                    ) : (
+                      <FaLock
+                        className="text-green-500 w-4 h-4 shrink-0 mr-1.5"
+                        title="Unlocked"
+                      />
+                    )}
 
-              navigator.clipboard.writeText(
-                order.domainName
-              );
-            }}
-          >
-            <FaCopy className="w-3 h-3" />
-          </button>
-        <FaExternalLinkAlt
-          className="w-3 h-3 text-gray-500 cursor-pointer hover:text-blue-600"
-          title="Open Domain"
-          onClick={(e) => {
-            e.stopPropagation();
+                    {/* DOMAIN + CUSTOMER */}
 
-            window.open(
-              `https://${order.domainName}`,
-              "_blank"
-            );
-          }}
-        />
-      </div>
+                    <div className="flex flex-col">
 
-{/* Customer */}
-{userType === "admin" && order.client ? (
-  <Link
-    to={`/admin/orders/customer/${order.client._id}`}
-    className="text-sm text-blue-600 leading-5"
-  >
-    {order.client.c_company || order.client.c_name}
-  </Link>
-) : (
-  <span className="text-gray-400 text-xs leading-5"></span>
-)}
-    </div>
+                      {/* DOMAIN */}
 
-  </div>
-</td>
+                      <div className="flex items-center gap-1">
 
+                        <span className="font-medium text-[16px] leading-5">
+                          {order.domainName}
+                        </span>
 
-              {/* SERVICES */}
+                        {/* COPY DOMAIN */}
 
-              <td className="px-4 py-4 text-left">
+                        <button
+                          type="button"
+                          title="Copy Domain"
+                          className="text-gray-400 hover:text-blue-600"
+                          onClick={(e) => {
+                            e.stopPropagation();
 
-                <div className="flex items-center">
+                            navigator.clipboard.writeText(
+                              order.domainName
+                            );
+                          }}
+                        >
+                          <FaCopy className="w-3 h-3" />
+                        </button>
 
-                  <ServiceIcons order={order} />
+                        {/* OPEN DOMAIN */}
 
-                </div>
+                        <FaExternalLinkAlt
+                          className="w-3 h-3 text-gray-500 cursor-pointer hover:text-blue-600"
+                          title="Open Domain"
+                          onClick={(e) => {
+                            e.stopPropagation();
 
-              </td>
+                            window.open(
+                              `https://${order.domainName}`,
+                              "_blank"
+                            );
+                          }}
+                        />
 
+                      </div>
 
-              {/* EXPIRY */}
+                      {/* CUSTOMER */}
 
-              <td className="px-3 py-4 text-center">
+                      {userType ===
+                        "admin" &&
+                      order.client ? (
+                        <Link
+                          to={`/admin/orders/customer/${order.client._id}`}
+                          className="text-sm text-blue-600 leading-5"
+                        >
+                          {order.client
+                            .c_company ||
+                            order.client
+                              .c_name}
+                        </Link>
+                      ) : (
+                        <span className="text-gray-400 text-xs leading-5">
+                          &nbsp;
+                        </span>
+                      )}
 
-                <ExpiryBadge order={order} />
+                    </div>
 
-              </td>
+                  </div>
 
+                </td>
 
+                {/* =================================================
+                    SERVICES
+                ================================================= */}
 
-             {/* ================= STATUS ================= */}
+                <td className="px-4 py-4 text-left">
 
-{/* ================= STATUS ================= */}
+                  <div className="flex items-center">
 
-<td className="px-3 py-4 text-center">
-  <div className="flex flex-col items-center gap-1">
+                    <ServiceIcons
+                      order={order}
+                      isArchivedPage={
+                        isArchivedPage
+                      }
+                    />
 
-    {/* ORDER STATUS */}
+                  </div>
 
-    <span
-  className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${getStatusClass(
-    order.order_status
-  )}`}
->
-  {showDomainStatus
-    ? `Order: ${order.order_status?.name || "N/A"}`
-    : order.order_status?.name || "N/A"}
-</span>
+                </td>
 
+                {/* =================================================
+                    EXPIRY
+                ================================================= */}
 
-    {/* DOMAIN STATUS - ONLY WHEN ENABLED */}
+                <td className="px-3 py-4 text-center">
 
-    {showDomainStatus && (
-      <span
-  className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${getStatusClass(
-    order.archived_status || order.domain_status
-  )}`}
->
-  Domain:{" "}
-  {order.archived_status?.name ||
-    order.domain_status?.name ||
-    "N/A"}
-</span>
+                  <ExpiryBadge
+                    order={order}
+                  />
 
-    )}
+                </td>
 
-  </div>
-</td>
-              {/* ACTIONS */}
+                {/* =================================================
+                    STATUS
+                ================================================= */}
 
-              <td className="px-3 py-4">
+                <td className="px-3 py-4 text-center">
 
-                <div className="flex justify-center gap-3 text-gray-500">
+                  <div className="flex flex-col items-center gap-1">
 
-                  {/* VIEW */}
+                    {/* ORDER STATUS */}
 
-                  <button
-                    className="hover:text-blue-600"
-                    title="View"
-                   onClick={() =>
-  navigate(
-    showDomainStatus
-      ? `/admin/archived/order-details/${order._id}`
-      : `/admin/orders/order-details/${order._id}`,
-    {
-      state: {
-        fromPage: currentPage,
-      },
-    }
-  )
-}
-                  >
-                    <FaEye className="w-4 h-4" />
-                  </button>
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${getStatusClass(
+                        order.order_status
+                      )}`}
+                    >
+                      {showDomainStatus
+                        ? `Order: ${
+                            order
+                              .order_status
+                              ?.name ||
+                            "N/A"
+                          }`
+                        : order
+                            .order_status
+                            ?.name ||
+                          "N/A"}
+                    </span>
 
+                    {/* =================================================
+                        DOMAIN STATUS
+                    ================================================= */}
 
-                  {/* EDIT */}
+                    {showDomainStatus && (
 
-                  <button
-                    onClick={() => handleEdit(order)}
-                    className="hover:text-yellow-600"
-                    title="Edit"
-                  >
-                    <FaEdit className="w-4 h-4" />
-                  </button>
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${getStatusClass(
+                          order.archived_status ||
+                            order.domain_status
+                        )}`}
+                      >
+                        Domain:{" "}
 
-                </div>
+                        {order
+                          .archived_status
+                          ?.name ||
+                          order
+                            .domain_status
+                            ?.name ||
+                          "N/A"}
 
-              </td>
+                      </span>
 
-            </tr>
+                    )}
 
-          ))}
+                  </div>
+
+                </td>
+
+                {/* =================================================
+                    ACTIONS
+                ================================================= */}
+
+                <td className="px-3 py-4">
+
+                  <div className="flex justify-center gap-3 text-gray-500">
+
+                    {/* VIEW */}
+
+                    <button
+                      className="hover:text-blue-600"
+                      title="View"
+                      onClick={() =>
+                        navigate(
+                          showDomainStatus
+                            ? `/admin/archived/order-details/${order._id}`
+                            : `/admin/orders/order-details/${order._id}`,
+                          {
+                            state: {
+                              fromPage:
+                                currentPage,
+                            },
+                          }
+                        )
+                      }
+                    >
+                      <FaEye className="w-4 h-4" />
+                    </button>
+
+                    {/* EDIT */}
+
+                    <button
+                      onClick={() =>
+                        handleEdit(order)
+                      }
+                      className="hover:text-yellow-600"
+                      title="Edit"
+                    >
+                      <FaEdit className="w-4 h-4" />
+                    </button>
+
+                  </div>
+
+                </td>
+
+              </tr>
+
+            )
+          )}
 
         </tbody>
 

@@ -147,7 +147,6 @@ interface OrderForm {
   hosting_expiry_date?: string;
   hosting_registration_date?: string;
 
-  // Domain Source
   domainSource?: any;
 
   newCustomer: {
@@ -207,6 +206,7 @@ const UpdateOrder: React.FC = () => {
         status?.name ||
           status?.code ||
           status?.status ||
+          status?.value ||
           ""
       )
         .trim()
@@ -216,13 +216,6 @@ const UpdateOrder: React.FC = () => {
     return String(status).trim().toUpperCase();
   };
 
-  /**
-   * TRANSFERRED and CANCELLED plans are VIEW ONLY.
-   *
-   * They can be viewed but:
-   * - cannot be edited
-   * - cannot be removed
-   */
   const isLockedStatus = (status: any): boolean => {
     const statusName = getStatusName(status);
 
@@ -236,10 +229,12 @@ const UpdateOrder: React.FC = () => {
     if (!plan) return false;
 
     return (
-      Boolean(plan.isTransferred) ||
+      plan.isTransferred === true ||
       isLockedStatus(plan.primary_status) ||
       isLockedStatus(plan.primaryStatus) ||
-      isLockedStatus(plan.status)
+      isLockedStatus(plan.status) ||
+      isLockedStatus(plan.order_status) ||
+      isLockedStatus(plan.domain_status)
     );
   };
 
@@ -382,6 +377,26 @@ const UpdateOrder: React.FC = () => {
   const [hostingChecked, setHostingChecked] = useState(false);
   const [websiteChecked, setWebsiteChecked] = useState(false);
   const [sslChecked, setSslChecked] = useState(false);
+
+  // =========================================================
+  // LOCKED SERVICE CHECKBOX STATUS
+  // =========================================================
+
+  const hasLockedEmailPlan = emailPlans.some((plan) =>
+    isLockedPlan(plan)
+  );
+
+  const hasLockedStoragePlan = storagePlans.some((plan) =>
+    isLockedPlan(plan)
+  );
+
+  const hasLockedMsofficePlan = msofficePlans.some((plan) =>
+    isLockedPlan(plan)
+  );
+
+  const hasLockedHostingPlan = hostingPlans.some((plan) =>
+    isLockedPlan(plan)
+  );
 
   // =========================================================
   // FETCH PLANS
@@ -857,6 +872,8 @@ const UpdateOrder: React.FC = () => {
 
     switch (name) {
       case "email_services":
+        if (hasLockedEmailPlan) return;
+
         setEmailChecked(checked);
 
         if (checked && emailPlans.length === 0) {
@@ -865,6 +882,8 @@ const UpdateOrder: React.FC = () => {
         break;
 
       case "storage_services":
+        if (hasLockedStoragePlan) return;
+
         setStorageChecked(checked);
 
         if (checked && storagePlans.length === 0) {
@@ -873,6 +892,8 @@ const UpdateOrder: React.FC = () => {
         break;
 
       case "msoffice_services":
+        if (hasLockedMsofficePlan) return;
+
         setMsofficeChecked(checked);
 
         if (checked && msofficePlans.length === 0) {
@@ -1391,11 +1412,11 @@ const UpdateOrder: React.FC = () => {
           email_expiryDate:
             order.email_expiryDate?.slice(0, 10) || "",
 
-          users: order.users || 1,
+          users:
+            order.users || 1,
 
-          // IMPORTANT:
-          // Keep original plans for locked-plan preservation.
-          plans: order.plans || [],
+          plans:
+            order.plans || [],
         }));
 
         // =====================================================
@@ -1493,7 +1514,6 @@ const UpdateOrder: React.FC = () => {
                 }
               }
 
-              // Locked plan must always remain visible
               if (
                 p.planId &&
                 p.planName &&
@@ -1789,11 +1809,6 @@ const UpdateOrder: React.FC = () => {
         emailPlans.length > 0
       ) {
         emailPlans.forEach((plan) => {
-          /**
-           * LOCKED PLAN:
-           * Do NOT create a modified version.
-           * Original plan will be restored below.
-           */
           if (isLockedPlan(plan)) return;
 
           combinedPlans.push({
@@ -2022,7 +2037,7 @@ const UpdateOrder: React.FC = () => {
       }
 
       // =====================================================
-      // PRESERVE TRANSFERRED / CANCELLED PLANS
+      // PRESERVE LOCKED PLANS
       // =====================================================
 
       const originalLockedPlans =
@@ -2237,9 +2252,7 @@ const UpdateOrder: React.FC = () => {
           onSubmit={handleSubmit}
         >
 
-          {/* =================================================
-              CUSTOMER TYPE
-          ================================================= */}
+          {/* CUSTOMER TYPE */}
 
           <div>
             <label className="mr-4 text-black">
@@ -2271,9 +2284,7 @@ const UpdateOrder: React.FC = () => {
             </label>
           </div>
 
-          {/* =================================================
-              EXISTING CUSTOMER
-          ================================================= */}
+          {/* EXISTING CUSTOMER */}
 
           {customerType === "existing" && (
             <div className="mb-4">
@@ -2321,9 +2332,7 @@ const UpdateOrder: React.FC = () => {
             </div>
           )}
 
-          {/* =================================================
-              NEW CUSTOMER
-          ================================================= */}
+          {/* NEW CUSTOMER */}
 
           {customerType === "new" && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -2636,9 +2645,7 @@ const UpdateOrder: React.FC = () => {
             </div>
           )}
 
-          {/* =================================================
-              DOMAIN DETAILS
-          ================================================= */}
+          {/* DOMAIN DETAILS */}
 
           <h2 className="text-xl font-semibold underline text-indigo-600 mb-3">
             Domain Details
@@ -2797,25 +2804,23 @@ const UpdateOrder: React.FC = () => {
 
           </div>
 
-          {/* =================================================
-              SERVICES
-          ================================================= */}
+          {/* SERVICES */}
 
           <h2 className="text-xl font-semibold underline text-indigo-600 mb-3">
             Services
           </h2>
 
-          {/* =================================================
-              EMAIL
-          ================================================= */}
+          {/* EMAIL */}
 
           <label className="flex items-center gap-2">
+
             <input
               type="checkbox"
               name="email_services"
               checked={emailChecked}
               onChange={handleCheckboxChange}
-              className="h-4 w-4"
+              disabled={hasLockedEmailPlan}
+              className="h-4 w-4 disabled:cursor-not-allowed disabled:opacity-50"
             />
 
             Email Services
@@ -2854,8 +2859,6 @@ const UpdateOrder: React.FC = () => {
                       )}
 
                       <div className="grid grid-cols-1 md:grid-cols-5 gap-2 items-end">
-
-                        {/* Email Type */}
 
                         <div>
                           <label>
@@ -2898,8 +2901,6 @@ const UpdateOrder: React.FC = () => {
                           </select>
                         </div>
 
-                        {/* Plan */}
-
                         <div>
                           <label className="block mb-1 text-gray-700">
                             Select Plan
@@ -2941,8 +2942,6 @@ const UpdateOrder: React.FC = () => {
                           </select>
                         </div>
 
-                        {/* Users */}
-
                         <div>
                           <label>
                             Users
@@ -2952,8 +2951,7 @@ const UpdateOrder: React.FC = () => {
                             type="number"
                             min={0}
                             value={
-                              plan.users ||
-                              0
+                              plan.users || 0
                             }
                             onChange={(e) =>
                               handleEmailPlanChange(
@@ -2966,8 +2964,6 @@ const UpdateOrder: React.FC = () => {
                             className="w-full border rounded px-2 py-1 disabled:bg-gray-200 disabled:cursor-not-allowed"
                           />
                         </div>
-
-                        {/* Registration */}
 
                         <div>
                           <label>
@@ -2991,8 +2987,6 @@ const UpdateOrder: React.FC = () => {
                             className="w-full border rounded px-2 py-1 disabled:bg-gray-200 disabled:cursor-not-allowed"
                           />
                         </div>
-
-                        {/* Expiry */}
 
                         <div>
                           <label>
@@ -3051,17 +3045,17 @@ const UpdateOrder: React.FC = () => {
             </div>
           )}
 
-          {/* =================================================
-              STORAGE
-          ================================================= */}
+          {/* STORAGE */}
 
           <label className="flex items-center gap-2 mt-6">
+
             <input
               type="checkbox"
               name="storage_services"
               checked={storageChecked}
               onChange={handleCheckboxChange}
-              className="h-4 w-4"
+              disabled={hasLockedStoragePlan}
+              className="h-4 w-4 disabled:cursor-not-allowed disabled:opacity-50"
             />
 
             Storage Services
@@ -3192,8 +3186,7 @@ const UpdateOrder: React.FC = () => {
                             type="number"
                             min={1}
                             value={
-                              plan.users ||
-                              1
+                              plan.users || 1
                             }
                             onChange={(e) =>
                               handleStoragePlanChange(
@@ -3287,17 +3280,17 @@ const UpdateOrder: React.FC = () => {
             </div>
           )}
 
-          {/* =================================================
-              MS OFFICE
-          ================================================= */}
+          {/* MS OFFICE */}
 
           <label className="flex items-center gap-2 mt-4">
+
             <input
               type="checkbox"
               name="msoffice_services"
               checked={msofficeChecked}
               onChange={handleCheckboxChange}
-              className="h-4 w-4"
+              disabled={hasLockedMsofficePlan}
+              className="h-4 w-4 disabled:cursor-not-allowed disabled:opacity-50"
             />
 
             MS Office Services
@@ -3446,8 +3439,7 @@ const UpdateOrder: React.FC = () => {
                           <input
                             type="number"
                             value={
-                              plan.users ||
-                              ""
+                              plan.users || ""
                             }
                             onChange={(e) =>
                               handleMsofficePlanChange(
@@ -3541,15 +3533,16 @@ const UpdateOrder: React.FC = () => {
             </div>
           )}
 
-          {/* =================================================
-              HOSTING
-          ================================================= */}
+          {/* HOSTING */}
 
           <label className="flex items-center gap-2 mt-3">
+
             <input
               type="checkbox"
               checked={hostingChecked}
               onChange={(e) => {
+                if (hasLockedHostingPlan) return;
+
                 const checked =
                   e.target.checked;
 
@@ -3567,8 +3560,7 @@ const UpdateOrder: React.FC = () => {
                       hosting_plan: "",
                       hosting_subplan: "",
                       storage: "",
-                      registrationDate:
-                        "",
+                      registrationDate: "",
                       expiryDate: "",
                     },
                   ]);
@@ -3578,7 +3570,8 @@ const UpdateOrder: React.FC = () => {
                   setHostingPlans([]);
                 }
               }}
-              className="h-4 w-4"
+              disabled={hasLockedHostingPlan}
+              className="h-4 w-4 disabled:cursor-not-allowed disabled:opacity-50"
             />
 
             Hosting
@@ -3612,8 +3605,6 @@ const UpdateOrder: React.FC = () => {
                       — view only
                     </div>
                   )}
-
-                  {/* Hosting Type */}
 
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">
@@ -3655,8 +3646,6 @@ const UpdateOrder: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* Sub Type */}
-
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">
                       Hosting Sub Type
@@ -3667,7 +3656,9 @@ const UpdateOrder: React.FC = () => {
                         plan.hosting_subplan ||
                         ""
                       }
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        if (locked) return;
+
                         setHostingPlans(
                           (prev) =>
                             prev.map(
@@ -3686,8 +3677,8 @@ const UpdateOrder: React.FC = () => {
                                     }
                                   : item
                             )
-                        )
-                      }
+                        );
+                      }}
                       disabled={locked}
                       className="w-full border rounded px-3 py-2 disabled:bg-gray-200 disabled:cursor-not-allowed"
                     >
@@ -3712,8 +3703,6 @@ const UpdateOrder: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* Storage */}
-
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">
                       Storage
@@ -3724,7 +3713,9 @@ const UpdateOrder: React.FC = () => {
                         plan.storage ||
                         ""
                       }
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        if (locked) return;
+
                         setHostingPlans(
                           (prev) =>
                             prev.map(
@@ -3743,8 +3734,8 @@ const UpdateOrder: React.FC = () => {
                                     }
                                   : item
                             )
-                        )
-                      }
+                        );
+                      }}
                       disabled={locked}
                       className="w-full border rounded px-3 py-2 disabled:bg-gray-200 disabled:cursor-not-allowed"
                     >
@@ -3769,8 +3760,6 @@ const UpdateOrder: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* Registration */}
-
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">
                       Registration Date
@@ -3782,7 +3771,9 @@ const UpdateOrder: React.FC = () => {
                         plan.registrationDate ||
                         ""
                       }
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        if (locked) return;
+
                         setHostingPlans(
                           (prev) =>
                             prev.map(
@@ -3801,14 +3792,12 @@ const UpdateOrder: React.FC = () => {
                                     }
                                   : item
                             )
-                        )
-                      }
+                        );
+                      }}
                       disabled={locked}
                       className="w-full border rounded px-3 py-2 disabled:bg-gray-200 disabled:cursor-not-allowed"
                     />
                   </div>
-
-                  {/* Expiry */}
 
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">
@@ -3821,7 +3810,9 @@ const UpdateOrder: React.FC = () => {
                         plan.expiryDate ||
                         ""
                       }
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        if (locked) return;
+
                         setHostingPlans(
                           (prev) =>
                             prev.map(
@@ -3840,8 +3831,8 @@ const UpdateOrder: React.FC = () => {
                                     }
                                   : item
                             )
-                        )
-                      }
+                        );
+                      }}
                       disabled={locked}
                       className="w-full border rounded px-3 py-2 disabled:bg-gray-200 disabled:cursor-not-allowed"
                     />
@@ -3852,9 +3843,7 @@ const UpdateOrder: React.FC = () => {
             }
           )}
 
-          {/* =================================================
-              WEBSITE / SSL
-          ================================================= */}
+          {/* WEBSITE / SSL */}
 
           <div className="mt-3">
 
@@ -3890,9 +3879,7 @@ const UpdateOrder: React.FC = () => {
 
           </div>
 
-          {/* =================================================
-              BUTTONS
-          ================================================= */}
+          {/* BUTTONS */}
 
           <div className="flex justify-end gap-3 mt-6">
 
@@ -3923,9 +3910,7 @@ const UpdateOrder: React.FC = () => {
         </form>
       </div>
 
-      {/* =====================================================
-          REMOVE MODAL
-      ===================================================== */}
+      {/* REMOVE MODAL */}
 
       {confirmRemove && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
@@ -3962,6 +3947,9 @@ const UpdateOrder: React.FC = () => {
 
             </div>
 
+
+            
+
           </div>
         </div>
       )}
@@ -3971,4 +3959,3 @@ const UpdateOrder: React.FC = () => {
 };
 
 export default UpdateOrder;
-

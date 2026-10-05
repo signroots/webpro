@@ -28,6 +28,10 @@ export default function ServiceIcons({
 
   const { user } = useAuth();
 
+  // =========================================================
+  // USER TYPE
+  // =========================================================
+
   const loggedInUserType =
     user?.type?.toLowerCase() ||
     user?.role?.toLowerCase() ||
@@ -38,58 +42,185 @@ export default function ServiceIcons({
     loggedInUserType === "customer";
 
   // =========================================================
-  // DOMAIN STATUS
+  // STATUS HELPER
   // =========================================================
 
-  const domainStatus = String(
-    order?.domain_status?.code ||
-      order?.domain_status?.name ||
-      ""
-  )
-    .trim()
-    .toUpperCase();
-
-  // =========================================================
-  // DOMAIN DISABLE
-  // =========================================================
-  // ONLY Order page:
-  // TRANSFERRED / CANCELLED = disabled
-  //
-  // Archived page:
-  // Always enabled
-  // =========================================================
-
-  const isDomainDisabled =
-    !isArchivedPage &&
-    ["TRANSFERRED", "CANCELLED"].includes(domainStatus);
-
-  // =========================================================
-  // PLAN DISABLE
-  // =========================================================
-  // ONLY Order page:
-  // TRANSFERRED / CANCELLED = disabled
-  //
-  // Archived page:
-  // Always enabled
-  // =========================================================
-
-  const isPlanDisabled = (plan: any) => {
-    // Archived page => NEVER disable
-    if (isArchivedPage === true) {
-      return false;
+  const getStatusValue = (status: any): string => {
+    if (!status) {
+      return "";
     }
 
-    const primaryStatus = String(
-      plan?.primary_status?.code ||
-        plan?.primary_status?.name ||
+    if (typeof status === "string") {
+      return status.trim().toUpperCase();
+    }
+
+    return String(
+      status?.code ||
+        status?.name ||
         ""
     )
       .trim()
       .toUpperCase();
+  };
 
-    return ["TRANSFERRED", "CANCELLED"].includes(
+  // =========================================================
+  // SPECIAL STATUSES
+  // =========================================================
+
+  const DISABLED_STATUSES = [
+    "TRANSFERRED",
+    "CANCELLED",
+  ];
+
+  // =========================================================
+  // DOMAIN STATUS
+  // =========================================================
+  //
+  // NORMAL ORDER PAGE:
+  //
+  // ACTIVE
+  //   -> Enabled
+  //
+  // TRANSFERRED / CANCELLED
+  //   -> Disabled
+  //
+  //
+  // ARCHIVED ORDER PAGE:
+  //
+  // ACTIVE
+  //   -> Disabled
+  //
+  // TRANSFERRED / CANCELLED
+  //   -> Enabled
+  //
+  // =========================================================
+
+  const domainStatus = getStatusValue(
+    order?.domain_status
+  );
+
+  const isDomainDisabled = isArchivedPage
+    ? !DISABLED_STATUSES.includes(domainStatus)
+    : DISABLED_STATUSES.includes(domainStatus);
+
+  // =========================================================
+  // PLAN STATUS
+  // =========================================================
+
+  const getPlanPrimaryStatus = (
+    plan: any
+  ): string => {
+    return getStatusValue(
+      plan?.primary_status
+    );
+  };
+
+  // =========================================================
+  // PLAN DISABLED LOGIC
+  // =========================================================
+  //
+  // NORMAL ORDER PAGE:
+  //
+  // ACTIVE
+  //   -> Enabled
+  //
+  // TRANSFERRED / CANCELLED
+  //   -> Disabled
+  //
+  //
+  // ARCHIVED ORDER PAGE:
+  //
+  // ACTIVE
+  //   -> Disabled
+  //
+  // TRANSFERRED / CANCELLED
+  //   -> Enabled
+  //
+  // =========================================================
+
+  const isPlanDisabled = (
+    plan: any
+  ): boolean => {
+    const primaryStatus =
+      getPlanPrimaryStatus(plan);
+
+    if (isArchivedPage) {
+      return !DISABLED_STATUSES.includes(
+        primaryStatus
+      );
+    }
+
+    return DISABLED_STATUSES.includes(
       primaryStatus
     );
+  };
+
+  // =========================================================
+  // PLAN TITLE
+  // =========================================================
+
+  const getPlanStatusTitle = (
+    plan: any,
+    serviceName: string
+  ): string => {
+    const status =
+      getPlanPrimaryStatus(plan);
+
+    if (
+      isPlanDisabled(plan)
+    ) {
+      return `${serviceName} ${status}`;
+    }
+
+    return serviceName;
+  };
+
+  // =========================================================
+  // DOMAIN IMAGE URL
+  // =========================================================
+
+  const getDomainImageUrl = (): string | null => {
+    const image =
+      order?.domainSource?.image;
+
+    if (!image) {
+      return null;
+    }
+
+    if (image.startsWith("http")) {
+      return image;
+    }
+
+    if (image.startsWith("/")) {
+      return `${API_BASE_URL}${image}`;
+    }
+
+    return `${API_BASE_URL}/uploads/domainsources/${image}`;
+  };
+
+  // =========================================================
+  // EMAIL IMAGE URL
+  // =========================================================
+
+  const getEmailImageUrl = (
+    plan: any
+  ): string => {
+    const image =
+      plan?.emailTypeImage;
+
+    if (!image) {
+      return "/email.png";
+    }
+
+    if (image.startsWith("http")) {
+      return image;
+    }
+
+    if (image.startsWith("/")) {
+      return `${API_BASE_URL}${image}`;
+    }
+
+    return `${API_BASE_URL}/${image}`;
   };
 
   // =========================================================
@@ -97,14 +228,22 @@ export default function ServiceIcons({
   // =========================================================
 
   const handleMsofficeHover = async () => {
+    if (!order?._id) {
+      return;
+    }
+
     setSelectedOrderId(order._id);
     setIsHovering(true);
 
-    if (msofficeCache[order._id]) return;
+    if (msofficeCache[order._id]) {
+      return;
+    }
 
     try {
       const fullOrder =
-        await fetchOrderById(order._id);
+        await fetchOrderById(
+          order._id
+        );
 
       const plans =
         fullOrder?.data?.plans || [];
@@ -112,16 +251,20 @@ export default function ServiceIcons({
       const msofficePlans =
         plans.filter(
           (p: any) =>
-            p?.serviceType?.toLowerCase() ===
+            p?.serviceType
+              ?.toLowerCase() ===
               "msoffice" ||
             p?.type?.toLowerCase() ===
               "msoffice"
         );
 
-      setMsofficeCache((prev: any) => ({
-        ...prev,
-        [order._id]: msofficePlans,
-      }));
+      setMsofficeCache(
+        (prev: any) => ({
+          ...prev,
+          [order._id]:
+            msofficePlans,
+        })
+      );
     } catch (err) {
       console.error(
         "MS Office fetch error",
@@ -130,11 +273,110 @@ export default function ServiceIcons({
     }
   };
 
+  // =========================================================
+  // DOMAIN ICON
+  // =========================================================
+
+  const renderDomainIcon = () => {
+    // =======================================================
+    // DISABLED DOMAIN
+    // =======================================================
+
+    if (isDomainDisabled) {
+      return (
+        <FaGlobe
+          className="w-6 h-6 text-gray-400"
+          title={`Domain ${domainStatus}`}
+        />
+      );
+    }
+
+    // =======================================================
+    // ENABLED DOMAIN
+    // =======================================================
+
+    const domainImage =
+      getDomainImageUrl();
+
+    // =======================================================
+    // CLIENT / CUSTOMER
+    // =======================================================
+
+    if (isClientOrCustomer) {
+      const managedBy =
+        String(
+          order?.managedBy || ""
+        )
+          .trim()
+          .toLowerCase();
+
+      if (managedBy === "signroots") {
+        return (
+          <FaGlobe
+            className="w-6 h-6 text-blue-500"
+            title="Managed by SignRoots"
+          />
+        );
+      }
+
+      if (
+        managedBy === "customer" &&
+        domainImage
+      ) {
+        return (
+          <img
+            src={domainImage}
+            className="w-6 h-6 object-contain"
+            title={
+              order?.domainSource?.name ||
+              "Domain Source"
+            }
+          />
+        );
+      }
+
+      return (
+        <FaGlobe
+          className="w-6 h-6 text-gray-400"
+          title="No Domain Source"
+        />
+      );
+    }
+
+    // =======================================================
+    // ADMIN / OTHER USER
+    // =======================================================
+
+    if (domainImage) {
+      return (
+        <img
+          src={domainImage}
+          className="w-6 h-6 object-contain"
+          title={
+            order?.domainSource?.name ||
+            "Domain Source"
+          }
+        />
+      );
+    }
+
+    return (
+      <FaGlobe
+        className="w-6 h-6 text-gray-400"
+        title="No Domain Source"
+      />
+    );
+  };
+
+  // =========================================================
+  // RETURN
+  // =========================================================
+
   return (
     <div className="flex items-center justify-center gap-3 whitespace-nowrap">
 
       {/* =====================================================
-          DOMAIN SOURCE
+          DOMAIN
       ===================================================== */}
 
       <div
@@ -143,95 +385,8 @@ export default function ServiceIcons({
             ? "opacity-40 grayscale pointer-events-none"
             : ""
         }
-        title={
-          isDomainDisabled
-            ? `Domain ${domainStatus}`
-            : undefined
-        }
       >
-        {isClientOrCustomer ? (
-          String(order?.managedBy || "")
-            .trim()
-            .toLowerCase() === "signroots" ? (
-            <FaGlobe
-              className={`w-6 h-6 ${
-                isDomainDisabled
-                  ? "text-gray-400"
-                  : "text-blue-500"
-              }`}
-              title={
-                isDomainDisabled
-                  ? `Domain ${domainStatus}`
-                  : "Managed by SignRoots"
-              }
-            />
-          ) : String(order?.managedBy || "")
-              .trim()
-              .toLowerCase() === "customer" ? (
-            order?.domainSource?.image ? (
-              <img
-                src={
-                  order.domainSource.image.startsWith("/")
-                    ? `${API_BASE_URL}${order.domainSource.image}`
-                    : `${API_BASE_URL}/uploads/domainsources/${order.domainSource.image}`
-                }
-                className={`w-6 h-6 object-contain ${
-                  isDomainDisabled
-                    ? "grayscale opacity-40"
-                    : ""
-                }`}
-                title={
-                  isDomainDisabled
-                    ? `Domain ${domainStatus}`
-                    : order.domainSource.name ||
-                      "Domain Source"
-                }
-              />
-            ) : (
-              <FaGlobe
-                className={`w-6 h-6 ${
-                  isDomainDisabled
-                    ? "text-gray-400"
-                    : "text-gray-400"
-                }`}
-                title="No Domain Source"
-              />
-            )
-          ) : (
-            <FaGlobe
-              className="w-6 h-6 text-gray-400"
-              title="No Domain Source"
-            />
-          )
-        ) : order?.domainSource?.image ? (
-          <img
-            src={
-              order.domainSource.image.startsWith("/")
-                ? `${API_BASE_URL}${order.domainSource.image}`
-                : `${API_BASE_URL}/uploads/domainsources/${order.domainSource.image}`
-            }
-            className={`w-6 h-6 object-contain ${
-              isDomainDisabled
-                ? "grayscale opacity-40"
-                : ""
-            }`}
-            title={
-              isDomainDisabled
-                ? `Domain ${domainStatus}`
-                : order.domainSource.name ||
-                  "Domain Source"
-            }
-          />
-        ) : (
-          <FaGlobe
-            className={`w-6 h-6 ${
-              isDomainDisabled
-                ? "text-gray-400"
-                : "text-gray-400"
-            }`}
-            title="No Domain Source"
-          />
-        )}
+        {renderDomainIcon()}
       </div>
 
       {/* =====================================================
@@ -240,66 +395,90 @@ export default function ServiceIcons({
 
       {order?.Plans?.some(
         (plan: any) =>
-          plan?.type?.toLowerCase() === "email"
+          plan?.type?.toLowerCase() ===
+          "email"
       ) ? (
+
         order.Plans
           .filter(
             (plan: any) =>
-              plan?.type?.toLowerCase() === "email"
+              plan?.type?.toLowerCase() ===
+              "email"
           )
-          .map((plan: any, index: number) => {
-            const disabled =
-              isPlanDisabled(plan);
+          .map(
+            (
+              plan: any,
+              index: number
+            ) => {
 
-            return (
-              <div
-                key={index}
-                className={`relative group ${
-                  disabled
-                    ? "opacity-40 grayscale pointer-events-none"
-                    : ""
-                }`}
-                title={
-                  disabled
-                    ? `Email ${String(
-                        plan?.primary_status?.name ||
-                          plan?.primary_status?.code ||
-                          ""
-                      ).toUpperCase()}`
-                    : plan?.emailType
-                }
-              >
-                <div className="relative inline-block">
-                  <img
-                    src={
-                      plan?.emailTypeImage
-                        ? `${API_BASE_URL}${plan.emailTypeImage}`
-                        : "/email.png"
-                    }
-                    className="w-6 h-6 cursor-pointer"
-                    title={
-                      disabled
-                        ? `Email ${String(
-                            plan?.primary_status?.name ||
-                              plan?.primary_status?.code ||
-                              ""
-                          ).toUpperCase()}`
-                        : plan?.emailType
-                    }
-                  />
+              const disabled =
+                isPlanDisabled(plan);
 
-                  <span className="absolute -top-2 -right-2 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-[300] border border-white">
-                    {plan?.noOfUsers ?? 0}
-                  </span>
+              const planStatus =
+                getPlanPrimaryStatus(
+                  plan
+                );
+
+              return (
+                <div
+                  key={`email-${index}`}
+                  className={`relative group ${
+                    disabled
+                      ? "opacity-40 grayscale pointer-events-none"
+                      : ""
+                  }`}
+                  title={
+                    disabled
+                      ? getPlanStatusTitle(
+                          plan,
+                          "Email"
+                        )
+                      : plan?.emailType ||
+                        "Email"
+                  }
+                >
+                  <div className="relative inline-block">
+
+                    {disabled ? (
+
+                      <FaEnvelope
+                        className="w-6 h-6 text-gray-400"
+                        title={`Email ${planStatus}`}
+                      />
+
+                    ) : (
+
+                      <img
+                        src={getEmailImageUrl(
+                          plan
+                        )}
+                        className="w-6 h-6 object-contain cursor-pointer"
+                        title={
+                          plan?.emailType ||
+                          "Email"
+                        }
+                      />
+
+                    )}
+
+                    <span className="absolute -top-2 -right-2 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-[300] border border-white">
+                      {plan?.noOfUsers ??
+                        0}
+                    </span>
+
+                  </div>
                 </div>
-              </div>
-            );
-          })
+              );
+            }
+          )
+
       ) : (
+
         <FaEnvelope
           className="w-6 h-6 text-gray-300"
           title="No Email"
         />
+
       )}
 
       {/* =====================================================
@@ -307,6 +486,7 @@ export default function ServiceIcons({
       ===================================================== */}
 
       {(() => {
+
         const hostingPlans =
           order?.Plans?.filter(
             (plan: any) =>
@@ -314,7 +494,9 @@ export default function ServiceIcons({
               "hosting"
           ) || [];
 
-        if (hostingPlans.length === 0) {
+        if (
+          hostingPlans.length === 0
+        ) {
           return (
             <FaServer
               className="w-6 h-6 text-gray-300"
@@ -324,13 +506,22 @@ export default function ServiceIcons({
         }
 
         return hostingPlans.map(
-          (plan: any, index: number) => {
+          (
+            plan: any,
+            index: number
+          ) => {
+
             const disabled =
               isPlanDisabled(plan);
 
+            const status =
+              getPlanPrimaryStatus(
+                plan
+              );
+
             return (
               <FaServer
-                key={index}
+                key={`hosting-${index}`}
                 className={`w-6 h-6 ${
                   disabled
                     ? "text-gray-400 opacity-40 grayscale"
@@ -338,17 +529,14 @@ export default function ServiceIcons({
                 }`}
                 title={
                   disabled
-                    ? `Hosting ${String(
-                        plan?.primary_status?.name ||
-                          plan?.primary_status?.code ||
-                          ""
-                      ).toUpperCase()}`
+                    ? `Hosting ${status}`
                     : "Hosting"
                 }
               />
             );
           }
         );
+
       })()}
 
       {/* =====================================================
@@ -356,6 +544,7 @@ export default function ServiceIcons({
       ===================================================== */}
 
       {(() => {
+
         const websitePlans =
           order?.Plans?.filter(
             (plan: any) =>
@@ -363,7 +552,9 @@ export default function ServiceIcons({
               "website"
           ) || [];
 
-        if (websitePlans.length === 0) {
+        if (
+          websitePlans.length === 0
+        ) {
           return (
             <FaLaptopCode
               className="w-6 h-6 text-gray-300"
@@ -373,13 +564,22 @@ export default function ServiceIcons({
         }
 
         return websitePlans.map(
-          (plan: any, index: number) => {
+          (
+            plan: any,
+            index: number
+          ) => {
+
             const disabled =
               isPlanDisabled(plan);
 
+            const status =
+              getPlanPrimaryStatus(
+                plan
+              );
+
             return (
               <FaLaptopCode
-                key={index}
+                key={`website-${index}`}
                 className={`w-6 h-6 ${
                   disabled
                     ? "text-gray-400 opacity-40 grayscale"
@@ -387,17 +587,14 @@ export default function ServiceIcons({
                 }`}
                 title={
                   disabled
-                    ? `Website ${String(
-                        plan?.primary_status?.name ||
-                          plan?.primary_status?.code ||
-                          ""
-                      ).toUpperCase()}`
+                    ? `Website ${status}`
                     : "Website"
                 }
               />
             );
           }
         );
+
       })()}
 
       {/* =====================================================
@@ -410,58 +607,75 @@ export default function ServiceIcons({
             plan?.type?.toLowerCase() ===
             "msoffice"
         )
-        .map((plan: any, index: number) => {
-          const disabled =
-            isPlanDisabled(plan);
+        .map(
+          (
+            plan: any,
+            index: number
+          ) => {
 
-          return (
-            <div
-              key={index}
-              className={`relative inline-block ${
-                disabled
-                  ? "opacity-40 grayscale pointer-events-none"
-                  : ""
-              }`}
-              onMouseEnter={
-                handleMsofficeHover
-              }
-              onMouseLeave={() =>
-                setIsHovering(false)
-              }
-              title={
-                disabled
-                  ? `MS Office ${String(
-                      plan?.primary_status?.name ||
-                        plan?.primary_status?.code ||
-                        ""
-                    ).toUpperCase()}`
-                  : plan?.emailType
-              }
-            >
-              <img
-                src={
-                  plan?.emailTypeImage
-                    ? `${API_BASE_URL}${plan.emailTypeImage}`
-                    : "/MSOffice.png"
+            const disabled =
+              isPlanDisabled(plan);
+
+            const status =
+              getPlanPrimaryStatus(
+                plan
+              );
+
+            return (
+              <div
+                key={`msoffice-${index}`}
+                className={`relative inline-block ${
+                  disabled
+                    ? "opacity-40 grayscale pointer-events-none"
+                    : ""
+                }`}
+                onMouseEnter={
+                  disabled
+                    ? undefined
+                    : handleMsofficeHover
                 }
-                className="w-6 h-6 object-contain"
+                onMouseLeave={() =>
+                  setIsHovering(false)
+                }
                 title={
                   disabled
-                    ? `MS Office ${String(
-                        plan?.primary_status?.name ||
-                          plan?.primary_status?.code ||
-                          ""
-                      ).toUpperCase()}`
-                    : plan?.emailType
+                    ? `MS Office ${status}`
+                    : plan?.emailType ||
+                      "MS Office"
                 }
-              />
+              >
 
-              <span className="absolute -top-2 -right-2 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-[300] border border-white">
-                {plan?.noOfUsers ?? 0}
-              </span>
-            </div>
-          );
-        })}
+                {disabled ? (
+
+                  <FaEnvelope
+                    className="w-6 h-6 text-gray-400"
+                    title={`MS Office ${status}`}
+                  />
+
+                ) : (
+
+                  <img
+                    src={getEmailImageUrl(
+                      plan
+                    )}
+                    className="w-6 h-6 object-contain cursor-pointer"
+                    title={
+                      plan?.emailType ||
+                      "MS Office"
+                    }
+                  />
+
+                )}
+
+                <span className="absolute -top-2 -right-2 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-[300] border border-white">
+                  {plan?.noOfUsers ??
+                    0}
+                </span>
+
+              </div>
+            );
+          }
+        )}
 
       {/* =====================================================
           SSL
@@ -470,32 +684,41 @@ export default function ServiceIcons({
       {order?.Plans
         ?.filter(
           (plan: any) =>
-            plan?.type?.toLowerCase() === "ssl"
+            plan?.type?.toLowerCase() ===
+            "ssl"
         )
-        .map((plan: any, index: number) => {
-          const disabled =
-            isPlanDisabled(plan);
+        .map(
+          (
+            plan: any,
+            index: number
+          ) => {
 
-          return (
-            <FaLock
-              key={index}
-              className={`w-6 h-6 ${
-                disabled
-                  ? "text-gray-400 opacity-40 grayscale"
-                  : "text-yellow-500"
-              }`}
-              title={
-                disabled
-                  ? `SSL ${String(
-                      plan?.primary_status?.name ||
-                        plan?.primary_status?.code ||
-                        ""
-                    ).toUpperCase()}`
-                  : "SSL"
-              }
-            />
-          );
-        })}
+            const disabled =
+              isPlanDisabled(plan);
+
+            const status =
+              getPlanPrimaryStatus(
+                plan
+              );
+
+            return (
+              <FaLock
+                key={`ssl-${index}`}
+                className={`w-6 h-6 ${
+                  disabled
+                    ? "text-gray-400 opacity-40 grayscale"
+                    : "text-yellow-500"
+                }`}
+                title={
+                  disabled
+                    ? `SSL ${status}`
+                    : "SSL"
+                }
+              />
+            );
+          }
+        )}
+
     </div>
   );
 }

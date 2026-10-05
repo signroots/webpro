@@ -1,8 +1,9 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+
 import OrdersTable from "../Order/OrdersTable";
+import type { Status } from "../../../types/order";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -25,9 +26,9 @@ const CustomerOrders: React.FC = () => {
   const [error, setError] = useState("");
   const [archivedError, setArchivedError] = useState("");
 
-  // =========================================
+  // =========================================================
   // FETCH CURRENT CUSTOMER ORDERS
-  // =========================================
+  // =========================================================
 
   const fetchCustomerOrders = async () => {
     if (!customerId) return;
@@ -43,10 +44,12 @@ const CustomerOrders: React.FC = () => {
       console.log("Customer Order API Response:", response.data);
 
       if (response.data.status === "SUCCESS") {
-        setCustomer(response.data.client);
+        setCustomer(response.data.client || null);
         setOrders(response.data.orders || []);
       } else {
-        setError("Unable to fetch customer orders.");
+        setError(
+          response.data.message || "Unable to fetch customer orders."
+        );
       }
     } catch (err) {
       console.error("Customer orders fetch error:", err);
@@ -56,9 +59,9 @@ const CustomerOrders: React.FC = () => {
     }
   };
 
-  // =========================================
-  // FETCH CANCELLED / TRANSFERRED ORDERS
-  // =========================================
+  // =========================================================
+  // FETCH CANCELLED / TRANSFERRED CUSTOMER ORDERS
+  // =========================================================
 
   const fetchArchivedOrders = async () => {
     if (!customerId) return;
@@ -77,49 +80,82 @@ const CustomerOrders: React.FC = () => {
       );
 
       if (response.data.success === true) {
-        // Archived API response format
-        setArchivedOrders(response.data.orders || []);
+        /*
+         * Archived API normally returns:
+         *
+         * {
+         *   success: true,
+         *   data: [...],
+         *   pagination: {...}
+         * }
+         *
+         * Keep orders fallback also, so both response formats
+         * are supported.
+         */
+        const archivedData =
+          Array.isArray(response.data.data)
+            ? response.data.data
+            : Array.isArray(response.data.orders)
+            ? response.data.orders
+            : [];
 
-        // Set customer details if not already available
+        setArchivedOrders(archivedData);
+
+        // Customer details
         if (response.data.client) {
-          setCustomer((previous: any) => previous || response.data.client);
+          setCustomer((previous: any) => {
+            return previous || response.data.client;
+          });
         }
       } else {
         setArchivedError(
-          response.data.message || "Unable to fetch archived orders."
+          response.data.message ||
+            "Unable to fetch cancelled / transferred orders."
         );
       }
     } catch (err) {
-      console.error("Archived customer orders fetch error:", err);
-      setArchivedError("Failed to load cancelled / transferred orders.");
+      console.error(
+        "Archived customer orders fetch error:",
+        err
+      );
+
+      setArchivedError(
+        "Failed to load cancelled / transferred orders."
+      );
     } finally {
       setArchivedLoading(false);
     }
   };
 
-  // =========================================
+  // =========================================================
   // INITIAL FETCH
-  // =========================================
+  // =========================================================
 
   useEffect(() => {
-    if (customerId) {
-      setArchivedOrders([]);
-      setActiveTab("current");
-      fetchCustomerOrders();
-    }
+    if (!customerId) return;
+
+    setArchivedOrders([]);
+    setActiveTab("current");
+
+    fetchCustomerOrders();
   }, [customerId]);
 
-  // Fetch archived orders when the archived tab is opened.
-  // Avoid fetching again if already loaded.
+  // =========================================================
+  // FETCH ARCHIVED ORDERS WHEN ARCHIVED TAB IS OPENED
+  // =========================================================
+
   useEffect(() => {
-    if (activeTab === "archived" && archivedOrders.length === 0) {
+    if (
+      activeTab === "archived" &&
+      archivedOrders.length === 0
+    ) {
       fetchArchivedOrders();
     }
   }, [activeTab, customerId]);
 
-  // =========================================
+  // =========================================================
   // EDIT ORDER
-  // =========================================
+  // =========================================================
 
   const handleEdit = (order: any) => {
     navigate(`/admin/orders/update/${order._id}`, {
@@ -131,17 +167,13 @@ const CustomerOrders: React.FC = () => {
     });
   };
 
-  // =========================================
+  // =========================================================
   // STATUS BADGE
-  // =========================================
+  // =========================================================
 
-  const getStatusClass = (status?: {
-    _id: string;
-    name: string;
-    code: string;
-    type: "order" | "plan" | "domain";
-    is_active: boolean;
-  } | null): string => {
+  const getStatusClass = (
+    status?: Status | null
+  ): string => {
     const value = status?.name?.trim().toLowerCase();
 
     if (!value) {
@@ -167,38 +199,49 @@ const CustomerOrders: React.FC = () => {
     return "bg-gray-200 text-gray-800";
   };
 
-  // =========================================
-  // LOADING
-  // =========================================
+  // =========================================================
+  // INITIAL LOADING
+  // =========================================================
 
   if (loading) {
-    return <div className="p-6">Loading customer details...</div>;
+    return (
+      <div className="p-6">
+        Loading customer details...
+      </div>
+    );
   }
 
-  // =========================================
-  // SELECT ORDERS BASED ON TAB
-  // =========================================
+  // =========================================================
+  // SELECT ORDERS BASED ON ACTIVE TAB
+  // =========================================================
 
   const displayedOrders =
-    activeTab === "current" ? orders : archivedOrders;
+    activeTab === "current"
+      ? orders
+      : archivedOrders;
 
-  // =========================================
+  // =========================================================
   // UI
-  // =========================================
+  // =========================================================
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
 
-      {/* CUSTOMER DETAILS */}
+      {/* =====================================================
+          CUSTOMER DETAILS
+      ===================================================== */}
 
       <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+
         <h2 className="text-xl font-semibold mb-4">
           Customer Details
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+
           <p>
-            <b>Name:</b> {customer?.c_name || "-"}
+            <b>Name:</b>{" "}
+            {customer?.c_name || "-"}
           </p>
 
           <p>
@@ -215,32 +258,41 @@ const CustomerOrders: React.FC = () => {
           </p>
 
           <p>
-            <b>Company:</b> {customer?.c_company || "-"}
+            <b>Company:</b>{" "}
+            {customer?.c_company || "-"}
           </p>
 
           <p>
-            <b>Address:</b> {customer?.c_address || "-"}
+            <b>Address:</b>{" "}
+            {customer?.c_address || "-"}
           </p>
 
           <p>
-            <b>City:</b> {customer?.c_city || "-"}
+            <b>City:</b>{" "}
+            {customer?.c_city || "-"}
           </p>
 
           <p>
-            <b>State:</b> {customer?.c_state_name || "-"}
+            <b>State:</b>{" "}
+            {customer?.c_state_name || "-"}
           </p>
 
           <p>
-            <b>Country:</b> {customer?.c_country_name || "-"}
+            <b>Country:</b>{" "}
+            {customer?.c_country_name || "-"}
           </p>
+
         </div>
       </div>
 
-      {/* ORDERS SECTION */}
+      {/* =====================================================
+          ORDERS SECTION
+      ===================================================== */}
 
       <div className="bg-white rounded-xl shadow-sm p-6">
 
         <div className="mb-5">
+
           <h2 className="text-xl font-semibold text-gray-800">
             Customer Orders
           </h2>
@@ -248,11 +300,16 @@ const CustomerOrders: React.FC = () => {
           <p className="text-sm text-gray-500 mt-1">
             View current, cancelled and transferred orders.
           </p>
+
         </div>
 
-        {/* TABS */}
+        {/* ===================================================
+            TABS
+        =================================================== */}
 
         <div className="flex flex-wrap gap-2 border-b mb-5">
+
+          {/* CURRENT ORDERS TAB */}
 
           <button
             type="button"
@@ -264,10 +321,13 @@ const CustomerOrders: React.FC = () => {
             }`}
           >
             Current Orders
+
             <span className="ml-2 px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
               {orders.length}
             </span>
           </button>
+
+          {/* ARCHIVED ORDERS TAB */}
 
           <button
             type="button"
@@ -279,6 +339,7 @@ const CustomerOrders: React.FC = () => {
             }`}
           >
             Cancelled / Transferred
+
             <span className="ml-2 px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
               {archivedOrders.length}
             </span>
@@ -286,11 +347,15 @@ const CustomerOrders: React.FC = () => {
 
         </div>
 
-        {/* TAB CONTENT */}
+        {/* ===================================================
+            CURRENT TAB ERROR
+        =================================================== */}
 
         {activeTab === "current" && error && (
           <div className="p-4 mb-4 rounded bg-red-50 text-red-700 text-sm">
+
             {error}
+
             <button
               type="button"
               onClick={fetchCustomerOrders}
@@ -298,33 +363,61 @@ const CustomerOrders: React.FC = () => {
             >
               Retry
             </button>
+
           </div>
         )}
 
-        {activeTab === "archived" && archivedLoading && (
-          <div className="p-6 text-center text-gray-500">
-            Loading cancelled / transferred orders...
-          </div>
-        )}
+        {/* ===================================================
+            ARCHIVED LOADING
+        =================================================== */}
 
-        {activeTab === "archived" && archivedError && (
-          <div className="p-4 mb-4 rounded bg-red-50 text-red-700 text-sm">
-            {archivedError}
-            <button
-              type="button"
-              onClick={fetchArchivedOrders}
-              className="ml-3 underline font-medium"
-            >
-              Retry
-            </button>
-          </div>
-        )}
+        {activeTab === "archived" &&
+          archivedLoading && (
+            <div className="p-6 text-center text-gray-500">
+              Loading cancelled / transferred orders...
+            </div>
+          )}
 
-        {!(activeTab === "archived" && archivedLoading) &&
+        {/* ===================================================
+            ARCHIVED ERROR
+        =================================================== */}
+
+        {activeTab === "archived" &&
+          archivedError && (
+            <div className="p-4 mb-4 rounded bg-red-50 text-red-700 text-sm">
+
+              {archivedError}
+
+              <button
+                type="button"
+                onClick={fetchArchivedOrders}
+                className="ml-3 underline font-medium"
+              >
+                Retry
+              </button>
+
+            </div>
+          )}
+
+        {/* ===================================================
+            TABLE CONTENT
+        =================================================== */}
+
+        {!(
+          activeTab === "archived" &&
+          archivedLoading
+        ) &&
           !(activeTab === "current" && error) &&
-          !(activeTab === "archived" && archivedError) && (
+          !(
+            activeTab === "archived" &&
+            archivedError
+          ) && (
             <>
+
+              {/* TABLE HEADER */}
+
               <div className="flex items-center justify-between mb-4">
+
                 <h3 className="text-base font-semibold text-gray-700">
                   {activeTab === "current"
                     ? "Current Orders"
@@ -334,30 +427,47 @@ const CustomerOrders: React.FC = () => {
                 <span className="text-sm text-gray-500">
                   Total: {displayedOrders.length}
                 </span>
+
               </div>
+
+              {/* =================================================
+                  ORDERS TABLE
+              ================================================= */}
 
               {displayedOrders.length > 0 ? (
                 <div className="overflow-x-auto">
-                  <OrdersTable
-                    paginatedOrders={displayedOrders}
-                    handleEdit={handleEdit}
-                    getStatusClass={getStatusClass}
-                    navigate={navigate}
-                  />
+
+                 <OrdersTable
+  paginatedOrders={displayedOrders}
+  handleEdit={handleEdit}
+  getStatusClass={getStatusClass}
+  navigate={navigate}
+  showDomainStatus={activeTab === "archived"}
+/>
+
+
+
                 </div>
               ) : (
                 <div className="p-8 text-center border border-dashed rounded-lg">
+
                   <p className="text-gray-500">
+
                     {activeTab === "current"
                       ? "No current orders found for this customer."
                       : "No cancelled or transferred orders found for this customer."}
+
                   </p>
+
                 </div>
               )}
+
             </>
           )}
 
-        {/* BACK BUTTON */}
+        {/* =====================================================
+            BACK BUTTON
+        ===================================================== */}
 
         <button
           type="button"
