@@ -40,9 +40,9 @@ interface OrdersTableProps {
   /*
    * Use the same Status type from types/order.ts
    */
-  getStatusClass: (
-    status?: Status | null
-  ) => string;
+getStatusClass: (
+  status?: any | null
+) => string;
 
   navigate: NavigateFunction;
 
