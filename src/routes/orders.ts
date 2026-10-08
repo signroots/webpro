@@ -6419,7 +6419,6 @@ router.get(
             lockStatus: 1,
             domainSource: 1,
 
-            // Existing fields
             status: 1,
             email_expiryDate: 1,
             createdAt: 1,
@@ -6719,16 +6718,6 @@ router.get(
       // ========================================================
       // 12. SERVICE AVAILABILITY
       // ========================================================
-      //
-      // Domain available OR any plan available
-      // => SHOW
-      //
-      // Domain transferred/cancelled AND
-      // all plans transferred/cancelled
-      // => HIDE
-      //
-      // Same condition as first route
-      // ========================================================
 
       orders =
         orders.filter(
@@ -7002,7 +6991,7 @@ router.get(
             (order: any) => {
 
               // ------------------------------------------------
-              // TRANSFERRED / CANCELLED
+              // TRANSFERRED / CANCELLED ORDER
               // DO NOT OVERWRITE
               // ------------------------------------------------
 
@@ -7058,6 +7047,24 @@ router.get(
               const planExpired =
                 orderPlans.some(
                   (plan: any) => {
+
+                    // ------------------------------------------
+                    // IMPORTANT:
+                    // CANCELLED / TRANSFERRED PLAN
+                    // MUST NOT MAKE ORDER EXPIRED
+                    // ------------------------------------------
+
+                    if (
+                      isTransferredOrCancelled(
+                        plan.primary_status
+                      )
+                    ) {
+                      return false;
+                    }
+
+                    // ------------------------------------------
+                    // NO EXPIRY
+                    // ------------------------------------------
 
                     if (
                       !plan.expiryDate
@@ -7548,7 +7555,6 @@ router.get(
     }
   }
 );
-
 /**
  * GET CUSTOMER CANCELLED / TRANSFERRED ORDERS
  *
