@@ -6,15 +6,13 @@ import {
   FaExternalLinkAlt,
   FaCopy,
 } from "react-icons/fa";
+
 import {
   Link,
   NavigateFunction,
 } from "react-router-dom";
 
-import {
-  Order,
-  Status,
-} from "../../../types/order";
+import { Order } from "../../../types/order";
 
 import ServiceIcons from "./ServiceIcons";
 import ExpiryBadge from "./ExpiryBadge";
@@ -38,11 +36,11 @@ interface OrdersTableProps {
   handleEdit: (order: Order) => void;
 
   /*
-   * Use the same Status type from types/order.ts
+   * Get status class
    */
-getStatusClass: (
-  status?: any | null
-) => string;
+  getStatusClass: (
+    status?: any | null
+  ) => string;
 
   navigate: NavigateFunction;
 
@@ -82,21 +80,6 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
    */
   const isArchivedPage =
     showDomainStatus === true;
-
-  console.log(
-    "AUTH USER:",
-    user
-  );
-
-  console.log(
-    "USER TYPE:",
-    userType
-  );
-
-  console.log(
-    "ORDERS TABLE - isArchivedPage:",
-    isArchivedPage
-  );
 
   return (
     <div className="bg-white shadow rounded-lg overflow-x-auto">
@@ -151,8 +134,7 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
               <tr
                 key={order._id}
                 className={`transition-all duration-500 ${
-                  highlightedOrderId ===
-                  order._id
+                  highlightedOrderId === order._id
                     ? "bg-blue-50 border-l-4 border-blue-500"
                     : "hover:bg-gray-50"
                 }`}
@@ -184,8 +166,7 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
 
                     {/* LOCK */}
 
-                    {order.lockStatus ===
-                    "Locked" ? (
+                    {order.lockStatus === "Locked" ? (
                       <FaLock
                         className="text-red-500 w-4 h-4 shrink-0 mr-1.5"
                         title="Locked"
@@ -245,17 +226,14 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
 
                       {/* CUSTOMER */}
 
-                      {userType ===
-                        "admin" &&
+                      {userType === "admin" &&
                       order.client ? (
                         <Link
                           to={`/admin/orders/customer/${order.client._id}`}
                           className="text-sm text-blue-600 leading-5"
                         >
-                          {order.client
-                            .c_company ||
-                            order.client
-                              .c_name}
+                          {order.client.c_company ||
+                            order.client.c_name}
                         </Link>
                       ) : (
                         <span className="text-gray-400 text-xs leading-5">
@@ -296,6 +274,9 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
 
                   <ExpiryBadge
                     order={order}
+                    isArchivedPage={
+                      isArchivedPage
+                    }
                   />
 
                 </td>
@@ -317,15 +298,11 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
                     >
                       {showDomainStatus
                         ? `Order: ${
-                            order
-                              .order_status
-                              ?.name ||
-                            "N/A"
+                            order.order_status
+                              ?.name || "N/A"
                           }`
-                        : order
-                            .order_status
-                            ?.name ||
-                          "N/A"}
+                        : order.order_status
+                            ?.name || "N/A"}
                     </span>
 
                     {/* =================================================
@@ -333,7 +310,6 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
                     ================================================= */}
 
                     {showDomainStatus && (
-
                       <span
                         className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${getStatusClass(
                           order.archived_status ||
@@ -342,16 +318,12 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
                       >
                         Domain:{" "}
 
-                        {order
-                          .archived_status
+                        {order.archived_status
                           ?.name ||
-                          order
-                            .domain_status
+                          order.domain_status
                             ?.name ||
                           "N/A"}
-
                       </span>
-
                     )}
 
                   </div>
@@ -418,3 +390,4 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
 };
 
 export default OrdersTable;
+

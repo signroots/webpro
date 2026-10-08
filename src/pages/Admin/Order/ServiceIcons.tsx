@@ -461,10 +461,11 @@ export default function ServiceIcons({
 
                     )}
 
-                    <span className="absolute -top-2 -right-2 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-[300] border border-white">
-                      {plan?.noOfUsers ??
-                        0}
-                    </span>
+                  {!disabled && (
+  <span className="absolute -top-2 -right-2 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-[300] border border-white">
+    {plan?.noOfUsers ?? 0}
+  </span>
+)}
 
                   </div>
                 </div>
