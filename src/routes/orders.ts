@@ -4216,6 +4216,8 @@ router.get(
 
           adminEmail: p.adminEmail || "",
           username: p.username || "",
+          adminPassword: p.adminPassword || "",
+          
 
           // ========================================
           // PLAN STATUS DATE TRACKING
