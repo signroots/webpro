@@ -2034,41 +2034,41 @@ router.get(
       const orderPlans: any[] =
         orderIds.length > 0
           ? await OrderPlan.find({
-              orderId: {
-                $in:
-                  orderIds,
-              },
+            orderId: {
+              $in:
+                orderIds,
+            },
+          })
+
+            .populate({
+              path:
+                "primary_status",
+              select:
+                "_id name code type category is_active is_custom",
             })
 
-              .populate({
-                path:
-                  "primary_status",
-                select:
-                  "_id name code type category is_active is_custom",
-              })
+            .populate({
+              path:
+                "secondary_status",
+              select:
+                "_id name code type category is_active is_custom",
+            })
 
-              .populate({
-                path:
-                  "secondary_status",
-                select:
-                  "_id name code type category is_active is_custom",
-              })
+            .populate({
+              path:
+                "planId",
+              select:
+                "_id planName image provider serviceType type",
+            })
 
-              .populate({
-                path:
-                  "planId",
-                select:
-                  "_id planName image provider serviceType type",
-              })
+            .populate({
+              path:
+                "emailTypeId",
+              select:
+                "_id name image",
+            })
 
-              .populate({
-                path:
-                  "emailTypeId",
-                select:
-                  "_id name image",
-              })
-
-              .lean()
+            .lean()
           : [];
 
       // ========================================================
@@ -2094,7 +2094,7 @@ router.get(
 
               plan_transferred_on:
                 plan.plan_transferred_on
-                  ?? null,
+                ?? null,
 
               // ------------------------------------------------
               // PLAN CANCELLED DATE/TIME
@@ -2102,7 +2102,7 @@ router.get(
 
               plan_cancelled_on:
                 plan.plan_cancelled_on
-                  ?? null,
+                ?? null,
 
               emailType:
                 emailType?.name ||
@@ -2115,15 +2115,15 @@ router.get(
               emailTypeId:
                 emailType
                   ? {
-                      _id:
-                        emailType._id,
+                    _id:
+                      emailType._id,
 
-                      name:
-                        emailType.name,
+                    name:
+                      emailType.name,
 
-                      image:
-                        emailType.image,
-                    }
+                    image:
+                      emailType.image,
+                  }
                   : null,
             };
           }
@@ -2141,7 +2141,7 @@ router.get(
 
       for (
         const plan of
-          formattedOrderPlans
+        formattedOrderPlans
       ) {
         if (!plan.orderId) {
           continue;
@@ -2194,7 +2194,7 @@ router.get(
 
             order_transferred_on:
               order.order_transferred_on
-                ?? null,
+              ?? null,
 
             // ------------------------------------------------
             // ORDER CANCELLED DATE/TIME
@@ -2202,7 +2202,7 @@ router.get(
 
             order_cancelled_on:
               order.order_cancelled_on
-                ?? null,
+              ?? null,
 
             // ------------------------------------------------
             // DOMAIN TRANSFERRED DATE/TIME
@@ -2210,7 +2210,7 @@ router.get(
 
             domain_transferred_on:
               order.domain_transferred_on
-                ?? null,
+              ?? null,
 
             // ------------------------------------------------
             // DOMAIN CANCELLED DATE/TIME
@@ -2218,7 +2218,7 @@ router.get(
 
             domain_cancelled_on:
               order.domain_cancelled_on
-                ?? null,
+              ?? null,
 
             // ------------------------------------------------
             // PLANS
@@ -2288,13 +2288,13 @@ router.get(
           totalPages:
             Math.ceil(
               total /
-                limit
+              limit
             ),
         },
       });
 
     } catch (
-      error: any
+    error: any
     ) {
       console.error(
         "================================="
@@ -2767,33 +2767,33 @@ router.get(
                   hostType:
                     plan.hostTypeId
                       ? {
-                          _id:
-                            plan.hostTypeId._id,
-                          type:
-                            plan.hostTypeId.type,
-                        }
+                        _id:
+                          plan.hostTypeId._id,
+                        type:
+                          plan.hostTypeId.type,
+                      }
                       : null,
 
                   hostSubType:
                     plan.hostSubTypeId
                       ? {
-                          _id:
-                            plan.hostSubTypeId._id,
-                          name:
-                            plan.hostSubTypeId.name,
-                        }
+                        _id:
+                          plan.hostSubTypeId._id,
+                        name:
+                          plan.hostSubTypeId.name,
+                      }
                       : null,
 
                   storage:
                     plan.storageId
                       ? {
-                          _id:
-                            plan.storageId._id,
-                          name:
-                            plan.storageId.name ||
-                            plan.storageId.storage ||
-                            null,
-                        }
+                        _id:
+                          plan.storageId._id,
+                        name:
+                          plan.storageId.name ||
+                          plan.storageId.storage ||
+                          null,
+                      }
                       : null,
 
                   primary_status:
@@ -3255,12 +3255,12 @@ router.get(
               const expiredDays =
                 Math.floor(
                   diffMs /
-                    (
-                      1000 *
-                      60 *
-                      60 *
-                      24
-                    )
+                  (
+                    1000 *
+                    60 *
+                    60 *
+                    24
+                  )
                 );
 
               let newArchivedStatus:
@@ -3566,12 +3566,12 @@ router.get(
               const expiredDays =
                 Math.floor(
                   diffMs /
-                    (
-                      1000 *
-                      60 *
-                      60 *
-                      24
-                    )
+                  (
+                    1000 *
+                    60 *
+                    60 *
+                    24
+                  )
                 );
 
               // TODAY / FUTURE
@@ -3628,9 +3628,9 @@ router.get(
 
               const isExcluded =
                 code ===
-                  "TRANSFERRED" ||
+                "TRANSFERRED" ||
                 code ===
-                  "CANCELLED";
+                "CANCELLED";
 
               if (
                 isExcluded
@@ -3816,17 +3816,17 @@ router.get(
             emailType
               ? {}
               : {
-                  pagination: {
-                    page,
-                    limit,
-                    total,
-                    totalPages:
-                      Math.ceil(
-                        total /
-                        limit
-                      ),
-                  },
-                }
+                pagination: {
+                  page,
+                  limit,
+                  total,
+                  totalPages:
+                    Math.ceil(
+                      total /
+                      limit
+                    ),
+                },
+              }
           ),
 
         });
@@ -3909,17 +3909,17 @@ router.get(
             emailType
               ? {}
               : {
-                  pagination: {
-                    page,
-                    limit,
-                    total,
-                    totalPages:
-                      Math.ceil(
-                        total /
-                        limit
-                      ),
-                  },
-                }
+                pagination: {
+                  page,
+                  limit,
+                  total,
+                  totalPages:
+                    Math.ceil(
+                      total /
+                      limit
+                    ),
+                },
+              }
           ),
 
         });
@@ -3938,7 +3938,7 @@ router.get(
       });
 
     } catch (
-      error: any
+    error: any
     ) {
 
       console.error(
@@ -4131,9 +4131,9 @@ router.get(
 
           status: p.status
             ? {
-                _id: p.status._id,
-                name: p.status.name,
-              }
+              _id: p.status._id,
+              name: p.status.name,
+            }
             : null,
 
           // ========================================
@@ -4142,14 +4142,14 @@ router.get(
 
           primary_status: p.primary_status
             ? {
-                _id: p.primary_status._id,
-                name: p.primary_status.name,
-                code: p.primary_status.code,
-                type: p.primary_status.type,
-                category: p.primary_status.category,
-                is_custom: p.primary_status.is_custom,
-                is_active: p.primary_status.is_active,
-              }
+              _id: p.primary_status._id,
+              name: p.primary_status.name,
+              code: p.primary_status.code,
+              type: p.primary_status.type,
+              category: p.primary_status.category,
+              is_custom: p.primary_status.is_custom,
+              is_active: p.primary_status.is_active,
+            }
             : null,
 
           // ========================================
@@ -4158,14 +4158,14 @@ router.get(
 
           secondary_status: p.secondary_status
             ? {
-                _id: p.secondary_status._id,
-                name: p.secondary_status.name,
-                code: p.secondary_status.code,
-                type: p.secondary_status.type,
-                category: p.secondary_status.category,
-                is_custom: p.secondary_status.is_custom,
-                is_active: p.secondary_status.is_active,
-              }
+              _id: p.secondary_status._id,
+              name: p.secondary_status.name,
+              code: p.secondary_status.code,
+              type: p.secondary_status.type,
+              category: p.secondary_status.category,
+              is_custom: p.secondary_status.is_custom,
+              is_active: p.secondary_status.is_active,
+            }
             : null,
 
           // ========================================
@@ -4174,9 +4174,9 @@ router.get(
 
           hostType: p.hostTypeId
             ? {
-                _id: p.hostTypeId._id,
-                name: p.hostTypeId.type,
-              }
+              _id: p.hostTypeId._id,
+              name: p.hostTypeId.type,
+            }
             : null,
 
           // ========================================
@@ -4185,9 +4185,9 @@ router.get(
 
           hostSubType: p.hostSubTypeId
             ? {
-                _id: p.hostSubTypeId._id,
-                name: p.hostSubTypeId.name,
-              }
+              _id: p.hostSubTypeId._id,
+              name: p.hostSubTypeId.name,
+            }
             : null,
 
           // ========================================
@@ -4196,9 +4196,9 @@ router.get(
 
           storage: p.storageId
             ? {
-                _id: p.storageId._id,
-                name: p.storageId.storage,
-              }
+              _id: p.storageId._id,
+              name: p.storageId.storage,
+            }
             : null,
 
           // ========================================
@@ -4210,6 +4210,12 @@ router.get(
           expiryDate: p.expiryDate,
 
           noOfUsers: p.noOfUsers,
+          // ========================================
+          // ADMIN LOGIN INFORMATION
+          // ========================================
+
+          adminEmail: p.adminEmail || "",
+          username: p.username || "",
 
           // ========================================
           // PLAN STATUS DATE TRACKING
@@ -4328,9 +4334,9 @@ router.get(
 
           domainSource: orderObj.domainSource
             ? {
-                ...orderObj.domainSource,
-                image: domainSourceImage,
-              }
+              ...orderObj.domainSource,
+              image: domainSourceImage,
+            }
             : null,
 
           // ========================================
@@ -5083,7 +5089,6 @@ router.post(
   }
 );
 
-
 // =====================================================
 // PUT - UPDATE ORDER
 // =====================================================
@@ -5116,11 +5121,10 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
     // DETERMINE CLIENT
     // =====================================================
 
-    let clientId;
+    let clientId: mongoose.Types.ObjectId;
 
     if (is_customer) {
       if (existingClient) {
-        // Handle both object and string client
         const clientIdValue =
           typeof existingClient === "object" && existingClient._id
             ? existingClient._id
@@ -5143,11 +5147,8 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
         return;
       }
     } else if (newCustomer?.c_name && newCustomer?.c_email?.length) {
-      // Create new client
       const { _id, ...customerData } = newCustomer;
-
       const createdClient = await Client.create(customerData);
-
       clientId = createdClient._id;
     } else {
       res.status(400).json({
@@ -5164,8 +5165,7 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
     const updatePayload: any = {
       ...rest,
       client: clientId,
-      hoststorageId:
-        rest.hoststorageId?._id || rest.hoststorageId,
+      hoststorageId: rest.hoststorageId?._id || rest.hoststorageId,
     };
 
     // =====================================================
@@ -5206,7 +5206,6 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
       const oldString = String(oldValue ?? "");
       const newString = String(newValue ?? "");
 
-      // Only save changed fields
       if (oldString !== newString) {
         orderChanges.push({
           field,
@@ -5216,29 +5215,20 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
       }
     });
 
-    // Create order activity only if something changed
     if (orderChanges.length > 0) {
       await ActivityLog.create({
         entityType: "ORDER",
         entityId: updatedOrder._id,
         orderId: updatedOrder._id,
         domainName: updatedOrder.domainName,
-
         action: "UPDATED",
-
         performedBy: (req as any).user?._id,
         performedByName: (req as any).user?.name,
-
         changes: orderChanges,
-
-        description:
-          `Order ${updatedOrder.domainName} was updated`,
-
+        description: `Order ${updatedOrder.domainName} was updated`,
         source: "ADMIN",
-
         ipAddress: req.ip,
         userAgent: req.get("user-agent"),
-
         isSystemAction: false,
       });
     }
@@ -5247,11 +5237,10 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
     // HANDLE ORDER PLANS
     // =====================================================
 
-    if (plans && Array.isArray(plans)) {
-
-      // =====================================================
-      // GET OLD PLANS BEFORE DELETE
-      // =====================================================
+    if (Array.isArray(plans)) {
+      // -----------------------------------------------
+      // GET EXISTING PLANS BEFORE DELETE
+      // -----------------------------------------------
 
       const oldPlans = await OrderPlan.find({
         orderId: updatedOrder._id,
@@ -5263,182 +5252,228 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
         .populate("storageId")
         .lean();
 
-      // =====================================================
-      // DELETE OLD PLANS
-      // =====================================================
+      // -----------------------------------------------
+      // PRESERVE EXISTING PLAN STATUS AND ADMIN LOGIN
+      // Match by plan _id when frontend sends it.
+      // -----------------------------------------------
 
-      await OrderPlan.deleteMany({
-        orderId: updatedOrder._id,
+      const oldPlanMap = new Map<string, any>();
+
+      oldPlans.forEach((plan: any) => {
+        oldPlanMap.set(plan._id.toString(), plan);
       });
 
-      // =====================================================
+      // -----------------------------------------------
       // PREPARE NEW PLANS
-      // =====================================================
+      // -----------------------------------------------
 
       const planDocs = await Promise.all(
         plans.map(async (p: any) => {
+          let planId = p.planId?._id || p.planId || null;
+          let emailTypeId = p.emailTypeId?._id || p.emailTypeId || null;
 
-          let planId = p.planId || null;
-          let emailTypeId = p.emailTypeId || null;
+          // Find matching existing plan, if its _id was sent.
+          const oldPlan = p._id
+            ? oldPlanMap.get(String(p._id))
+            : undefined;
 
-          // =================================================
+          // -----------------------------------------------
           // EMAIL / STORAGE / MS OFFICE
-          // =================================================
+          // -----------------------------------------------
 
           if (
             p.type === "email" ||
             p.type === "storage" ||
             p.type === "msoffice"
           ) {
-
-            // -----------------------------------------------
-            // PLAN VALIDATION
-            // -----------------------------------------------
-
-            if (!planId && p.planName) {
-
+            if (
+              (!planId || !mongoose.Types.ObjectId.isValid(planId)) &&
+              p.planName
+            ) {
               const plan = await PlanEmail.findOne({
                 plan: p.planName,
               });
 
               if (!plan) {
-                throw new Error(
-                  `PlanEmail not found: ${p.planName}`
-                );
+                throw new Error(`PlanEmail not found: ${p.planName}`);
               }
 
               planId = plan._id;
             }
 
-            // -----------------------------------------------
-            // EMAIL TYPE VALIDATION
-            // -----------------------------------------------
-
-            if (!emailTypeId && p.emailType) {
-
+            if (
+              (!emailTypeId ||
+                !mongoose.Types.ObjectId.isValid(emailTypeId)) &&
+              p.emailType
+            ) {
               const emailType = await TypeEmail.findOne({
                 type: p.emailType,
               });
 
               if (!emailType) {
-                throw new Error(
-                  `TypeEmail not found: ${p.emailType}`
-                );
+                throw new Error(`TypeEmail not found: ${p.emailType}`);
               }
 
               emailTypeId = emailType._id;
             }
           }
 
-          // =================================================
+          // -----------------------------------------------
+          // RESOLVE ID SAFELY
+          // -----------------------------------------------
+
+          const toObjectIdOrNull = (value: any) => {
+            const id = value?._id || value;
+
+            return id && mongoose.Types.ObjectId.isValid(id)
+              ? new mongoose.Types.ObjectId(id)
+              : null;
+          };
+
+          // -----------------------------------------------
+          // PRESERVE EXISTING VALUES WHEN OMITTED
+          // -----------------------------------------------
+
+          const adminEmail =
+            p.adminEmail !== undefined
+              ? p.adminEmail
+              : oldPlan?.adminEmail || "";
+
+          const adminPassword =
+            p.adminPassword !== undefined
+              ? p.adminPassword
+              : oldPlan?.adminPassword || "";
+
+          const primaryStatus =
+            p.primary_status !== undefined
+              ? toObjectIdOrNull(p.primary_status)
+              : oldPlan?.primary_status?._id ||
+              oldPlan?.primary_status ||
+              null;
+
+          const secondaryStatus =
+            p.secondary_status !== undefined
+              ? toObjectIdOrNull(p.secondary_status)
+              : oldPlan?.secondary_status?._id ||
+              oldPlan?.secondary_status ||
+              null;
+
+          const status =
+            p.status !== undefined
+              ? toObjectIdOrNull(p.status)
+              : oldPlan?.status?._id || oldPlan?.status || null;
+
+          const planTransferredOn =
+            p.plan_transferred_on !== undefined
+              ? p.plan_transferred_on
+                ? new Date(p.plan_transferred_on)
+                : undefined
+              : oldPlan?.plan_transferred_on;
+
+          const planCancelledOn =
+            p.plan_cancelled_on !== undefined
+              ? p.plan_cancelled_on
+                ? new Date(p.plan_cancelled_on)
+                : undefined
+              : oldPlan?.plan_cancelled_on;
+
+          // -----------------------------------------------
           // RETURN PLAN DOCUMENT
-          // =================================================
+          // -----------------------------------------------
 
           return {
-
             orderId: updatedOrder._id,
 
-            // -----------------------------------------------
-            // PLAN
-            // -----------------------------------------------
-
-            planId:
-              planId &&
-                mongoose.Types.ObjectId.isValid(planId)
-                ? new mongoose.Types.ObjectId(planId)
-                : null,
-
-            // -----------------------------------------------
-            // EMAIL TYPE
-            // -----------------------------------------------
-
-            emailTypeId:
-              emailTypeId &&
-                mongoose.Types.ObjectId.isValid(emailTypeId)
-                ? new mongoose.Types.ObjectId(emailTypeId)
-                : null,
-
-            // -----------------------------------------------
-            // HOSTING TYPE
-            // -----------------------------------------------
-
-            hostTypeId:
-              p.hostingType &&
-                mongoose.Types.ObjectId.isValid(
-                  p.hostingType
-                )
-                ? new mongoose.Types.ObjectId(
-                  p.hostingType
-                )
-                : null,
-
-            // -----------------------------------------------
-            // HOSTING SUB TYPE
-            // -----------------------------------------------
-
-            hostSubTypeId:
-              p.hostingSubType &&
-                mongoose.Types.ObjectId.isValid(
-                  p.hostingSubType
-                )
-                ? new mongoose.Types.ObjectId(
-                  p.hostingSubType
-                )
-                : null,
-
-            // -----------------------------------------------
-            // STORAGE
-            // -----------------------------------------------
-
-            storageId:
-              p.storage &&
-                mongoose.Types.ObjectId.isValid(p.storage)
-                ? new mongoose.Types.ObjectId(p.storage)
-                : null,
-
-            // -----------------------------------------------
-            // REGISTRATION DATE
-            // -----------------------------------------------
-
-            registrationDate:
-              p.registrationDate
-                ? new Date(p.registrationDate)
-                : null,
-
-            // -----------------------------------------------
-            // EXPIRY DATE
-            // -----------------------------------------------
-
-            expiryDate:
-              p.expiryDate
-                ? new Date(p.expiryDate)
-                : null,
-
-            // -----------------------------------------------
-            // NUMBER OF USERS
-            // -----------------------------------------------
-
-            noOfUsers:
-              Number(p.noOfUsers || 1),
-
-            // -----------------------------------------------
-            // TYPE
-            // -----------------------------------------------
+            // Preserve original plan document ID when possible.
+            ...(oldPlan?._id ? { _id: oldPlan._id } : {}),
 
             type: p.type,
+
+            planId: toObjectIdOrNull(planId),
+            emailTypeId: toObjectIdOrNull(emailTypeId),
+
+            hostTypeId: toObjectIdOrNull(
+              p.hostingType !== undefined
+                ? p.hostingType
+                : oldPlan?.hostTypeId
+            ),
+
+            hostSubTypeId: toObjectIdOrNull(
+              p.hostingSubType !== undefined
+                ? p.hostingSubType
+                : oldPlan?.hostSubTypeId
+            ),
+
+            storageId: toObjectIdOrNull(
+              p.storage !== undefined
+                ? p.storage
+                : oldPlan?.storageId
+            ),
+
+            registrationDate:
+              p.registrationDate !== undefined
+                ? p.registrationDate
+                  ? new Date(p.registrationDate)
+                  : null
+                : oldPlan?.registrationDate ?? null,
+
+            expiryDate:
+              p.expiryDate !== undefined
+                ? p.expiryDate
+                  ? new Date(p.expiryDate)
+                  : null
+                : oldPlan?.expiryDate ?? null,
+
+            noOfUsers: Number(
+              p.noOfUsers ?? oldPlan?.noOfUsers ?? 1
+            ),
+
+            // ADMIN LOGIN
+            adminEmail,
+            adminPassword,
+
+            // STATUS
+            status,
+            primary_status: primaryStatus,
+            secondary_status: secondaryStatus,
+
+            // TRANSFER / CANCEL DATES
+            ...(planTransferredOn
+              ? { plan_transferred_on: planTransferredOn }
+              : {}),
+            ...(planCancelledOn
+              ? { plan_cancelled_on: planCancelledOn }
+              : {}),
+
+            // WEBSITE / SSL DETAILS
+            websiteDetails:
+              p.websiteDetails !== undefined
+                ? p.websiteDetails
+                : oldPlan?.websiteDetails ?? null,
+
+            sslDetails:
+              p.sslDetails !== undefined
+                ? p.sslDetails
+                : oldPlan?.sslDetails ?? null,
           };
         })
       );
 
-      // =====================================================
-      // INSERT NEW PLANS
-      // =====================================================
+      // -----------------------------------------------
+      // REPLACE PLANS
+      // -----------------------------------------------
 
-      await OrderPlan.insertMany(planDocs);
+      await OrderPlan.deleteMany({
+        orderId: updatedOrder._id,
+      });
 
-      // =====================================================
-      // GET NEW PLANS WITH POPULATED DATA
-      // =====================================================
+      if (planDocs.length > 0) {
+        await OrderPlan.insertMany(planDocs);
+      }
+
+      // -----------------------------------------------
+      // GET NEW PLANS
+      // -----------------------------------------------
 
       const newPlans = await OrderPlan.find({
         orderId: updatedOrder._id,
@@ -5450,9 +5485,9 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
         .populate("storageId")
         .lean();
 
-      // =====================================================
-      // PLAN CHANGES
-      // =====================================================
+      // -----------------------------------------------
+      // COMPARE PLAN CHANGES
+      // -----------------------------------------------
 
       const planChanges: {
         field: string;
@@ -5460,358 +5495,162 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
         newValue?: any;
       }[] = [];
 
-      const maxPlans = Math.max(
-        oldPlans.length,
-        newPlans.length
-      );
+      const maxPlans = Math.max(oldPlans.length, newPlans.length);
 
-      // =====================================================
-      // COMPARE EVERY PLAN
-      // =====================================================
+      const getId = (value: any) =>
+        String(value?._id || value || "");
 
       for (let i = 0; i < maxPlans; i++) {
-
         const oldPlan: any = oldPlans[i];
         const newPlan: any = newPlans[i];
 
-        // =================================================
-        // NEW PLAN ADDED
-        // =================================================
+        const planSummary = (plan: any) =>
+          plan
+            ? {
+              plan: plan.planId?.plan || null,
+              emailType: plan.emailTypeId?.type || null,
+              hostingType: plan.hostTypeId?.name || null,
+              hostingSubType: plan.hostSubTypeId?.name || null,
+              storage: plan.storageId?.name || null,
+              registrationDate: plan.registrationDate || null,
+              expiryDate: plan.expiryDate || null,
+              noOfUsers: plan.noOfUsers || 0,
+              type: plan.type || null,
+              adminEmail: plan.adminEmail || "",
+              // Do not put plaintext passwords in activity logs.
+              adminPassword: undefined,
+            }
+            : null;
 
         if (!oldPlan && newPlan) {
-
           planChanges.push({
             field: `plans[${i}]`,
             oldValue: null,
-            newValue: {
-              plan:
-                newPlan.planId?.plan || null,
-
-              emailType:
-                newPlan.emailTypeId?.type || null,
-
-              hostingType:
-                newPlan.hostTypeId?.name || null,
-
-              hostingSubType:
-                newPlan.hostSubTypeId?.name || null,
-
-              storage:
-                newPlan.storageId?.name || null,
-
-              registrationDate:
-                newPlan.registrationDate || null,
-
-              expiryDate:
-                newPlan.expiryDate || null,
-
-              noOfUsers:
-                newPlan.noOfUsers || 0,
-
-              type:
-                newPlan.type || null,
-            },
+            newValue: planSummary(newPlan),
           });
-
           continue;
         }
-
-        // =================================================
-        // PLAN REMOVED
-        // =================================================
 
         if (oldPlan && !newPlan) {
-
           planChanges.push({
             field: `plans[${i}]`,
-            oldValue: {
-              plan:
-                oldPlan.planId?.plan || null,
-
-              emailType:
-                oldPlan.emailTypeId?.type || null,
-
-              hostingType:
-                oldPlan.hostTypeId?.name || null,
-
-              hostingSubType:
-                oldPlan.hostSubTypeId?.name || null,
-
-              storage:
-                oldPlan.storageId?.name || null,
-
-              registrationDate:
-                oldPlan.registrationDate || null,
-
-              expiryDate:
-                oldPlan.expiryDate || null,
-
-              noOfUsers:
-                oldPlan.noOfUsers || 0,
-
-              type:
-                oldPlan.type || null,
-            },
+            oldValue: planSummary(oldPlan),
             newValue: null,
           });
-
           continue;
         }
 
-        // =================================================
-        // PLAN
-        // =================================================
+        if (!oldPlan || !newPlan) continue;
 
-        const oldPlanId =
-          oldPlan?.planId?._id?.toString() || "";
+        const comparisons: {
+          field: string;
+          oldValue: any;
+          newValue: any;
+        }[] = [
+            {
+              field: "plan",
+              oldValue: oldPlan.planId?.plan || null,
+              newValue: newPlan.planId?.plan || null,
+            },
+            {
+              field: "emailType",
+              oldValue: oldPlan.emailTypeId?.type || null,
+              newValue: newPlan.emailTypeId?.type || null,
+            },
+            {
+              field: "hostingType",
+              oldValue: oldPlan.hostTypeId?.name || null,
+              newValue: newPlan.hostTypeId?.name || null,
+            },
+            {
+              field: "hostingSubType",
+              oldValue: oldPlan.hostSubTypeId?.name || null,
+              newValue: newPlan.hostSubTypeId?.name || null,
+            },
+            {
+              field: "storage",
+              oldValue: oldPlan.storageId?.name || null,
+              newValue: newPlan.storageId?.name || null,
+            },
+            {
+              field: "registrationDate",
+              oldValue: oldPlan.registrationDate
+                ? new Date(oldPlan.registrationDate).getTime()
+                : null,
+              newValue: newPlan.registrationDate
+                ? new Date(newPlan.registrationDate).getTime()
+                : null,
+            },
+            {
+              field: "expiryDate",
+              oldValue: oldPlan.expiryDate
+                ? new Date(oldPlan.expiryDate).getTime()
+                : null,
+              newValue: newPlan.expiryDate
+                ? new Date(newPlan.expiryDate).getTime()
+                : null,
+            },
+            {
+              field: "noOfUsers",
+              oldValue: Number(oldPlan.noOfUsers || 0),
+              newValue: Number(newPlan.noOfUsers || 0),
+            },
+            {
+              field: "type",
+              oldValue: oldPlan.type || null,
+              newValue: newPlan.type || null,
+            },
+            {
+              field: "adminEmail",
+              oldValue: oldPlan.adminEmail || "",
+              newValue: newPlan.adminEmail || "",
+            },
+            {
+              field: "status",
+              oldValue: getId(oldPlan.status),
+              newValue: getId(newPlan.status),
+            },
+            {
+              field: "primary_status",
+              oldValue: getId(oldPlan.primary_status),
+              newValue: getId(newPlan.primary_status),
+            },
+            {
+              field: "secondary_status",
+              oldValue: getId(oldPlan.secondary_status),
+              newValue: getId(newPlan.secondary_status),
+            },
+          ];
 
-        const newPlanId =
-          newPlan?.planId?._id?.toString() || "";
-
-        if (oldPlanId !== newPlanId) {
-
-          planChanges.push({
-            field: `plans[${i}].plan`,
-            oldValue:
-              oldPlan?.planId?.plan || null,
-            newValue:
-              newPlan?.planId?.plan || null,
-          });
-        }
-
-        // =================================================
-        // EMAIL TYPE
-        // =================================================
-
-        const oldEmailTypeId =
-          oldPlan?.emailTypeId?._id?.toString() || "";
-
-        const newEmailTypeId =
-          newPlan?.emailTypeId?._id?.toString() || "";
-
-        if (
-          oldEmailTypeId !== newEmailTypeId
-        ) {
-
-          planChanges.push({
-            field: `plans[${i}].emailType`,
-            oldValue:
-              oldPlan?.emailTypeId?.type || null,
-            newValue:
-              newPlan?.emailTypeId?.type || null,
-          });
-        }
-
-        // =================================================
-        // HOSTING TYPE
-        // =================================================
-
-        const oldHostTypeId =
-          oldPlan?.hostTypeId?._id?.toString() || "";
-
-        const newHostTypeId =
-          newPlan?.hostTypeId?._id?.toString() || "";
-
-        if (
-          oldHostTypeId !== newHostTypeId
-        ) {
-
-          planChanges.push({
-            field: `plans[${i}].hostingType`,
-            oldValue:
-              oldPlan?.hostTypeId?.name || null,
-            newValue:
-              newPlan?.hostTypeId?.name || null,
-          });
-        }
-
-        // =================================================
-        // HOSTING SUB TYPE
-        // =================================================
-
-        const oldHostSubTypeId =
-          oldPlan?.hostSubTypeId?._id?.toString() || "";
-
-        const newHostSubTypeId =
-          newPlan?.hostSubTypeId?._id?.toString() || "";
-
-        if (
-          oldHostSubTypeId !== newHostSubTypeId
-        ) {
-
-          planChanges.push({
-            field: `plans[${i}].hostingSubType`,
-            oldValue:
-              oldPlan?.hostSubTypeId?.name || null,
-            newValue:
-              newPlan?.hostSubTypeId?.name || null,
-          });
-        }
-
-        // =================================================
-        // STORAGE
-        // =================================================
-
-        const oldStorageId =
-          oldPlan?.storageId?._id?.toString() || "";
-
-        const newStorageId =
-          newPlan?.storageId?._id?.toString() || "";
-
-        if (
-          oldStorageId !== newStorageId
-        ) {
-
-          planChanges.push({
-            field: `plans[${i}].storage`,
-            oldValue:
-              oldPlan?.storageId?.name || null,
-            newValue:
-              newPlan?.storageId?.name || null,
-          });
-        }
-
-        // =================================================
-        // REGISTRATION DATE
-        // =================================================
-
-        const oldRegistration =
-          oldPlan?.registrationDate
-            ? new Date(
-              oldPlan.registrationDate
-            ).getTime()
-            : null;
-
-        const newRegistration =
-          newPlan?.registrationDate
-            ? new Date(
-              newPlan.registrationDate
-            ).getTime()
-            : null;
-
-        if (
-          oldRegistration !== newRegistration
-        ) {
-
-          planChanges.push({
-            field:
-              `plans[${i}].registrationDate`,
-
-            oldValue:
-              oldPlan?.registrationDate || null,
-
-            newValue:
-              newPlan?.registrationDate || null,
-          });
-        }
-
-        // =================================================
-        // EXPIRY DATE
-        // =================================================
-
-        const oldExpiry =
-          oldPlan?.expiryDate
-            ? new Date(
-              oldPlan.expiryDate
-            ).getTime()
-            : null;
-
-        const newExpiry =
-          newPlan?.expiryDate
-            ? new Date(
-              newPlan.expiryDate
-            ).getTime()
-            : null;
-
-        if (oldExpiry !== newExpiry) {
-
-          planChanges.push({
-            field:
-              `plans[${i}].expiryDate`,
-
-            oldValue:
-              oldPlan?.expiryDate || null,
-
-            newValue:
-              newPlan?.expiryDate || null,
-          });
-        }
-
-        // =================================================
-        // NUMBER OF USERS
-        // =================================================
-
-        const oldUsers =
-          Number(oldPlan?.noOfUsers || 0);
-
-        const newUsers =
-          Number(newPlan?.noOfUsers || 0);
-
-        if (oldUsers !== newUsers) {
-
-          planChanges.push({
-            field:
-              `plans[${i}].noOfUsers`,
-
-            oldValue: oldUsers,
-            newValue: newUsers,
-          });
-        }
-
-        // =================================================
-        // TYPE
-        // =================================================
-
-        const oldType =
-          oldPlan?.type || null;
-
-        const newType =
-          newPlan?.type || null;
-
-        if (oldType !== newType) {
-
-          planChanges.push({
-            field:
-              `plans[${i}].type`,
-
-            oldValue: oldType,
-            newValue: newType,
-          });
-        }
+        comparisons.forEach((change) => {
+          if (String(change.oldValue ?? "") !== String(change.newValue ?? "")) {
+            planChanges.push({
+              field: `plans[${i}].${change.field}`,
+              oldValue: change.oldValue,
+              newValue: change.newValue,
+            });
+          }
+        });
       }
 
-      // =====================================================
+      // -----------------------------------------------
       // CREATE PLAN ACTIVITY LOG
-      // =====================================================
+      // -----------------------------------------------
 
       if (planChanges.length > 0) {
-
         await ActivityLog.create({
           entityType: "ORDER",
           entityId: updatedOrder._id,
           orderId: updatedOrder._id,
           domainName: updatedOrder.domainName,
-
           action: "PLAN_CHANGED",
-
-          performedBy:
-            (req as any).user?._id,
-
-          performedByName:
-            (req as any).user?.name,
-
+          performedBy: (req as any).user?._id,
+          performedByName: (req as any).user?.name,
           changes: planChanges,
-
-          description:
-            `Plans updated for order ${updatedOrder.domainName}`,
-
+          description: `Plans updated for order ${updatedOrder.domainName}`,
           source: "ADMIN",
-
           ipAddress: req.ip,
-
-          userAgent:
-            req.get("user-agent"),
-
+          userAgent: req.get("user-agent"),
           isSystemAction: false,
         });
       }
@@ -5821,16 +5660,15 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
     // POPULATE FOR RESPONSE
     // =====================================================
 
-    const populatedOrder =
-      await Order.findById(updatedOrder._id)
-        .populate("client")
-        .populate({
-          path: "hoststorageId",
-          populate: [
-            { path: "hostType" },
-            { path: "hostSubType" },
-          ],
-        });
+    const populatedOrder = await Order.findById(updatedOrder._id)
+      .populate("client")
+      .populate({
+        path: "hoststorageId",
+        populate: [
+          { path: "hostType" },
+          { path: "hostSubType" },
+        ],
+      });
 
     // =====================================================
     // SUCCESS RESPONSE
@@ -5840,13 +5678,8 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
       success: true,
       data: populatedOrder,
     });
-
   } catch (err: any) {
-
-    console.error(
-      "Error updating order:",
-      err
-    );
+    console.error("Error updating order:", err);
 
     res.status(500).json({
       success: false,
@@ -5854,217 +5687,6 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
     });
   }
 });
-router.put(
-  "/assignclient/:id",
-  authMiddleware,
-  async (req: AuthRequest, res: Response) => {
-    try {
-      const { id } = req.params;
-      const {
-        is_customer,
-        client,
-        newCustomer
-      } = req.body;
-
-
-      // Validate Order ID
-      if (!mongoose.Types.ObjectId.isValid(id)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid order ID"
-        });
-      }
-
-
-      // Find Order
-      const order = await Order.findById(id);
-
-      if (!order) {
-        return res.status(404).json({
-          success: false,
-          message: "Order not found"
-        });
-      }
-
-
-
-      let clientId;
-
-
-
-      // =========================
-      // EXISTING CLIENT
-      // =========================
-
-      if (is_customer === true) {
-
-
-        if (!client || !mongoose.Types.ObjectId.isValid(client)) {
-          return res.status(400).json({
-            success: false,
-            message: "Invalid client ID"
-          });
-        }
-
-
-
-        const existingClient = await Client.findById(client);
-
-
-        if (!existingClient) {
-          return res.status(404).json({
-            success: false,
-            message: "Client not found"
-          });
-        }
-
-
-        clientId = existingClient._id;
-
-      }
-
-
-
-      // =========================
-      // NEW CLIENT CREATE
-      // =========================
-
-      else {
-
-
-        if (!newCustomer) {
-          return res.status(400).json({
-            success: false,
-            message: "New customer details required"
-          });
-        }
-
-
-
-        const createdClient = await Client.create({
-
-          c_salutation:
-            newCustomer.c_salutation || "",
-
-          c_firstName:
-            newCustomer.c_firstName || "",
-
-          c_lastName:
-            newCustomer.c_lastName || "",
-
-          c_name:
-            newCustomer.c_name,
-
-          c_email:
-            newCustomer.c_email,
-
-          c_phone:
-            newCustomer.c_phone,
-
-          c_company:
-            newCustomer.c_company || "",
-
-          c_address:
-            newCustomer.c_address || "",
-
-          c_address2:
-            newCustomer.c_address2 || "",
-
-          c_city:
-            newCustomer.c_city || "",
-
-          c_country:
-            newCustomer.c_country || null,
-
-          c_state:
-            newCustomer.c_state || null,
-
-          c_zipCode:
-            newCustomer.c_zipCode || "",
-
-          c_gst:
-            newCustomer.c_gst || "",
-
-          c_countryCode:
-            newCustomer.c_countryCode || "",
-
-          c_portalEnabled:
-            newCustomer.c_portalEnabled || false,
-
-          c_bankAccountPayment:
-            newCustomer.c_bankAccountPayment || "",
-
-          c_placeOfContact:
-            newCustomer.c_placeOfContact || "",
-
-          c_placeOfContactWithStateCode:
-            newCustomer.c_placeOfContactWithStateCode || ""
-
-        });
-
-
-
-        clientId = createdClient._id;
-
-      }
-
-
-
-
-      // =========================
-      // ASSIGN CLIENT TO ORDER
-      // =========================
-
-
-      order.client = clientId;
-
-
-      await order.save();
-
-
-
-      return res.status(200).json({
-
-        success: true,
-
-        message:
-          is_customer
-            ? "Existing client assigned successfully"
-            : "New client created and assigned successfully",
-
-        data: {
-
-          orderId: order._id,
-
-          clientId: clientId
-
-        }
-
-      });
-
-
-
-    } catch (error) {
-
-
-      console.error(
-        "Assign client error:",
-        error
-      );
-
-
-      return res.status(500).json({
-
-        success: false,
-
-        error:
-          (error as Error).message
-
-      });
-
-    }
-  }
-);
 // router.put("/:id", async (req: Request<{ id: string }, {}, Partial<IOrder>>, res: Response): Promise<void> => {
 //   try {
 //     const updatedOrder = await mongoose.model<IOrder>("Order").findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
@@ -6482,78 +6104,78 @@ router.get(
       const plans =
         orderIds.length
           ? await OrderPlan.find({
-              orderId: {
-                $in: orderIds,
-              },
+            orderId: {
+              $in: orderIds,
+            },
+          })
+
+            // ------------------------------------------------
+            // EMAIL TYPE
+            // ------------------------------------------------
+
+            .populate({
+              path:
+                "emailTypeId",
+              select:
+                "name image",
             })
 
-              // ------------------------------------------------
-              // EMAIL TYPE
-              // ------------------------------------------------
+            // ------------------------------------------------
+            // HOST TYPE
+            // ------------------------------------------------
 
-              .populate({
-                path:
-                  "emailTypeId",
-                select:
-                  "name image",
-              })
+            .populate({
+              path:
+                "hostTypeId",
+              select:
+                "type",
+            })
 
-              // ------------------------------------------------
-              // HOST TYPE
-              // ------------------------------------------------
+            // ------------------------------------------------
+            // HOST SUB TYPE
+            // ------------------------------------------------
 
-              .populate({
-                path:
-                  "hostTypeId",
-                select:
-                  "type",
-              })
+            .populate({
+              path:
+                "hostSubTypeId",
+              select:
+                "name",
+            })
 
-              // ------------------------------------------------
-              // HOST SUB TYPE
-              // ------------------------------------------------
+            // ------------------------------------------------
+            // STORAGE
+            // ------------------------------------------------
 
-              .populate({
-                path:
-                  "hostSubTypeId",
-                select:
-                  "name",
-              })
+            .populate({
+              path:
+                "storageId",
+              select:
+                "name storage",
+            })
 
-              // ------------------------------------------------
-              // STORAGE
-              // ------------------------------------------------
+            // ------------------------------------------------
+            // PRIMARY STATUS
+            // ------------------------------------------------
 
-              .populate({
-                path:
-                  "storageId",
-                select:
-                  "name storage",
-              })
+            .populate({
+              path:
+                "primary_status",
+              select:
+                "_id name code type is_active",
+            })
 
-              // ------------------------------------------------
-              // PRIMARY STATUS
-              // ------------------------------------------------
+            // ------------------------------------------------
+            // SECONDARY STATUS
+            // ------------------------------------------------
 
-              .populate({
-                path:
-                  "primary_status",
-                select:
-                  "_id name code type is_active",
-              })
+            .populate({
+              path:
+                "secondary_status",
+              select:
+                "_id name code type is_active",
+            })
 
-              // ------------------------------------------------
-              // SECONDARY STATUS
-              // ------------------------------------------------
-
-              .populate({
-                path:
-                  "secondary_status",
-                select:
-                  "_id name code type is_active",
-              })
-
-              .select(`
+            .select(`
                 _id
                 orderId
                 type
@@ -6569,7 +6191,7 @@ router.get(
                 secondary_status
               `)
 
-              .lean()
+            .lean()
           : [];
 
       // ========================================================
@@ -6632,36 +6254,36 @@ router.get(
               hostType:
                 plan.hostTypeId
                   ? {
-                      _id:
-                        plan.hostTypeId._id,
+                    _id:
+                      plan.hostTypeId._id,
 
-                      type:
-                        plan.hostTypeId.type,
-                    }
+                    type:
+                      plan.hostTypeId.type,
+                  }
                   : null,
 
               hostSubType:
                 plan.hostSubTypeId
                   ? {
-                      _id:
-                        plan.hostSubTypeId._id,
+                    _id:
+                      plan.hostSubTypeId._id,
 
-                      name:
-                        plan.hostSubTypeId.name,
-                    }
+                    name:
+                      plan.hostSubTypeId.name,
+                  }
                   : null,
 
               storage:
                 plan.storageId
                   ? {
-                      _id:
-                        plan.storageId._id,
+                    _id:
+                      plan.storageId._id,
 
-                      name:
-                        plan.storageId.name ||
-                        plan.storageId.storage ||
-                        null,
-                    }
+                    name:
+                      plan.storageId.name ||
+                      plan.storageId.storage ||
+                      null,
+                  }
                   : null,
 
               primary_status:
@@ -6690,18 +6312,18 @@ router.get(
           domainSource:
             order.domainSource
               ? {
-                  ...order.domainSource,
+                ...order.domainSource,
 
-                  image:
-                    order.domainSource
-                      .image
-                      ? order.domainSource.image.startsWith(
-                          "/uploads"
-                        )
-                        ? order.domainSource.image
-                        : `/uploads/domainsources/${order.domainSource.image}`
-                      : null,
-                }
+                image:
+                  order.domainSource
+                    .image
+                    ? order.domainSource.image.startsWith(
+                      "/uploads"
+                    )
+                      ? order.domainSource.image
+                      : `/uploads/domainsources/${order.domainSource.image}`
+                    : null,
+              }
               : null,
 
           // ----------------------------------------------------
@@ -7230,12 +6852,12 @@ router.get(
               const expiredDays =
                 Math.floor(
                   diffMs /
-                    (
-                      1000 *
-                      60 *
-                      60 *
-                      24
-                    )
+                  (
+                    1000 *
+                    60 *
+                    60 *
+                    24
+                  )
                 );
 
               let newArchivedStatus:
@@ -7419,12 +7041,12 @@ router.get(
             const expiredDays =
               Math.floor(
                 diffMs /
-                  (
-                    1000 *
-                    60 *
-                    60 *
-                    24
-                  )
+                (
+                  1000 *
+                  60 *
+                  60 *
+                  24
+                )
               );
 
             // --------------------------------------------------
@@ -7506,10 +7128,10 @@ router.get(
                   emailExpiryDates.length
                     ? emailExpiryDates
                     : order.email_expiryDate
-                    ? [
+                      ? [
                         order.email_expiryDate,
                       ]
-                    : [],
+                      : [],
               };
             }
           )
@@ -7529,7 +7151,7 @@ router.get(
       });
 
     } catch (
-      error: any
+    error: any
     ) {
 
       console.error(
