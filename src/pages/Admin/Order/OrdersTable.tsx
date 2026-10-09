@@ -35,9 +35,6 @@ interface OrdersTableProps {
 
   handleEdit: (order: Order) => void;
 
-  /*
-   * Get status class
-   */
   getStatusClass: (
     status?: any | null
   ) => string;
@@ -49,6 +46,12 @@ interface OrdersTableProps {
    * true = Archived Orders page
    */
   showDomainStatus?: boolean;
+
+  /*
+   * Hide expired dates only when explicitly enabled.
+   * Other pages remain unchanged by default.
+   */
+  hideExpiredDates?: boolean;
 }
 
 /* =========================================================
@@ -64,36 +67,20 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
   getStatusClass,
   navigate,
   showDomainStatus = false,
+  hideExpiredDates = false,
 }) => {
   const { user } = useAuth();
 
   const userType = user?.type;
 
-  /*
-   * IMPORTANT
-   *
-   * Normal Orders:
-   * showDomainStatus = false
-   *
-   * Archived Orders:
-   * showDomainStatus = true
-   */
-  const isArchivedPage =
-    showDomainStatus === true;
+  const isArchivedPage = showDomainStatus === true;
 
   return (
     <div className="bg-white shadow rounded-lg overflow-x-auto">
-
       <table className="w-full table-fixed divide-y divide-gray-200 text-sm">
-
-        {/* =================================================
-            HEADER
-        ================================================= */}
-
+        {/* HEADER */}
         <thead className="bg-gray-100 text-gray-600 uppercase text-xs tracking-wider">
-
           <tr>
-
             <th className="w-[60px] px-3 py-3 text-center">
               SL No
             </th>
@@ -117,277 +104,190 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
             <th className="w-[120px] px-3 py-3 text-center">
               Actions
             </th>
-
           </tr>
-
         </thead>
 
-        {/* =================================================
-            BODY
-        ================================================= */}
-
+        {/* BODY */}
         <tbody className="divide-y divide-gray-100 text-gray-900">
+          {paginatedOrders.map((order, idx) => (
+            <tr
+              key={order._id}
+              className={`transition-all duration-500 ${
+                highlightedOrderId === order._id
+                  ? "bg-blue-50 border-l-4 border-blue-500"
+                  : "hover:bg-gray-50"
+              }`}
+            >
+              {/* SL NO */}
+              <td className="px-3 py-4 text-center">
+                {currentPage && itemsPerPage
+                  ? (currentPage - 1) * itemsPerPage +
+                    idx +
+                    1
+                  : idx + 1}
+              </td>
 
-          {paginatedOrders.map(
-            (order, idx) => (
+              {/* DOMAIN */}
+              <td className="px-3 py-4">
+                <div className="flex items-center">
+                  {order.lockStatus === "Locked" ? (
+                    <FaLock
+                      className="text-red-500 w-4 h-4 shrink-0 mr-1.5"
+                      title="Locked"
+                    />
+                  ) : (
+                    <FaLock
+                      className="text-green-500 w-4 h-4 shrink-0 mr-1.5"
+                      title="Unlocked"
+                    />
+                  )}
 
-              <tr
-                key={order._id}
-                className={`transition-all duration-500 ${
-                  highlightedOrderId === order._id
-                    ? "bg-blue-50 border-l-4 border-blue-500"
-                    : "hover:bg-gray-50"
-                }`}
-              >
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-1">
+                      <span className="font-medium text-[16px] leading-5">
+                        {order.domainName}
+                      </span>
 
-                {/* =================================================
-                    SL NO
-                ================================================= */}
+                      {/* COPY DOMAIN */}
+                      <button
+                        type="button"
+                        title="Copy Domain"
+                        className="text-gray-400 hover:text-blue-600"
+                        onClick={(e) => {
+                          e.stopPropagation();
 
-                <td className="px-3 py-4 text-center">
+                          navigator.clipboard.writeText(
+                            order.domainName
+                          );
+                        }}
+                      >
+                        <FaCopy className="w-3 h-3" />
+                      </button>
 
-                  {currentPage &&
-                  itemsPerPage
-                    ? (currentPage - 1) *
-                        itemsPerPage +
-                      idx +
-                      1
-                    : idx + 1}
+                      {/* OPEN DOMAIN */}
+                      <FaExternalLinkAlt
+                        className="w-3 h-3 text-gray-500 cursor-pointer hover:text-blue-600"
+                        title="Open Domain"
+                        onClick={(e) => {
+                          e.stopPropagation();
 
-                </td>
-
-                {/* =================================================
-                    DOMAIN
-                ================================================= */}
-
-                <td className="px-3 py-4">
-
-                  <div className="flex items-center">
-
-                    {/* LOCK */}
-
-                    {order.lockStatus === "Locked" ? (
-                      <FaLock
-                        className="text-red-500 w-4 h-4 shrink-0 mr-1.5"
-                        title="Locked"
+                          window.open(
+                            `https://${order.domainName}`,
+                            "_blank"
+                          );
+                        }}
                       />
-                    ) : (
-                      <FaLock
-                        className="text-green-500 w-4 h-4 shrink-0 mr-1.5"
-                        title="Unlocked"
-                      />
-                    )}
-
-                    {/* DOMAIN + CUSTOMER */}
-
-                    <div className="flex flex-col">
-
-                      {/* DOMAIN */}
-
-                      <div className="flex items-center gap-1">
-
-                        <span className="font-medium text-[16px] leading-5">
-                          {order.domainName}
-                        </span>
-
-                        {/* COPY DOMAIN */}
-
-                        <button
-                          type="button"
-                          title="Copy Domain"
-                          className="text-gray-400 hover:text-blue-600"
-                          onClick={(e) => {
-                            e.stopPropagation();
-
-                            navigator.clipboard.writeText(
-                              order.domainName
-                            );
-                          }}
-                        >
-                          <FaCopy className="w-3 h-3" />
-                        </button>
-
-                        {/* OPEN DOMAIN */}
-
-                        <FaExternalLinkAlt
-                          className="w-3 h-3 text-gray-500 cursor-pointer hover:text-blue-600"
-                          title="Open Domain"
-                          onClick={(e) => {
-                            e.stopPropagation();
-
-                            window.open(
-                              `https://${order.domainName}`,
-                              "_blank"
-                            );
-                          }}
-                        />
-
-                      </div>
-
-                      {/* CUSTOMER */}
-
-                      {userType === "admin" &&
-                      order.client ? (
-                        <Link
-                          to={`/admin/orders/customer/${order.client._id}`}
-                          className="text-sm text-blue-600 leading-5"
-                        >
-                          {order.client.c_company ||
-                            order.client.c_name}
-                        </Link>
-                      ) : (
-                        <span className="text-gray-400 text-xs leading-5">
-                          &nbsp;
-                        </span>
-                      )}
-
                     </div>
 
-                  </div>
-
-                </td>
-
-                {/* =================================================
-                    SERVICES
-                ================================================= */}
-
-                <td className="px-4 py-4 text-left">
-
-                  <div className="flex items-center">
-
-                    <ServiceIcons
-                      order={order}
-                      isArchivedPage={
-                        isArchivedPage
-                      }
-                    />
-
-                  </div>
-
-                </td>
-
-                {/* =================================================
-                    EXPIRY
-                ================================================= */}
-
-                <td className="px-3 py-4 text-center">
-
-                  <ExpiryBadge
-                    order={order}
-                    isArchivedPage={
-                      isArchivedPage
-                    }
-                  />
-
-                </td>
-
-                {/* =================================================
-                    STATUS
-                ================================================= */}
-
-                <td className="px-3 py-4 text-center">
-
-                  <div className="flex flex-col items-center gap-1">
-
-                    {/* ORDER STATUS */}
-
-                    <span
-                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${getStatusClass(
-                        order.order_status
-                      )}`}
-                    >
-                      {showDomainStatus
-                        ? `Order: ${
-                            order.order_status
-                              ?.name || "N/A"
-                          }`
-                        : order.order_status
-                            ?.name || "N/A"}
-                    </span>
-
-                    {/* =================================================
-                        DOMAIN STATUS
-                    ================================================= */}
-
-                    {showDomainStatus && (
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${getStatusClass(
-                          order.archived_status ||
-                            order.domain_status
-                        )}`}
+                    {/* CUSTOMER */}
+                    {userType === "admin" && order.client ? (
+                      <Link
+                        to={`/admin/orders/customer/${order.client._id}`}
+                        className="text-sm text-blue-600 leading-5"
                       >
-                        Domain:{" "}
-
-                        {order.archived_status
-                          ?.name ||
-                          order.domain_status
-                            ?.name ||
-                          "N/A"}
+                        {order.client.c_company ||
+                          order.client.c_name}
+                      </Link>
+                    ) : (
+                      <span className="text-gray-400 text-xs leading-5">
+                        &nbsp;
                       </span>
                     )}
-
                   </div>
+                </div>
+              </td>
 
-                </td>
+              {/* SERVICES */}
+              <td className="px-4 py-4 text-left">
+                <div className="flex items-center">
+                  <ServiceIcons
+                    order={order}
+                    isArchivedPage={isArchivedPage}
+                  />
+                </div>
+              </td>
 
-                {/* =================================================
-                    ACTIONS
-                ================================================= */}
+              {/* EXPIRY */}
+              <td className="px-3 py-4 text-center">
+                <ExpiryBadge
+                  order={order}
+                  isArchivedPage={isArchivedPage}
+                  hideExpiredDates={hideExpiredDates}
+                />
+              </td>
 
-                <td className="px-3 py-4">
+              {/* STATUS */}
+              <td className="px-3 py-4 text-center">
+                <div className="flex flex-col items-center gap-1">
+                  {/* ORDER STATUS */}
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${getStatusClass(
+                      order.order_status
+                    )}`}
+                  >
+                    {showDomainStatus
+                      ? `Order: ${
+                          order.order_status?.name || "N/A"
+                        }`
+                      : order.order_status?.name || "N/A"}
+                  </span>
 
-                  <div className="flex justify-center gap-3 text-gray-500">
-
-                    {/* VIEW */}
-
-                    <button
-                      className="hover:text-blue-600"
-                      title="View"
-                      onClick={() =>
-                        navigate(
-                          showDomainStatus
-                            ? `/admin/archived/order-details/${order._id}`
-                            : `/admin/orders/order-details/${order._id}`,
-                          {
-                            state: {
-                              fromPage:
-                                currentPage,
-                            },
-                          }
-                        )
-                      }
+                  {/* DOMAIN STATUS */}
+                  {showDomainStatus && (
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${getStatusClass(
+                        order.archived_status ||
+                          order.domain_status
+                      )}`}
                     >
-                      <FaEye className="w-4 h-4" />
-                    </button>
+                      Domain:{" "}
+                      {order.archived_status?.name ||
+                        order.domain_status?.name ||
+                        "N/A"}
+                    </span>
+                  )}
+                </div>
+              </td>
 
-                    {/* EDIT */}
+              {/* ACTIONS */}
+              <td className="px-3 py-4">
+                <div className="flex justify-center gap-3 text-gray-500">
+                  {/* VIEW */}
+                  <button
+                    className="hover:text-blue-600"
+                    title="View"
+                    onClick={() =>
+                      navigate(
+                        showDomainStatus
+                          ? `/admin/archived/order-details/${order._id}`
+                          : `/admin/orders/order-details/${order._id}`,
+                        {
+                          state: {
+                            fromPage: currentPage,
+                          },
+                        }
+                      )
+                    }
+                  >
+                    <FaEye className="w-4 h-4" />
+                  </button>
 
-                    <button
-                      onClick={() =>
-                        handleEdit(order)
-                      }
-                      className="hover:text-yellow-600"
-                      title="Edit"
-                    >
-                      <FaEdit className="w-4 h-4" />
-                    </button>
-
-                  </div>
-
-                </td>
-
-              </tr>
-
-            )
-          )}
-
+                  {/* EDIT */}
+                  <button
+                    onClick={() => handleEdit(order)}
+                    className="hover:text-yellow-600"
+                    title="Edit"
+                  >
+                    <FaEdit className="w-4 h-4" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
         </tbody>
-
       </table>
-
     </div>
   );
 };
 
 export default OrdersTable;
-

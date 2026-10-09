@@ -799,6 +799,7 @@ const getStatusClass = (status?: Status | null): string => {
   handleEdit={handleEdit}
   getStatusClass={getStatusClass}
   navigate={navigate}
+  hideExpiredDates={true}
   
 />
 

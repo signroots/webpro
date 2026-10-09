@@ -1,10 +1,16 @@
+import React from "react";
+
+type ExpiryBadgeProps = {
+  order: any;
+  isArchivedPage?: boolean;
+  hideExpiredDates?: boolean;
+};
+
 export default function ExpiryBadge({
   order,
   isArchivedPage = false,
-}: {
-  order: any;
-  isArchivedPage?: boolean;
-}) {
+  hideExpiredDates = false,
+}: ExpiryBadgeProps) {
   // -----------------------------------------
   // Format date
   // -----------------------------------------
@@ -42,7 +48,32 @@ export default function ExpiryBadge({
   };
 
   // -----------------------------------------
-  // Get expiry status + colour
+  // Check whether date is expired
+  // -----------------------------------------
+  const isExpired = (dateKey: string) => {
+    const [year, month, day] = dateKey
+      .split("-")
+      .map(Number);
+
+    const expiryDate = Date.UTC(
+      year,
+      month - 1,
+      day
+    );
+
+    const now = new Date();
+
+    const todayUTC = Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate()
+    );
+
+    return expiryDate < todayUTC;
+  };
+
+  // -----------------------------------------
+  // Calculate badge colour
   // -----------------------------------------
   const getExpiryColor = (dateKey: string) => {
     const [year, month, day] = dateKey
@@ -64,146 +95,89 @@ export default function ExpiryBadge({
     );
 
     const diffMs =
-      expiryDate.getTime() -
-      todayUTC.getTime();
+      expiryDate.getTime() - todayUTC.getTime();
 
     const diffDays = Math.ceil(
       diffMs / (1000 * 60 * 60 * 24)
     );
 
-    // Expired
     if (diffDays < 0) {
       return {
         bg: "bg-red-100",
         text: "text-red-800",
-        expired: true,
       };
     }
 
-    // Expiring within 15 days
     if (diffDays <= 15) {
       return {
         bg: "bg-orange-100",
         text: "text-orange-800",
-        expired: false,
       };
     }
 
-    // More than 15 days
     return {
       bg: "bg-green-100",
       text: "text-green-800",
-      expired: false,
     };
   };
 
   // -----------------------------------------
-  // Get status name
+  // Get Domain expiry
   // -----------------------------------------
-  const getStatusName = (status: any) => {
-    if (!status) return "";
-
-    if (typeof status === "string") {
-      return status.toUpperCase();
-    }
-
-    return (
-      status?.name ||
-      status?.code ||
-      ""
-    ).toUpperCase();
-  };
+  const domainDate = formatDate(order?.expiryDate);
+  const domainKey = getDateKey(order?.expiryDate);
 
   // -----------------------------------------
-  // Domain expiry
+  // Get Email expiry dates
   // -----------------------------------------
-  const domainDate = formatDate(
-    order?.expiryDate
-  );
-
-  const domainKey = getDateKey(
-    order?.expiryDate
-  );
-
-  // Domain status
-  const domainStatus = getStatusName(
-    order?.domain_status
-  );
-
-  // -----------------------------------------
-  // Email expiry
-  // -----------------------------------------
-  const emailPlans = (
-    order?.Plans || []
-  ).filter(
+  const emailPlans = (order?.Plans || []).filter(
     (plan: any) =>
       plan.type?.toLowerCase() === "email" &&
       plan.expiryDate
   );
 
   // -----------------------------------------
-  // Hosting expiry
+  // Get Hosting expiry dates
   // -----------------------------------------
-  const hostingPlans = (
-    order?.Plans || []
-  ).filter(
+  const hostingPlans = (order?.Plans || []).filter(
     (plan: any) =>
       plan.type?.toLowerCase() === "hosting" &&
       plan.expiryDate
   );
 
   // -----------------------------------------
-  // MS Office expiry
+  // Get MS Office expiry dates
   // -----------------------------------------
-  const msofficePlans = (
-    order?.Plans || []
-  ).filter(
+  const msofficePlans = (order?.Plans || []).filter(
     (plan: any) =>
       plan.type?.toLowerCase() === "msoffice" &&
       plan.expiryDate
   );
 
   // -----------------------------------------
-  // Build expiry entries
+  // Build all expiry entries
   // -----------------------------------------
   const expiryEntries: {
     type: string;
     label: string;
     date: string;
     key: string;
-    status: string;
   }[] = [];
 
-  // -----------------------------------------
   // Domain
-  // -----------------------------------------
   if (domainDate && domainKey) {
     expiryEntries.push({
       type: "domain",
       label: "D",
       date: domainDate,
       key: domainKey,
-      status: domainStatus,
     });
   }
 
-  // -----------------------------------------
   // Email
-  // -----------------------------------------
   emailPlans.forEach((plan: any) => {
-    const date = formatDate(
-      plan.expiryDate
-    );
-
-    const key = getDateKey(
-      plan.expiryDate
-    );
-
-    const status = getStatusName(
-      plan.primary_status ||
-      plan.primaryStatus ||
-      plan.status
-    );
+    const date = formatDate(plan.expiryDate);
+    const key = getDateKey(plan.expiryDate);
 
     if (date && key) {
       expiryEntries.push({
@@ -211,28 +185,14 @@ export default function ExpiryBadge({
         label: "E",
         date,
         key,
-        status,
       });
     }
   });
 
-  // -----------------------------------------
   // Hosting
-  // -----------------------------------------
   hostingPlans.forEach((plan: any) => {
-    const date = formatDate(
-      plan.expiryDate
-    );
-
-    const key = getDateKey(
-      plan.expiryDate
-    );
-
-    const status = getStatusName(
-      plan.primary_status ||
-      plan.primaryStatus ||
-      plan.status
-    );
+    const date = formatDate(plan.expiryDate);
+    const key = getDateKey(plan.expiryDate);
 
     if (date && key) {
       expiryEntries.push({
@@ -240,28 +200,14 @@ export default function ExpiryBadge({
         label: "H",
         date,
         key,
-        status,
       });
     }
   });
 
-  // -----------------------------------------
   // MS Office
-  // -----------------------------------------
   msofficePlans.forEach((plan: any) => {
-    const date = formatDate(
-      plan.expiryDate
-    );
-
-    const key = getDateKey(
-      plan.expiryDate
-    );
-
-    const status = getStatusName(
-      plan.primary_status ||
-      plan.primaryStatus ||
-      plan.status
-    );
+    const date = formatDate(plan.expiryDate);
+    const key = getDateKey(plan.expiryDate);
 
     if (date && key) {
       expiryEntries.push({
@@ -269,70 +215,43 @@ export default function ExpiryBadge({
         label: "M",
         date,
         key,
-        status,
       });
     }
   });
 
   // -----------------------------------------
-  // PAGE-SPECIFIC FILTER
+  // Filter expired dates ONLY when requested
   // -----------------------------------------
-  const filteredExpiryEntries =
-    expiryEntries.filter((entry) => {
-      const colors = getExpiryColor(
-        entry.key
-      );
-
-      // =====================================
-      // ARCHIVED ORDER PAGE
-      // =====================================
-      //
-      // Show expiry date when service/domain
-      // is CANCELLED or TRANSFERRED.
-      //
-      // ACTIVE must NOT be shown.
-      //
-      if (isArchivedPage) {
-        return (
-          entry.status === "CANCELLED" ||
-          entry.status === "TRANSFERRED"
-        );
-      }
-
-      // =====================================
-      // NORMAL ORDER PAGE
-      // =====================================
-      //
-      // Show only active/future expiry dates.
-      //
-      return !colors.expired;
-    });
+  const filteredExpiryEntries = hideExpiredDates
+    ? expiryEntries.filter(
+        (entry) => !isExpired(entry.key)
+      )
+    : expiryEntries;
 
   // -----------------------------------------
   // Group same expiry dates
   // -----------------------------------------
-  const groupedDates =
-    filteredExpiryEntries.reduce(
-      (
-        groups: Record<
-          string,
-          typeof filteredExpiryEntries
-        >,
-        item
-      ) => {
-        if (!groups[item.key]) {
-          groups[item.key] = [];
-        }
+  const groupedDates = filteredExpiryEntries.reduce(
+    (
+      groups: Record<
+        string,
+        typeof filteredExpiryEntries
+      >,
+      item
+    ) => {
+      if (!groups[item.key]) {
+        groups[item.key] = [];
+      }
 
-        groups[item.key].push(item);
+      groups[item.key].push(item);
 
-        return groups;
-      },
-      {}
-    );
+      return groups;
+    },
+    {}
+  );
 
   // -----------------------------------------
-  // Badge classes
+  // Badge base classes
   // -----------------------------------------
   const badgeBase =
     "inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium w-fit";
@@ -341,20 +260,15 @@ export default function ExpiryBadge({
     "w-4 h-4 flex justify-center items-center rounded-full bg-white text-black text-[9px]";
 
   // -----------------------------------------
-  // No matching expiry dates
+  // No dates to display
   // -----------------------------------------
-  if (
-    filteredExpiryEntries.length === 0
-  ) {
+  if (filteredExpiryEntries.length === 0) {
     return (
       <div className="flex flex-col gap-1">
         <div
           className={`${badgeBase} bg-gray-200 text-gray-500 min-w-[100px]`}
         >
-          <span className={iconBase}>
-            -
-          </span>
-
+          <span className={iconBase}>-</span>
           N/A
         </div>
       </div>
@@ -362,59 +276,43 @@ export default function ExpiryBadge({
   }
 
   // -----------------------------------------
-  // Render
+  // Render expiry badges
   // -----------------------------------------
   return (
     <div className="flex flex-col gap-1">
-      {Object.entries(
-        groupedDates
-      ).map(
+      {Object.entries(groupedDates).map(
         ([dateKey, entries]) => {
-          // Remove duplicate service types
-          const uniqueTypes =
-            Array.from(
-              new Map(
-                entries.map(
-                  (entry) => [
-                    entry.type,
-                    entry,
-                  ]
-                )
-              ).values()
-            );
+          // Remove duplicate service types for same date
+          const uniqueTypes = Array.from(
+            new Map(
+              entries.map((entry) => [
+                entry.type,
+                entry,
+              ])
+            ).values()
+          );
 
-          // Create label
-          const label =
-            uniqueTypes
-              .map(
-                (entry) =>
-                  entry.label
-              )
-              .join("");
+          // Create badge label
+          const label = uniqueTypes
+            .map((entry) => entry.label)
+            .join("");
 
-          // Get colour
-          const colors =
-            getExpiryColor(
-              dateKey
-            );
+          // Date to display
+          const displayDate = uniqueTypes[0].date;
+
+          // Badge colour
+          const colors = getExpiryColor(dateKey);
 
           return (
             <div
               key={dateKey}
               className={`${badgeBase} ${colors.bg} ${colors.text}`}
             >
-              <span
-                className={iconBase}
-              >
+              <span className={iconBase}>
                 {label}
               </span>
 
-              <span>
-                {
-                  uniqueTypes[0]
-                    .date
-                }
-              </span>
+              {displayDate}
             </div>
           );
         }
@@ -422,3 +320,4 @@ export default function ExpiryBadge({
     </div>
   );
 }
+
