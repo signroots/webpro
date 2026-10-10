@@ -38,6 +38,8 @@ interface EmailPlan {
   status?: any;
   primary_status?: any;
   isTransferred?: boolean;
+  adminEmail?: string;
+  adminPassword?: string;
 }
 
 interface MsofficeOrderPlan {
@@ -58,6 +60,8 @@ interface MsofficeOrderPlan {
   status?: any;
   primary_status?: any;
   isTransferred?: boolean;
+  adminEmail?: string;
+  adminPassword?: string;
 }
 
 interface OrderPlan {
@@ -75,6 +79,8 @@ interface OrderPlan {
   status?: any;
   primary_status?: any;
   isTransferred?: boolean;
+  adminEmail?: string;
+  adminPassword?: string;
 }
 
 interface StoragePlan {
@@ -98,6 +104,8 @@ interface StoragePlan {
   status?: any;
   primary_status?: any;
   isTransferred?: boolean;
+  adminEmail?: string;
+  adminPassword?: string;
 }
 
 interface HostType {
@@ -134,6 +142,8 @@ interface HostingPlan {
   status?: any;
   primary_status?: any;
   isTransferred?: boolean;
+  adminEmail?: string;
+  adminPassword?: string;
 }
 
 interface OrderForm {
@@ -496,6 +506,8 @@ const UpdateOrder: React.FC = () => {
         selected_plan: "",
         type: "email",
         status: "",
+        adminEmail: "",
+        adminPassword: "",
       },
     ]);
   };
@@ -518,6 +530,8 @@ const UpdateOrder: React.FC = () => {
         plans: [],
         selected_plan: "",
         type: "storage",
+        adminEmail: "",
+        adminPassword: "",
       },
     ]);
   };
@@ -535,6 +549,8 @@ const UpdateOrder: React.FC = () => {
         plans: [],
         selected_plan: "",
         type: "msoffice",
+        adminEmail: "",
+        adminPassword: "",
       },
     ]);
   };
@@ -1180,6 +1196,8 @@ const UpdateOrder: React.FC = () => {
 
               isTransferred:
                 isLockedPlan(p),
+              adminEmail: p.adminEmail || "",
+              adminPassword: p.adminPassword || "",
             };
           })
         );
@@ -1229,6 +1247,8 @@ const UpdateOrder: React.FC = () => {
 
             isTransferred:
               isLockedPlan(p),
+            adminEmail: p.adminEmail || "",
+            adminPassword: p.adminPassword || "",
           }))
         );
 
@@ -1277,6 +1297,8 @@ const UpdateOrder: React.FC = () => {
 
             isTransferred:
               isLockedPlan(p),
+            adminEmail: p.adminEmail || "",
+            adminPassword: p.adminPassword || "",
           }))
         );
 
@@ -1318,6 +1340,8 @@ const UpdateOrder: React.FC = () => {
 
             isTransferred:
               isLockedPlan(p),
+            adminEmail: p.adminEmail || "",
+            adminPassword: p.adminPassword || "",
           }))
         );
 
@@ -1577,6 +1601,8 @@ const UpdateOrder: React.FC = () => {
 
                 isTransferred:
                   isLockedPlan(p),
+                adminEmail: p.adminEmail || "",
+                adminPassword: p.adminPassword || "",
               };
             })
           );
@@ -1851,6 +1877,8 @@ const UpdateOrder: React.FC = () => {
 
             status:
               plan.status || "",
+            adminEmail: plan.adminEmail || "",
+            adminPassword: plan.adminPassword || "",
           });
         });
       }
@@ -1907,6 +1935,8 @@ const UpdateOrder: React.FC = () => {
 
             status:
               plan.status || "",
+            adminEmail: plan.adminEmail || "",
+            adminPassword: plan.adminPassword || "",
           });
         });
       }
@@ -1954,6 +1984,8 @@ const UpdateOrder: React.FC = () => {
 
             status:
               plan.status || "",
+            adminEmail: plan.adminEmail || "",
+            adminPassword: plan.adminPassword || "",
           });
         });
       }
@@ -1994,6 +2026,8 @@ const UpdateOrder: React.FC = () => {
 
             status:
               plan.status || "",
+            adminEmail: plan.adminEmail || "",
+            adminPassword: plan.adminPassword || "",
           });
         });
       }
@@ -3013,6 +3047,49 @@ const UpdateOrder: React.FC = () => {
 
                       </div>
 
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                        <div>
+                          <label className="block mb-1 text-gray-700">
+                            Admin Email
+                          </label>
+                          <input
+                            type="email"
+                            value={plan.adminEmail || ""}
+                            onChange={(e) =>
+                              handleEmailPlanChange(
+                                idx,
+                                "adminEmail",
+                                e.target.value
+                              )
+                            }
+                            disabled={locked}
+                            placeholder="Enter admin email"
+                            autoComplete="off"
+                            className="w-full border rounded px-3 py-2 disabled:bg-gray-200 disabled:cursor-not-allowed"
+                          />
+                        </div>
+                        <div>
+                          <label className="block mb-1 text-gray-700">
+                            Admin Password
+                          </label>
+                          <input
+                            type="password"
+                            value={plan.adminPassword || ""}
+                            onChange={(e) =>
+                              handleEmailPlanChange(
+                                idx,
+                                "adminPassword",
+                                e.target.value
+                              )
+                            }
+                            disabled={locked}
+                            placeholder="Enter admin password"
+                            autoComplete="new-password"
+                            className="w-full border rounded px-3 py-2 disabled:bg-gray-200 disabled:cursor-not-allowed"
+                          />
+                        </div>
+                      </div>
+
                       <button
                         type="button"
                         disabled={locked}
@@ -3246,6 +3323,49 @@ const UpdateOrder: React.FC = () => {
                           />
                         </div>
 
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                        <div>
+                          <label className="block mb-1 text-gray-700">
+                            Admin Email
+                          </label>
+                          <input
+                            type="email"
+                            value={plan.adminEmail || ""}
+                            onChange={(e) =>
+                              handleStoragePlanChange(
+                                idx,
+                                "adminEmail",
+                                e.target.value
+                              )
+                            }
+                            disabled={locked}
+                            placeholder="Enter admin email"
+                            autoComplete="off"
+                            className="w-full border rounded px-3 py-2 disabled:bg-gray-200 disabled:cursor-not-allowed"
+                          />
+                        </div>
+                        <div>
+                          <label className="block mb-1 text-gray-700">
+                            Admin Password
+                          </label>
+                          <input
+                            type="password"
+                            value={plan.adminPassword || ""}
+                            onChange={(e) =>
+                              handleStoragePlanChange(
+                                idx,
+                                "adminPassword",
+                                e.target.value
+                              )
+                            }
+                            disabled={locked}
+                            placeholder="Enter admin password"
+                            autoComplete="new-password"
+                            className="w-full border rounded px-3 py-2 disabled:bg-gray-200 disabled:cursor-not-allowed"
+                          />
+                        </div>
                       </div>
 
                       <button
@@ -3501,6 +3621,49 @@ const UpdateOrder: React.FC = () => {
 
                       </div>
 
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                        <div>
+                          <label className="block mb-1 text-gray-700">
+                            Admin Email
+                          </label>
+                          <input
+                            type="email"
+                            value={plan.adminEmail || ""}
+                            onChange={(e) =>
+                              handleMsofficePlanChange(
+                                idx,
+                                "adminEmail",
+                                e.target.value
+                              )
+                            }
+                            disabled={locked}
+                            placeholder="Enter admin email"
+                            autoComplete="off"
+                            className="w-full border rounded px-3 py-2 disabled:bg-gray-200 disabled:cursor-not-allowed"
+                          />
+                        </div>
+                        <div>
+                          <label className="block mb-1 text-gray-700">
+                            Admin Password
+                          </label>
+                          <input
+                            type="password"
+                            value={plan.adminPassword || ""}
+                            onChange={(e) =>
+                              handleMsofficePlanChange(
+                                idx,
+                                "adminPassword",
+                                e.target.value
+                              )
+                            }
+                            disabled={locked}
+                            placeholder="Enter admin password"
+                            autoComplete="new-password"
+                            className="w-full border rounded px-3 py-2 disabled:bg-gray-200 disabled:cursor-not-allowed"
+                          />
+                        </div>
+                      </div>
+
                       <button
                         type="button"
                         disabled={locked}
@@ -3562,6 +3725,8 @@ const UpdateOrder: React.FC = () => {
                       storage: "",
                       registrationDate: "",
                       expiryDate: "",
+                      adminEmail: "",
+                      adminPassword: "",
                     },
                   ]);
                 }
@@ -3836,6 +4001,55 @@ const UpdateOrder: React.FC = () => {
                       disabled={locked}
                       className="w-full border rounded px-3 py-2 disabled:bg-gray-200 disabled:cursor-not-allowed"
                     />
+                  </div>
+
+                  <div className="md:col-span-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-gray-700 font-medium mb-2">
+                        Admin Email
+                      </label>
+                      <input
+                        type="email"
+                        value={plan.adminEmail || ""}
+                        onChange={(e) => {
+                          if (locked) return;
+                          setHostingPlans((prev) =>
+                            prev.map((item, i) =>
+                              i === idx
+                                ? { ...item, adminEmail: e.target.value }
+                                : item
+                            )
+                          );
+                        }}
+                        disabled={locked}
+                        placeholder="Enter admin email"
+                        autoComplete="off"
+                        className="w-full border rounded px-3 py-2 disabled:bg-gray-200 disabled:cursor-not-allowed"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-700 font-medium mb-2">
+                        Admin Password
+                      </label>
+                      <input
+                        type="password"
+                        value={plan.adminPassword || ""}
+                        onChange={(e) => {
+                          if (locked) return;
+                          setHostingPlans((prev) =>
+                            prev.map((item, i) =>
+                              i === idx
+                                ? { ...item, adminPassword: e.target.value }
+                                : item
+                            )
+                          );
+                        }}
+                        disabled={locked}
+                        placeholder="Enter admin password"
+                        autoComplete="new-password"
+                        className="w-full border rounded px-3 py-2 disabled:bg-gray-200 disabled:cursor-not-allowed"
+                      />
+                    </div>
                   </div>
 
                 </div>

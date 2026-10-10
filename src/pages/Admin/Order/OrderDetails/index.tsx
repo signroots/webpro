@@ -16,29 +16,28 @@ import {
   FaEdit,
   FaRedo,
   FaTimes,
+  FaCopy,
 } from "react-icons/fa";
 
-/* =========================================================
-   TYPES
-========================================================= */
+/* ===================== TYPES ===================== */
 
 interface Plan {
   _id: string;
-
   planName: string;
   serviceType: string;
   type: string;
-
   registrationDate: string;
   expiryDate: string;
-
   provider?: string;
   noOfUsers?: number;
-
   orderId: string;
   planId: string;
-
   emailType?: string;
+
+  // Admin login information
+  adminEmail?: string;
+  adminPassword?: string;
+  username?: string;
 
   primary_status?: {
     _id: string;
@@ -94,12 +93,8 @@ interface Status {
   _id: string;
   name: string;
   code?: string;
-
   category?: "primary" | "secondary";
-
   is_active: boolean;
-
-  type?: string;
 
   typeEmail?: {
     _id: string;
@@ -109,7 +104,6 @@ interface Status {
 
 interface Order {
   _id: string;
-
   domainName: string;
 
   status?: {
@@ -134,10 +128,8 @@ interface Order {
   } | null;
 
   managedBy?: string;
-
   registrationDate?: string;
   expiryDate?: string;
-
   provider?: string;
 
   domainSource?: DomainSource | null;
@@ -153,14 +145,12 @@ interface Order {
 
   lockStatus?: string;
   email_status?: string;
-
   businessEmail?: boolean;
   cloudflareRegistered?: boolean;
   google_email?: boolean;
   microsoft_email?: boolean;
 
   username?: string;
-
   nameServers?: string[];
 
   customer?: Customer;
@@ -169,15 +159,19 @@ interface Order {
   plans?: Plan[];
 }
 
-/* =========================================================
-   API BASE URL
-========================================================= */
+/* ===================== SMALL COMPONENTS ===================== */
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-/* =========================================================
-   SMALL COMPONENT
-========================================================= */
+const copyToClipboard = async (value: string, label: string) => {
+  try {
+    await navigator.clipboard.writeText(value);
+    alert(`${label} copied successfully`);
+  } catch (error) {
+    console.error("Copy failed:", error);
+    alert(`Failed to copy ${label.toLowerCase()}`);
+  }
+};
 
 const Info: React.FC<{
   label: string;
@@ -196,9 +190,7 @@ const Info: React.FC<{
   </div>
 );
 
-/* =========================================================
-   MAIN COMPONENT
-========================================================= */
+/* ===================== MAIN COMPONENT ===================== */
 
 const OrderDetails: React.FC = () => {
   const { orderId } = useParams<{
@@ -207,9 +199,7 @@ const OrderDetails: React.FC = () => {
 
   const navigate = useNavigate();
 
-  /* =======================================================
-     STATES
-  ======================================================= */
+  /* ===================== STATES ===================== */
 
   const [statuses, setStatuses] =
     useState<Status[]>([]);
@@ -232,9 +222,7 @@ const OrderDetails: React.FC = () => {
   const [error, setError] =
     useState<string | null>(null);
 
-  /* =======================================================
-     STATUS MODAL
-  ======================================================= */
+  /* ===================== STATUS MODAL ===================== */
 
   const [statusModalOpen, setStatusModalOpen] =
     useState(false);
@@ -263,42 +251,7 @@ const OrderDetails: React.FC = () => {
   const [statusUpdating, setStatusUpdating] =
     useState(false);
 
-  /* =======================================================
-     MAP PERSON
-  ======================================================= */
-
-  const mapPerson = (source: any) =>
-    source
-      ? {
-          name: source.c_name,
-          email: source.c_email,
-          phone: source.c_phone,
-          company: source.c_company,
-          address: source.c_address,
-          city: source.c_city,
-          state: source.c_state?.name,
-          country: source.c_country?.name,
-        }
-      : undefined;
-
-  /* =======================================================
-     MAP ORDER RESPONSE
-  ======================================================= */
-
-  const mapOrderResponse = (data: any): Order => ({
-    ...data,
-
-    domainSource:
-      data.domainSource || null,
-
-    customer: mapPerson(data.customer),
-
-    client: mapPerson(data.client),
-  });
-
-  /* =======================================================
-     OPEN STATUS MODAL
-  ======================================================= */
+  /* ===================== OPEN STATUS MODAL ===================== */
 
   const openStatusModal = () => {
     setSelectedOrderStatus(
@@ -330,9 +283,7 @@ const OrderDetails: React.FC = () => {
     setStatusModalOpen(true);
   };
 
-  /* =======================================================
-     HANDLE STATUS UPDATE
-  ======================================================= */
+  /* ===================== HANDLE STATUS UPDATE ===================== */
 
   const handleStatusUpdate = async () => {
     if (!order) return;
@@ -342,192 +293,91 @@ const OrderDetails: React.FC = () => {
       !updateDomainStatusChecked &&
       !updatePlanStatusChecked
     ) {
-      alert(
-        "Please select at least one status to update"
-      );
+      alert("Please select at least one status to update");
       return;
     }
 
     try {
       setStatusUpdating(true);
 
-      /* =====================================================
-         1. ORDER STATUS UPDATE
-
-         ONLY order_status is sent.
-
-         Backend automatically handles:
-
-         CANCELLED:
-           Order -> CANCELLED
-           Domain -> CANCELLED
-           Email Primary -> CANCELLED
-           Secondary -> unchanged
-
-         TRANSFERRED:
-           Order -> TRANSFERRED
-           Domain -> TRANSFERRED
-           Email Primary -> TRANSFERRED
-           Secondary -> unchanged
-           managedBy -> Customer
-      ===================================================== */
+      /* ===================== ORDER STATUS ===================== */
 
       if (
         updateOrderStatusChecked &&
         selectedOrderStatus &&
-        selectedOrderStatus !==
-          order.order_status?._id
+        selectedOrderStatus !== order.order_status?._id
       ) {
-        const payload = {
-          order_status:
-            selectedOrderStatus,
-        };
-
-        console.log(
-          "ORDER STATUS UPDATE PAYLOAD:",
-          payload
-        );
-
-        await updateOrderStatus(
+        const updatedOrder = await updateOrderStatus(
           order._id,
-          payload
+          {
+            order_status: selectedOrderStatus,
+          }
         );
 
-        /* Refresh complete order */
-
-        const refreshedOrder =
-          await fetchOrderById(order._id);
-
-        const mappedRefreshedOrder =
-          mapOrderResponse(
-            refreshedOrder
-          );
-
-        setOrder(
-          mappedRefreshedOrder
-        );
-
-        console.log(
-          "ORDER STATUS UPDATE COMPLETED:",
-          mappedRefreshedOrder
+        setOrder((prev) =>
+          prev
+            ? {
+                ...prev,
+                order_status:
+                  updatedOrder.order_status,
+              }
+            : prev
         );
       }
 
-      /* =====================================================
-         2. DOMAIN STATUS UPDATE
-
-         Domain status is updated ONLY when
-         Order Status checkbox is NOT selected.
-
-         Therefore an order status ID can never
-         accidentally be sent as domain_status.
-      ===================================================== */
+      /* ===================== DOMAIN STATUS ===================== */
 
       if (
-        !updateOrderStatusChecked &&
         updateDomainStatusChecked &&
         selectedDomainStatus &&
-        selectedDomainStatus !==
-          order.domain_status?._id
+        selectedDomainStatus !== order.domain_status?._id
       ) {
-        const payload = {
-          domain_status:
-            selectedDomainStatus,
-        };
-
-        console.log(
-          "DOMAIN STATUS UPDATE PAYLOAD:",
-          payload
-        );
-
-        await updateOrderStatus(
+        const updatedOrder = await updateOrderStatus(
           order._id,
-          payload
+          {
+            domain_status: selectedDomainStatus,
+          }
         );
 
-        /* Refresh complete order */
-
-        const refreshedOrder =
-          await fetchOrderById(order._id);
-
-        const mappedRefreshedOrder =
-          mapOrderResponse(
-            refreshedOrder
-          );
-
-        setOrder(
-          mappedRefreshedOrder
-        );
-
-        console.log(
-          "DOMAIN STATUS UPDATE COMPLETED:",
-          mappedRefreshedOrder
+        setOrder((prev) =>
+          prev
+            ? {
+                ...prev,
+                domain_status:
+                  updatedOrder.domain_status,
+              }
+            : prev
         );
       }
 
-      /* =====================================================
-         3. MANUAL PLAN STATUS UPDATE
+      /* ===================== PLAN STATUS ===================== */
 
-         IMPORTANT:
+      if (updatePlanStatusChecked) {
+        for (const plan of order.plans || []) {
 
-         - This executes ONLY when Order Status
-           checkbox is NOT selected.
-         - ALL PLAN TYPES ARE EDITABLE.
-         - Each selected plan is updated individually.
-         - Other plans remain unchanged.
-      ===================================================== */
-
-      if (
-        !updateOrderStatusChecked &&
-        updatePlanStatusChecked
-      ) {
-        for (
-          const plan of order.plans || []
-        ) {
-          /* =================================================
-             NO EMAIL-ONLY CONDITION HERE.
-
-             Every plan type can be updated:
-               email
-               storage
-               msoffice
-               hosting
-               website
-               ssl
-          ================================================= */
+          /*
+           * Only email plans are allowed
+           * to be updated from this popup.
+           */
+          if (!plan.emailType) {
+            continue;
+          }
 
           const primaryStatus =
-            selectedPrimaryPlanStatuses[
-              plan._id
-            ] || "";
+            selectedPrimaryPlanStatuses[plan._id] || "";
 
           const secondaryStatus =
-            selectedSecondaryPlanStatuses[
-              plan._id
-            ] || "";
-
-          const currentPrimaryStatus =
-            plan.primary_status?._id || "";
-
-          const currentSecondaryStatus =
-            plan.secondary_status?._id || "";
+            selectedSecondaryPlanStatuses[plan._id] || "";
 
           const primaryChanged =
             primaryStatus !==
-            currentPrimaryStatus;
+            (plan.primary_status?._id || "");
 
           const secondaryChanged =
             secondaryStatus !==
-            currentSecondaryStatus;
+            (plan.secondary_status?._id || "");
 
-          /* =================================================
-             NOTHING CHANGED
-          ================================================= */
-
-          if (
-            !primaryChanged &&
-            !secondaryChanged
-          ) {
+          if (!primaryChanged && !secondaryChanged) {
             continue;
           }
 
@@ -535,10 +385,6 @@ const OrderDetails: React.FC = () => {
             primary_status?: string;
             secondary_status?: string | null;
           } = {};
-
-          /* =================================================
-             PRIMARY STATUS
-          ================================================= */
 
           if (
             primaryChanged &&
@@ -548,224 +394,188 @@ const OrderDetails: React.FC = () => {
               primaryStatus;
           }
 
-          /* =================================================
-             SECONDARY STATUS
-
-             Empty value means clear secondary status.
-          ================================================= */
-
-          if (
-            secondaryChanged
-          ) {
+          if (secondaryChanged) {
             payload.secondary_status =
               secondaryStatus || null;
           }
 
-          /* =================================================
-             UPDATE ONLY THIS PLAN
-          ================================================= */
+          const updatedPlan =
+            await updatePlanStatus(
+              plan._id,
+              payload
+            );
 
-          console.log(
-            `PLAN STATUS UPDATE PAYLOAD - ${plan._id}:`,
-            {
-              planId: plan._id,
-              planType: plan.type,
-              payload,
-            }
-          );
+          setOrder((prev) => {
+            if (!prev) return prev;
 
-          await updatePlanStatus(
-            plan._id,
-            payload
-          );
+            return {
+              ...prev,
+
+              plans: prev.plans?.map((p) =>
+                p._id === plan._id
+                  ? {
+                      ...p,
+                      primary_status:
+                        updatedPlan.primary_status,
+                      secondary_status:
+                        updatedPlan.secondary_status,
+                    }
+                  : p
+              ),
+            };
+          });
         }
-
-        /* =================================================
-           REFRESH COMPLETE ORDER
-        ================================================= */
-
-        const refreshedOrder =
-          await fetchOrderById(order._id);
-
-        const mappedRefreshedOrder =
-          mapOrderResponse(
-            refreshedOrder
-          );
-
-        setOrder(
-          mappedRefreshedOrder
-        );
-
-        console.log(
-          "PLAN STATUS UPDATE COMPLETED:",
-          mappedRefreshedOrder
-        );
       }
-
-      /* =====================================================
-         CLOSE MODAL
-      ===================================================== */
 
       setStatusModalOpen(false);
 
-      alert(
-        "Status updated successfully"
-      );
+      alert("Status updated successfully");
 
-    } catch (error: any) {
+    } catch (error) {
       console.error(
-        "STATUS UPDATE ERROR:",
+        "Status update error:",
         error
       );
 
-      const backendMessage =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Failed to update status";
-
-      alert(
-        backendMessage
-      );
+      alert("Failed to update status");
 
     } finally {
       setStatusUpdating(false);
     }
   };
 
-  /* =======================================================
-     LOAD ORDER DETAILS
-  ======================================================= */
+  /* ===================== LOAD ORDER ===================== */
 
   useEffect(() => {
     if (!orderId) return;
 
-    const loadOrderDetails =
-      async () => {
-        try {
-          setLoading(true);
-          setError(null);
+    const loadOrderDetails = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-          /* ================= FETCH ORDER ================= */
+        /* ===================== FETCH ORDER ===================== */
 
-          const data =
-            await fetchOrderById(
-              orderId
-            );
+        const data =
+          await fetchOrderById(orderId);
 
-          const mappedOrder =
-            mapOrderResponse(data);
+        /* ===================== MAP CUSTOMER / CLIENT ===================== */
 
-          setOrder(
-            mappedOrder
-          );
+        const mapPerson = (source: any) =>
+          source
+            ? {
+                name: source.c_name,
+                email: source.c_email,
+                phone: source.c_phone,
+                company: source.c_company,
+                address: source.c_address,
+                city: source.c_city,
+                state:
+                  source.c_state?.name,
+                country:
+                  source.c_country?.name,
+              }
+            : undefined;
 
-          /* ================= ORDER STATUS ================= */
+        const mappedOrder: Order = {
+          ...data,
 
-          const orderStatusData =
-            await fetchOrderStatuses(
-              orderId
-            );
+          domainSource:
+            data.domainSource || null,
 
-          setStatuses(
-            Array.isArray(
-              orderStatusData
-            )
-              ? orderStatusData
-              : []
-          );
+          customer: mapPerson(
+            data.customer
+          ),
 
-          /* ================= DOMAIN STATUS ================= */
+          client: mapPerson(
+            data.client
+          ),
+        };
 
-          const domainStatusData =
-            await fetchDomainStatuses(
-              orderId
-            );
+        setOrder(mappedOrder);
 
-          setDomainStatuses(
-            Array.isArray(
-              domainStatusData
-            )
-              ? domainStatusData
-              : []
-          );
+        /* ===================== ORDER STATUS ===================== */
 
-          /* ================= PLAN STATUS ================= */
+        const orderStatusData =
+          await fetchOrderStatuses(orderId);
 
-          const primaryStatuses =
-            await fetchPrimaryPlanStatuses();
+        setStatuses(
+          Array.isArray(orderStatusData)
+            ? orderStatusData
+            : []
+        );
 
-          const secondaryStatuses =
-            await fetchSecondaryPlanStatuses();
+        /* ===================== DOMAIN STATUS ===================== */
 
-          const primaryStatusMap: Record<
-            string,
-            Status[]
-          > = {};
+        const domainStatusData =
+          await fetchDomainStatuses(orderId);
 
-          const secondaryStatusMap: Record<
-            string,
-            Status[]
-          > = {};
+        setDomainStatuses(
+          Array.isArray(domainStatusData)
+            ? domainStatusData
+            : []
+        );
 
-          /* =================================================
-             ASSIGN STATUS LIST TO EVERY PLAN
+        /* ===================== PLAN STATUSES ===================== */
 
-             No type restriction here.
-          ================================================= */
+        const primaryStatuses =
+          await fetchPrimaryPlanStatuses();
 
-          for (
-            const plan of
-              mappedOrder.plans || []
-          ) {
-            primaryStatusMap[
-              plan._id
-            ] =
-              Array.isArray(
-                primaryStatuses
-              )
-                ? primaryStatuses
-                : [];
+        const secondaryStatuses =
+          await fetchSecondaryPlanStatuses();
 
-            secondaryStatusMap[
-              plan._id
-            ] =
-              Array.isArray(
-                secondaryStatuses
-              )
-                ? secondaryStatuses
-                : [];
-          }
+        const primaryStatusMap: Record<
+          string,
+          Status[]
+        > = {};
 
-          setPrimaryPlanStatuses(
-            primaryStatusMap
-          );
+        const secondaryStatusMap: Record<
+          string,
+          Status[]
+        > = {};
 
-          setSecondaryPlanStatuses(
-            secondaryStatusMap
-          );
+        for (
+          const plan of mappedOrder.plans || []
+        ) {
+          primaryStatusMap[plan._id] =
+            Array.isArray(primaryStatuses)
+              ? primaryStatuses
+              : [];
 
-        } catch (error) {
-          console.error(
-            "Failed to load order details:",
-            error
-          );
-
-          setError(
-            "Failed to load order details"
-          );
-
-        } finally {
-          setLoading(false);
+          secondaryStatusMap[plan._id] =
+            Array.isArray(secondaryStatuses)
+              ? secondaryStatuses
+              : [];
         }
-      };
+
+        setPrimaryPlanStatuses(
+          primaryStatusMap
+        );
+
+        setSecondaryPlanStatuses(
+          secondaryStatusMap
+        );
+
+      } catch (error) {
+        console.error(
+          "Failed to load order details:",
+          error
+        );
+
+        setError(
+          "Failed to load order details"
+        );
+
+      } finally {
+        setLoading(false);
+      }
+    };
 
     loadOrderDetails();
 
   }, [orderId]);
 
-  /* =======================================================
-     SECTION COMPONENT
-  ======================================================= */
+  /* ===================== SECTION COMPONENT ===================== */
 
   const Section: React.FC<{
     title: string;
@@ -803,9 +613,7 @@ const OrderDetails: React.FC = () => {
     </section>
   );
 
-  /* =======================================================
-     LOADING
-  ======================================================= */
+  /* ===================== LOADING ===================== */
 
   if (loading) {
     return (
@@ -815,9 +623,7 @@ const OrderDetails: React.FC = () => {
     );
   }
 
-  /* =======================================================
-     ERROR
-  ======================================================= */
+  /* ===================== ERROR ===================== */
 
   if (error) {
     return (
@@ -827,9 +633,7 @@ const OrderDetails: React.FC = () => {
     );
   }
 
-  /* =======================================================
-     NO ORDER
-  ======================================================= */
+  /* ===================== NO ORDER ===================== */
 
   if (!order) {
     return (
@@ -839,41 +643,27 @@ const OrderDetails: React.FC = () => {
     );
   }
 
-  /* =======================================================
-     DATE FORMAT
-  ======================================================= */
+  /* ===================== DATE FORMAT ===================== */
 
-  const formatDate = (
-    date?: string
-  ) =>
+  const formatDate = (date?: string) =>
     date
       ? new Date(date)
-          .toLocaleDateString(
-            "en-GB",
-            {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-            }
-          )
-          .replaceAll(
-            " ",
-            "-"
-          )
+          .toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })
+          .replaceAll(" ", "-")
       : "-";
 
-  /* =======================================================
-     RETURN
-  ======================================================= */
+  /* ===================== RETURN ===================== */
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
 
       <div className="max-w-6xl mx-auto bg-white rounded-xl shadow p-6 space-y-8">
 
-        {/* =================================================
-            HEADER
-        ================================================= */}
+        {/* ===================== HEADER ===================== */}
 
         <div className="flex justify-between items-center">
 
@@ -885,9 +675,7 @@ const OrderDetails: React.FC = () => {
 
             <button
               type="button"
-              onClick={
-                openStatusModal
-              }
+              onClick={openStatusModal}
               className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium"
             >
               <FaEdit />
@@ -897,9 +685,7 @@ const OrderDetails: React.FC = () => {
           </div>
 
           <button
-            onClick={() =>
-              navigate(-1)
-            }
+            onClick={() => navigate(-1)}
             className="flex items-center gap-2 bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
           >
             <FaArrowLeft />
@@ -908,9 +694,7 @@ const OrderDetails: React.FC = () => {
 
         </div>
 
-        {/* =================================================
-            DOMAIN INFORMATION
-        ================================================= */}
+        {/* ===================== DOMAIN INFORMATION ===================== */}
 
         <Section
           title="Domain Information"
@@ -919,16 +703,12 @@ const OrderDetails: React.FC = () => {
 
           <Info
             label="Domain Name"
-            value={
-              order.domainName
-            }
+            value={order.domainName}
           />
 
           <Info
             label="Managed By"
-            value={
-              order.managedBy
-            }
+            value={order.managedBy}
           />
 
           {/* REGISTRAR */}
@@ -944,24 +724,17 @@ const OrderDetails: React.FC = () => {
               {order.domainSource?.image && (
                 <img
                   src={
-                    order.domainSource.image.startsWith(
-                      "/"
-                    )
+                    order.domainSource.image.startsWith("/")
                       ? `${API_BASE_URL}${order.domainSource.image}`
                       : `${API_BASE_URL}/${order.domainSource.image}`
                   }
                   className="w-6 h-6 object-contain"
-                  alt={
-                    order.domainSource.name
-                  }
+                  alt={order.domainSource.name}
                 />
               )}
 
               <span className="text-sm text-gray-700">
-                {
-                  order.domainSource?.name ||
-                  "-"
-                }
+                {order.domainSource?.name || "-"}
               </span>
 
             </div>
@@ -984,175 +757,129 @@ const OrderDetails: React.FC = () => {
 
           <Info
             label="Lock Status"
-            value={
-              order.lockStatus
-            }
+            value={order.lockStatus}
           />
 
           <Info
             label="Name Servers"
-            value={
-              order.nameServers
-            }
+            value={order.nameServers}
           />
 
         </Section>
 
-        {/* =================================================
-            CUSTOMER
-        ================================================= */}
+        {/* ===================== CUSTOMER ===================== */}
 
         {order.customer && (
-          <Section
-            title="Customer Details"
-          >
+          <Section title="Customer Details">
 
             {order.customer.name && (
               <Info
                 label="Name"
-                value={
-                  order.customer.name
-                }
+                value={order.customer.name}
               />
             )}
 
             {order.customer.company && (
               <Info
                 label="Company"
-                value={
-                  order.customer.company
-                }
+                value={order.customer.company}
               />
             )}
 
             {order.customer.email && (
               <Info
                 label="Email"
-                value={
-                  order.customer.email
-                }
+                value={order.customer.email}
               />
             )}
 
             {order.customer.phone && (
               <Info
                 label="Phone"
-                value={
-                  order.customer.phone
-                }
+                value={order.customer.phone}
               />
             )}
 
             {order.customer.address && (
               <Info
                 label="Address"
-                value={
-                  order.customer.address
-                }
+                value={order.customer.address}
               />
             )}
 
             {order.customer.city && (
               <Info
                 label="City"
-                value={
-                  order.customer.city
-                }
+                value={order.customer.city}
               />
             )}
 
             {order.customer.state && (
               <Info
                 label="State"
-                value={
-                  order.customer.state
-                }
+                value={order.customer.state}
               />
             )}
 
             {order.customer.country && (
               <Info
                 label="Country"
-                value={
-                  order.customer.country
-                }
+                value={order.customer.country}
               />
             )}
 
           </Section>
         )}
 
-        {/* =================================================
-            CLIENT
-        ================================================= */}
+        {/* ===================== CLIENT ===================== */}
 
         {order.client && (
-          <Section
-            title="Client Details"
-          >
+          <Section title="Client Details">
 
             <Info
               label="Name"
-              value={
-                order.client.name
-              }
+              value={order.client.name}
             />
 
             <Info
               label="Company"
-              value={
-                order.client.company
-              }
+              value={order.client.company}
             />
 
             <Info
               label="Email"
-              value={
-                order.client.email
-              }
+              value={order.client.email}
             />
 
             <Info
               label="Phone"
-              value={
-                order.client.phone
-              }
+              value={order.client.phone}
             />
 
             <Info
               label="Address"
-              value={
-                order.client.address
-              }
+              value={order.client.address}
             />
 
             <Info
               label="City"
-              value={
-                order.client.city
-              }
+              value={order.client.city}
             />
 
             <Info
               label="State"
-              value={
-                order.client.state
-              }
+              value={order.client.state}
             />
 
             <Info
               label="Country"
-              value={
-                order.client.country
-              }
+              value={order.client.country}
             />
 
           </Section>
         )}
 
-        {/* =================================================
-            PLANS
-        ================================================= */}
+        {/* ===================== PLANS ===================== */}
 
         {order.plans &&
           order.plans.length > 0 && (
@@ -1187,6 +914,14 @@ const OrderDetails: React.FC = () => {
                     </th>
 
                     <th className="border px-2 py-1">
+                      Admin Email
+                    </th>
+
+                    <th className="border px-2 py-1">
+                      Admin Password
+                    </th>
+
+                    <th className="border px-2 py-1">
                       Reg Date
                     </th>
 
@@ -1207,36 +942,74 @@ const OrderDetails: React.FC = () => {
                   {order.plans.map(
                     (plan) => (
 
-                    <tr
-                      key={
-                        plan._id
-                      }
-                    >
+                    <tr key={plan._id}>
 
                       <td className="border px-2 py-1">
-                        {
-                          plan.emailType ||
-                          "-"
-                        }
+                        {plan.emailType || "-"}
                       </td>
 
                       <td className="border px-2 py-1">
-                        {
-                          plan.planName
-                        }
+                        {plan.planName}
                       </td>
 
                       <td className="border px-2 py-1">
-                        {
-                          plan.type
-                        }
+                        {plan.type}
                       </td>
 
                       <td className="border px-2 py-1">
-                        {
-                          plan.noOfUsers ??
-                          "-"
-                        }
+                        {plan.noOfUsers ?? "-"}
+                      </td>
+
+                      {/* ADMIN EMAIL WITH COPY BUTTON */}
+                      <td className="border px-2 py-1">
+                        <div className="flex items-center gap-2">
+                          <span className="break-all">
+                            {plan.adminEmail || "-"}
+                          </span>
+
+                          {plan.adminEmail && (
+                            <button
+                              type="button"
+                              title="Copy Admin Email"
+                              aria-label="Copy Admin Email"
+                              onClick={() =>
+                                copyToClipboard(
+                                  plan.adminEmail!,
+                                  "Admin Email"
+                                )
+                              }
+                              className="text-blue-600 hover:text-blue-800"
+                            >
+                              <FaCopy />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* MASKED ADMIN PASSWORD WITH COPY BUTTON */}
+                      <td className="border px-2 py-1">
+                        <div className="flex items-center gap-2">
+                          <span>
+                            {plan.adminPassword ? "••••••••" : "-"}
+                          </span>
+
+                          {plan.adminPassword && (
+                            <button
+                              type="button"
+                              title="Copy Admin Password"
+                              aria-label="Copy Admin Password"
+                              onClick={() =>
+                                copyToClipboard(
+                                  plan.adminPassword!,
+                                  "Admin Password"
+                                )
+                              }
+                              className="text-blue-600 hover:text-blue-800"
+                            >
+                              <FaCopy />
+                            </button>
+                          )}
+                        </div>
                       </td>
 
                       <td className="border px-2 py-1">
@@ -1257,18 +1030,12 @@ const OrderDetails: React.FC = () => {
 
                           <span className="text-sm font-medium text-gray-700">
                             Primary:{" "}
-                            {
-                              plan.primary_status?.name ||
-                              "-"
-                            }
+                            {plan.primary_status?.name || "-"}
                           </span>
 
                           <span className="text-sm text-gray-600">
                             Secondary:{" "}
-                            {
-                              plan.secondary_status?.name ||
-                              "-"
-                            }
+                            {plan.secondary_status?.name || "-"}
                           </span>
 
                         </div>
@@ -1288,9 +1055,7 @@ const OrderDetails: React.FC = () => {
           </Section>
         )}
 
-        {/* =================================================
-            STATUS UPDATE MODAL
-        ================================================= */}
+        {/* ===================== STATUS UPDATE MODAL ===================== */}
 
         {statusModalOpen && (
 
@@ -1298,7 +1063,7 @@ const OrderDetails: React.FC = () => {
 
             <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-xl shadow-2xl">
 
-              {/* MODAL HEADER */}
+              {/* ===================== MODAL HEADER ===================== */}
 
               <div className="flex items-center justify-between border-b px-5 py-4">
 
@@ -1317,29 +1082,21 @@ const OrderDetails: React.FC = () => {
                 <button
                   type="button"
                   onClick={() =>
-                    setStatusModalOpen(
-                      false
-                    )
+                    setStatusModalOpen(false)
                   }
-                  disabled={
-                    statusUpdating
-                  }
+                  disabled={statusUpdating}
                   className="text-gray-500 hover:text-gray-800"
                 >
-                  <FaTimes
-                    size={18}
-                  />
+                  <FaTimes size={18} />
                 </button>
 
               </div>
 
-              {/* MODAL CONTENT */}
+              {/* ===================== MODAL CONTENT ===================== */}
 
               <div className="p-5 space-y-4">
 
-                {/* =================================================
-                    ORDER STATUS
-                ================================================= */}
+                {/* ===================== ORDER STATUS ===================== */}
 
                 <div className="border rounded-lg p-4">
 
@@ -1369,9 +1126,7 @@ const OrderDetails: React.FC = () => {
                     <div className="mt-3 ml-7">
 
                       <select
-                        value={
-                          selectedOrderStatus
-                        }
+                        value={selectedOrderStatus}
                         onChange={(e) =>
                           setSelectedOrderStatus(
                             e.target.value
@@ -1391,20 +1146,13 @@ const OrderDetails: React.FC = () => {
                               status._id ===
                                 order.order_status?._id
                           )
-                          .map(
-                            (status) => (
+                          .map((status) => (
 
                             <option
-                              key={
-                                status._id
-                              }
-                              value={
-                                status._id
-                              }
+                              key={status._id}
+                              value={status._id}
                             >
-                              {
-                                status.name
-                              }
+                              {status.name}
                             </option>
 
                           ))}
@@ -1417,9 +1165,7 @@ const OrderDetails: React.FC = () => {
 
                 </div>
 
-                {/* =================================================
-                    DOMAIN STATUS
-                ================================================= */}
+                {/* ===================== DOMAIN STATUS ===================== */}
 
                 {order.domainSource && (
 
@@ -1451,9 +1197,7 @@ const OrderDetails: React.FC = () => {
                       <div className="mt-3 ml-7">
 
                         <select
-                          value={
-                            selectedDomainStatus
-                          }
+                          value={selectedDomainStatus}
                           onChange={(e) =>
                             setSelectedDomainStatus(
                               e.target.value
@@ -1473,20 +1217,13 @@ const OrderDetails: React.FC = () => {
                                 status._id ===
                                   order.domain_status?._id
                             )
-                            .map(
-                              (status) => (
+                            .map((status) => (
 
                               <option
-                                key={
-                                  status._id
-                                }
-                                value={
-                                  status._id
-                                }
+                                key={status._id}
+                                value={status._id}
                               >
-                                {
-                                  status.name
-                                }
+                                {status.name}
                               </option>
 
                             ))}
@@ -1501,12 +1238,9 @@ const OrderDetails: React.FC = () => {
 
                 )}
 
-                {/* =================================================
-                    PLAN STATUS
-                ================================================= */}
+                {/* ===================== PLAN STATUS ===================== */}
 
-                {(order.plans || [])
-                  .length > 0 && (
+                {(order.plans || []).length > 0 && (
 
                   <div className="border rounded-lg p-4">
 
@@ -1539,51 +1273,21 @@ const OrderDetails: React.FC = () => {
                           (plan) => (
 
                           <div
-                            key={
-                              plan._id
-                            }
+                            key={plan._id}
                             className="border rounded-lg p-3 bg-gray-50"
                           >
 
-                            {/* =================================================
-                                PLAN HEADER
-                            ================================================= */}
+                            {/* PLAN NAME / EMAIL TYPE */}
 
-                            <div className="mb-3">
-
-                              <p className="font-medium text-gray-800">
-                                {
-                                  plan.emailType ||
-                                  plan.planName ||
-                                  "-"
-                                }
-                              </p>
-
-                              <p className="text-xs text-gray-500 mt-1">
-                                Type:{" "}
-                                {plan.type || "-"}
-                              </p>
-
-                              {plan.emailType && (
-                                <p className="text-xs text-gray-500">
-                                  Email Type:{" "}
-                                  {plan.emailType}
-                                </p>
-                              )}
-
-                            </div>
-
-                            {/* =================================================
-                                ALL PLAN TYPES
-
-                                No email-only condition.
-                            ================================================= */}
+                            <p className="font-medium text-gray-800 mb-3">
+                              {plan.emailType ||
+                                plan.planName ||
+                                "-"}
+                            </p>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 
-                              {/* =================================================
-                                  PRIMARY STATUS
-                              ================================================= */}
+                              {/* ================= PRIMARY STATUS ================= */}
 
                               <div>
 
@@ -1652,33 +1356,23 @@ const OrderDetails: React.FC = () => {
                                           plan.primary_status?._id
                                     )
                                     .map(
-                                      (
-                                        status
-                                      ) => (
+                                      (status) => (
 
-                                        <option
-                                          key={
-                                            status._id
-                                          }
-                                          value={
-                                            status._id
-                                          }
-                                        >
-                                          {
-                                            status.name
-                                          }
-                                        </option>
+                                      <option
+                                        key={status._id}
+                                        value={status._id}
+                                      >
+                                        {status.name}
+                                      </option>
 
-                                      )
-                                    )}
+                                    )
+                                  )}
 
                                 </select>
 
                               </div>
 
-                              {/* =================================================
-                                  SECONDARY STATUS
-                              ================================================= */}
+                              {/* ================= SECONDARY STATUS ================= */}
 
                               <div>
 
@@ -1747,25 +1441,17 @@ const OrderDetails: React.FC = () => {
                                           plan.secondary_status?._id
                                     )
                                     .map(
-                                      (
-                                        status
-                                      ) => (
+                                      (status) => (
 
-                                        <option
-                                          key={
-                                            status._id
-                                          }
-                                          value={
-                                            status._id
-                                          }
-                                        >
-                                          {
-                                            status.name
-                                          }
-                                        </option>
+                                      <option
+                                        key={status._id}
+                                        value={status._id}
+                                      >
+                                        {status.name}
+                                      </option>
 
-                                      )
-                                    )}
+                                    )
+                                  )}
 
                                 </select>
 
@@ -1785,22 +1471,16 @@ const OrderDetails: React.FC = () => {
 
                 )}
 
-                {/* =================================================
-                    MODAL ACTIONS
-                ================================================= */}
+                {/* ===================== MODAL ACTIONS ===================== */}
 
                 <div className="flex justify-end gap-3 pt-3 border-t">
 
                   <button
                     type="button"
                     onClick={() =>
-                      setStatusModalOpen(
-                        false
-                      )
+                      setStatusModalOpen(false)
                     }
-                    disabled={
-                      statusUpdating
-                    }
+                    disabled={statusUpdating}
                     className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
                   >
                     Cancel
@@ -1808,12 +1488,8 @@ const OrderDetails: React.FC = () => {
 
                   <button
                     type="button"
-                    onClick={
-                      handleStatusUpdate
-                    }
-                    disabled={
-                      statusUpdating
-                    }
+                    onClick={handleStatusUpdate}
+                    disabled={statusUpdating}
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
                   >
                     {statusUpdating
@@ -1831,9 +1507,7 @@ const OrderDetails: React.FC = () => {
 
         )}
 
-        {/* =================================================
-            PAGE ACTIONS
-        ================================================= */}
+        {/* ===================== PAGE ACTIONS ===================== */}
 
         <div className="flex justify-end gap-3">
 

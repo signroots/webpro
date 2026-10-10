@@ -116,7 +116,7 @@ const [emailType, setEmailType] = useState<string | undefined>(undefined);
   const [msofficeCache, setMsofficeCache] = useState<Record<string, any[]>>({});
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const isRestoringRef = useRef(false);
-
+const searchInputRef = useRef<HTMLInputElement>(null);
 
 
 
@@ -606,7 +606,7 @@ const getStatusClass = (status?: Status | null): string => {
   }
 
   if (normalized === "EXPIRED") {
-    return "bg-orange-100 text-orange-700";
+    return "bg-red-100 text-red-700";
   }
 
   return "bg-gray-100 text-gray-700";
@@ -660,28 +660,39 @@ const getStatusClass = (status?: Status | null): string => {
         </Link>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-4 mb-4 items-center">
-       <div className="relative">
-  <input
-    type="text"
-    placeholder="Search domain..."
-    value={searchTerm}
-    onChange={(e) => setSearchTerm(e.target.value)}
-    className="border px-3 py-2 pr-10 rounded-lg text-black w-64"
-  />
 
-  {/* Clear Button */}
-  {searchTerm && (
-    <button
-      onClick={() => setSearchTerm("")}
-      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black"
-      title="Clear search"
-    >
-      ✕
-    </button>
-  )}
-</div>
+{/* Filters */}
+<div className="flex flex-wrap gap-4 mb-4 items-center">
+  <div className="relative">
+    <input
+      ref={searchInputRef}
+      type="text"
+      placeholder="Search domain..."
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+      className="border px-3 py-2 pr-10 rounded-lg text-black w-64"
+    />
+
+    {searchTerm.length > 0 && (
+      <button
+        type="button"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => {
+          setSearchTerm("");
+          setDebouncedSearch("");
+          setCurrentPage(1);
+          searchInputRef.current?.focus();
+        }}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black text-xl"
+        aria-label="Clear search"
+        title="Clear search"
+      >
+        ×
+      </button>
+    )}
+  </div>
+
+
 
         {/* 🌐 Provider Dropdown */}
         {/* Provider Dropdown */}
