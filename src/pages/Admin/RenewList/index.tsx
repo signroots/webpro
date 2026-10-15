@@ -1,3 +1,4 @@
+
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FaLock, FaEdit, FaSyncAlt } from "react-icons/fa";
@@ -12,6 +13,10 @@ type PlanType =
   | "hosting"
   | "website"
   | "ssl";
+
+type Tab = "previous" | "current" | "next";
+type RenewalTarget = "domain" | "plan";
+type RenewalDuration = 1 | 12;
 
 interface Plan {
   _id: string;
@@ -39,21 +44,55 @@ interface Order {
 
 interface RenewalItem {
   key: string;
-  target: "domain" | "plan";
+  target: RenewalTarget;
   label: string;
   planId?: string;
   currentExpiry?: string | null;
-  durationMonths: number;
+  durationMonths: RenewalDuration;
+  monthlyLocked?: boolean;
 }
-
-type Tab = "previous" | "current" | "next";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
+/**
+ * Safely convert an expiry value into YYYY-MM-DD.
+ * ISO date strings are parsed directly to avoid timezone shifts.
+ */
 function toDateInputValue(value?: string | Date | null): string {
   if (!value) return "";
 
-  const date = value instanceof Date ? new Date(value) : new Date(value);
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return "";
+
+    return [
+      value.getFullYear(),
+      String(value.getMonth() + 1).padStart(2, "0"),
+      String(value.getDate()).padStart(2, "0"),
+    ].join("-");
+  }
+
+  const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+
+  if (isoMatch) {
+    const [, year, month, day] = isoMatch;
+    const parsed = new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day)
+    );
+
+    if (
+      parsed.getFullYear() !== Number(year) ||
+      parsed.getMonth() !== Number(month) - 1 ||
+      parsed.getDate() !== Number(day)
+    ) {
+      return "";
+    }
+
+    return `${year}-${month}-${day}`;
+  }
+
+  const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) return "";
 
@@ -65,9 +104,8 @@ function toDateInputValue(value?: string | Date | null): string {
 }
 
 /**
- * Adds months while preserving the day where possible.
- * Example: 31 January + 1 month = 28 February
- * (or 29 February in a leap year).
+ * Add months without overflowing the last day of a month.
+ * Example: 31 January + 1 month = 28 February.
  */
 function addMonthsSafely(date: Date, months: number): Date {
   const result = new Date(date);
@@ -88,52 +126,38 @@ function addMonthsSafely(date: Date, months: number): Date {
 }
 
 /**
- * Matches the backend policy:
- * - Future expiry: extend from existing expiry.
- * - Expired/no expiry: start from today.
+ * Calculate the suggested expiry from the existing expiry date.
+ * Example: 11-10-2026 + 12 months = 11-10-2027.
+ * Use today's date only when the existing expiry date is missing or invalid.
  */
 function calculateNewExpiry(
   currentExpiry: string | null | undefined,
   durationMonths: number
 ): string {
-  const now = new Date();
   const currentInput = toDateInputValue(currentExpiry);
-
   let baseDate: Date;
 
   if (currentInput) {
     const [year, month, day] = currentInput.split("-").map(Number);
 
+    // Always extend from the current expiry, even if it has already passed.
     baseDate = new Date(year, month - 1, day, 12, 0, 0);
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const expiryDay = new Date(year, month - 1, day);
-    expiryDay.setHours(0, 0, 0, 0);
-
-    if (expiryDay.getTime() < today.getTime()) {
-      baseDate = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate(),
-        12,
-        0,
-        0
-      );
-    }
   } else {
+    // If no valid expiry date exists, use today's date.
+    const today = new Date();
     baseDate = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
       12,
       0,
       0
     );
   }
 
-  return toDateInputValue(addMonthsSafely(baseDate, durationMonths));
+  return toDateInputValue(
+    addMonthsSafely(baseDate, durationMonths)
+  );
 }
 
 function displayDate(value?: string | null): string {
@@ -143,7 +167,7 @@ function displayDate(value?: string | null): string {
 
   const [year, month, day] = date.split("-");
 
-  return `${day}/${month}/${year}`;
+  return `${day}-${month}-${year}`;
 }
 
 function statusClass(status?: string): string {
@@ -163,14 +187,24 @@ const RenewList: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedTab, setSelectedTab] = useState<Tab>("current");
   const [search, setSearch] = useState("");
 
   const [renewOrder, setRenewOrder] = useState<Order | null>(null);
-  const [renewDates, setRenewDates] = useState<Record<string, string>>({});
+  const [renewDates, setRenewDates] = useState<Record<string, string>>(
+    {}
+  );
+  const [renewalDurations, setRenewalDurations] = useState<
+    Record<string, RenewalDuration>
+  >({});
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  const [renewStep, setRenewStep] = useState<"dates" | "confirm">("dates");
+
+  const [renewStep, setRenewStep] = useState<"dates" | "confirm">(
+    "dates"
+  );
+
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -183,6 +217,7 @@ const RenewList: React.FC = () => {
       const response = await fetchRenewListOrders(selectedTab);
       setOrders(response?.data?.data || []);
       setCurrentPage(1);
+      setError("");
     } catch (err) {
       console.error("Failed to load renewal orders:", err);
       setError("Failed to load renewal orders.");
@@ -211,8 +246,7 @@ const RenewList: React.FC = () => {
     (order.Plans || []).forEach((plan) => {
       if (!plan._id || !plan.expiryDate) return;
 
-      const durationMonths =
-        plan.monthly_renewlaed === true ? 1 : 12;
+      const monthlyLocked = plan.monthly_renewlaed === true;
 
       items.push({
         key: `plan-${plan._id}`,
@@ -220,7 +254,8 @@ const RenewList: React.FC = () => {
         planId: plan._id,
         label: `${plan.type.toUpperCase()} Plan`,
         currentExpiry: plan.expiryDate,
-        durationMonths,
+        durationMonths: monthlyLocked ? 1 : 12,
+        monthlyLocked,
       });
     });
 
@@ -236,8 +271,11 @@ const RenewList: React.FC = () => {
     }
 
     const dates: Record<string, string> = {};
+    const durations: Record<string, RenewalDuration> = {};
 
     items.forEach((item) => {
+      durations[item.key] = item.durationMonths;
+
       dates[item.key] = calculateNewExpiry(
         item.currentExpiry,
         item.durationMonths
@@ -246,6 +284,7 @@ const RenewList: React.FC = () => {
 
     setRenewOrder(order);
     setRenewDates(dates);
+    setRenewalDurations(durations);
     setSelectedItems(items.map((item) => item.key));
     setRenewStep("dates");
     setError("");
@@ -257,6 +296,7 @@ const RenewList: React.FC = () => {
 
     setRenewOrder(null);
     setRenewDates({});
+    setRenewalDurations({});
     setSelectedItems([]);
     setRenewStep("dates");
     setError("");
@@ -266,9 +306,39 @@ const RenewList: React.FC = () => {
     ? getRenewalItems(renewOrder)
     : [];
 
-  const selectedRenewalItems = renewalItems.filter((item) =>
-    selectedItems.includes(item.key)
+  // Apply the selected duration to each item.
+  const itemsWithSelectedDuration = renewalItems.map((item) => ({
+    ...item,
+    durationMonths:
+      renewalDurations[item.key] ?? item.durationMonths,
+  }));
+
+  const selectedRenewalItems = itemsWithSelectedDuration.filter(
+    (item) => selectedItems.includes(item.key)
   );
+
+  /**
+   * Change monthly/yearly duration and recalculate the suggested expiry.
+   * Monthly-locked plans cannot be changed to yearly.
+   */
+  const handleDurationChange = (
+    item: RenewalItem,
+    duration: RenewalDuration
+  ) => {
+    if (item.monthlyLocked) return;
+
+    setRenewalDurations((previous) => ({
+      ...previous,
+      [item.key]: duration,
+    }));
+
+    setRenewDates((previous) => ({
+      ...previous,
+      [item.key]: calculateNewExpiry(item.currentExpiry, duration),
+    }));
+
+    setError("");
+  };
 
   const filteredOrders = useMemo(
     () =>
@@ -353,6 +423,22 @@ const RenewList: React.FC = () => {
         setError(`Select a valid expiry date for ${item.label}.`);
         return;
       }
+
+      const minimumDate = toDateInputValue(new Date());
+
+      if (selectedDate < minimumDate) {
+        setError(
+          `The new expiry date for ${item.label} cannot be in the past.`
+        );
+        return;
+      }
+
+      if (item.monthlyLocked && item.durationMonths !== 1) {
+        setError(
+          `${item.label} is configured for monthly renewal only.`
+        );
+        return;
+      }
     }
 
     setSaving(true);
@@ -393,6 +479,7 @@ const RenewList: React.FC = () => {
       setSuccess("Renewal completed successfully.");
       setRenewOrder(null);
       setRenewDates({});
+      setRenewalDurations({});
       setSelectedItems([]);
       setRenewStep("dates");
 
@@ -668,12 +755,14 @@ const RenewList: React.FC = () => {
               <>
                 <p className="mb-4 text-sm text-gray-600">
                   Select the domain or plans you want to renew.
-                  The suggested date follows the monthly/yearly renewal rule.
+                  Yearly is the default for plans unless monthly
+                  renewal is already configured.
                 </p>
 
                 <div className="space-y-4">
-                  {renewalItems.map((item) => {
+                  {itemsWithSelectedDuration.map((item) => {
                     const checked = selectedItems.includes(item.key);
+                    const duration = item.durationMonths;
 
                     return (
                       <div
@@ -694,12 +783,81 @@ const RenewList: React.FC = () => {
                               );
                             }}
                           />
+
                           {item.label}
+
                           <span className="text-xs text-gray-500">
-                            ({item.durationMonths} month
-                            {item.durationMonths === 1 ? "" : "s"})
+                            ({duration} month
+                            {duration === 1 ? "" : "s"})
                           </span>
                         </label>
+
+                        {item.target === "plan" && (
+                          <div className="mt-4">
+                            <p className="mb-2 text-sm font-medium text-gray-700">
+                              Renewal Type
+                            </p>
+
+                            <div className="flex flex-wrap gap-5">
+                              <label
+                                className={`flex items-center gap-2 ${
+                                  item.monthlyLocked
+                                    ? "cursor-not-allowed text-gray-400"
+                                    : "cursor-pointer"
+                                }`}
+                              >
+                                <input
+                                  type="radio"
+                                  name={`duration-${item.key}`}
+                                  value="12"
+                                  checked={duration === 12}
+                                  disabled={
+                                    item.monthlyLocked || !checked
+                                  }
+                                  onChange={() =>
+                                    handleDurationChange(item, 12)
+                                  }
+                                />
+                                Yearly (12 months)
+                              </label>
+
+                              <label
+                                className={`flex items-center gap-2 ${
+                                  !item.monthlyLocked && checked
+                                    ? "cursor-pointer"
+                                    : "cursor-not-allowed text-gray-400"
+                                }`}
+                              >
+                                <input
+                                  type="radio"
+                                  name={`duration-${item.key}`}
+                                  value="1"
+                                  checked={duration === 1}
+                                  disabled={
+                                    item.monthlyLocked || !checked
+                                  }
+                                  onChange={() =>
+                                    handleDurationChange(item, 1)
+                                  }
+                                />
+                                Monthly (1 month)
+                              </label>
+                            </div>
+
+                            {item.monthlyLocked && (
+                              <p className="mt-2 text-xs text-orange-600">
+                                This plan is configured for monthly
+                                renewal. The renewal type cannot be changed.
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {item.target === "domain" && (
+                          <p className="mt-2 text-xs text-gray-500">
+                            Domain renewal: Yearly (12 months)
+                          </p>
+                        )}
 
                         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                           <div>
@@ -713,17 +871,19 @@ const RenewList: React.FC = () => {
                             <label className="mb-1 block text-sm">
                               New expiry date
                             </label>
+
                             <input
                               type="date"
                               disabled={!checked}
                               min={toDateInputValue(new Date())}
                               value={renewDates[item.key] || ""}
-                              onChange={(event) =>
+                              onChange={(event) => {
                                 setRenewDates((previous) => ({
                                   ...previous,
                                   [item.key]: event.target.value,
-                                }))
-                              }
+                                }));
+                                setError("");
+                              }}
                               className="w-full rounded-lg border p-2 disabled:bg-gray-100"
                             />
                           </div>
@@ -735,6 +895,7 @@ const RenewList: React.FC = () => {
 
                 <div className="mt-6 flex justify-end gap-3">
                   <button
+                    type="button"
                     onClick={closeRenewPopup}
                     className="rounded-lg border px-4 py-2"
                   >
@@ -742,6 +903,7 @@ const RenewList: React.FC = () => {
                   </button>
 
                   <button
+                    type="button"
                     disabled={
                       !selectedRenewalItems.length ||
                       selectedRenewalItems.some(
@@ -761,7 +923,8 @@ const RenewList: React.FC = () => {
             ) : (
               <>
                 <p className="mb-4 text-sm text-gray-600">
-                  Check the selected services and expiry dates before saving.
+                  Check the selected services, renewal types and expiry
+                  dates before saving.
                 </p>
 
                 <div className="space-y-3 rounded-lg border p-4">
@@ -772,9 +935,20 @@ const RenewList: React.FC = () => {
                     >
                       <div>
                         <p className="font-medium">{item.label}</p>
+
                         <p className="text-sm text-gray-500">
                           Old: {displayDate(item.currentExpiry)}
                         </p>
+
+                        <p className="text-sm text-gray-500">
+                          Renewal type:{" "}
+                          {item.target === "domain"
+                            ? "Yearly"
+                            : item.durationMonths === 1
+                              ? "Monthly"
+                              : "Yearly"}
+                        </p>
+
                         <p className="text-xs text-gray-500">
                           Duration: {item.durationMonths} month
                           {item.durationMonths === 1 ? "" : "s"}
@@ -790,6 +964,7 @@ const RenewList: React.FC = () => {
 
                 <div className="mt-6 flex justify-end gap-3">
                   <button
+                    type="button"
                     disabled={saving}
                     onClick={() => setRenewStep("dates")}
                     className="rounded-lg border px-4 py-2"
@@ -798,6 +973,7 @@ const RenewList: React.FC = () => {
                   </button>
 
                   <button
+                    type="button"
                     disabled={saving}
                     onClick={confirmRenewal}
                     className="rounded-lg bg-green-600 px-4 py-2 text-white disabled:opacity-50"
