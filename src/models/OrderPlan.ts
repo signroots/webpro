@@ -26,7 +26,7 @@ export interface IOrderPlan extends Document {
   expiryDate?: Date | null;
   plan_transferred_on?: Date;
   plan_cancelled_on?:Date;
-
+monthly_renewlaed?: boolean;
   // ===============================
   // HOSTING
   // ===============================
@@ -163,6 +163,10 @@ plan_cancelled_on:{
 } ,
 plan_transferred_on: {
   type: Date,
+},
+monthly_renewlaed: {
+  type: Boolean,
+  default: false,
 },
     hostSubTypeId: {
       type: Schema.Types.ObjectId,

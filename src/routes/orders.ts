@@ -24,395 +24,605 @@ interface IOrderPlanResponse {
   expiryDate: Date;
   noOfUsers: number;
 }
+type RenewalItem =
+  | {
+      target: "domain";
+      durationMonths?: number;
+    }
+  | {
+      target: "plan";
+      planId: string;
+      durationMonths?: number;
+    };
+
+const allowedPlanTypes = [
+  "email",
+  "storage",
+  "msoffice",
+  "hosting",
+  "website",
+  "ssl",
+];
+
+/**
+ * Calculate the new expiry date.
+ *
+ * If the existing expiry is in the future, extend from that date.
+ * Otherwise, extend from today's date.
+ *
+ * Handles month-end dates safely.
+ */
+function calculateNewExpiry(
+  currentExpiry: Date | null | undefined,
+  durationMonths: number
+): Date {
+  const now = new Date();
+
+  const baseDate =
+    currentExpiry && !Number.isNaN(currentExpiry.getTime()) &&
+    currentExpiry.getTime() > now.getTime()
+      ? new Date(currentExpiry)
+      : new Date(now);
+
+  const originalDay = baseDate.getDate();
+
+  const result = new Date(baseDate);
+  result.setDate(1);
+  result.setMonth(result.getMonth() + durationMonths);
+
+  const lastDayOfTargetMonth = new Date(
+    result.getFullYear(),
+    result.getMonth() + 1,
+    0
+  ).getDate();
+
+  result.setDate(Math.min(originalDay, lastDayOfTargetMonth));
+
+  return result;
+}
+
+router.post(
+  "/:orderId",
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { orderId } = req.params;
+      const renewals = req.body?.renewals as RenewalItem[];
+
+      // 1. Validate order ID.
+      if (!mongoose.Types.ObjectId.isValid(orderId)) {
+        res.status(400).json({
+          success: false,
+          message: "Invalid order ID.",
+        });
+        return;
+      }
+
+      // 2. Validate renewal list.
+      if (!Array.isArray(renewals) || renewals.length === 0) {
+        res.status(400).json({
+          success: false,
+          message: "At least one renewal item is required.",
+        });
+        return;
+      }
+
+      // 3. Validate order.
+      const order = await Order.findById(orderId);
+
+      if (!order) {
+        res.status(404).json({
+          success: false,
+          message: "Order not found.",
+        });
+        return;
+      }
+
+      // 4. Validate all renewal requests before saving.
+      const seenTargets = new Set<string>();
+
+      for (const item of renewals) {
+        if (
+          !item ||
+          typeof item !== "object" ||
+          !["domain", "plan"].includes(item.target)
+        ) {
+          res.status(400).json({
+            success: false,
+            message: "Invalid renewal target.",
+          });
+          return;
+        }
+
+        // durationMonths is optional.
+        // The backend determines the actual duration below.
+        if (
+          item.durationMonths !== undefined &&
+          (
+            !Number.isInteger(item.durationMonths) ||
+            item.durationMonths < 1 ||
+            item.durationMonths > 120
+          )
+        ) {
+          res.status(400).json({
+            success: false,
+            message:
+              "durationMonths must be an integer between 1 and 120.",
+          });
+          return;
+        }
+
+        if (item.target === "domain") {
+          if (seenTargets.has("domain")) {
+            res.status(400).json({
+              success: false,
+              message: "Domain renewal was requested more than once.",
+            });
+            return;
+          }
+
+          seenTargets.add("domain");
+        }
+
+        if (item.target === "plan") {
+          if (
+            typeof item.planId !== "string" ||
+            !mongoose.Types.ObjectId.isValid(item.planId)
+          ) {
+            res.status(400).json({
+              success: false,
+              message: "Invalid plan ID.",
+            });
+            return;
+          }
+
+          const key = `plan:${item.planId}`;
+
+          if (seenTargets.has(key)) {
+            res.status(400).json({
+              success: false,
+              message: "The same plan cannot be renewed twice.",
+            });
+            return;
+          }
+
+          seenTargets.add(key);
+        }
+      }
+
+      // 5. Collect requested plan IDs.
+      const requestedPlanIds = renewals
+        .filter(
+          (
+            item
+          ): item is Extract<
+            RenewalItem,
+            { target: "plan" }
+          > => item.target === "plan"
+        )
+        .map((item) => item.planId);
+
+      // 6. Find plans belonging to this order only.
+      const plans =
+        requestedPlanIds.length > 0
+          ? await OrderPlan.find({
+              _id: { $in: requestedPlanIds },
+              orderId: order._id,
+            })
+          : [];
+
+      if (plans.length !== requestedPlanIds.length) {
+        res.status(400).json({
+          success: false,
+          message:
+            "One or more selected plans do not belong to this order.",
+        });
+        return;
+      }
+
+      // 7. Validate plan types before updating anything.
+      for (const plan of plans) {
+        if (!allowedPlanTypes.includes(plan.type)) {
+          res.status(400).json({
+            success: false,
+            message: `Unsupported plan type: ${plan.type}`,
+          });
+          return;
+        }
+      }
+
+      const renewedItems: Array<{
+        target: string;
+        planId?: string;
+        type?: string;
+        monthly_renewlaed?: boolean;
+        durationMonths: number;
+        oldExpiryDate: Date | null;
+        newExpiryDate: Date;
+      }> = [];
+
+      // 8. Perform the requested renewals.
+      for (const item of renewals) {
+        // -----------------------------------------
+        // DOMAIN RENEWAL: ALWAYS 12 MONTHS
+        // -----------------------------------------
+        if (item.target === "domain") {
+          const oldExpiryDate = order.expiryDate
+            ? new Date(order.expiryDate)
+            : null;
+
+          const durationMonths = 12;
+
+          const newExpiryDate = calculateNewExpiry(
+            oldExpiryDate,
+            durationMonths
+          );
+
+          order.expiryDate = newExpiryDate;
+          await order.save();
+
+          renewedItems.push({
+            target: "domain",
+            durationMonths,
+            oldExpiryDate,
+            newExpiryDate,
+          });
+        }
+
+        // -----------------------------------------
+        // PLAN RENEWAL
+        // -----------------------------------------
+        if (item.target === "plan") {
+          const plan = plans.find(
+            (p) => p._id.toString() === item.planId
+          );
+
+          if (!plan) {
+            res.status(400).json({
+              success: false,
+              message: `Plan not found: ${item.planId}`,
+            });
+            return;
+          }
+
+          const oldExpiryDate = plan.expiryDate
+            ? new Date(plan.expiryDate)
+            : null;
+
+          // Monthly plans get 1 month.
+          // Other plans get 12 months.
+          const isMonthly = plan.monthly_renewlaed === true;
+
+          const durationMonths = isMonthly ? 1 : 12;
+
+          const newExpiryDate = calculateNewExpiry(
+            oldExpiryDate,
+            durationMonths
+          );
+
+          plan.expiryDate = newExpiryDate;
+
+          await plan.save();
+
+          renewedItems.push({
+            target: "plan",
+            planId: plan._id.toString(),
+            type: plan.type,
+            monthly_renewlaed: isMonthly,
+            durationMonths,
+            oldExpiryDate,
+            newExpiryDate,
+          });
+        }
+      }
+
+      // 9. Return renewal result.
+      res.status(200).json({
+        success: true,
+        message: "Renewal completed successfully.",
+        data: {
+          orderId: order._id,
+          domainName: order.domainName,
+          domainExpiryDate: order.expiryDate ?? null,
+          renewedItems,
+        },
+      });
+    } catch (error) {
+      console.error("Renewal API error:", error);
+
+      res.status(500).json({
+        success: false,
+        message: "Failed to renew the selected service(s).",
+      });
+    }
+  }
+);
 router.get(
   "/orders-by-month",
   authMiddleware,
   async (_req: AuthRequest, res: Response) => {
-
     try {
-
+      // ==========================================
+      // ADMIN ACCESS
+      // ==========================================
       if (_req.user?.role?.toLowerCase() !== "admin") {
-
         return res.status(403).json({
           success: false,
           error: "Admin access required",
         });
-
       }
 
-
+      // ==========================================
+      // MONTH RANGE
+      // ==========================================
       const now = new Date();
-
-
-
-      // ================= MONTH RANGE =================
-
 
       const startOfCurrentMonth = new Date(
         now.getFullYear(),
         now.getMonth(),
         1,
-        0, 0, 0
-      );
-
-
-      const endOfCurrentMonth = new Date(
-        now.getFullYear(),
-        now.getMonth() + 1,
         0,
-        23, 59, 59
+        0,
+        0,
+        0
       );
-
-
 
       const startOfPrevMonth = new Date(
         now.getFullYear(),
         now.getMonth() - 1,
         1,
-        0, 0, 0
-      );
-
-
-      const endOfPrevMonth = new Date(
-        now.getFullYear(),
-        now.getMonth(),
         0,
-        23, 59, 59
+        0,
+        0,
+        0
       );
-
-
 
       const startOfNextMonth = new Date(
         now.getFullYear(),
         now.getMonth() + 1,
         1,
-        0, 0, 0
+        0,
+        0,
+        0,
+        0
       );
 
-
-      const endOfNextMonth = new Date(
+      const startOfFollowingMonth = new Date(
         now.getFullYear(),
         now.getMonth() + 2,
+        1,
         0,
-        23, 59, 59
+        0,
+        0,
+        0
       );
 
-
-
-
-
-      // ================= MONTH PARAM =================
-
-
-      const month =
-        (_req.query.month as string) || "current";
-
-
+      const month = String(_req.query.month || "current");
 
       let startDate: Date;
-      let endDate: Date;
-
-
+      let endExclusive: Date;
 
       switch (month) {
-
-
         case "previous":
-
           startDate = startOfPrevMonth;
-          endDate = endOfPrevMonth;
-
+          endExclusive = startOfCurrentMonth;
           break;
-
-
 
         case "next":
-
           startDate = startOfNextMonth;
-          endDate = endOfNextMonth;
-
+          endExclusive = startOfFollowingMonth;
           break;
 
-
-
+        case "current":
         default:
-
           startDate = startOfCurrentMonth;
-          endDate = endOfCurrentMonth;
-
+          endExclusive = startOfNextMonth;
+          break;
       }
 
+      // Last instant of the selected month, for the response.
+      const endDate = new Date(endExclusive.getTime() - 1);
 
-
-
-
-      // =================================================
-      // GET PLANS WHICH EXPIRE IN SELECTED MONTH
-      // =================================================
-
-
-      const plans: any[] = await OrderPlan.find({
-
+      // ==========================================
+      // GET PLANS EXPIRING IN SELECTED MONTH
+      // Used to find matching orders.
+      // ==========================================
+      const matchingPlans: any[] = await OrderPlan.find({
         expiryDate: {
           $gte: startDate,
-          $lte: endDate
-        }
-
+          $lt: endExclusive,
+        },
       })
-        .select(
-          "orderId type expiryDate emailTypeId planId noOfUsers"
-        )
-        .populate({
-
-          path: "emailTypeId",
-
-          select: "name image"
-
-        })
+        .select("orderId")
         .lean();
 
-
-
-
-
-
-
-      // =================================================
-      // PLAN ORDER IDS
-      // =================================================
-
-
       const planOrderIds = [
-
         ...new Set(
-
-          plans.map(
-            plan => String(plan.orderId)
+          matchingPlans.map((plan: any) =>
+            String(plan.orderId)
           )
-
-        )
-
+        ),
       ];
 
-
-
-
-
-
-
-      // =================================================
+      // ==========================================
       // GET ORDERS
-      // Domain expiry OR Plan expiry
-      // =================================================
-
-
+      // Match either:
+      // 1. Order/domain expiry
+      // 2. At least one plan expiry
+      // ==========================================
       const orders: any[] = await Order.find({
         $or: [
           {
             expiryDate: {
               $gte: startDate,
-              $lte: endDate
-            }
+              $lt: endExclusive,
+            },
           },
           {
             _id: {
-              $in: planOrderIds
-            }
-          }
-        ]
+              $in: planOrderIds,
+            },
+          },
+        ],
       })
         .populate({
           path: "customer",
-          select: "name email mobile"
+          select: "name email mobile",
         })
         .populate({
           path: "client",
-          select: "_id c_name c_company c_email c_phone"
+          select: "_id c_name c_company c_email c_phone",
         })
         .populate({
           path: "domainSource",
-          select: "name code image"
+          select: "name code image",
         })
         .populate({
           path: "order_status",
-          select: "_id name code type is_custom is_active"
+          select: "_id name code type is_custom is_active",
         })
         .lean();
-      // =================================================
-      // MAP PLANS WITH ORDER
-      // =================================================
 
+      // ==========================================
+      // GET ALL PLANS FOR THE MATCHING ORDERS
+      // Important: Do not restrict this query
+      // to the selected month's expiry dates.
+      // ==========================================
+      const orderIds = orders.map(
+        (order: any) => order._id
+      );
 
-      const planMap = new Map();
+      const plans: any[] =
+        orderIds.length > 0
+          ? await OrderPlan.find({
+              orderId: {
+                $in: orderIds,
+              },
+            })
+              .select(
+                [
+                  "orderId",
+                  "type",
+                  "expiryDate",
+                  "registrationDate",
+                  "emailTypeId",
+                  "planId",
+                  "noOfUsers",
+                  "hostTypeId",
+                  "hostSubTypeId",
+                  "storageId",
+                  "websiteDetails",
+                  "sslDetails",
+                  "adminEmail",
+                  "adminPassword",
+                  "monthly_renewlaed",
+                  "primary_status",
+                  "secondary_status",
+                  "status",
+                  "plan_transferred_on",
+                  "plan_cancelled_on",
+                ].join(" ")
+              )
+              .populate({
+                path: "emailTypeId",
+                select: "name image",
+              })
+              .lean()
+          : [];
 
+      // ==========================================
+      // MAP ALL PLANS TO THEIR ORDERS
+      // ==========================================
+      const planMap = new Map<string, any[]>();
 
-
-      plans.forEach(plan => {
-
-
-        const key =
-          String(plan.orderId);
-
-
+      plans.forEach((plan: any) => {
+        const key = String(plan.orderId);
 
         if (!planMap.has(key)) {
-
-
-          planMap.set(
-            key,
-            []
-          );
-
-
+          planMap.set(key, []);
         }
 
+        planMap.get(key)!.push({
+          ...plan,
 
+          // Each plan's own expiry date
+          expiryDate: plan.expiryDate ?? null,
 
-        planMap.get(key).push({
+          registrationDate:
+            plan.registrationDate ?? null,
 
-
-          type: plan.type,
-
-
-          expiryDate: plan.expiryDate,
-          noOfUsers: plan.noOfUsers || 0,
-
+          noOfUsers: plan.noOfUsers ?? 0,
 
           emailType:
-            plan.emailTypeId?.name || null,
-
+            plan.emailTypeId?.name ?? null,
 
           emailTypeImage:
-            plan.emailTypeId?.image || null,
+            plan.emailTypeId?.image ?? null,
 
-
-          planId: plan.planId
-
-
+          planId: plan.planId ?? null,
         });
-
-
-
       });
 
-
-
-
-
-
-
-
-      // =================================================
-      // FINAL RESPONSE DATA
-      // =================================================
-
-
-      const finalOrders = orders.map(order => {
-
-
+      // ==========================================
+      // BUILD FINAL RESPONSE
+      // ==========================================
+      const finalOrders = orders.map((order: any) => {
         const orderPlans =
-          planMap.get(
-            String(order._id)
-          ) || [];
+          planMap.get(String(order._id)) || [];
 
+        const expiryDates: Date[] = [];
 
-
-
-        const expiryDates: any[] = [];
-
-
-
-        // Domain expiry
-
+        // Order/domain expiry date
         if (order.expiryDate) {
+          const date = new Date(order.expiryDate);
 
-          expiryDates.push(
-            new Date(order.expiryDate)
-          );
-
+          if (!Number.isNaN(date.getTime())) {
+            expiryDates.push(date);
+          }
         }
 
-
-
-
-        // Plan expiry
-
+        // Every plan's expiry date
         orderPlans.forEach((plan: any) => {
-
-
           if (plan.expiryDate) {
+            const date = new Date(plan.expiryDate);
 
-
-            expiryDates.push(
-              new Date(plan.expiryDate)
-            );
-
-
+            if (!Number.isNaN(date.getTime())) {
+              expiryDates.push(date);
+            }
           }
-
-
         });
 
-
-
-
-
+        // Earliest expiry date among the order and plans
         const nearestExpiryDate =
-
-          expiryDates.length
-
-            ?
-
-            new Date(
-
-              Math.min(
-
-                ...expiryDates.map(
-                  d => d.getTime()
+          expiryDates.length > 0
+            ? new Date(
+                Math.min(
+                  ...expiryDates.map((date) =>
+                    date.getTime()
+                  )
                 )
-
               )
-
-            )
-
-            :
-
-            null;
-
-
-
-
+            : null;
 
         return {
-
           ...order,
 
+          // Explicit order/domain expiry
+          expiryDate: order.expiryDate ?? null,
+
+          // Earliest expiry among order and plans
           nearestExpiryDate,
 
-          Plans: orderPlans
-
+          // All plans, each with its own expiryDate
+          Plans: orderPlans,
         };
-
-
       });
 
-
-
-
-
-      // =================================================
+      // ==========================================
       // UPDATE ORDER STATUS
-      // Same logic as Orders API
-      // Domain expiry OR Plan expiry
-      // Skip TRANSFERRED / CANCELLED
-      // =================================================
-
+      // Skip CANCELLED and TRANSFERRED orders.
+      // ==========================================
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-
-      const bulkOps: any[] = [];
-
-      // ================= GET STATUS IDS =================
 
       const activeStatus = await Status.findOne({
         type: "order",
@@ -432,20 +642,16 @@ router.get(
         );
       }
 
-      // ================= CHECK EACH ORDER =================
+      const bulkOps: any[] = [];
 
       finalOrders.forEach((order: any) => {
-
-        // ==========================================
-        // SKIP MANUAL STATUSES
-        // ==========================================
-
         const currentStatusCode =
           order.order_status?.code?.toUpperCase();
 
         const currentStatusName =
           order.order_status?.name?.toUpperCase();
 
+        // Preserve manually assigned statuses
         if (
           currentStatusCode === "TRANSFERRED" ||
           currentStatusName === "TRANSFERRED" ||
@@ -455,16 +661,10 @@ router.get(
           return;
         }
 
-        // ==========================================
-        // EXPIRY CHECK
-        // ==========================================
-
         let isExpired = false;
 
-        // ================= DOMAIN EXPIRY =================
-
+        // Check order/domain expiry
         if (order.expiryDate) {
-
           const expiry = new Date(order.expiryDate);
           expiry.setHours(0, 0, 0, 0);
 
@@ -473,16 +673,10 @@ router.get(
           }
         }
 
-        // ================= PLAN EXPIRY =================
-
-        if (
-          order.Plans &&
-          order.Plans.length > 0
-        ) {
-
+        // Check every plan expiry
+        if (order.Plans?.length > 0) {
           const planExpired = order.Plans.some(
             (plan: any) => {
-
               if (!plan.expiryDate) {
                 return false;
               }
@@ -499,10 +693,6 @@ router.get(
           }
         }
 
-        // ==========================================
-        // NEW STATUS OBJECT
-        // ==========================================
-
         const newStatus = isExpired
           ? expiredStatus
           : activeStatus;
@@ -514,12 +704,8 @@ router.get(
         const newStatusId =
           newStatus._id.toString();
 
-        // ==========================================
-        // UPDATE ONLY IF STATUS CHANGED
-        // ==========================================
-
+        // Update only when the status has changed
         if (currentStatusId !== newStatusId) {
-
           bulkOps.push({
             updateOne: {
               filter: {
@@ -533,7 +719,7 @@ router.get(
             },
           });
 
-          // Response-il updated status kaanikkum
+          // Reflect the updated status in the response
           order.order_status = {
             _id: newStatus._id,
             name: newStatus.name,
@@ -542,107 +728,60 @@ router.get(
         }
       });
 
-      // ================= DB UPDATE =================
-
+      // ==========================================
+      // SAVE STATUS CHANGES
+      // ==========================================
       if (bulkOps.length > 0) {
         await Order.bulkWrite(bulkOps);
       }
 
-
-
-      // =================================================
+      // ==========================================
       // SORT BY NEAREST EXPIRY
-      // =================================================
-
-
-      finalOrders.sort((a, b) => {
-
-
-        if (!a.nearestExpiryDate)
+      // ==========================================
+      finalOrders.sort((a: any, b: any) => {
+        if (!a.nearestExpiryDate) {
           return 1;
+        }
 
-
-        if (!b.nearestExpiryDate)
+        if (!b.nearestExpiryDate) {
           return -1;
-
-
+        }
 
         return (
-
-          new Date(a.nearestExpiryDate).getTime()
-
-          -
-
+          new Date(a.nearestExpiryDate).getTime() -
           new Date(b.nearestExpiryDate).getTime()
-
         );
-
-
       });
 
-
-
-
-
-
-
+      // ==========================================
+      // RESPONSE
+      // ==========================================
       return res.status(200).json({
-
         success: true,
 
-
         counts: {
-
-
           total: finalOrders.length,
-
-
           month,
-
-
           startDate,
-
-
-          endDate
-
-
+          endDate,
         },
 
-
-        data: finalOrders
-
-
+        data: finalOrders,
       });
-
-
-
-    }
-
-
-    catch (error) {
-
-
+    } catch (error) {
       console.error(
         "Error fetching orders by month:",
         error
       );
 
-
-
       return res.status(500).json({
-
         success: false,
-
-        message: "Server Error"
-
+        message: "Server Error",
       });
-
-
     }
-
-
   }
 );
+
 router.get(
   "/existing_customers",
   authMiddleware,
