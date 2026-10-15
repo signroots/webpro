@@ -24,15 +24,18 @@ interface IOrderPlanResponse {
   expiryDate: Date;
   noOfUsers: number;
 }
+
 type RenewalItem =
   | {
       target: "domain";
       durationMonths?: number;
+      expiryDate?: string;
     }
   | {
       target: "plan";
       planId: string;
       durationMonths?: number;
+      expiryDate?: string;
     };
 
 const allowedPlanTypes = [
@@ -45,24 +48,41 @@ const allowedPlanTypes = [
 ];
 
 /**
- * Calculate the new expiry date.
- *
- * If the existing expiry is in the future, extend from that date.
- * Otherwise, extend from today's date.
- *
- * Handles month-end dates safely.
+ * Parse YYYY-MM-DD without timezone shifting the selected calendar date.
+ */
+function parseExpiryDate(value?: string): Date | null {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return null;
+  }
+
+  const [year, month, day] = value.split("-").map(Number);
+
+  const date = new Date(year, month - 1, day, 12, 0, 0);
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return date;
+}
+
+/**
+ * Add months to the existing expiry date.
+ * Expired services are also extended from their existing expiry date.
+ * Example: 08-10-2026 + 1 month = 08-11-2026.
  */
 function calculateNewExpiry(
   currentExpiry: Date | null | undefined,
   durationMonths: number
 ): Date {
-  const now = new Date();
-
   const baseDate =
-    currentExpiry && !Number.isNaN(currentExpiry.getTime()) &&
-    currentExpiry.getTime() > now.getTime()
+    currentExpiry && !Number.isNaN(currentExpiry.getTime())
       ? new Date(currentExpiry)
-      : new Date(now);
+      : new Date();
 
   const originalDay = baseDate.getDate();
 
@@ -106,7 +126,7 @@ router.post(
         return;
       }
 
-      // 3. Validate order.
+      // 3. Find order.
       const order = await Order.findById(orderId);
 
       if (!order) {
@@ -117,7 +137,7 @@ router.post(
         return;
       }
 
-      // 4. Validate all renewal requests before saving.
+      // 4. Validate requested items and prevent duplicates.
       const seenTargets = new Set<string>();
 
       for (const item of renewals) {
@@ -133,22 +153,46 @@ router.post(
           return;
         }
 
-        // durationMonths is optional.
-        // The backend determines the actual duration below.
         if (
           item.durationMonths !== undefined &&
-          (
-            !Number.isInteger(item.durationMonths) ||
+          (!Number.isInteger(item.durationMonths) ||
             item.durationMonths < 1 ||
-            item.durationMonths > 120
-          )
+            item.durationMonths > 120)
         ) {
           res.status(400).json({
             success: false,
-            message:
-              "durationMonths must be an integer between 1 and 120.",
+            message: "durationMonths must be an integer between 1 and 120.",
           });
           return;
+        }
+
+        if (item.expiryDate !== undefined) {
+          const requestedDate = parseExpiryDate(item.expiryDate);
+
+          if (!requestedDate) {
+            res.status(400).json({
+              success: false,
+              message: "Invalid expiry date. Use YYYY-MM-DD.",
+            });
+            return;
+          }
+
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+
+          const selectedDay = new Date(
+            requestedDate.getFullYear(),
+            requestedDate.getMonth(),
+            requestedDate.getDate()
+          );
+
+          if (selectedDay < today) {
+            res.status(400).json({
+              success: false,
+              message: "New expiry date cannot be in the past.",
+            });
+            return;
+          }
         }
 
         if (item.target === "domain") {
@@ -189,19 +233,16 @@ router.post(
         }
       }
 
-      // 5. Collect requested plan IDs.
+      // 5. Find the requested plans belonging to this order.
       const requestedPlanIds = renewals
         .filter(
           (
             item
-          ): item is Extract<
-            RenewalItem,
-            { target: "plan" }
-          > => item.target === "plan"
+          ): item is Extract<RenewalItem, { target: "plan" }> =>
+            item.target === "plan"
         )
         .map((item) => item.planId);
 
-      // 6. Find plans belonging to this order only.
       const plans =
         requestedPlanIds.length > 0
           ? await OrderPlan.find({
@@ -219,7 +260,7 @@ router.post(
         return;
       }
 
-      // 7. Validate plan types before updating anything.
+      // 6. Validate plan types.
       for (const plan of plans) {
         if (!allowedPlanTypes.includes(plan.type)) {
           res.status(400).json({
@@ -230,6 +271,7 @@ router.post(
         }
       }
 
+      // 7. Process renewal requests.
       const renewedItems: Array<{
         target: string;
         planId?: string;
@@ -240,22 +282,25 @@ router.post(
         newExpiryDate: Date;
       }> = [];
 
-      // 8. Perform the requested renewals.
       for (const item of renewals) {
         // -----------------------------------------
-        // DOMAIN RENEWAL: ALWAYS 12 MONTHS
+        // DOMAIN RENEWAL
         // -----------------------------------------
         if (item.target === "domain") {
           const oldExpiryDate = order.expiryDate
             ? new Date(order.expiryDate)
             : null;
 
+          // Domain renewal is always yearly.
           const durationMonths = 12;
 
-          const newExpiryDate = calculateNewExpiry(
-            oldExpiryDate,
-            durationMonths
-          );
+          // Use the selected date when provided.
+          // Otherwise calculate from the current expiry date.
+          const requestedExpiry = parseExpiryDate(item.expiryDate);
+
+          const newExpiryDate =
+            requestedExpiry ??
+            calculateNewExpiry(oldExpiryDate, durationMonths);
 
           order.expiryDate = newExpiryDate;
           await order.save();
@@ -288,16 +333,22 @@ router.post(
             ? new Date(plan.expiryDate)
             : null;
 
-          // Monthly plans get 1 month.
-          // Other plans get 12 months.
+          // Monthly-configured plans must remain monthly.
+          // Other plans use the duration selected in the frontend.
           const isMonthly = plan.monthly_renewlaed === true;
 
-          const durationMonths = isMonthly ? 1 : 12;
+          const durationMonths: number = isMonthly
+            ? 1
+            : item.durationMonths ?? 12;
 
-          const newExpiryDate = calculateNewExpiry(
-            oldExpiryDate,
-            durationMonths
-          );
+          // IMPORTANT:
+          // If the frontend sends expiryDate, save that date.
+          // Do not silently replace it with today's date + duration.
+          const requestedExpiry = parseExpiryDate(item.expiryDate);
+
+          const newExpiryDate =
+            requestedExpiry ??
+            calculateNewExpiry(oldExpiryDate, durationMonths);
 
           plan.expiryDate = newExpiryDate;
 
@@ -315,7 +366,7 @@ router.post(
         }
       }
 
-      // 9. Return renewal result.
+      // 8. Return updated renewal details.
       res.status(200).json({
         success: true,
         message: "Renewal completed successfully.",
@@ -336,6 +387,7 @@ router.post(
     }
   }
 );
+
 router.get(
   "/orders-by-month",
   authMiddleware,
