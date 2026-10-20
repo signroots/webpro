@@ -163,15 +163,6 @@ interface Order {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-const copyToClipboard = async (value: string, label: string) => {
-  try {
-    await navigator.clipboard.writeText(value);
-    alert(`${label} copied successfully`);
-  } catch (error) {
-    console.error("Copy failed:", error);
-    alert(`Failed to copy ${label.toLowerCase()}`);
-  }
-};
 
 const Info: React.FC<{
   label: string;
@@ -250,6 +241,60 @@ const OrderDetails: React.FC = () => {
 
   const [statusUpdating, setStatusUpdating] =
     useState(false);
+
+  /* ===================== COPY FEEDBACK ===================== */
+
+  const [copyFeedback, setCopyFeedback] = useState<{
+    key: string;
+    message: string;
+    success: boolean;
+  } | null>(null);
+
+  const copyTimeoutRef =
+    React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const copyToClipboard = async (
+    value: string,
+    label: string,
+    planId: string
+  ) => {
+    const key = `${planId}-${label}`;
+
+    try {
+      await navigator.clipboard.writeText(value);
+
+      setCopyFeedback({
+        key,
+        message: "Copied successfully",
+        success: true,
+      });
+    } catch (error) {
+      console.error("Copy failed:", error);
+
+      setCopyFeedback({
+        key,
+        message: "Copy failed",
+        success: false,
+      });
+    }
+
+    if (copyTimeoutRef.current) {
+      clearTimeout(copyTimeoutRef.current);
+    }
+
+    copyTimeoutRef.current = setTimeout(() => {
+      setCopyFeedback(null);
+      copyTimeoutRef.current = null;
+    }, 2500);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+    };
+  }, []);
 
   /* ===================== OPEN STATUS MODAL ===================== */
 
@@ -968,21 +1013,37 @@ const OrderDetails: React.FC = () => {
                           </span>
 
                           {plan.adminEmail && (
-                            <button
-                              type="button"
-                              title="Copy Admin Email"
-                              aria-label="Copy Admin Email"
-                              onClick={() =>
-                                copyToClipboard(
-                                  plan.adminEmail!,
-                                  "Admin Email"
-                                )
-                              }
-                              className="text-blue-600 hover:text-blue-800"
-                            >
-                              <FaCopy />
-                            </button>
+                            <span className="relative inline-flex shrink-0">
+                              <button
+                                type="button"
+                                title="Copy Admin Email"
+                                aria-label="Copy Admin Email"
+                                onClick={() =>
+                                  copyToClipboard(
+                                    plan.adminEmail!,
+                                    "Admin Email",
+                                    plan._id
+                                  )
+                                }
+                                className="text-blue-600 hover:text-blue-800"
+                              >
+                                <FaCopy />
+                              </button>
+                              {copyFeedback?.key === `${plan._id}-Admin Email` && (
+                                <span
+                                  role="status"
+                                  className={`absolute left-full bottom-full z-50 ml-1 mb-1 whitespace-nowrap rounded px-2 py-1 text-xs font-medium shadow-md ${
+                                    copyFeedback.success
+                                      ? "bg-green-600 text-white"
+                                      : "bg-red-600 text-white"
+                                  }`}
+                                >
+                                  {copyFeedback.message}
+                                </span>
+                              )}
+                            </span>
                           )}
+
                         </div>
                       </td>
 
@@ -994,21 +1055,37 @@ const OrderDetails: React.FC = () => {
                           </span>
 
                           {plan.adminPassword && (
-                            <button
-                              type="button"
-                              title="Copy Admin Password"
-                              aria-label="Copy Admin Password"
-                              onClick={() =>
-                                copyToClipboard(
-                                  plan.adminPassword!,
-                                  "Admin Password"
-                                )
-                              }
-                              className="text-blue-600 hover:text-blue-800"
-                            >
-                              <FaCopy />
-                            </button>
+                            <span className="relative inline-flex shrink-0">
+                              <button
+                                type="button"
+                                title="Copy Admin Password"
+                                aria-label="Copy Admin Password"
+                                onClick={() =>
+                                  copyToClipboard(
+                                    plan.adminPassword!,
+                                    "Admin Password",
+                                    plan._id
+                                  )
+                                }
+                                className="text-blue-600 hover:text-blue-800"
+                              >
+                                <FaCopy />
+                              </button>
+                              {copyFeedback?.key === `${plan._id}-Admin Password` && (
+                                <span
+                                  role="status"
+                                  className={`absolute left-full bottom-full z-50 ml-1 mb-1 whitespace-nowrap rounded px-2 py-1 text-xs font-medium shadow-md ${
+                                    copyFeedback.success
+                                      ? "bg-green-600 text-white"
+                                      : "bg-red-600 text-white"
+                                  }`}
+                                >
+                                  {copyFeedback.message}
+                                </span>
+                              )}
+                            </span>
                           )}
+
                         </div>
                       </td>
 
