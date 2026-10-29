@@ -13,6 +13,7 @@ import Status from "../models/Status";
 import State from "../models/State";
 import Country from "../models/Country";
 import ActivityLog from "../models/ActivityLog";
+import { addPlanLicenses } from "../controllers/orderPlanController";
 const router = express.Router();
 interface IOrderPlanResponse {
   _id: string;
@@ -387,7 +388,7 @@ router.post(
     }
   }
 );
-
+router.put("/:planId/licenses", addPlanLicenses);
 router.get(
   "/orders-by-month",
   authMiddleware,
