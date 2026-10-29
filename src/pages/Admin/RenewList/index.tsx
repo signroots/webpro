@@ -1,7 +1,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { FaLock, FaEdit, FaSyncAlt } from "react-icons/fa";
+import { FaLock, FaEdit, FaSyncAlt,FaCopy } from "react-icons/fa";
 import ServiceIcons from "../Order/ServiceIcons";
 import ExpiryBadge from "../Order/ExpiryBadge";
 import { fetchRenewListOrders } from "../Order/api";
@@ -26,6 +26,7 @@ interface Plan {
   emailTypeImage?: string;
   planId?: string;
   monthly_renewlaed?: boolean;
+  noOfUsers?: number;
 }
 
 interface Order {
@@ -37,6 +38,7 @@ interface Order {
   domainSource?: { _id: string; name?: string } | null;
   Plans?: Plan[];
   client?: {
+      _id?: string;
     c_name?: string;
     c_company?: string;
   };
@@ -159,6 +161,118 @@ function calculateNewExpiry(
     addMonthsSafely(baseDate, durationMonths)
   );
 }
+
+function formatExpiryDate(value?: string | null): string {
+  if (!value) return "Not available";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Not available";
+  }
+
+  return date
+    .toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+      timeZone: "UTC",
+    })
+    .replace(/ /g, "-");
+}
+const copyRenewalNotification = async (
+  order: Order,
+  setSuccess: React.Dispatch<React.SetStateAction<string>>
+) => {
+  const plans = order.Plans || [];
+
+  const emailPlans = plans.filter(
+    (plan) => plan.type === "email" || plan.type === "msoffice"
+  );
+const hostingPlans = plans.filter(
+  (plan) => plan.type === "hosting"
+);
+ 
+  
+
+  
+
+const notification = [
+  "RENEWAL NOTIFICATION",
+  "",
+  order.domainName,
+  `Domain: ${order.domainSource?._id ? "Yes" : "No"}`,
+  "",
+  emailPlans.length
+    ? emailPlans
+        .map(
+          (plan) =>
+            `Email: ${plan.emailType || "N/A"}\n` +
+            `No. of Users: ${plan.noOfUsers ?? 0}\n` +
+            `Expiry Date: ${formatExpiryDate(plan.expiryDate)}`
+        )
+        .join("\n\n")
+    : "Email: No",
+  "",
+  hostingPlans.length
+    ? hostingPlans
+        .map(
+          (plan) =>
+            `Hosting: Yes\n` +
+            `Expiry Date: ${formatExpiryDate(plan.expiryDate)}`
+        )
+        .join("\n\n")
+    : "Hosting: No",
+].join("\n");
+
+  try {
+    let copied = false;
+
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(notification);
+        copied = true;
+      } catch (error) {
+        console.warn("Clipboard API failed. Trying fallback.", error);
+      }
+    }
+
+    if (!copied) {
+      const textarea = document.createElement("textarea");
+      textarea.value = notification;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      textarea.style.top = "0";
+
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      textarea.setSelectionRange(0, textarea.value.length);
+
+      try {
+        copied = document.execCommand("copy");
+      } finally {
+        document.body.removeChild(textarea);
+      }
+    }
+
+    if (!copied) {
+      throw new Error("Copy command failed");
+    }
+
+    setSuccess("Renewal notification copied successfully!");
+
+    window.setTimeout(() => {
+      setSuccess("");
+    }, 2500);
+  } catch (error) {
+    console.error("Copy failed:", error);
+    window.alert(
+      "Unable to copy. Please check clipboard permissions and try again."
+    );
+  }
+};
 
 function displayDate(value?: string | null): string {
   const date = toDateInputValue(value);
@@ -600,18 +714,38 @@ const RenewList: React.FC = () => {
 
       <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full table-fixed text-sm">
+          <table className="w-full min-w-[1100px] table-auto text-sm">
             <thead className="bg-gray-50">
-              <tr>
-                <th className="w-16 px-4 py-4">SL No</th>
-                <th className="w-64 px-4 py-4 text-left">Domain</th>
-                <th className="w-56 px-4 py-4 text-left">Customer</th>
-                <th className="w-44 px-4 py-4">Services</th>
-                <th className="w-36 px-4 py-4">Expiry Date</th>
-                <th className="w-32 px-4 py-4">Status</th>
-                <th className="w-48 px-4 py-4">Actions</th>
-              </tr>
-            </thead>
+  <tr>
+    <th className="w-[60px] px-3 py-4 text-center whitespace-nowrap">
+      SL No
+    </th>
+
+    <th className="w-[220px] px-4 py-4 text-left">
+      Domain
+    </th>
+
+    <th className="w-[250px] px-4 py-4 text-left">
+      Customer
+    </th>
+
+    <th className="w-[180px] px-3 py-4 text-center">
+      Services
+    </th>
+
+    <th className="w-[150px] px-3 py-4 text-center whitespace-nowrap">
+      Expiry Date
+    </th>
+
+    <th className="w-[120px] px-3 py-4 text-center">
+      Status
+    </th>
+
+    <th className="w-[130px] px-3 py-4 text-center">
+      Actions
+    </th>
+  </tr>
+</thead>
 
             <tbody>
               {paginatedOrders.map((order, index) => (
@@ -636,11 +770,16 @@ const RenewList: React.FC = () => {
                     </div>
                   </td>
 
-                  <td className="px-4 py-4">
-                    {order.client?.c_company ||
-                      order.client?.c_name ||
-                      "N/A"}
-                  </td>
+                 <td className="px-4 py-4">
+  <Link
+    to={`/admin/orders/customer/${order.client?._id}`}
+    className="text-blue-600 hover:underline cursor-pointer"
+  >
+    {order.client?.c_company ||
+      order.client?.c_name ||
+      "N/A"}
+  </Link>
+</td>
 
                   <td className="px-4 py-4">
                     <ServiceIcons order={order} />
@@ -675,11 +814,21 @@ const RenewList: React.FC = () => {
                         type="button"
                         onClick={() => openRenewPopup(order)}
                         title="Renew"
-                        className="flex items-center gap-1 rounded-lg bg-green-600 px-3 py-1.5 text-xs text-white"
+                         className="border-0 bg-transparent p-0 text-green-600 shadow-none hover:text-blue-600"
                       >
                         <FaSyncAlt />
-                        Renew
+                       
                       </button>
+
+<button
+  type="button"
+  onClick={() => copyRenewalNotification(order, setSuccess)}
+  title="Copy Renewal Notification"
+  className="border-0 bg-transparent p-0 text-blue-600 shadow-none hover:text-blue-800"
+>
+  <FaCopy />
+</button>
+
                     </div>
                   </td>
                 </tr>

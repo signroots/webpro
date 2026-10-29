@@ -244,6 +244,131 @@ const OrderDetails: React.FC = () => {
 
   /* ===================== COPY FEEDBACK ===================== */
 
+  /* ===================== GOOGLE WORKSPACE LICENCES MODAL ===================== */
+
+  const [licenseModalOpen, setLicenseModalOpen] = useState(false);
+  const [licenseConfirmModalOpen, setLicenseConfirmModalOpen] = useState(false);
+  const [selectedLicensePlanId, setSelectedLicensePlanId] = useState("");
+  const [additionalLicenses, setAdditionalLicenses] = useState("0");
+  const [purchaseOrderNumber, setPurchaseOrderNumber] = useState("");
+
+  const selectedLicensePlan = (order?.plans || []).find(
+    (plan) => plan._id === selectedLicensePlanId
+  );
+
+  const openLicenseModal = (plan: Plan) => {
+    setSelectedLicensePlanId(plan._id);
+    setAdditionalLicenses("0");
+    setPurchaseOrderNumber("");
+    setLicenseConfirmModalOpen(false);
+    setLicenseModalOpen(true);
+  };
+
+  const handleContinueLicenses = () => {
+    const count = Number(additionalLicenses);
+
+    if (!selectedLicensePlan) {
+      alert("Please select a plan.");
+      return;
+    }
+
+    const currentUsers = selectedLicensePlan.noOfUsers ?? 0;
+    const maxAdditionalLicenses = Math.max(0, 300 - currentUsers);
+
+    if (
+      additionalLicenses.trim() === "" ||
+      !Number.isInteger(count) ||
+      count < 1 ||
+      count > maxAdditionalLicenses
+    ) {
+      alert(
+        `Number of additional licences must be between 1 and ${maxAdditionalLicenses}`
+      );
+      return;
+    }
+
+    // Continue opens the confirmation step; do not update the count yet.
+    setLicenseModalOpen(false);
+    setLicenseConfirmModalOpen(true);
+  };
+
+
+const handleConfirmLicenses = async () => {
+  if (!selectedLicensePlan) {
+    alert("Please select a plan.");
+    return;
+  }
+
+  const count = Number(additionalLicenses);
+  const currentUsers = selectedLicensePlan.noOfUsers ?? 0;
+  const maxAdditionalLicenses = Math.max(0, 300 - currentUsers);
+
+  if (
+    additionalLicenses.trim() === "" ||
+    !Number.isInteger(count) ||
+    count < 1 ||
+    count > maxAdditionalLicenses
+  ) {
+    alert(
+      `Number of additional licences must be between 1 and ${maxAdditionalLicenses}`
+    );
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/orders/${selectedLicensePlan._id}/licenses`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          additionalLicenses: count,
+        }),
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(
+        result.message || "Failed to update licences."
+      );
+    }
+
+    const updatedUsers =
+      result.data?.noOfUsers ?? currentUsers + count;
+
+    setOrder((prev) =>
+      prev
+        ? {
+            ...prev,
+            plans: prev.plans?.map((plan) =>
+              plan._id === selectedLicensePlan._id
+                ? { ...plan, noOfUsers: updatedUsers }
+                : plan
+            ),
+          }
+        : prev
+    );
+
+    setLicenseConfirmModalOpen(false);
+    setLicenseModalOpen(false);
+
+    alert("Licences updated successfully.");
+  } catch (error) {
+    console.error("Licence update error:", error);
+
+    alert(
+      error instanceof Error
+        ? error.message
+        : "Failed to update licences."
+    );
+  }
+};
+
+
   const [copyFeedback, setCopyFeedback] = useState<{
     key: string;
     message: string;
@@ -265,7 +390,7 @@ const OrderDetails: React.FC = () => {
 
       setCopyFeedback({
         key,
-        message: "Copied successfully",
+        message: "Copied",
         success: true,
       });
     } catch (error) {
@@ -1002,7 +1127,21 @@ const OrderDetails: React.FC = () => {
                       </td>
 
                       <td className="border px-2 py-1">
-                        {plan.noOfUsers ?? "-"}
+                        <div className="flex items-center justify-center gap-2">
+                          <span>{plan.noOfUsers ?? 0}</span>
+
+                          {plan.noOfUsers !== undefined && plan.noOfUsers !== null && (
+                            <button
+                              type="button"
+                              title="Add licences"
+                              aria-label="Add licences"
+                              onClick={() => openLicenseModal(plan)}
+                              className="text-blue-600 hover:text-blue-800"
+                            >
+                              <FaEdit size={14} />
+                            </button>
+                          )}
+                        </div>
                       </td>
 
                       {/* ADMIN EMAIL WITH COPY BUTTON */}
@@ -1132,7 +1271,182 @@ const OrderDetails: React.FC = () => {
           </Section>
         )}
 
-        {/* ===================== STATUS UPDATE MODAL ===================== */}
+        {/* ===================== ADD LICENCES MODAL ===================== */}
+
+        {licenseModalOpen && selectedLicensePlan && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+            <div className="w-full max-w-lg rounded-lg bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b px-6 py-4">
+                <h2 className="text-lg font-medium text-gray-800">
+                  Add licences
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setLicenseModalOpen(false)}
+                  aria-label="Close"
+                  className="text-blue-600 hover:text-blue-800"
+                >
+                  <FaTimes size={20} />
+                </button>
+              </div>
+
+              <div className="px-6 py-5">
+                <p className="mb-4 text-sm text-gray-800">
+                  Your {selectedLicensePlan.planName || selectedLicensePlan.emailType || selectedLicensePlan.type || "subscription"} subscription currently has {selectedLicensePlan.noOfUsers ?? 0} {((selectedLicensePlan.noOfUsers ?? 0) === 1) ? "licence" : "licences"}. You can add up to {Math.max(0, 300 - (selectedLicensePlan.noOfUsers ?? 0))} more licences.
+                </p>
+
+                <label
+                  htmlFor="additional-licenses"
+                  className="mb-1 block text-sm font-medium text-red-600"
+                >
+                  Additional licences*
+                </label>
+                <input
+                  id="additional-licenses"
+                  type="number"
+                  min={0}
+                  max={Math.max(0, 300 - (selectedLicensePlan.noOfUsers ?? 0))}
+                  step={1}
+                  value={additionalLicenses}
+                  onChange={(e) => setAdditionalLicenses(e.target.value)}
+                  aria-invalid={
+                    additionalLicenses.trim() === "" ||
+                    !Number.isInteger(Number(additionalLicenses)) ||
+                    Number(additionalLicenses) < 1 ||
+                    Number(additionalLicenses) >
+                      300 - (selectedLicensePlan.noOfUsers ?? 0)
+                  }
+                  className="w-full rounded border border-gray-300 px-3 py-3 text-sm outline-none focus:border-blue-500"
+                />
+
+                {(additionalLicenses.trim() === "" ||
+                  !Number.isInteger(Number(additionalLicenses)) ||
+                  Number(additionalLicenses) < 1 ||
+                  Number(additionalLicenses) >
+                    300 - (selectedLicensePlan.noOfUsers ?? 0)) && (
+                  <p className="mt-1 text-sm text-red-600">
+                    Number of additional licences must be between 1 and{" "}
+                    {Math.max(0, 300 - (selectedLicensePlan.noOfUsers ?? 0))}.
+                  </p>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-3 border-t px-6 py-4">
+                <button
+                  type="button"
+                  onClick={() => setLicenseModalOpen(false)}
+                  className="rounded px-4 py-2 text-sm text-blue-600 hover:bg-gray-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleContinueLicenses}
+                  disabled={
+                    additionalLicenses.trim() === "" ||
+                    !Number.isInteger(Number(additionalLicenses)) ||
+                    Number(additionalLicenses) < 1 ||
+                    Number(additionalLicenses) >
+                      300 - (selectedLicensePlan.noOfUsers ?? 0)
+                  }
+                  className="rounded bg-blue-600 px-5 py-2 text-sm text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ===================== CONFIRM ADD LICENCES MODAL ===================== */}
+
+        {licenseConfirmModalOpen && selectedLicensePlan && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
+            <div className="w-full max-w-xl rounded-lg bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b px-6 py-5">
+                <h2 className="text-lg font-medium text-gray-800">Add licences</h2>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLicenseConfirmModalOpen(false);
+                    setLicenseModalOpen(true);
+                  }}
+                  aria-label="Close"
+                  className="text-blue-600 hover:text-blue-800"
+                >
+                  <FaTimes size={20} />
+                </button>
+              </div>
+
+              <div className="space-y-5 px-6 py-5 text-sm">
+                <div>
+                  <p className="mb-4 font-medium text-gray-900">
+                    {selectedLicensePlan.planName || selectedLicensePlan.emailType || selectedLicensePlan.type || "Subscription"}
+                  </p>
+                  <div className="grid grid-cols-[1fr_auto] gap-x-6 gap-y-2 max-w-sm">
+                    <span>Current licences</span>
+                    <span className="font-medium">{selectedLicensePlan.noOfUsers ?? 0}</span>
+                    <span>Additional licences</span>
+                    <span className="font-medium">{Number(additionalLicenses)}</span>
+                    <span className="font-semibold">Total licences</span>
+                    <span className="font-semibold">
+                      {(selectedLicensePlan.noOfUsers ?? 0) + Number(additionalLicenses)}
+                    </span>
+                  </div>
+                </div>
+
+                <hr />
+
+                <div>
+                  <p className="mb-2 font-medium text-gray-800">Estimated cost</p>
+                  <p className="text-gray-600">
+                    Pricing information is not available for this plan.
+                  </p>
+                  <p className="mt-3 text-xs text-gray-500">
+                    Any applicable prorated cost depends on the subscription pricing and remaining contract term.
+                  </p>
+                </div>
+
+                <div>
+                  <label htmlFor="license-po-number" className="mb-1 block text-sm text-gray-700">
+                    P.O. #
+                  </label>
+                  <input
+                    id="license-po-number"
+                    type="text"
+                    value={purchaseOrderNumber}
+                    onChange={(e) => setPurchaseOrderNumber(e.target.value)}
+                    placeholder="P.O. #"
+                    maxLength={100}
+                    className="w-full max-w-xs rounded border border-gray-300 px-3 py-3 text-sm outline-none focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-4 border-t px-6 py-5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLicenseConfirmModalOpen(false);
+                    setLicenseModalOpen(true);
+                  }}
+                  className="rounded px-4 py-2 text-sm text-blue-600 hover:bg-gray-100"
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmLicenses}
+                  className="rounded bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                >
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+                {/* ===================== STATUS UPDATE MODAL ===================== */}
 
         {statusModalOpen && (
 

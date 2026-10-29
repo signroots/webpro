@@ -29,7 +29,7 @@ const menuItems: MenuItem[] = [
     icon: <ShoppingCart size={20} />,
   },
   {
-    name: "Renew List",
+    name: "Renewals",
     icon: <BarChart size={16} />,
   },
   {
@@ -83,7 +83,7 @@ const roleMenus: Record<string, string[]> = {
   admin: [
     "Dashboard",
     "Orders",
-    "Renew List",
+    "Renewals",
      "Archived Orders",
     "DNS Orders",
     "Customers",
@@ -165,7 +165,7 @@ const location = useLocation();
     case "DNS Orders":
       return "/admin/dns-order";
 
-    case "Renew List":
+    case "Renewals":
       return "/admin/renew-list";
     case "Archived Orders":
       return "/admin/archived-orders";
