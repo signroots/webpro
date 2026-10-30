@@ -37,13 +37,30 @@ const Login: React.FC = () => {
         notify("Login successful.", "success");
 
         // ✅ Navigate based on role
-        if (safeUser.role === "Admin") {
-          navigate("/admin/orders");
-        } else if (safeUser.role === "Customer") {
-          navigate("/customer/orders");
-        } else {
-          notify("Unauthorized role", "warning");
-        }
+        // Navigate based on role
+const normalizedRole = String(safeUser.role)
+  .trim()
+  .toLowerCase();
+
+const normalizedType = String(safeUser.type)
+  .trim()
+  .toLowerCase();
+
+if (
+  normalizedRole === "admin" ||
+  normalizedType === "admin"
+) {
+  navigate("/admin/orders");
+} else if (
+  normalizedRole === "client" ||
+  normalizedRole === "customer" ||
+  normalizedType === "client" ||
+  normalizedType === "customer"
+) {
+  navigate("/customer/orders");
+} else {
+  notify(`Unauthorized role: ${safeUser.role}`, "warning");
+}
       } else {
         // ❌ Show backend message in toast if available
         const errorMessage =

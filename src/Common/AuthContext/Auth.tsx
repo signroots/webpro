@@ -60,73 +60,30 @@ interface AuthProviderProps {
 // NORMALIZE USER
 // =====================================================
 const normalizeUser = (data: any): User => {
-  const role = String(
-    data?.role ?? data?.type ?? ""
-  )
-    .trim()
-    .toLowerCase();
-
-  // ================================
-  // NORMALIZED ROLE
-  // ================================
+  const role = String(data?.role ?? "").trim().toLowerCase();
+  const originalType = String(data?.type ?? "").trim().toLowerCase();
 
   let normalizedRole = "user";
-
-  if (role === "admin") {
-    normalizedRole = "admin";
-  } else if (
-    role === "client" ||
-    role === "customer"
-  ) {
-    normalizedRole = "client";
-  }
-
-  // ================================
-  // NORMALIZED TYPE
-  // ================================
-
   let normalizedType: User["type"] = "user";
 
-  const originalType = String(
-    data?.type ?? ""
-  )
-    .trim()
-    .toLowerCase();
-
-  if (originalType === "admin" || role === "admin") {
+  if (role === "admin" || originalType === "admin") {
+    normalizedRole = "admin";
     normalizedType = "admin";
-  } else if (
-    originalType === "client" ||
-    originalType === "customer" ||
-    role === "client" ||
-    role === "customer"
-  ) {
+  } else if (role === "client" || originalType === "client") {
+    normalizedRole = "client";
     normalizedType = "client";
+  } else if (role === "customer" || originalType === "customer") {
+    normalizedRole = "client";
+    normalizedType = "customer";
   }
 
   return {
-    id: String(
-      data?.id ??
-      data?._id ??
-      ""
-    ),
-
-    email: String(
-      data?.email ?? ""
-    ),
-
-    name: String(
-      data?.name ?? ""
-    ),
-
+    id: String(data?.id ?? data?._id ?? ""),
+    email: String(data?.email ?? ""),
+    name: String(data?.name ?? ""),
     role: normalizedRole,
-
     type: normalizedType,
-
-    clientId:
-      data?.clientId != null
-        ? String(data.clientId)
-        : null,
+    clientId: data?.clientId != null ? String(data.clientId) : null,
   };
 };
 // =====================================================
