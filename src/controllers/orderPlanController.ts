@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { OrderPlan } from "../models/OrderPlan";
+
 export const addPlanLicenses = async (
   req: Request,
   res: Response
@@ -9,6 +10,7 @@ export const addPlanLicenses = async (
     const { planId } = req.params;
     const { additionalLicenses } = req.body;
 
+    // Validate Plan ID
     if (!mongoose.Types.ObjectId.isValid(planId)) {
       return res.status(400).json({
         success: false,
@@ -16,13 +18,14 @@ export const addPlanLicenses = async (
       });
     }
 
+    // Allow positive and negative integers, but not zero
     if (
       !Number.isInteger(additionalLicenses) ||
-      additionalLicenses < 1
+      additionalLicenses === 0
     ) {
       return res.status(400).json({
         success: false,
-        message: "Additional licences must be a positive integer",
+        message: "Licence change must be a non-zero integer",
       });
     }
 
@@ -37,26 +40,44 @@ export const addPlanLicenses = async (
 
     const currentUsers = plan.noOfUsers ?? 0;
 
-    if (currentUsers + additionalLicenses > 300) {
+    // Calculate new licence count
+    const newTotal = currentUsers + additionalLicenses;
+
+    // Minimum licence validation
+    if (newTotal < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Minimum 1 licence is required",
+      });
+    }
+
+    // Maximum licence validation
+    if (newTotal > 300) {
       return res.status(400).json({
         success: false,
         message: "Total licences cannot exceed 300",
       });
     }
 
-    plan.noOfUsers = currentUsers + additionalLicenses;
+    // Update licence count
+    plan.noOfUsers = newTotal;
+
     await plan.save();
 
     return res.status(200).json({
       success: true,
-      message: "Licences updated successfully",
+      message:
+        additionalLicenses > 0
+          ? "Licences added successfully"
+          : "Licences minimized successfully",
       plan: {
         _id: plan._id,
         noOfUsers: plan.noOfUsers,
       },
     });
+
   } catch (error) {
-    console.error("Add licences error:", error);
+    console.error("Update licences error:", error);
 
     return res.status(500).json({
       success: false,
