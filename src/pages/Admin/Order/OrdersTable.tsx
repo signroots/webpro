@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import {
   FaEye,
   FaEdit,
@@ -18,40 +18,21 @@ import ServiceIcons from "./ServiceIcons";
 import ExpiryBadge from "./ExpiryBadge";
 import { useAuth } from "../../../Common/AuthContext/Auth";
 
-/* =========================================================
-   PROPS
-========================================================= */
-
 interface OrdersTableProps {
   paginatedOrders: any[];
-
   currentPage?: number;
   itemsPerPage?: number;
-
   highlightedOrderId?: string | null;
-
   handleEdit: (order: any) => void;
-
   getStatusClass: (status?: any | null) => string;
-
   navigate: NavigateFunction;
-
   showDomainStatus?: boolean;
-
   hideExpiredDates?: boolean;
-
   showRenewalActions?: boolean;
-
   handleRenew?: (order: any) => void;
-
-  handleCopyNotification?: (order: any) => void;
-
+  handleCopyNotification?: (order: any) => Promise<boolean>;
   showEditAction?: boolean;
 }
-
-/* =========================================================
-   COMPONENT
-========================================================= */
 
 const OrdersTable: React.FC<OrdersTableProps> = ({
   paginatedOrders,
@@ -69,53 +50,75 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
   showEditAction = true,
 }) => {
   const { user } = useAuth();
-
   const userType = user?.type;
 
   const isArchivedPage = showDomainStatus === true;
-
-  // Edit is available only when explicitly enabled for an admin.
   const canShowEdit = user?.type === "admin" && showEditAction;
-  console.log("ORDERS TABLE DEBUG:", {
-  userType: user?.type,
-  showEditAction,
-  canShowEdit,
-});
+
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const showCopied = (key: string) => {
+    setCopiedKey(key);
+
+    window.setTimeout(() => {
+      setCopiedKey((current) =>
+        current === key ? null : current
+      );
+    }, 2000);
+  };
+
+  const copyDomain = async (order: any) => {
+    try {
+      await navigator.clipboard.writeText(order.domainName);
+      showCopied(`domain-${order._id}`);
+    } catch (error) {
+      console.error("Domain copy failed:", error);
+      window.alert("Unable to copy domain.");
+    }
+  };
+
+  const copyNotification = async (order: any) => {
+    try {
+      const copied = await handleCopyNotification?.(order);
+
+      if (copied) {
+        showCopied(`notification-${order._id}`);
+      }
+    } catch (error) {
+      console.error("Notification copy failed:", error);
+    }
+  };
+
+  // Open Order Details
+  const handleView = (order: any) => {
+    navigate(
+      showDomainStatus
+        ? `/admin/archived/order-details/${order._id}`
+        : `/admin/orders/order-details/${order._id}`,
+      {
+        state: {
+          fromPage: currentPage,
+          from: showRenewalActions ? "renewal" : undefined,
+        },
+      }
+    );
+  };
 
   return (
     <div className="bg-white shadow rounded-lg overflow-x-auto">
       <table className="w-full min-w-[1100px] table-fixed divide-y divide-gray-200 text-sm">
 
-        {/* HEADER */}
         <thead className="bg-gray-100 text-gray-600 uppercase text-xs tracking-wider">
           <tr>
-            <th className="w-[60px] px-3 py-3 text-center">
-              SL No
-            </th>
-
-            <th className="w-[350px] px-3 py-3 text-left">
-              Domain Name
-            </th>
-
-            <th className="w-[200px] px-3 py-3 text-left">
-              Services
-            </th>
-
-            <th className="w-[140px] px-3 py-3 text-center">
-              Expiry Date
-            </th>
-
-            <th className="w-[150px] px-3 py-3 text-center">
-              Status
-            </th>
-
-            <th className="w-[150px] px-3 py-3 text-center">
-              Actions
-            </th>
+            <th className="w-[60px] px-3 py-3 text-center">SL No</th>
+            <th className="w-[350px] px-3 py-3 text-left">Domain Name</th>
+            <th className="w-[200px] px-3 py-3 text-left">Services</th>
+            <th className="w-[140px] px-3 py-3 text-center">Expiry Date</th>
+            <th className="w-[150px] px-3 py-3 text-center">Status</th>
+            <th className="w-[150px] px-3 py-3 text-center">Actions</th>
           </tr>
         </thead>
 
-        {/* BODY */}
         <tbody className="divide-y divide-gray-100 text-gray-900">
           {paginatedOrders.map((order, idx) => (
             <tr
@@ -126,7 +129,6 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
                   : "hover:bg-gray-50"
               }`}
             >
-              {/* SL NO */}
               <td className="px-3 py-4 text-center">
                 {currentPage && itemsPerPage
                   ? (currentPage - 1) * itemsPerPage + idx + 1
@@ -136,17 +138,18 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
               {/* DOMAIN AND CUSTOMER */}
               <td className="px-3 py-4">
                 <div className="flex items-center">
-                  {order.lockStatus === "Locked" ? (
-                    <FaLock
-                      className="text-red-500 w-4 h-4 shrink-0 mr-1.5"
-                      title="Locked"
-                    />
-                  ) : (
-                    <FaLock
-                      className="text-green-500 w-4 h-4 shrink-0 mr-1.5"
-                      title="Unlocked"
-                    />
-                  )}
+                  <FaLock
+                    className={`w-4 h-4 shrink-0 mr-1.5 ${
+                      order.lockStatus === "Locked"
+                        ? "text-red-500"
+                        : "text-green-500"
+                    }`}
+                    title={
+                      order.lockStatus === "Locked"
+                        ? "Locked"
+                        : "Unlocked"
+                    }
+                  />
 
                   <div className="flex min-w-0 flex-col">
                     <div className="flex items-center gap-1 min-w-0">
@@ -158,20 +161,25 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
                       </span>
 
                       {/* COPY DOMAIN */}
-                      <button
-                        type="button"
-                        title="Copy Domain"
-                        className="shrink-0 text-gray-400 hover:text-blue-600"
-                        onClick={(e) => {
-                          e.stopPropagation();
+                      <div className="relative flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          title="Copy Domain"
+                          className="text-gray-400 hover:text-blue-600"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void copyDomain(order);
+                          }}
+                        >
+                          <FaCopy className="w-3 h-3" />
+                        </button>
 
-                          navigator.clipboard.writeText(
-                            order.domainName
-                          );
-                        }}
-                      >
-                        <FaCopy className="w-3 h-3" />
-                      </button>
+                        {copiedKey === `domain-${order._id}` && (
+                          <span className="text-xs font-medium text-green-600 whitespace-nowrap">
+                            Copied
+                          </span>
+                        )}
+                      </div>
 
                       {/* OPEN DOMAIN */}
                       <FaExternalLinkAlt
@@ -179,7 +187,6 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
                         title="Open Domain"
                         onClick={(e) => {
                           e.stopPropagation();
-
                           window.open(
                             `https://${order.domainName}`,
                             "_blank"
@@ -241,9 +248,7 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
                     )}`}
                   >
                     {showDomainStatus
-                      ? `Order: ${
-                          order.order_status?.name || "N/A"
-                        }`
+                      ? `Order: ${order.order_status?.name || "N/A"}`
                       : order.order_status?.name || "N/A"}
                   </span>
 
@@ -266,41 +271,46 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
               {/* ACTIONS */}
               <td className="px-3 py-4">
                 <div className="flex justify-center items-center gap-4 text-gray-500">
+
                   {showRenewalActions ? (
                     <>
-                      {/* EDIT */}
-                      {canShowEdit && (
-                        <button
-                          type="button"
-                          onClick={() => handleEdit(order)}
-                          className="text-yellow-500 hover:text-yellow-600"
-                          title="Edit"
-                        >
-                          <FaEdit className="w-4 h-4" />
-                        </button>
-                      )}
+                      {/* VIEW - RENEWAL PAGE */}
+                      <button
+                        type="button"
+                        onClick={() => handleView(order)}
+                        className="text-blue-600 hover:text-blue-800 transition-colors"
+                        title="View Order Details"
+                      >
+                        <FaEye className="w-4 h-4" />
+                      </button>
 
                       {/* RENEW */}
                       <button
                         type="button"
                         onClick={() => handleRenew?.(order)}
-                        className="text-green-600 hover:text-blue-600"
+                        className="text-green-600 hover:text-green-700 transition-colors"
                         title="Renew"
                       >
                         <FaSyncAlt className="w-4 h-4" />
                       </button>
 
                       {/* COPY NOTIFICATION */}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleCopyNotification?.(order)
-                        }
-                        className="text-blue-600 hover:text-blue-800"
-                        title="Copy Renewal Notification"
-                      >
-                        <FaCopy className="w-4 h-4" />
-                      </button>
+                      <div className="relative flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => void copyNotification(order)}
+                          className="text-blue-600 hover:text-blue-800"
+                          title="Copy Renewal Notification"
+                        >
+                          <FaCopy className="w-4 h-4" />
+                        </button>
+
+                        {copiedKey === `notification-${order._id}` && (
+                          <span className="text-xs font-medium text-green-600 whitespace-nowrap">
+                            Copied
+                          </span>
+                        )}
+                      </div>
                     </>
                   ) : (
                     <>
@@ -309,23 +319,12 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
                         type="button"
                         className="hover:text-blue-600"
                         title="View"
-                        onClick={() =>
-                          navigate(
-                            showDomainStatus
-                              ? `/admin/archived/order-details/${order._id}`
-                              : `/admin/orders/order-details/${order._id}`,
-                            {
-                              state: {
-                                fromPage: currentPage,
-                              },
-                            }
-                          )
-                        }
+                        onClick={() => handleView(order)}
                       >
                         <FaEye className="w-4 h-4" />
                       </button>
 
-                      {/* EDIT */}
+                      {/* EDIT - OTHER PAGES */}
                       {canShowEdit && (
                         <button
                           type="button"
@@ -338,6 +337,7 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
                       )}
                     </>
                   )}
+
                 </div>
               </td>
             </tr>

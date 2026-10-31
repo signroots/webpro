@@ -17,6 +17,9 @@ import {
   FaRedo,
   FaTimes,
   FaCopy,
+  FaUsers,
+  FaPlus,
+  FaMinus,
 } from "react-icons/fa";
 
 /* ===================== TYPES ===================== */
@@ -33,8 +36,6 @@ interface Plan {
   orderId: string;
   planId: string;
   emailType?: string;
-
-  // Admin login information
   adminEmail?: string;
   adminPassword?: string;
   username?: string;
@@ -134,8 +135,6 @@ interface Order {
 
   domainSource?: DomainSource | null;
 
-  /* FLAGS */
-
   domain_flag?: boolean;
   email_flag?: boolean;
   host_flag?: boolean;
@@ -163,15 +162,12 @@ interface Order {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-
 const Info: React.FC<{
   label: string;
   value?: any;
 }> = ({ label, value }) => (
   <div>
-    <p className="text-sm text-gray-500">
-      {label}
-    </p>
+    <p className="text-sm text-gray-500">{label}</p>
 
     <p className="font-medium text-gray-800">
       {Array.isArray(value)
@@ -192,11 +188,9 @@ const OrderDetails: React.FC = () => {
 
   /* ===================== STATES ===================== */
 
-  const [statuses, setStatuses] =
-    useState<Status[]>([]);
+  const [statuses, setStatuses] = useState<Status[]>([]);
 
-  const [domainStatuses, setDomainStatuses] =
-    useState<Status[]>([]);
+  const [domainStatuses, setDomainStatuses] = useState<Status[]>([]);
 
   const [primaryPlanStatuses, setPrimaryPlanStatuses] =
     useState<Record<string, Status[]>>({});
@@ -204,19 +198,15 @@ const OrderDetails: React.FC = () => {
   const [secondaryPlanStatuses, setSecondaryPlanStatuses] =
     useState<Record<string, Status[]>>({});
 
-  const [order, setOrder] =
-    useState<Order | null>(null);
+  const [order, setOrder] = useState<Order | null>(null);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [loading, setLoading] = useState(true);
 
-  const [error, setError] =
-    useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   /* ===================== STATUS MODAL ===================== */
 
-  const [statusModalOpen, setStatusModalOpen] =
-    useState(false);
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
 
   const [updateOrderStatusChecked, setUpdateOrderStatusChecked] =
     useState(false);
@@ -227,11 +217,9 @@ const OrderDetails: React.FC = () => {
   const [updatePlanStatusChecked, setUpdatePlanStatusChecked] =
     useState(false);
 
-  const [selectedOrderStatus, setSelectedOrderStatus] =
-    useState("");
+  const [selectedOrderStatus, setSelectedOrderStatus] = useState("");
 
-  const [selectedDomainStatus, setSelectedDomainStatus] =
-    useState("");
+  const [selectedDomainStatus, setSelectedDomainStatus] = useState("");
 
   const [selectedPrimaryPlanStatuses, setSelectedPrimaryPlanStatuses] =
     useState<Record<string, string>>({});
@@ -239,135 +227,9 @@ const OrderDetails: React.FC = () => {
   const [selectedSecondaryPlanStatuses, setSelectedSecondaryPlanStatuses] =
     useState<Record<string, string>>({});
 
-  const [statusUpdating, setStatusUpdating] =
-    useState(false);
+  const [statusUpdating, setStatusUpdating] = useState(false);
 
   /* ===================== COPY FEEDBACK ===================== */
-
-  /* ===================== GOOGLE WORKSPACE LICENCES MODAL ===================== */
-
-  const [licenseModalOpen, setLicenseModalOpen] = useState(false);
-  const [licenseConfirmModalOpen, setLicenseConfirmModalOpen] = useState(false);
-  const [selectedLicensePlanId, setSelectedLicensePlanId] = useState("");
-  const [additionalLicenses, setAdditionalLicenses] = useState("0");
-  const [purchaseOrderNumber, setPurchaseOrderNumber] = useState("");
-
-  const selectedLicensePlan = (order?.plans || []).find(
-    (plan) => plan._id === selectedLicensePlanId
-  );
-
-  const openLicenseModal = (plan: Plan) => {
-    setSelectedLicensePlanId(plan._id);
-    setAdditionalLicenses("0");
-    setPurchaseOrderNumber("");
-    setLicenseConfirmModalOpen(false);
-    setLicenseModalOpen(true);
-  };
-
-  const handleContinueLicenses = () => {
-    const count = Number(additionalLicenses);
-
-    if (!selectedLicensePlan) {
-      alert("Please select a plan.");
-      return;
-    }
-
-    const currentUsers = selectedLicensePlan.noOfUsers ?? 0;
-    const maxAdditionalLicenses = Math.max(0, 300 - currentUsers);
-
-    if (
-      additionalLicenses.trim() === "" ||
-      !Number.isInteger(count) ||
-      count < 1 ||
-      count > maxAdditionalLicenses
-    ) {
-      alert(
-        `Number of additional licences must be between 1 and ${maxAdditionalLicenses}`
-      );
-      return;
-    }
-
-    // Continue opens the confirmation step; do not update the count yet.
-    setLicenseModalOpen(false);
-    setLicenseConfirmModalOpen(true);
-  };
-
-
-const handleConfirmLicenses = async () => {
-  if (!selectedLicensePlan) {
-    alert("Please select a plan.");
-    return;
-  }
-
-  const count = Number(additionalLicenses);
-  const currentUsers = selectedLicensePlan.noOfUsers ?? 0;
-  const maxAdditionalLicenses = Math.max(0, 300 - currentUsers);
-
-  if (
-    additionalLicenses.trim() === "" ||
-    !Number.isInteger(count) ||
-    count < 1 ||
-    count > maxAdditionalLicenses
-  ) {
-    alert(
-      `Number of additional licences must be between 1 and ${maxAdditionalLicenses}`
-    );
-    return;
-  }
-
-  try {
-    const response = await fetch(
-      `${API_BASE_URL}/api/orders/${selectedLicensePlan._id}/licenses`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          additionalLicenses: count,
-        }),
-      }
-    );
-
-    const result = await response.json();
-
-    if (!response.ok || !result.success) {
-      throw new Error(
-        result.message || "Failed to update licences."
-      );
-    }
-
-    const updatedUsers =
-      result.data?.noOfUsers ?? currentUsers + count;
-
-    setOrder((prev) =>
-      prev
-        ? {
-            ...prev,
-            plans: prev.plans?.map((plan) =>
-              plan._id === selectedLicensePlan._id
-                ? { ...plan, noOfUsers: updatedUsers }
-                : plan
-            ),
-          }
-        : prev
-    );
-
-    setLicenseConfirmModalOpen(false);
-    setLicenseModalOpen(false);
-
-    alert("Licences updated successfully.");
-  } catch (error) {
-    console.error("Licence update error:", error);
-
-    alert(
-      error instanceof Error
-        ? error.message
-        : "Failed to update licences."
-    );
-  }
-};
-
 
   const [copyFeedback, setCopyFeedback] = useState<{
     key: string;
@@ -421,6 +283,172 @@ const handleConfirmLicenses = async () => {
     };
   }, []);
 
+  /* ===================== MANAGE LICENCES ===================== */
+
+  const [licenseModalOpen, setLicenseModalOpen] = useState(false);
+
+  const [licenseConfirmModalOpen, setLicenseConfirmModalOpen] =
+    useState(false);
+
+  const [selectedLicensePlanId, setSelectedLicensePlanId] = useState("");
+
+  const [newLicenseTotalInput, setNewLicenseTotalInput] = useState("0");
+
+  const [purchaseOrderNumber, setPurchaseOrderNumber] = useState("");
+
+  const [licenseUpdating, setLicenseUpdating] = useState(false);
+
+  const selectedLicensePlan = (order?.plans || []).find(
+    (plan) => plan._id === selectedLicensePlanId
+  );
+
+  const currentLicenseCount = selectedLicensePlan?.noOfUsers ?? 0;
+
+  const newLicenseTotal = Number(newLicenseTotalInput);
+
+  const licenseDelta = newLicenseTotal - currentLicenseCount;
+
+  const isLicenseTotalValid =
+    newLicenseTotalInput.trim() !== "" &&
+    Number.isInteger(newLicenseTotal) &&
+    newLicenseTotal >= 1 &&
+    newLicenseTotal <= 300 &&
+    licenseDelta !== 0;
+
+  /* OPEN LICENCE MODAL */
+
+  const openLicenseModal = (plan: Plan) => {
+    setSelectedLicensePlanId(plan._id);
+
+    setNewLicenseTotalInput(String(plan.noOfUsers ?? 0));
+
+    setPurchaseOrderNumber("");
+
+    setLicenseConfirmModalOpen(false);
+
+    setLicenseModalOpen(true);
+  };
+
+  /* INCREASE / DECREASE LICENCE COUNT */
+
+  const changeLicenseTotal = (change: number) => {
+    setNewLicenseTotalInput((prev) => {
+      const current = Number(prev);
+
+      const safeCurrent = Number.isInteger(current)
+        ? current
+        : currentLicenseCount;
+
+      const next = Math.min(
+        300,
+        Math.max(1, safeCurrent + change)
+      );
+
+      return String(next);
+    });
+  };
+
+  /* CONTINUE TO CONFIRMATION */
+
+  const handleContinueLicenses = () => {
+    if (!selectedLicensePlan) {
+      alert("Please select a plan.");
+      return;
+    }
+
+    if (!isLicenseTotalValid) {
+      alert(
+        "Please change the licence total between 1 and 300."
+      );
+      return;
+    }
+
+    setLicenseModalOpen(false);
+
+    setLicenseConfirmModalOpen(true);
+  };
+
+  /* CONFIRM LICENCE UPDATE */
+
+  const handleConfirmLicenses = async () => {
+    if (!selectedLicensePlan) {
+      alert("Please select a plan.");
+      return;
+    }
+
+    if (!isLicenseTotalValid) {
+      alert(
+        "Please select a valid licence total between 1 and 300."
+      );
+
+      setLicenseConfirmModalOpen(false);
+
+      setLicenseModalOpen(true);
+
+      return;
+    }
+
+    try {
+      setLicenseUpdating(true);
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/orders/${selectedLicensePlan._id}/licenses`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            additionalLicenses: licenseDelta,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(
+          result.message || "Failed to update licences."
+        );
+      }
+
+      const updatedUsers =
+        result.data?.noOfUsers ?? newLicenseTotal;
+
+      setOrder((prev) =>
+        prev
+          ? {
+              ...prev,
+              plans: prev.plans?.map((plan) =>
+                plan._id === selectedLicensePlan._id
+                  ? {
+                      ...plan,
+                      noOfUsers: updatedUsers,
+                    }
+                  : plan
+              ),
+            }
+          : prev
+      );
+
+      setLicenseConfirmModalOpen(false);
+
+      setLicenseModalOpen(false);
+
+      alert("Licences updated successfully.");
+    } catch (error) {
+      console.error("Licence update error:", error);
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Failed to update licences."
+      );
+    } finally {
+      setLicenseUpdating(false);
+    }
+  };
+
   /* ===================== OPEN STATUS MODAL ===================== */
 
   const openStatusModal = () => {
@@ -433,21 +461,23 @@ const handleConfirmLicenses = async () => {
     );
 
     const primary: Record<string, string> = {};
+
     const secondary: Record<string, string> = {};
 
     (order?.plans || []).forEach((plan) => {
-      primary[plan._id] =
-        plan.primary_status?._id || "";
+      primary[plan._id] = plan.primary_status?._id || "";
 
-      secondary[plan._id] =
-        plan.secondary_status?._id || "";
+      secondary[plan._id] = plan.secondary_status?._id || "";
     });
 
     setSelectedPrimaryPlanStatuses(primary);
+
     setSelectedSecondaryPlanStatuses(secondary);
 
     setUpdateOrderStatusChecked(false);
+
     setUpdateDomainStatusChecked(false);
+
     setUpdatePlanStatusChecked(false);
 
     setStatusModalOpen(true);
@@ -470,7 +500,7 @@ const handleConfirmLicenses = async () => {
     try {
       setStatusUpdating(true);
 
-      /* ===================== ORDER STATUS ===================== */
+      /* ORDER STATUS */
 
       if (
         updateOrderStatusChecked &&
@@ -488,14 +518,13 @@ const handleConfirmLicenses = async () => {
           prev
             ? {
                 ...prev,
-                order_status:
-                  updatedOrder.order_status,
+                order_status: updatedOrder.order_status,
               }
             : prev
         );
       }
 
-      /* ===================== DOMAIN STATUS ===================== */
+      /* DOMAIN STATUS */
 
       if (
         updateDomainStatusChecked &&
@@ -513,22 +542,21 @@ const handleConfirmLicenses = async () => {
           prev
             ? {
                 ...prev,
-                domain_status:
-                  updatedOrder.domain_status,
+                domain_status: updatedOrder.domain_status,
               }
             : prev
         );
       }
 
-      /* ===================== PLAN STATUS ===================== */
+      /* PLAN STATUS */
 
       if (updatePlanStatusChecked) {
         for (const plan of order.plans || []) {
-
           /*
            * Only email plans are allowed
            * to be updated from this popup.
            */
+
           if (!plan.emailType) {
             continue;
           }
@@ -556,24 +584,18 @@ const handleConfirmLicenses = async () => {
             secondary_status?: string | null;
           } = {};
 
-          if (
-            primaryChanged &&
-            primaryStatus
-          ) {
-            payload.primary_status =
-              primaryStatus;
+          if (primaryChanged && primaryStatus) {
+            payload.primary_status = primaryStatus;
           }
 
           if (secondaryChanged) {
-            payload.secondary_status =
-              secondaryStatus || null;
+            payload.secondary_status = secondaryStatus || null;
           }
 
-          const updatedPlan =
-            await updatePlanStatus(
-              plan._id,
-              payload
-            );
+          const updatedPlan = await updatePlanStatus(
+            plan._id,
+            payload
+          );
 
           setOrder((prev) => {
             if (!prev) return prev;
@@ -585,10 +607,8 @@ const handleConfirmLicenses = async () => {
                 p._id === plan._id
                   ? {
                       ...p,
-                      primary_status:
-                        updatedPlan.primary_status,
-                      secondary_status:
-                        updatedPlan.secondary_status,
+                      primary_status: updatedPlan.primary_status,
+                      secondary_status: updatedPlan.secondary_status,
                     }
                   : p
               ),
@@ -600,15 +620,10 @@ const handleConfirmLicenses = async () => {
       setStatusModalOpen(false);
 
       alert("Status updated successfully");
-
     } catch (error) {
-      console.error(
-        "Status update error:",
-        error
-      );
+      console.error("Status update error:", error);
 
       alert("Failed to update status");
-
     } finally {
       setStatusUpdating(false);
     }
@@ -622,14 +637,14 @@ const handleConfirmLicenses = async () => {
     const loadOrderDetails = async () => {
       try {
         setLoading(true);
+
         setError(null);
 
-        /* ===================== FETCH ORDER ===================== */
+        /* FETCH ORDER */
 
-        const data =
-          await fetchOrderById(orderId);
+        const data = await fetchOrderById(orderId);
 
-        /* ===================== MAP CUSTOMER / CLIENT ===================== */
+        /* MAP CUSTOMER / CLIENT */
 
         const mapPerson = (source: any) =>
           source
@@ -640,31 +655,24 @@ const handleConfirmLicenses = async () => {
                 company: source.c_company,
                 address: source.c_address,
                 city: source.c_city,
-                state:
-                  source.c_state?.name,
-                country:
-                  source.c_country?.name,
+                state: source.c_state?.name,
+                country: source.c_country?.name,
               }
             : undefined;
 
         const mappedOrder: Order = {
           ...data,
 
-          domainSource:
-            data.domainSource || null,
+          domainSource: data.domainSource || null,
 
-          customer: mapPerson(
-            data.customer
-          ),
+          customer: mapPerson(data.customer),
 
-          client: mapPerson(
-            data.client
-          ),
+          client: mapPerson(data.client),
         };
 
         setOrder(mappedOrder);
 
-        /* ===================== ORDER STATUS ===================== */
+        /* ORDER STATUS */
 
         const orderStatusData =
           await fetchOrderStatuses(orderId);
@@ -675,7 +683,7 @@ const handleConfirmLicenses = async () => {
             : []
         );
 
-        /* ===================== DOMAIN STATUS ===================== */
+        /* DOMAIN STATUS */
 
         const domainStatusData =
           await fetchDomainStatuses(orderId);
@@ -686,7 +694,7 @@ const handleConfirmLicenses = async () => {
             : []
         );
 
-        /* ===================== PLAN STATUSES ===================== */
+        /* PLAN STATUSES */
 
         const primaryStatuses =
           await fetchPrimaryPlanStatuses();
@@ -694,19 +702,11 @@ const handleConfirmLicenses = async () => {
         const secondaryStatuses =
           await fetchSecondaryPlanStatuses();
 
-        const primaryStatusMap: Record<
-          string,
-          Status[]
-        > = {};
+        const primaryStatusMap: Record<string, Status[]> = {};
 
-        const secondaryStatusMap: Record<
-          string,
-          Status[]
-        > = {};
+        const secondaryStatusMap: Record<string, Status[]> = {};
 
-        for (
-          const plan of mappedOrder.plans || []
-        ) {
+        for (const plan of mappedOrder.plans || []) {
           primaryStatusMap[plan._id] =
             Array.isArray(primaryStatuses)
               ? primaryStatuses
@@ -718,31 +718,22 @@ const handleConfirmLicenses = async () => {
               : [];
         }
 
-        setPrimaryPlanStatuses(
-          primaryStatusMap
-        );
+        setPrimaryPlanStatuses(primaryStatusMap);
 
-        setSecondaryPlanStatuses(
-          secondaryStatusMap
-        );
-
+        setSecondaryPlanStatuses(secondaryStatusMap);
       } catch (error) {
         console.error(
           "Failed to load order details:",
           error
         );
 
-        setError(
-          "Failed to load order details"
-        );
-
+        setError("Failed to load order details");
       } finally {
         setLoading(false);
       }
     };
 
     loadOrderDetails();
-
   }, [orderId]);
 
   /* ===================== SECTION COMPONENT ===================== */
@@ -759,15 +750,12 @@ const handleConfirmLicenses = async () => {
     rightContent,
   }) => (
     <section className="mb-6">
-
       <div className="flex items-center justify-between mb-3 border-b pb-2">
-
         <h2 className="text-lg font-semibold">
           {title}
         </h2>
 
         {rightContent}
-
       </div>
 
       <div
@@ -779,7 +767,6 @@ const handleConfirmLicenses = async () => {
       >
         {children}
       </div>
-
     </section>
   );
 
@@ -830,15 +817,12 @@ const handleConfirmLicenses = async () => {
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-
       <div className="max-w-6xl mx-auto bg-white rounded-xl shadow p-6 space-y-8">
 
-        {/* ===================== HEADER ===================== */}
+        {/* HEADER */}
 
         <div className="flex justify-between items-center">
-
           <div className="flex items-center gap-3">
-
             <h1 className="text-2xl font-bold text-gray-800">
               Order – {order.domainName}
             </h1>
@@ -851,7 +835,6 @@ const handleConfirmLicenses = async () => {
               <FaEdit />
               Status Update
             </button>
-
           </div>
 
           <button
@@ -861,16 +844,14 @@ const handleConfirmLicenses = async () => {
             <FaArrowLeft />
             Back
           </button>
-
         </div>
 
-        {/* ===================== DOMAIN INFORMATION ===================== */}
+        {/* DOMAIN INFORMATION */}
 
         <Section
           title="Domain Information"
           rightContent={null}
         >
-
           <Info
             label="Domain Name"
             value={order.domainName}
@@ -884,13 +865,11 @@ const handleConfirmLicenses = async () => {
           {/* REGISTRAR */}
 
           <div className="flex items-center gap-2">
-
             <label className="text-sm font-medium">
               Registrar:
             </label>
 
             <div className="flex items-center gap-2">
-
               {order.domainSource?.image && (
                 <img
                   src={
@@ -906,23 +885,17 @@ const handleConfirmLicenses = async () => {
               <span className="text-sm text-gray-700">
                 {order.domainSource?.name || "-"}
               </span>
-
             </div>
-
           </div>
 
           <Info
             label="Registration Date"
-            value={formatDate(
-              order.registrationDate
-            )}
+            value={formatDate(order.registrationDate)}
           />
 
           <Info
             label="Expiry Date"
-            value={formatDate(
-              order.expiryDate
-            )}
+            value={formatDate(order.expiryDate)}
           />
 
           <Info
@@ -934,14 +907,12 @@ const handleConfirmLicenses = async () => {
             label="Name Servers"
             value={order.nameServers}
           />
-
         </Section>
 
-        {/* ===================== CUSTOMER ===================== */}
+        {/* CUSTOMER */}
 
         {order.customer && (
           <Section title="Customer Details">
-
             {order.customer.name && (
               <Info
                 label="Name"
@@ -997,15 +968,13 @@ const handleConfirmLicenses = async () => {
                 value={order.customer.country}
               />
             )}
-
           </Section>
         )}
 
-        {/* ===================== CLIENT ===================== */}
+        {/* CLIENT */}
 
         {order.client && (
           <Section title="Client Details">
-
             <Info
               label="Name"
               value={order.client.name}
@@ -1045,28 +1014,20 @@ const handleConfirmLicenses = async () => {
               label="Country"
               value={order.client.country}
             />
-
           </Section>
         )}
 
-        {/* ===================== PLANS ===================== */}
+        {/* PLANS */}
 
-        {order.plans &&
-          order.plans.length > 0 && (
-
+        {order.plans && order.plans.length > 0 && (
           <Section
             title="Plans & Services"
             fullWidth
           >
-
             <div className="overflow-x-auto">
-
               <table className="w-full border border-gray-300">
-
                 <thead className="bg-gray-100">
-
                   <tr>
-
                     <th className="border px-2 py-1">
                       Email Type
                     </th>
@@ -1102,18 +1063,12 @@ const handleConfirmLicenses = async () => {
                     <th className="border px-2 py-1">
                       Status
                     </th>
-
                   </tr>
-
                 </thead>
 
                 <tbody>
-
-                  {order.plans.map(
-                    (plan) => (
-
+                  {order.plans.map((plan) => (
                     <tr key={plan._id}>
-
                       <td className="border px-2 py-1">
                         {plan.emailType || "-"}
                       </td>
@@ -1126,25 +1081,33 @@ const handleConfirmLicenses = async () => {
                         {plan.type}
                       </td>
 
+                      {/* USERS / LICENCES */}
+
                       <td className="border px-2 py-1">
                         <div className="flex items-center justify-center gap-2">
-                          <span>{plan.noOfUsers ?? 0}</span>
+                          <span>
+                            {plan.noOfUsers ?? 0}
+                          </span>
 
-                          {plan.noOfUsers !== undefined && plan.noOfUsers !== null && (
-                            <button
-                              type="button"
-                              title="Add licences"
-                              aria-label="Add licences"
-                              onClick={() => openLicenseModal(plan)}
-                              className="text-blue-600 hover:text-blue-800"
-                            >
-                              <FaEdit size={14} />
-                            </button>
-                          )}
+                          {plan.noOfUsers !== undefined &&
+                            plan.noOfUsers !== null && (
+                              <button
+                                type="button"
+                                title="Manage licences"
+                                aria-label="Manage licences"
+                                onClick={() =>
+                                  openLicenseModal(plan)
+                                }
+                                className="text-blue-600 hover:text-blue-800"
+                              >
+                                <FaEdit size={14} />
+                              </button>
+                            )}
                         </div>
                       </td>
 
                       {/* ADMIN EMAIL WITH COPY BUTTON */}
+
                       <td className="border px-2 py-1">
                         <div className="flex items-center gap-2">
                           <span className="break-all">
@@ -1168,7 +1131,9 @@ const handleConfirmLicenses = async () => {
                               >
                                 <FaCopy />
                               </button>
-                              {copyFeedback?.key === `${plan._id}-Admin Email` && (
+
+                              {copyFeedback?.key ===
+                                `${plan._id}-Admin Email` && (
                                 <span
                                   role="status"
                                   className={`absolute left-full bottom-full z-50 ml-1 mb-1 whitespace-nowrap rounded px-2 py-1 text-xs font-medium shadow-md ${
@@ -1182,15 +1147,17 @@ const handleConfirmLicenses = async () => {
                               )}
                             </span>
                           )}
-
                         </div>
                       </td>
 
-                      {/* MASKED ADMIN PASSWORD WITH COPY BUTTON */}
+                      {/* ADMIN PASSWORD WITH COPY BUTTON */}
+
                       <td className="border px-2 py-1">
                         <div className="flex items-center gap-2">
                           <span>
-                            {plan.adminPassword ? "••••••••" : "-"}
+                            {plan.adminPassword
+                              ? "••••••••"
+                              : "-"}
                           </span>
 
                           {plan.adminPassword && (
@@ -1210,7 +1177,9 @@ const handleConfirmLicenses = async () => {
                               >
                                 <FaCopy />
                               </button>
-                              {copyFeedback?.key === `${plan._id}-Admin Password` && (
+
+                              {copyFeedback?.key ===
+                                `${plan._id}-Admin Password` && (
                                 <span
                                   role="status"
                                   className={`absolute left-full bottom-full z-50 ml-1 mb-1 whitespace-nowrap rounded px-2 py-1 text-xs font-medium shadow-md ${
@@ -1224,26 +1193,19 @@ const handleConfirmLicenses = async () => {
                               )}
                             </span>
                           )}
-
                         </div>
                       </td>
 
                       <td className="border px-2 py-1">
-                        {formatDate(
-                          plan.registrationDate
-                        )}
+                        {formatDate(plan.registrationDate)}
                       </td>
 
                       <td className="border px-2 py-1">
-                        {formatDate(
-                          plan.expiryDate
-                        )}
+                        {formatDate(plan.expiryDate)}
                       </td>
 
                       <td className="border px-2 py-1">
-
                         <div className="flex flex-col gap-1">
-
                           <span className="text-sm font-medium text-gray-700">
                             Primary:{" "}
                             {plan.primary_status?.name || "-"}
@@ -1253,103 +1215,211 @@ const handleConfirmLicenses = async () => {
                             Secondary:{" "}
                             {plan.secondary_status?.name || "-"}
                           </span>
-
                         </div>
-
                       </td>
-
                     </tr>
-
                   ))}
-
                 </tbody>
-
               </table>
-
             </div>
-
           </Section>
         )}
 
-        {/* ===================== ADD LICENCES MODAL ===================== */}
+        {/* ===================== MANAGE LICENCES MODAL ===================== */}
 
         {licenseModalOpen && selectedLicensePlan && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
-            <div className="w-full max-w-lg rounded-lg bg-white shadow-2xl">
-              <div className="flex items-center justify-between border-b px-6 py-4">
-                <h2 className="text-lg font-medium text-gray-800">
-                  Add licences
-                </h2>
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-[2px]">
+            <div className="w-full max-w-md overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl">
+
+              {/* HEADER */}
+
+              <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+                      <FaUsers size={17} />
+                    </div>
+
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      Manage Licences
+                    </h2>
+                  </div>
+
+                  <p className="mt-2 text-sm text-gray-500">
+                    {selectedLicensePlan.planName ||
+                      selectedLicensePlan.emailType ||
+                      selectedLicensePlan.type ||
+                      "Subscription"}
+                  </p>
+                </div>
+
                 <button
                   type="button"
                   onClick={() => setLicenseModalOpen(false)}
                   aria-label="Close"
-                  className="text-blue-600 hover:text-blue-800"
+                  className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
                 >
-                  <FaTimes size={20} />
+                  <FaTimes size={17} />
                 </button>
               </div>
 
-              <div className="px-6 py-5">
-                <p className="mb-4 text-sm text-gray-800">
-                  Your {selectedLicensePlan.planName || selectedLicensePlan.emailType || selectedLicensePlan.type || "subscription"} subscription currently has {selectedLicensePlan.noOfUsers ?? 0} {((selectedLicensePlan.noOfUsers ?? 0) === 1) ? "licence" : "licences"}. You can add up to {Math.max(0, 300 - (selectedLicensePlan.noOfUsers ?? 0))} more licences.
-                </p>
+              {/* CONTENT */}
 
-                <label
-                  htmlFor="additional-licenses"
-                  className="mb-1 block text-sm font-medium text-red-600"
-                >
-                  Additional licences*
-                </label>
-                <input
-                  id="additional-licenses"
-                  type="number"
-                  min={0}
-                  max={Math.max(0, 300 - (selectedLicensePlan.noOfUsers ?? 0))}
-                  step={1}
-                  value={additionalLicenses}
-                  onChange={(e) => setAdditionalLicenses(e.target.value)}
-                  aria-invalid={
-                    additionalLicenses.trim() === "" ||
-                    !Number.isInteger(Number(additionalLicenses)) ||
-                    Number(additionalLicenses) < 1 ||
-                    Number(additionalLicenses) >
-                      300 - (selectedLicensePlan.noOfUsers ?? 0)
-                  }
-                  className="w-full rounded border border-gray-300 px-3 py-3 text-sm outline-none focus:border-blue-500"
-                />
+              <div className="space-y-6 px-6 py-6">
 
-                {(additionalLicenses.trim() === "" ||
-                  !Number.isInteger(Number(additionalLicenses)) ||
-                  Number(additionalLicenses) < 1 ||
-                  Number(additionalLicenses) >
-                    300 - (selectedLicensePlan.noOfUsers ?? 0)) && (
-                  <p className="mt-1 text-sm text-red-600">
-                    Number of additional licences must be between 1 and{" "}
-                    {Math.max(0, 300 - (selectedLicensePlan.noOfUsers ?? 0))}.
+                {/* CURRENT LICENCES */}
+
+                <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Current Licences
                   </p>
-                )}
+
+                  <p className="mt-1 text-3xl font-bold text-gray-900">
+                    {currentLicenseCount}
+                  </p>
+                </div>
+
+                {/* LICENCE COUNTER */}
+
+                <div>
+                  <p className="mb-3 text-sm font-semibold text-gray-800">
+                    Update Licence Total
+                  </p>
+
+                  <div className="flex items-center justify-center gap-5">
+
+                    {/* MINUS BUTTON */}
+
+                    <button
+                      type="button"
+                      onClick={() => changeLicenseTotal(-1)}
+                      disabled={
+                        !Number.isInteger(newLicenseTotal) ||
+                        newLicenseTotal <= 1
+                      }
+                      aria-label="Decrease licences"
+                      className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-300 bg-white text-gray-700 shadow-sm transition hover:border-red-400 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
+                    >
+                      <FaMinus size={16} />
+                    </button>
+
+                    {/* TOTAL INPUT */}
+
+                    <div className="min-w-[100px] text-center">
+                      <input
+                        type="number"
+                        min={1}
+                        max={300}
+                        step={1}
+                        value={newLicenseTotalInput}
+                        onChange={(e) =>
+                          setNewLicenseTotalInput(e.target.value)
+                        }
+                        className="w-full border-0 bg-transparent text-center text-4xl font-bold text-gray-900 outline-none"
+                      />
+
+                      <p className="mt-1 text-xs text-gray-500">
+                        Total Licences
+                      </p>
+                    </div>
+
+                    {/* PLUS BUTTON */}
+
+                    <button
+                      type="button"
+                      onClick={() => changeLicenseTotal(1)}
+                      disabled={
+                        !Number.isInteger(newLicenseTotal) ||
+                        newLicenseTotal >= 300
+                      }
+                      aria-label="Increase licences"
+                      className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-300 bg-white text-gray-700 shadow-sm transition hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-30"
+                    >
+                      <FaPlus size={16} />
+                    </button>
+                  </div>
+
+                  <p className="mt-3 text-center text-xs text-gray-500">
+                    Minimum: 1 licence | Maximum: 300 licences
+                  </p>
+
+                  {newLicenseTotalInput.trim() !== "" &&
+                    (!Number.isInteger(newLicenseTotal) ||
+                      newLicenseTotal < 1 ||
+                      newLicenseTotal > 300) && (
+                      <p className="mt-2 text-center text-xs font-medium text-red-600">
+                        Please enter a whole number between 1 and 300.
+                      </p>
+                    )}
+                </div>
+
+                {/* LICENCE SUMMARY */}
+
+                <div className="rounded-xl border border-gray-200 p-4">
+                  <p className="mb-3 text-sm font-semibold text-gray-800">
+                    Licence Summary
+                  </p>
+
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between text-gray-600">
+                      <span>Current Total</span>
+
+                      <span className="font-semibold text-gray-900">
+                        {currentLicenseCount}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between text-gray-600">
+                      <span>Change</span>
+
+                      <span
+                        className={`font-semibold ${
+                          licenseDelta > 0
+                            ? "text-green-600"
+                            : licenseDelta < 0
+                            ? "text-red-600"
+                            : "text-gray-500"
+                        }`}
+                      >
+                        {licenseDelta > 0
+                          ? `+${licenseDelta}`
+                          : licenseDelta < 0
+                          ? `${licenseDelta}`
+                          : "No change"}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between border-t border-gray-100 pt-3 font-semibold text-gray-900">
+                      <span>New Total</span>
+
+                      <span className="text-xl">
+                        {Number.isInteger(newLicenseTotal) &&
+                        newLicenseTotal >= 1 &&
+                        newLicenseTotal <= 300
+                          ? newLicenseTotal
+                          : "—"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex justify-end gap-3 border-t px-6 py-4">
+              {/* FOOTER */}
+
+              <div className="flex justify-end gap-2 border-t border-gray-100 bg-gray-50/70 px-6 py-4">
                 <button
                   type="button"
                   onClick={() => setLicenseModalOpen(false)}
-                  className="rounded px-4 py-2 text-sm text-blue-600 hover:bg-gray-100"
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
                 >
                   Cancel
                 </button>
+
                 <button
                   type="button"
                   onClick={handleContinueLicenses}
-                  disabled={
-                    additionalLicenses.trim() === "" ||
-                    !Number.isInteger(Number(additionalLicenses)) ||
-                    Number(additionalLicenses) < 1 ||
-                    Number(additionalLicenses) >
-                      300 - (selectedLicensePlan.noOfUsers ?? 0)
-                  }
-                  className="rounded bg-blue-600 px-5 py-2 text-sm text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                  disabled={!isLicenseTotalValid}
+                  className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:shadow-none"
                 >
                   Continue
                 </button>
@@ -1358,13 +1428,31 @@ const handleConfirmLicenses = async () => {
           </div>
         )}
 
-        {/* ===================== CONFIRM ADD LICENCES MODAL ===================== */}
+        {/* ===================== CONFIRM LICENCE UPDATE MODAL ===================== */}
 
         {licenseConfirmModalOpen && selectedLicensePlan && (
-          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
-            <div className="w-full max-w-xl rounded-lg bg-white shadow-2xl">
-              <div className="flex items-center justify-between border-b px-6 py-5">
-                <h2 className="text-lg font-medium text-gray-800">Add licences</h2>
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-[2px]">
+            <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+
+              {/* HEADER */}
+
+              <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                    <FaUsers size={20} />
+                  </div>
+
+                  <div>
+                    <h2 className="text-lg font-semibold text-slate-900">
+                      Confirm Licence Update
+                    </h2>
+
+                    <p className="mt-1 text-sm text-slate-500">
+                      Review the licence changes before confirming.
+                    </p>
+                  </div>
+                </div>
+
                 <button
                   type="button"
                   onClick={() => {
@@ -1372,94 +1460,156 @@ const handleConfirmLicenses = async () => {
                     setLicenseModalOpen(true);
                   }}
                   aria-label="Close"
-                  className="text-blue-600 hover:text-blue-800"
+                  className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
                 >
-                  <FaTimes size={20} />
+                  <FaTimes size={17} />
                 </button>
               </div>
 
-              <div className="space-y-5 px-6 py-5 text-sm">
+              {/* CONTENT */}
+
+              <div className="space-y-5 px-6 py-5">
                 <div>
-                  <p className="mb-4 font-medium text-gray-900">
-                    {selectedLicensePlan.planName || selectedLicensePlan.emailType || selectedLicensePlan.type || "Subscription"}
+                  <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                    Subscription Plan
                   </p>
-                  <div className="grid grid-cols-[1fr_auto] gap-x-6 gap-y-2 max-w-sm">
-                    <span>Current licences</span>
-                    <span className="font-medium">{selectedLicensePlan.noOfUsers ?? 0}</span>
-                    <span>Additional licences</span>
-                    <span className="font-medium">{Number(additionalLicenses)}</span>
-                    <span className="font-semibold">Total licences</span>
-                    <span className="font-semibold">
-                      {(selectedLicensePlan.noOfUsers ?? 0) + Number(additionalLicenses)}
-                    </span>
+
+                  <p className="mt-1 text-sm font-semibold text-slate-800">
+                    {selectedLicensePlan.planName ||
+                      selectedLicensePlan.emailType ||
+                      selectedLicensePlan.type ||
+                      "Subscription"}
+                  </p>
+                </div>
+
+                {/* SUMMARY */}
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="mb-4 text-sm font-semibold text-slate-800">
+                    Licence Summary
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-lg border border-slate-200 bg-white p-3">
+                      <p className="text-xs text-slate-500">
+                        Current Licences
+                      </p>
+
+                      <p className="mt-1 text-2xl font-semibold text-slate-900">
+                        {currentLicenseCount}
+                      </p>
+                    </div>
+
+                    <div className="rounded-lg border border-slate-200 bg-white p-3">
+                      <p className="text-xs text-slate-500">
+                        Licence Change
+                      </p>
+
+                      <p
+                        className={`mt-1 text-2xl font-semibold ${
+                          licenseDelta > 0
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {licenseDelta > 0
+                          ? `+${licenseDelta}`
+                          : licenseDelta}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between rounded-lg bg-white px-3 py-3">
+                    <div>
+                      <p className="text-xs font-medium text-slate-500">
+                        New Total Licences
+                      </p>
+
+                      <p className="mt-0.5 text-xs text-slate-400">
+                        After this update
+                      </p>
+                    </div>
+
+                    <p className="text-3xl font-bold text-slate-900">
+                      {newLicenseTotal}
+                    </p>
                   </div>
                 </div>
 
-                <hr />
+                {/* OPTIONAL PO NUMBER */}
 
                 <div>
-                  <p className="mb-2 font-medium text-gray-800">Estimated cost</p>
-                  <p className="text-gray-600">
-                    Pricing information is not available for this plan.
-                  </p>
-                  <p className="mt-3 text-xs text-gray-500">
-                    Any applicable prorated cost depends on the subscription pricing and remaining contract term.
-                  </p>
-                </div>
-
-                <div>
-                  <label htmlFor="license-po-number" className="mb-1 block text-sm text-gray-700">
+                  <label
+                    htmlFor="license-po-number"
+                    className="mb-2 block text-sm font-medium text-slate-700"
+                  >
                     P.O. #
+                    <span className="ml-1 font-normal text-slate-400">
+                      (optional)
+                    </span>
                   </label>
+
                   <input
                     id="license-po-number"
                     type="text"
                     value={purchaseOrderNumber}
-                    onChange={(e) => setPurchaseOrderNumber(e.target.value)}
-                    placeholder="P.O. #"
+                    onChange={(e) =>
+                      setPurchaseOrderNumber(e.target.value)
+                    }
+                    placeholder="Enter purchase order number"
                     maxLength={100}
-                    className="w-full max-w-xs rounded border border-gray-300 px-3 py-3 text-sm outline-none focus:border-blue-500"
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
                   />
+                </div>
+
+                <div className="rounded-lg bg-blue-50 px-3.5 py-3 text-blue-800">
+                  <p className="text-xs leading-5">
+                    Please verify the new licence count before confirming.
+                    This will update the subscription quantity.
+                  </p>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-4 border-t px-6 py-5">
+              {/* FOOTER */}
+
+              <div className="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50/70 px-6 py-4">
                 <button
                   type="button"
                   onClick={() => {
                     setLicenseConfirmModalOpen(false);
                     setLicenseModalOpen(true);
                   }}
-                  className="rounded px-4 py-2 text-sm text-blue-600 hover:bg-gray-100"
+                  disabled={licenseUpdating}
+                  className="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Back
                 </button>
+
                 <button
                   type="button"
                   onClick={handleConfirmLicenses}
-                  className="rounded bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                  disabled={
+                    licenseUpdating || !isLicenseTotalValid
+                  }
+                  className="inline-flex min-w-[130px] items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
-                  Confirm
+                  {licenseUpdating ? "Updating..." : "Confirm"}
                 </button>
               </div>
             </div>
           </div>
         )}
 
-                {/* ===================== STATUS UPDATE MODAL ===================== */}
+        {/* ===================== STATUS UPDATE MODAL ===================== */}
 
         {statusModalOpen && (
-
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-
             <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-xl shadow-2xl">
 
-              {/* ===================== MODAL HEADER ===================== */}
+              {/* MODAL HEADER */}
 
               <div className="flex items-center justify-between border-b px-5 py-4">
-
                 <div>
-
                   <h2 className="text-lg font-semibold text-gray-800">
                     Update Status
                   </h2>
@@ -1467,41 +1617,31 @@ const handleConfirmLicenses = async () => {
                   <p className="text-sm text-gray-500 mt-1">
                     Select the status you want to update.
                   </p>
-
                 </div>
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setStatusModalOpen(false)
-                  }
+                  onClick={() => setStatusModalOpen(false)}
                   disabled={statusUpdating}
                   className="text-gray-500 hover:text-gray-800"
                 >
                   <FaTimes size={18} />
                 </button>
-
               </div>
 
-              {/* ===================== MODAL CONTENT ===================== */}
+              {/* MODAL CONTENT */}
 
               <div className="p-5 space-y-4">
 
-                {/* ===================== ORDER STATUS ===================== */}
+                {/* ORDER STATUS */}
 
                 <div className="border rounded-lg p-4">
-
                   <label className="flex items-center gap-3 cursor-pointer">
-
                     <input
                       type="checkbox"
-                      checked={
-                        updateOrderStatusChecked
-                      }
+                      checked={updateOrderStatusChecked}
                       onChange={(e) =>
-                        setUpdateOrderStatusChecked(
-                          e.target.checked
-                        )
+                        setUpdateOrderStatusChecked(e.target.checked)
                       }
                       className="w-4 h-4"
                     />
@@ -1509,23 +1649,17 @@ const handleConfirmLicenses = async () => {
                     <span className="font-medium text-gray-800">
                       Order Status
                     </span>
-
                   </label>
 
                   {updateOrderStatusChecked && (
-
                     <div className="mt-3 ml-7">
-
                       <select
                         value={selectedOrderStatus}
                         onChange={(e) =>
-                          setSelectedOrderStatus(
-                            e.target.value
-                          )
+                          setSelectedOrderStatus(e.target.value)
                         }
                         className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                       >
-
                         <option value="">
                           Select Order Status
                         </option>
@@ -1534,45 +1668,31 @@ const handleConfirmLicenses = async () => {
                           .filter(
                             (status) =>
                               status.is_active ||
-                              status._id ===
-                                order.order_status?._id
+                              status._id === order.order_status?._id
                           )
                           .map((status) => (
-
                             <option
                               key={status._id}
                               value={status._id}
                             >
                               {status.name}
                             </option>
-
                           ))}
-
                       </select>
-
                     </div>
-
                   )}
-
                 </div>
 
-                {/* ===================== DOMAIN STATUS ===================== */}
+                {/* DOMAIN STATUS */}
 
                 {order.domainSource && (
-
                   <div className="border rounded-lg p-4">
-
                     <label className="flex items-center gap-3 cursor-pointer">
-
                       <input
                         type="checkbox"
-                        checked={
-                          updateDomainStatusChecked
-                        }
+                        checked={updateDomainStatusChecked}
                         onChange={(e) =>
-                          setUpdateDomainStatusChecked(
-                            e.target.checked
-                          )
+                          setUpdateDomainStatusChecked(e.target.checked)
                         }
                         className="w-4 h-4"
                       />
@@ -1580,23 +1700,17 @@ const handleConfirmLicenses = async () => {
                       <span className="font-medium text-gray-800">
                         Domain Status
                       </span>
-
                     </label>
 
                     {updateDomainStatusChecked && (
-
                       <div className="mt-3 ml-7">
-
                         <select
                           value={selectedDomainStatus}
                           onChange={(e) =>
-                            setSelectedDomainStatus(
-                              e.target.value
-                            )
+                            setSelectedDomainStatus(e.target.value)
                           }
                           className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                         >
-
                           <option value="">
                             Select Domain Status
                           </option>
@@ -1605,47 +1719,32 @@ const handleConfirmLicenses = async () => {
                             .filter(
                               (status) =>
                                 status.is_active ||
-                                status._id ===
-                                  order.domain_status?._id
+                                status._id === order.domain_status?._id
                             )
                             .map((status) => (
-
                               <option
                                 key={status._id}
                                 value={status._id}
                               >
                                 {status.name}
                               </option>
-
                             ))}
-
                         </select>
-
                       </div>
-
                     )}
-
                   </div>
-
                 )}
 
-                {/* ===================== PLAN STATUS ===================== */}
+                {/* PLAN STATUS */}
 
                 {(order.plans || []).length > 0 && (
-
                   <div className="border rounded-lg p-4">
-
                     <label className="flex items-center gap-3 cursor-pointer">
-
                       <input
                         type="checkbox"
-                        checked={
-                          updatePlanStatusChecked
-                        }
+                        checked={updatePlanStatusChecked}
                         onChange={(e) =>
-                          setUpdatePlanStatusChecked(
-                            e.target.checked
-                          )
+                          setUpdatePlanStatusChecked(e.target.checked)
                         }
                         className="w-4 h-4"
                       />
@@ -1653,23 +1752,15 @@ const handleConfirmLicenses = async () => {
                       <span className="font-medium text-gray-800">
                         Plan Status
                       </span>
-
                     </label>
 
                     {updatePlanStatusChecked && (
-
                       <div className="mt-4 ml-7 space-y-4">
-
-                        {(order.plans || []).map(
-                          (plan) => (
-
+                        {(order.plans || []).map((plan) => (
                           <div
                             key={plan._id}
                             className="border rounded-lg p-3 bg-gray-50"
                           >
-
-                            {/* PLAN NAME / EMAIL TYPE */}
-
                             <p className="font-medium text-gray-800 mb-3">
                               {plan.emailType ||
                                 plan.planName ||
@@ -1678,10 +1769,9 @@ const handleConfirmLicenses = async () => {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 
-                              {/* ================= PRIMARY STATUS ================= */}
+                              {/* PRIMARY STATUS */}
 
                               <div>
-
                                 <label className="block text-xs font-medium text-gray-600 mb-1">
                                   Primary Status
                                 </label>
@@ -1696,19 +1786,15 @@ const handleConfirmLicenses = async () => {
                                     setSelectedPrimaryPlanStatuses(
                                       (prev) => ({
                                         ...prev,
-                                        [plan._id]:
-                                          e.target.value,
+                                        [plan._id]: e.target.value,
                                       })
                                     )
                                   }
                                   className="w-full border border-gray-300 rounded-md px-2 py-2 text-sm bg-white"
                                 >
-
                                   <option value="">
                                     Select Primary Status
                                   </option>
-
-                                  {/* CURRENT STATUS */}
 
                                   {plan.primary_status &&
                                     !(
@@ -1720,20 +1806,14 @@ const handleConfirmLicenses = async () => {
                                         status._id ===
                                         plan.primary_status?._id
                                     ) && (
-
                                       <option
                                         value={
                                           plan.primary_status._id
                                         }
                                       >
-                                        {
-                                          plan.primary_status.name
-                                        }
+                                        {plan.primary_status.name}
                                       </option>
-
                                     )}
-
-                                  {/* ACTIVE STATUS LIST */}
 
                                   {(
                                     primaryPlanStatuses[
@@ -1746,27 +1826,20 @@ const handleConfirmLicenses = async () => {
                                         status._id ===
                                           plan.primary_status?._id
                                     )
-                                    .map(
-                                      (status) => (
-
+                                    .map((status) => (
                                       <option
                                         key={status._id}
                                         value={status._id}
                                       >
                                         {status.name}
                                       </option>
-
-                                    )
-                                  )}
-
+                                    ))}
                                 </select>
-
                               </div>
 
-                              {/* ================= SECONDARY STATUS ================= */}
+                              {/* SECONDARY STATUS */}
 
                               <div>
-
                                 <label className="block text-xs font-medium text-gray-600 mb-1">
                                   Secondary Status
                                 </label>
@@ -1781,19 +1854,15 @@ const handleConfirmLicenses = async () => {
                                     setSelectedSecondaryPlanStatuses(
                                       (prev) => ({
                                         ...prev,
-                                        [plan._id]:
-                                          e.target.value,
+                                        [plan._id]: e.target.value,
                                       })
                                     )
                                   }
                                   className="w-full border border-gray-300 rounded-md px-2 py-2 text-sm bg-white"
                                 >
-
                                   <option value="">
                                     None / Select Secondary Status
                                   </option>
-
-                                  {/* CURRENT STATUS */}
 
                                   {plan.secondary_status &&
                                     !(
@@ -1805,20 +1874,14 @@ const handleConfirmLicenses = async () => {
                                         status._id ===
                                         plan.secondary_status?._id
                                     ) && (
-
                                       <option
                                         value={
                                           plan.secondary_status._id
                                         }
                                       >
-                                        {
-                                          plan.secondary_status.name
-                                        }
+                                        {plan.secondary_status.name}
                                       </option>
-
                                     )}
-
-                                  {/* ACTIVE STATUS LIST */}
 
                                   {(
                                     secondaryPlanStatuses[
@@ -1831,46 +1894,30 @@ const handleConfirmLicenses = async () => {
                                         status._id ===
                                           plan.secondary_status?._id
                                     )
-                                    .map(
-                                      (status) => (
-
+                                    .map((status) => (
                                       <option
                                         key={status._id}
                                         value={status._id}
                                       >
                                         {status.name}
                                       </option>
-
-                                    )
-                                  )}
-
+                                    ))}
                                 </select>
-
                               </div>
-
                             </div>
-
                           </div>
-
                         ))}
-
                       </div>
-
                     )}
-
                   </div>
-
                 )}
 
-                {/* ===================== MODAL ACTIONS ===================== */}
+                {/* MODAL ACTIONS */}
 
                 <div className="flex justify-end gap-3 pt-3 border-t">
-
                   <button
                     type="button"
-                    onClick={() =>
-                      setStatusModalOpen(false)
-                    }
+                    onClick={() => setStatusModalOpen(false)}
                     disabled={statusUpdating}
                     className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
                   >
@@ -1887,15 +1934,10 @@ const handleConfirmLicenses = async () => {
                       ? "Updating..."
                       : "Update Status"}
                   </button>
-
                 </div>
-
               </div>
-
             </div>
-
           </div>
-
         )}
 
         {/* ===================== PAGE ACTIONS ===================== */}
@@ -1906,9 +1948,7 @@ const handleConfirmLicenses = async () => {
 
           <button
             onClick={() =>
-              navigate(
-                `/admin/orders/update/${order._id}`
-              )
+              navigate(`/admin/orders/update/${order._id}`)
             }
             className="flex items-center gap-2 bg-yellow-500 text-white px-4 py-2 rounded"
           >
@@ -1920,20 +1960,15 @@ const handleConfirmLicenses = async () => {
 
           <button
             onClick={() =>
-              navigate(
-                `/admin/orders/renew/${order._id}`
-              )
+              navigate(`/admin/orders/renew/${order._id}`)
             }
             className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded"
           >
             <FaRedo />
             Renew
           </button>
-
         </div>
-
       </div>
-
     </div>
   );
 };

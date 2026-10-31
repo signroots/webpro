@@ -52,8 +52,8 @@ interface RenewalItem {
   currentExpiry?: string | null;
   durationMonths: RenewalDuration;
   monthlyLocked?: boolean;
+  currentUsers?: number;
 }
-
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 /* =========================================================
@@ -234,12 +234,10 @@ const getStatusClass = (status?: any | null): string => {
    COPY RENEWAL NOTIFICATION
 ========================================================= */
 
+
 const copyRenewalNotification = async (
-  order: Order,
-  setSuccess: React.Dispatch<
-    React.SetStateAction<string>
-  >
-) => {
+  order: Order
+): Promise<boolean> => {
   const plans = order.Plans || [];
 
   const emailPlans = plans.filter(
@@ -264,9 +262,7 @@ const copyRenewalNotification = async (
             (plan) =>
               `Email: ${plan.emailType || "N/A"}\n` +
               `No. of Users: ${plan.noOfUsers ?? 0}\n` +
-              `Expiry Date: ${formatExpiryDate(
-                plan.expiryDate
-              )}`
+              `Expiry Date: ${formatExpiryDate(plan.expiryDate)}`
           )
           .join("\n\n")
       : "Email: No",
@@ -276,9 +272,7 @@ const copyRenewalNotification = async (
           .map(
             (plan) =>
               `Hosting: Yes\n` +
-              `Expiry Date: ${formatExpiryDate(
-                plan.expiryDate
-              )}`
+              `Expiry Date: ${formatExpiryDate(plan.expiryDate)}`
           )
           .join("\n\n")
       : "Hosting: No",
@@ -287,42 +281,26 @@ const copyRenewalNotification = async (
   try {
     let copied = false;
 
-    if (
-      navigator.clipboard &&
-      window.isSecureContext
-    ) {
+    if (navigator.clipboard && window.isSecureContext) {
       try {
-        await navigator.clipboard.writeText(
-          notification
-        );
-
+        await navigator.clipboard.writeText(notification);
         copied = true;
       } catch (error) {
-        console.warn(
-          "Clipboard API failed. Trying fallback.",
-          error
-        );
+        console.warn("Clipboard API failed:", error);
       }
     }
 
     if (!copied) {
-      const textarea =
-        document.createElement("textarea");
+      const textarea = document.createElement("textarea");
 
       textarea.value = notification;
       textarea.setAttribute("readonly", "");
       textarea.style.position = "fixed";
       textarea.style.left = "-9999px";
-      textarea.style.top = "0";
 
       document.body.appendChild(textarea);
-
       textarea.focus();
       textarea.select();
-      textarea.setSelectionRange(
-        0,
-        textarea.value.length
-      );
 
       try {
         copied = document.execCommand("copy");
@@ -335,19 +313,13 @@ const copyRenewalNotification = async (
       throw new Error("Copy command failed");
     }
 
-    setSuccess(
-      "Renewal notification copied successfully!"
-    );
-
-    window.setTimeout(() => {
-      setSuccess("");
-    }, 2500);
+    return true;
   } catch (error) {
     console.error("Copy failed:", error);
 
-    window.alert(
-      "Unable to copy. Please check clipboard permissions and try again."
-    );
+    window.alert("Unable to copy. Please try again.");
+
+    return false;
   }
 };
 
@@ -382,7 +354,9 @@ const RenewList: React.FC = () => {
 
   const [selectedItems, setSelectedItems] =
     useState<string[]>([]);
-
+  const [licenseCounts, setLicenseCounts] = useState<
+  Record<string, number>
+>({});
   const [renewStep, setRenewStep] = useState<
     "dates" | "confirm"
   >("dates");
@@ -426,43 +400,49 @@ const RenewList: React.FC = () => {
      GET RENEWAL ITEMS
   ===================================================== */
 
-  const getRenewalItems = (
-    order: Order
-  ): RenewalItem[] => {
-    const items: RenewalItem[] = [];
+  const getRenewalItems = (order: Order): RenewalItem[] => {
+  const items: RenewalItem[] = [];
 
-    if (
-      order.domainSource?._id &&
-      order.expiryDate
-    ) {
-      items.push({
-        key: "domain",
-        target: "domain",
-        label: `Domain — ${order.domainName}`,
-        currentExpiry: order.expiryDate,
-        durationMonths: 12,
-      });
-    }
-
-    (order.Plans || []).forEach((plan) => {
-      if (!plan._id || !plan.expiryDate) return;
-
-      const monthlyLocked =
-        plan.monthly_renewlaed === true;
-
-      items.push({
-        key: `plan-${plan._id}`,
-        target: "plan",
-        planId: plan._id,
-        label: `${plan.type.toUpperCase()} Plan`,
-        currentExpiry: plan.expiryDate,
-        durationMonths: monthlyLocked ? 1 : 12,
-        monthlyLocked,
-      });
+  // Domain renewal
+  if (order.domainSource?._id && order.expiryDate) {
+    items.push({
+      key: "domain",
+      target: "domain",
+      label: `Domain — ${order.domainName}`,
+      currentExpiry: order.expiryDate,
+      durationMonths: 12,
     });
+  }
 
-    return items;
-  };
+  // Service plan renewal - add each plan only once
+  (order.Plans || []).forEach((plan) => {
+    if (!plan._id || !plan.expiryDate) return;
+
+    const monthlyLocked =
+      plan.monthly_renewlaed === true;
+
+    const isEmailPlan =
+      plan.type === "email" ||
+      plan.type === "msoffice";
+
+    items.push({
+      key: `plan-${plan._id}`,
+      target: "plan",
+      planId: plan._id,
+      label: `${plan.type.toUpperCase()} Plan`,
+      currentExpiry: plan.expiryDate,
+      durationMonths: monthlyLocked ? 1 : 12,
+      monthlyLocked,
+
+      // License quantity only for Email and MS Office
+      currentUsers: isEmailPlan
+        ? plan.noOfUsers ?? 0
+        : undefined,
+    });
+  });
+
+  return items;
+};
 
   /* =====================================================
      OPEN RENEW POPUP
@@ -485,19 +465,25 @@ const RenewList: React.FC = () => {
       RenewalDuration
     > = {};
 
-    items.forEach((item) => {
-      durations[item.key] = item.durationMonths;
+const initialLicenseCounts: Record<string, number> = {};
 
-      dates[item.key] = calculateNewExpiry(
-        item.currentExpiry,
-        item.durationMonths
-      );
-    });
+items.forEach((item) => {
+  durations[item.key] = item.durationMonths;
+
+  dates[item.key] = calculateNewExpiry(
+    item.currentExpiry,
+    item.durationMonths
+  );
+
+  if (item.currentUsers !== undefined) {
+    initialLicenseCounts[item.key] = item.currentUsers;
+  }
+});
 
     setRenewOrder(order);
     setRenewDates(dates);
     setRenewalDurations(durations);
-
+setLicenseCounts(initialLicenseCounts);
     setSelectedItems(
       items.map((item) => item.key)
     );
@@ -985,11 +971,8 @@ const RenewList: React.FC = () => {
             showRenewalActions={true}
             handleRenew={openRenewPopup}
             handleCopyNotification={(order) =>
-              copyRenewalNotification(
-                order,
-                setSuccess
-              )
-            }
+  copyRenewalNotification(order)
+}
           />
 
         </div>
