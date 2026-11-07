@@ -14,6 +14,7 @@ import State from "../models/State";
 import Country from "../models/Country";
 import ActivityLog from "../models/ActivityLog";
 import { addPlanLicenses } from "../controllers/orderPlanController";
+import OrderHistory from "../models/OrderHistory";
 const router = express.Router();
 interface IOrderPlanResponse {
   _id: string;
@@ -108,6 +109,8 @@ router.post(
     try {
       const { orderId } = req.params;
       const renewals = req.body?.renewals as RenewalItem[];
+
+      const updatedBy = (req as any).user?._id ?? null;
 
       // 1. Validate order ID.
       if (!mongoose.Types.ObjectId.isValid(orderId)) {
@@ -306,6 +309,30 @@ router.post(
           order.expiryDate = newExpiryDate;
           await order.save();
 
+          // Save domain renewal history.
+          try {
+            await OrderHistory.create({
+              orderId: order._id,
+              planId: null,
+              section: "ORDER",
+              action: "RENEW",
+              oldData: {
+                expiryDate: oldExpiryDate,
+              },
+              newData: {
+                expiryDate: newExpiryDate,
+              },
+              changedFields: ["expiryDate"],
+              description: `Domain ${order.domainName} expiry date renewed`,
+              updatedBy,
+            });
+          } catch (historyError) {
+            console.error(
+              "Domain renewal history save error:",
+              historyError
+            );
+          }
+
           renewedItems.push({
             target: "domain",
             durationMonths,
@@ -342,9 +369,7 @@ router.post(
             ? 1
             : item.durationMonths ?? 12;
 
-          // IMPORTANT:
-          // If the frontend sends expiryDate, save that date.
-          // Do not silently replace it with today's date + duration.
+          // Use the selected expiry date when provided.
           const requestedExpiry = parseExpiryDate(item.expiryDate);
 
           const newExpiryDate =
@@ -354,6 +379,30 @@ router.post(
           plan.expiryDate = newExpiryDate;
 
           await plan.save();
+
+          // Save plan renewal history.
+          try {
+            await OrderHistory.create({
+              orderId: order._id,
+              planId: plan._id,
+              section: "ORDER_PLAN",
+              action: "RENEW",
+              oldData: {
+                expiryDate: oldExpiryDate,
+              },
+              newData: {
+                expiryDate: newExpiryDate,
+              },
+              changedFields: ["expiryDate"],
+              description: `${plan.type} plan renewed for ${order.domainName}`,
+              updatedBy,
+            });
+          } catch (historyError) {
+            console.error(
+              "Plan renewal history save error:",
+              historyError
+            );
+          }
 
           renewedItems.push({
             target: "plan",
@@ -4642,6 +4691,7 @@ router.get(
 //     }
 //   }
 // );
+
 router.post(
   "/",
   authMiddleware,
@@ -4650,6 +4700,9 @@ router.post(
       const data = req.body;
 
       let customerId: string | undefined;
+
+      const updatedBy =
+        req.user?._id || null;
 
       // =====================================================
       // CUSTOMER HANDLING
@@ -4672,6 +4725,7 @@ router.post(
         }
 
         customerId = data.client.toString();
+
       } else if (data.newCustomer) {
         if (
           !data.newCustomer.c_name ||
@@ -4691,6 +4745,7 @@ router.post(
 
         if (existingCustomer) {
           customerId = existingCustomer._id.toString();
+
         } else {
           const newCust = new Client(data.newCustomer);
 
@@ -4788,6 +4843,7 @@ router.post(
         ) {
           mappedData.domainSource =
             data.domainSource;
+
         } else {
           const domainSourceDoc =
             await DomainSource.findOne({
@@ -4823,6 +4879,60 @@ router.post(
         "✅ ORDER SAVED:",
         savedOrder._id.toString()
       );
+
+      // =====================================================
+      // ORDER HISTORY - CREATE
+      // =====================================================
+
+      try {
+        const orderSnapshot =
+          savedOrder.toObject();
+
+        const orderChangedFields =
+          Object.keys(orderSnapshot).filter(
+            (field) =>
+              ![
+                "_id",
+                "__v",
+                "createdAt",
+                "updatedAt",
+              ].includes(field)
+          );
+
+        await OrderHistory.create({
+          orderId: savedOrder._id,
+
+          planId: null,
+
+          section: "ORDER",
+
+          action: "CREATE",
+
+          oldData: null,
+
+          newData: orderSnapshot,
+
+          changedFields: orderChangedFields,
+
+          description:
+            `Domain ${savedOrder.domainName} was created`,
+
+          updatedBy,
+        });
+
+        console.log(
+          "✅ ORDER HISTORY CREATED"
+        );
+
+      } catch (historyError) {
+        console.error(
+          "❌ ORDER HISTORY ERROR:",
+          historyError
+        );
+
+        // Do not interrupt order creation
+        // if history logging fails.
+      }
 
       // =====================================================
       // CREATE ORDER ACTIVITY LOG
@@ -4886,15 +4996,13 @@ router.post(
         );
 
       } catch (activityError) {
-
         console.error(
           "❌ ACTIVITY LOG ERROR:",
           activityError
         );
 
         // Activity log failure should not hide
-        // successful order creation
-
+        // successful order creation.
       }
 
       // =====================================================
@@ -5062,15 +5170,15 @@ router.post(
                   registrationDate:
                     p.registrationDate
                       ? new Date(
-                        p.registrationDate
-                      )
+                          p.registrationDate
+                        )
                       : new Date(),
 
                   expiryDate:
                     p.expiryDate
                       ? new Date(
-                        p.expiryDate
-                      )
+                          p.expiryDate
+                        )
                       : new Date(),
 
                   noOfUsers:
@@ -5096,6 +5204,69 @@ router.post(
             "✅ ORDER PLANS SAVED:",
             savedPlans.length
           );
+
+          // ===================================================
+          // ORDER PLAN HISTORY - CREATE
+          // ===================================================
+
+          try {
+            const planHistoryRecords =
+              savedPlans.map((plan) => {
+                const planSnapshot =
+                  plan.toObject();
+
+                const planChangedFields =
+                  Object.keys(planSnapshot).filter(
+                    (field) =>
+                      ![
+                        "_id",
+                        "__v",
+                        "createdAt",
+                        "updatedAt",
+                      ].includes(field)
+                  );
+
+                return {
+                  orderId: savedOrder._id,
+
+                  planId: plan._id,
+
+                  section: "ORDER_PLAN" as const,
+
+                  action: "CREATE" as const,
+
+                  oldData: null,
+
+                  newData: planSnapshot,
+
+                  changedFields:
+                    planChangedFields,
+
+                  description:
+                    `${plan.type} plan was created for ${savedOrder.domainName}`,
+
+                  updatedBy,
+                };
+              });
+
+            await OrderHistory.insertMany(
+              planHistoryRecords
+            );
+
+            console.log(
+              "✅ ORDER PLAN HISTORY CREATED:",
+              planHistoryRecords.length
+            );
+
+          } catch (historyError) {
+            console.error(
+              "❌ ORDER PLAN HISTORY ERROR:",
+              historyError
+            );
+
+            // Do not interrupt successful plan creation
+            // if history logging fails.
+          }
 
           // ===================================================
           // PLAN ACTIVITY LOG
@@ -5179,12 +5350,10 @@ router.post(
             );
 
           } catch (activityError) {
-
             console.error(
               "❌ PLAN ACTIVITY ERROR:",
               activityError
             );
-
           }
         }
       }
@@ -5199,7 +5368,6 @@ router.post(
       });
 
     } catch (err: any) {
-
       console.error(
         "❌ Order creation error:",
         err
@@ -5215,10 +5383,8 @@ router.post(
         ).json({
           success: false,
           error: {
-            code:
-              "VALIDATION_ERROR",
-            message:
-              err.message,
+            code: "VALIDATION_ERROR",
+            message: err.message,
           },
         });
 
@@ -5230,16 +5396,13 @@ router.post(
       // =====================================================
 
       if (
-        err.name ===
-        "ValidationError"
+        err.name === "ValidationError"
       ) {
         res.status(400).json({
           success: false,
           error: {
-            code:
-              "VALIDATION_ERROR",
-            message:
-              err.message,
+            code: "VALIDATION_ERROR",
+            message: err.message,
           },
         });
 
@@ -5256,10 +5419,8 @@ router.post(
         res.status(400).json({
           success: false,
           error: {
-            code:
-              "DUPLICATE_ENTRY",
-            message:
-              "Domain already exists",
+            code: "DUPLICATE_ENTRY",
+            message: "Domain already exists",
           },
         });
 
@@ -5273,15 +5434,14 @@ router.post(
       res.status(500).json({
         success: false,
         error: {
-          code:
-            "INTERNAL_SERVER_ERROR",
-          message:
-            "Something went wrong",
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went wrong",
         },
       });
     }
   }
 );
+
 
 // =====================================================
 // PUT - UPDATE ORDER
@@ -5296,6 +5456,8 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
       plans,
       ...rest
     }: any = req.body;
+
+    const updatedBy = (req as any).user?._id ?? null;
 
     // =====================================================
     // GET OLD ORDER
@@ -5384,7 +5546,7 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
     }
 
     // =====================================================
-    // ORDER ACTIVITY LOG
+    // ORDER ACTIVITY LOG + ORDER HISTORY
     // =====================================================
 
     const orderChanges: {
@@ -5410,6 +5572,7 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
     });
 
     if (orderChanges.length > 0) {
+      // Existing Activity Log
       await ActivityLog.create({
         entityType: "ORDER",
         entityId: updatedOrder._id,
@@ -5425,6 +5588,31 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
         userAgent: req.get("user-agent"),
         isSystemAction: false,
       });
+
+      // New Order History
+      try {
+        const oldData: Record<string, any> = {};
+        const newData: Record<string, any> = {};
+
+        orderChanges.forEach((change) => {
+          oldData[change.field] = change.oldValue;
+          newData[change.field] = change.newValue;
+        });
+
+        await OrderHistory.create({
+          orderId: updatedOrder._id,
+          planId: null,
+          section: "ORDER",
+          action: "UPDATE",
+          oldData,
+          newData,
+          changedFields: orderChanges.map((change) => change.field),
+          description: `Order ${updatedOrder.domainName} was updated`,
+          updatedBy,
+        });
+      } catch (historyError) {
+        console.error("Order history save error:", historyError);
+      }
     }
 
     // =====================================================
@@ -5446,9 +5634,13 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
         .populate("storageId")
         .lean();
 
+      // Get original raw plan data for OrderHistory.
+      const oldPlanHistorySnapshots = await OrderPlan.find({
+        orderId: updatedOrder._id,
+      }).lean();
+
       // -----------------------------------------------
       // PRESERVE EXISTING PLAN STATUS AND ADMIN LOGIN
-      // Match by plan _id when frontend sends it.
       // -----------------------------------------------
 
       const oldPlanMap = new Map<string, any>();
@@ -5466,7 +5658,7 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
           let planId = p.planId?._id || p.planId || null;
           let emailTypeId = p.emailTypeId?._id || p.emailTypeId || null;
 
-          // Find matching existing plan, if its _id was sent.
+          // Find matching existing plan.
           const oldPlan = p._id
             ? oldPlanMap.get(String(p._id))
             : undefined;
@@ -5542,15 +5734,15 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
             p.primary_status !== undefined
               ? toObjectIdOrNull(p.primary_status)
               : oldPlan?.primary_status?._id ||
-              oldPlan?.primary_status ||
-              null;
+                oldPlan?.primary_status ||
+                null;
 
           const secondaryStatus =
             p.secondary_status !== undefined
               ? toObjectIdOrNull(p.secondary_status)
               : oldPlan?.secondary_status?._id ||
-              oldPlan?.secondary_status ||
-              null;
+                oldPlan?.secondary_status ||
+                null;
 
           const status =
             p.status !== undefined
@@ -5635,6 +5827,7 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
             ...(planTransferredOn
               ? { plan_transferred_on: planTransferredOn }
               : {}),
+
             ...(planCancelledOn
               ? { plan_cancelled_on: planCancelledOn }
               : {}),
@@ -5679,9 +5872,164 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
         .populate("storageId")
         .lean();
 
-      // -----------------------------------------------
-      // COMPARE PLAN CHANGES
-      // -----------------------------------------------
+      // Get raw new plan data for OrderHistory.
+      const newPlanHistorySnapshots = await OrderPlan.find({
+        orderId: updatedOrder._id,
+      }).lean();
+
+      // =====================================================
+      // PLAN HISTORY TRACKING
+      // =====================================================
+
+      try {
+        const oldHistoryMap = new Map<string, any>();
+        const newHistoryMap = new Map<string, any>();
+
+        oldPlanHistorySnapshots.forEach((plan: any) => {
+          oldHistoryMap.set(plan._id.toString(), plan);
+        });
+
+        newPlanHistorySnapshots.forEach((plan: any) => {
+          newHistoryMap.set(plan._id.toString(), plan);
+        });
+
+        const allPlanIds = new Set([
+          ...oldHistoryMap.keys(),
+          ...newHistoryMap.keys(),
+        ]);
+
+        const planHistoryRecords: any[] = [];
+
+        const excludedFields = [
+          "_id",
+          "__v",
+          "createdAt",
+          "updatedAt",
+        ];
+
+        // Do not store admin passwords in history.
+        const sanitizePlanData = (plan: any) => {
+          if (!plan) return null;
+
+          const sanitized = { ...plan };
+
+          if (sanitized.adminPassword !== undefined) {
+            sanitized.adminPassword = "[REDACTED]";
+          }
+
+          return sanitized;
+        };
+
+        const valuesAreDifferent = (oldValue: any, newValue: any) => {
+          return (
+            JSON.stringify(oldValue ?? null) !==
+            JSON.stringify(newValue ?? null)
+          );
+        };
+
+        for (const id of allPlanIds) {
+          const oldPlan = oldHistoryMap.get(id);
+          const newPlan = newHistoryMap.get(id);
+
+          // -----------------------------------------------
+          // NEW PLAN CREATED
+          // -----------------------------------------------
+
+          if (!oldPlan && newPlan) {
+            const changedFields = Object.keys(newPlan).filter(
+              (field) => !excludedFields.includes(field)
+            );
+
+            planHistoryRecords.push({
+              orderId: updatedOrder._id,
+              planId: newPlan._id,
+              section: "ORDER_PLAN",
+              action: "CREATE",
+              oldData: null,
+              newData: sanitizePlanData(newPlan),
+              changedFields,
+              description: `${newPlan.type} plan created for ${updatedOrder.domainName}`,
+              updatedBy,
+            });
+
+            continue;
+          }
+
+          // -----------------------------------------------
+          // PLAN DELETED
+          // -----------------------------------------------
+
+          if (oldPlan && !newPlan) {
+            const changedFields = Object.keys(oldPlan).filter(
+              (field) => !excludedFields.includes(field)
+            );
+
+            planHistoryRecords.push({
+              orderId: updatedOrder._id,
+              planId: oldPlan._id,
+              section: "ORDER_PLAN",
+              action: "DELETE",
+              oldData: sanitizePlanData(oldPlan),
+              newData: null,
+              changedFields,
+              description: `${oldPlan.type} plan removed from ${updatedOrder.domainName}`,
+              updatedBy,
+            });
+
+            continue;
+          }
+
+          if (!oldPlan || !newPlan) continue;
+
+          // -----------------------------------------------
+          // EXISTING PLAN UPDATED
+          // -----------------------------------------------
+
+          const changedFields: string[] = [];
+
+          const allFields = new Set([
+            ...Object.keys(oldPlan),
+            ...Object.keys(newPlan),
+          ]);
+
+          allFields.forEach((field) => {
+            if (excludedFields.includes(field)) return;
+
+            if (
+              valuesAreDifferent(
+                oldPlan[field],
+                newPlan[field]
+              )
+            ) {
+              changedFields.push(field);
+            }
+          });
+
+          if (changedFields.length > 0) {
+            planHistoryRecords.push({
+              orderId: updatedOrder._id,
+              planId: newPlan._id,
+              section: "ORDER_PLAN",
+              action: "UPDATE",
+              oldData: sanitizePlanData(oldPlan),
+              newData: sanitizePlanData(newPlan),
+              changedFields,
+              description: `${newPlan.type} plan updated for ${updatedOrder.domainName}`,
+              updatedBy,
+            });
+          }
+        }
+
+        if (planHistoryRecords.length > 0) {
+          await OrderHistory.insertMany(planHistoryRecords);
+        }
+      } catch (historyError) {
+        console.error("Plan history save error:", historyError);
+      }
+
+      // =====================================================
+      // COMPARE PLAN CHANGES FOR ACTIVITY LOG
+      // =====================================================
 
       const planChanges: {
         field: string;
@@ -5701,19 +6049,19 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
         const planSummary = (plan: any) =>
           plan
             ? {
-              plan: plan.planId?.plan || null,
-              emailType: plan.emailTypeId?.type || null,
-              hostingType: plan.hostTypeId?.name || null,
-              hostingSubType: plan.hostSubTypeId?.name || null,
-              storage: plan.storageId?.name || null,
-              registrationDate: plan.registrationDate || null,
-              expiryDate: plan.expiryDate || null,
-              noOfUsers: plan.noOfUsers || 0,
-              type: plan.type || null,
-              adminEmail: plan.adminEmail || "",
-              // Do not put plaintext passwords in activity logs.
-              adminPassword: undefined,
-            }
+                plan: plan.planId?.plan || null,
+                emailType: plan.emailTypeId?.type || null,
+                hostingType: plan.hostTypeId?.name || null,
+                hostingSubType: plan.hostSubTypeId?.name || null,
+                storage: plan.storageId?.name || null,
+                registrationDate: plan.registrationDate || null,
+                expiryDate: plan.expiryDate || null,
+                noOfUsers: plan.noOfUsers || 0,
+                type: plan.type || null,
+                adminEmail: plan.adminEmail || "",
+                // Do not put plaintext passwords in activity logs.
+                adminPassword: undefined,
+              }
             : null;
 
         if (!oldPlan && newPlan) {
@@ -5741,83 +6089,86 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
           oldValue: any;
           newValue: any;
         }[] = [
-            {
-              field: "plan",
-              oldValue: oldPlan.planId?.plan || null,
-              newValue: newPlan.planId?.plan || null,
-            },
-            {
-              field: "emailType",
-              oldValue: oldPlan.emailTypeId?.type || null,
-              newValue: newPlan.emailTypeId?.type || null,
-            },
-            {
-              field: "hostingType",
-              oldValue: oldPlan.hostTypeId?.name || null,
-              newValue: newPlan.hostTypeId?.name || null,
-            },
-            {
-              field: "hostingSubType",
-              oldValue: oldPlan.hostSubTypeId?.name || null,
-              newValue: newPlan.hostSubTypeId?.name || null,
-            },
-            {
-              field: "storage",
-              oldValue: oldPlan.storageId?.name || null,
-              newValue: newPlan.storageId?.name || null,
-            },
-            {
-              field: "registrationDate",
-              oldValue: oldPlan.registrationDate
-                ? new Date(oldPlan.registrationDate).getTime()
-                : null,
-              newValue: newPlan.registrationDate
-                ? new Date(newPlan.registrationDate).getTime()
-                : null,
-            },
-            {
-              field: "expiryDate",
-              oldValue: oldPlan.expiryDate
-                ? new Date(oldPlan.expiryDate).getTime()
-                : null,
-              newValue: newPlan.expiryDate
-                ? new Date(newPlan.expiryDate).getTime()
-                : null,
-            },
-            {
-              field: "noOfUsers",
-              oldValue: Number(oldPlan.noOfUsers || 0),
-              newValue: Number(newPlan.noOfUsers || 0),
-            },
-            {
-              field: "type",
-              oldValue: oldPlan.type || null,
-              newValue: newPlan.type || null,
-            },
-            {
-              field: "adminEmail",
-              oldValue: oldPlan.adminEmail || "",
-              newValue: newPlan.adminEmail || "",
-            },
-            {
-              field: "status",
-              oldValue: getId(oldPlan.status),
-              newValue: getId(newPlan.status),
-            },
-            {
-              field: "primary_status",
-              oldValue: getId(oldPlan.primary_status),
-              newValue: getId(newPlan.primary_status),
-            },
-            {
-              field: "secondary_status",
-              oldValue: getId(oldPlan.secondary_status),
-              newValue: getId(newPlan.secondary_status),
-            },
-          ];
+          {
+            field: "plan",
+            oldValue: oldPlan.planId?.plan || null,
+            newValue: newPlan.planId?.plan || null,
+          },
+          {
+            field: "emailType",
+            oldValue: oldPlan.emailTypeId?.type || null,
+            newValue: newPlan.emailTypeId?.type || null,
+          },
+          {
+            field: "hostingType",
+            oldValue: oldPlan.hostTypeId?.name || null,
+            newValue: newPlan.hostTypeId?.name || null,
+          },
+          {
+            field: "hostingSubType",
+            oldValue: oldPlan.hostSubTypeId?.name || null,
+            newValue: newPlan.hostSubTypeId?.name || null,
+          },
+          {
+            field: "storage",
+            oldValue: oldPlan.storageId?.name || null,
+            newValue: newPlan.storageId?.name || null,
+          },
+          {
+            field: "registrationDate",
+            oldValue: oldPlan.registrationDate
+              ? new Date(oldPlan.registrationDate).getTime()
+              : null,
+            newValue: newPlan.registrationDate
+              ? new Date(newPlan.registrationDate).getTime()
+              : null,
+          },
+          {
+            field: "expiryDate",
+            oldValue: oldPlan.expiryDate
+              ? new Date(oldPlan.expiryDate).getTime()
+              : null,
+            newValue: newPlan.expiryDate
+              ? new Date(newPlan.expiryDate).getTime()
+              : null,
+          },
+          {
+            field: "noOfUsers",
+            oldValue: Number(oldPlan.noOfUsers || 0),
+            newValue: Number(newPlan.noOfUsers || 0),
+          },
+          {
+            field: "type",
+            oldValue: oldPlan.type || null,
+            newValue: newPlan.type || null,
+          },
+          {
+            field: "adminEmail",
+            oldValue: oldPlan.adminEmail || "",
+            newValue: newPlan.adminEmail || "",
+          },
+          {
+            field: "status",
+            oldValue: getId(oldPlan.status),
+            newValue: getId(newPlan.status),
+          },
+          {
+            field: "primary_status",
+            oldValue: getId(oldPlan.primary_status),
+            newValue: getId(newPlan.primary_status),
+          },
+          {
+            field: "secondary_status",
+            oldValue: getId(oldPlan.secondary_status),
+            newValue: getId(newPlan.secondary_status),
+          },
+        ];
 
         comparisons.forEach((change) => {
-          if (String(change.oldValue ?? "") !== String(change.newValue ?? "")) {
+          if (
+            String(change.oldValue ?? "") !==
+            String(change.newValue ?? "")
+          ) {
             planChanges.push({
               field: `plans[${i}].${change.field}`,
               oldValue: change.oldValue,

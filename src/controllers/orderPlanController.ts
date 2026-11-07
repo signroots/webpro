@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { OrderPlan } from "../models/OrderPlan";
-
+import OrderHistory from "../models/OrderHistory";
 export const addPlanLicenses = async (
   req: Request,
   res: Response
@@ -9,6 +9,8 @@ export const addPlanLicenses = async (
   try {
     const { planId } = req.params;
     const { additionalLicenses } = req.body;
+
+    const updatedBy = (req as any).user?._id ?? null;
 
     // Validate Plan ID
     if (!mongoose.Types.ObjectId.isValid(planId)) {
@@ -38,10 +40,11 @@ export const addPlanLicenses = async (
       });
     }
 
-    const currentUsers = plan.noOfUsers ?? 0;
+    // Store old licence count
+    const oldUsers = plan.noOfUsers ?? 0;
 
     // Calculate new licence count
-    const newTotal = currentUsers + additionalLicenses;
+    const newTotal = oldUsers + additionalLicenses;
 
     // Minimum licence validation
     if (newTotal < 1) {
@@ -63,6 +66,38 @@ export const addPlanLicenses = async (
     plan.noOfUsers = newTotal;
 
     await plan.save();
+
+    // Save licence update history
+    try {
+      await OrderHistory.create({
+        orderId: plan.orderId,
+        planId: plan._id,
+        section: "ORDER_PLAN",
+        action: "UPDATE",
+
+        oldData: {
+          noOfUsers: oldUsers,
+        },
+
+        newData: {
+          noOfUsers: newTotal,
+        },
+
+        changedFields: ["noOfUsers"],
+
+        description:
+          additionalLicenses > 0
+            ? `Licences increased from ${oldUsers} to ${newTotal}`
+            : `Licences minimized from ${oldUsers} to ${newTotal}`,
+
+        updatedBy,
+      });
+    } catch (historyError) {
+      console.error(
+        "Licence history save error:",
+        historyError
+      );
+    }
 
     return res.status(200).json({
       success: true,
