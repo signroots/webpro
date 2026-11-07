@@ -391,6 +391,121 @@ upsert: true
       "✅ Cloudflare Sync Completed"
     );
 
+    // =====================================
+    // HOSTINGER DOMAIN AUTO SYNC
+    // =====================================
+
+    console.log("🔄 Hostinger sync started");
+
+    const HOSTINGER_TOKEN =
+      process.env.HOSTINGER_API_TOKEN?.trim();
+
+    if (!HOSTINGER_TOKEN) {
+      console.warn(
+        "⚠️ HOSTINGER_API_TOKEN missing. Hostinger sync skipped."
+      );
+    } else {
+      const hostingerSource = await DomainSource.findOne({
+        code: "HOSTINGER",
+      });
+
+      if (!hostingerSource) {
+        throw new Error("HOSTINGER DomainSource not found");
+      }
+
+      const hostingerCustomer =
+        await Customer.findOneAndUpdate(
+          { email: "hostinger@signroots.com" },
+          {
+            $set: {
+              name: "Hostinger Domains",
+              phone: "0000000000",
+            },
+          },
+          { upsert: true, new: true }
+        );
+
+      const hostingerResponse = await axios.get(
+        "https://developers.hostinger.com/api/domains/v1/portfolio",
+        {
+          headers: {
+            Authorization: `Bearer ${HOSTINGER_TOKEN}`,
+          },
+          timeout: 30000,
+        }
+      );
+
+      const portfolio = hostingerResponse.data;
+
+      if (!Array.isArray(portfolio)) {
+        throw new Error("Invalid Hostinger portfolio response");
+      }
+
+      console.log(
+        "[HOSTINGER] Total portfolio:",
+        portfolio.length
+      );
+
+      console.log(
+        "[HOSTINGER] tiecon.in:",
+        portfolio.find(
+          (d: any) =>
+            String(d.domain || "").trim().toLowerCase() ===
+            "tiecon.in"
+        ) || "NOT FOUND"
+      );
+
+      const paidDomains = portfolio.filter(
+        (d: any) =>
+          d.type === "domain" &&
+          typeof d.domain === "string" &&
+          d.domain.trim().length > 0
+      );
+
+      const bulkOps = paidDomains.map((d: any) => {
+        const domainName = d.domain.trim().toLowerCase();
+
+        return {
+          updateOne: {
+            filter: { domainName },
+            update: {
+              $set: {
+                domainName,
+                status: d.status,
+                registrationDate: d.created_at
+                  ? new Date(d.created_at)
+                  : null,
+                expiryDate: d.expires_at
+                  ? new Date(d.expires_at)
+                  : null,
+                managedBy: "Signroots",
+                domainSource: hostingerSource._id,
+                customer: hostingerCustomer._id,
+                domain_flag: true,
+                updatedAt: new Date(),
+              },
+            },
+            upsert: true,
+          },
+        };
+      });
+
+      if (bulkOps.length > 0) {
+        const result = await Order.bulkWrite(bulkOps);
+
+        console.log("[HOSTINGER] Bulk write result:", {
+          processed: bulkOps.length,
+          inserted: result.upsertedCount,
+          modified: result.modifiedCount,
+          matched: result.matchedCount,
+        });
+      } else {
+        console.log("[HOSTINGER] No paid domains found");
+      }
+
+      console.log("✅ Hostinger sync completed");
+    }
+
 
   }
   catch (error: any) {
