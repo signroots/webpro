@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import OrdersTable from "../Order/OrdersTable";
@@ -235,22 +235,18 @@ const getStatusClass = (status?: any | null): string => {
 ========================================================= */
 
 
-const copyRenewalNotification = async (
-  order: Order
-): Promise<boolean> => {
+const copyRenewalNotification = (order: Order): string => {
   const plans = order.Plans || [];
 
   const emailPlans = plans.filter(
-    (plan) =>
-      plan.type === "email" ||
-      plan.type === "msoffice"
+    (plan) => plan.type === "email" || plan.type === "msoffice"
   );
 
   const hostingPlans = plans.filter(
     (plan) => plan.type === "hosting"
   );
 
-  const notification = [
+  return [
     "RENEWAL NOTIFICATION",
     "",
     order.domainName,
@@ -277,50 +273,6 @@ const copyRenewalNotification = async (
           .join("\n\n")
       : "Hosting: No",
   ].join("\n");
-
-  try {
-    let copied = false;
-
-    if (navigator.clipboard && window.isSecureContext) {
-      try {
-        await navigator.clipboard.writeText(notification);
-        copied = true;
-      } catch (error) {
-        console.warn("Clipboard API failed:", error);
-      }
-    }
-
-    if (!copied) {
-      const textarea = document.createElement("textarea");
-
-      textarea.value = notification;
-      textarea.setAttribute("readonly", "");
-      textarea.style.position = "fixed";
-      textarea.style.left = "-9999px";
-
-      document.body.appendChild(textarea);
-      textarea.focus();
-      textarea.select();
-
-      try {
-        copied = document.execCommand("copy");
-      } finally {
-        document.body.removeChild(textarea);
-      }
-    }
-
-    if (!copied) {
-      throw new Error("Copy command failed");
-    }
-
-    return true;
-  } catch (error) {
-    console.error("Copy failed:", error);
-
-    window.alert("Unable to copy. Please try again.");
-
-    return false;
-  }
 };
 
 /* =========================================================
@@ -363,7 +315,13 @@ const RenewList: React.FC = () => {
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+const [copyFeedback, setCopyFeedback] = useState<{
+  key: string;
+  message: string;
+  success: boolean;
+} | null>(null);
 
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const itemsPerPage = 50;
 
   /* =====================================================
@@ -395,6 +353,14 @@ const RenewList: React.FC = () => {
   useEffect(() => {
     void loadOrders();
   }, [selectedTab]);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+    };
+  }, []);
 
   /* =====================================================
      GET RENEWAL ITEMS
@@ -528,6 +494,50 @@ setLicenseCounts(initialLicenseCounts);
     itemsWithSelectedDuration.filter((item) =>
       selectedItems.includes(item.key)
     );
+const copyToClipboard = async (
+    value: string,
+    label: string,
+    planId: string
+  ) => {
+    const key = `${planId}-${label}`;
+
+    try {
+      await navigator.clipboard.writeText(value);
+
+      setCopyFeedback({
+        key,
+        message: "Copied",
+        success: true,
+      });
+    } catch (error) {
+      console.error("Copy failed:", error);
+
+      setCopyFeedback({
+        key,
+        message: "Copy failed",
+        success: false,
+      });
+    }
+
+    if (copyTimeoutRef.current) {
+      clearTimeout(copyTimeoutRef.current);
+    }
+
+    copyTimeoutRef.current = setTimeout(() => {
+      setCopyFeedback(null);
+      copyTimeoutRef.current = null;
+    }, 2500);
+  };
+
+  const handleCopyNotification = async (order: Order) => {
+    const notification = copyRenewalNotification(order);
+
+    await copyToClipboard(
+      notification,
+      "Renewal Notification",
+      order._id
+    );
+  };
 
   /* =====================================================
      CHANGE DURATION
@@ -970,9 +980,8 @@ setLicenseCounts(initialLicenseCounts);
             navigate={navigate}
             showRenewalActions={true}
             handleRenew={openRenewPopup}
-            handleCopyNotification={(order) =>
-  copyRenewalNotification(order)
-}
+            handleCopyNotification={handleCopyNotification}
+            copyFeedback={copyFeedback}
           />
 
         </div>

@@ -30,7 +30,12 @@ interface OrdersTableProps {
   hideExpiredDates?: boolean;
   showRenewalActions?: boolean;
   handleRenew?: (order: any) => void;
-  handleCopyNotification?: (order: any) => Promise<boolean>;
+  handleCopyNotification?: (order: any) => Promise<void>;
+  copyFeedback?: {
+    key: string;
+    message: string;
+    success: boolean;
+  } | null;
   showEditAction?: boolean;
 }
 
@@ -47,6 +52,7 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
   showRenewalActions = false,
   handleRenew,
   handleCopyNotification,
+  copyFeedback,
   showEditAction = true,
 }) => {
   const { user } = useAuth();
@@ -79,11 +85,7 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
 
   const copyNotification = async (order: any) => {
     try {
-      const copied = await handleCopyNotification?.(order);
-
-      if (copied) {
-        showCopied(`notification-${order._id}`);
-      }
+      await handleCopyNotification?.(order);
     } catch (error) {
       console.error("Notification copy failed:", error);
     }
@@ -161,7 +163,7 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
                       </span>
 
                       {/* COPY DOMAIN */}
-                      <div className="relative flex items-center gap-1 shrink-0">
+                      <div className="relative flex items-center shrink-0">
                         <button
                           type="button"
                           title="Copy Domain"
@@ -175,7 +177,7 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
                         </button>
 
                         {copiedKey === `domain-${order._id}` && (
-                          <span className="text-xs font-medium text-green-600 whitespace-nowrap">
+                          <span className="absolute left-full top-0 ml-1 -translate-y-1/2 text-[10px] font-medium text-green-600 whitespace-nowrap">
                             Copied
                           </span>
                         )}
@@ -295,7 +297,7 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
                       </button>
 
                       {/* COPY NOTIFICATION */}
-                      <div className="relative flex items-center gap-1">
+                      <div className="relative flex items-center">
                         <button
                           type="button"
                           onClick={() => void copyNotification(order)}
@@ -305,9 +307,16 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
                           <FaCopy className="w-4 h-4" />
                         </button>
 
-                        {copiedKey === `notification-${order._id}` && (
-                          <span className="text-xs font-medium text-green-600 whitespace-nowrap">
-                            Copied
+                        {copyFeedback?.key ===
+                          `${order._id}-Renewal Notification` && (
+                          <span
+                            className={`absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 whitespace-nowrap rounded px-2 py-1 text-xs text-white shadow ${
+                              copyFeedback.success
+                                ? "bg-green-600"
+                                : "bg-red-600"
+                            }`}
+                          >
+                            {copyFeedback.message}
                           </span>
                         )}
                       </div>

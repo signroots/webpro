@@ -259,21 +259,21 @@ useEffect(() => {
   fetchCustomers();
 }, [customerType]);
 useEffect(() => {
-//   if (formData.managedBy === "Customer") {
-//     setFormData((prev) => ({
-//       ...prev,
-//       domainSource: "Cloudflare",
-      
-// domain_flag: true,
-//     }));
-//   }
+  if (formData.managedBy === "Customer") {
+    setFormData((prev) => ({
+      ...prev,
+      domainSource: "",
+      registrationDate: "",
+      expiryDate: "",
+      domain_flag: false,
+    }));
+  }
 
   if (formData.managedBy === "Signroots") {
     setFormData((prev) => ({
       ...prev,
       domainSource: "",
-      
-domain_flag: false,
+      domain_flag: false,
     }));
   }
 }, [formData.managedBy]);
@@ -1621,95 +1621,55 @@ if (!payload.domainSource) {
   formData.managedBy === "Customer") && (
 
   <div>
-    <label className="block text-gray-700 font-medium mb-2">
-      Registrar
-    </label>
+  <label className="block text-gray-700 font-medium mb-2">
+    Registrar
+  </label>
 
-    <select
-      name="domainSource"
-      value={formData.domainSource || ""}
-      onChange={handleInputChange}
-      className="w-full border rounded px-3 py-2"
-    >
+  <select
+    name="domainSource"
+    value={formData.managedBy === "Customer" ? "" : formData.domainSource || ""}
+    onChange={handleInputChange}
+    disabled={formData.managedBy === "Customer"}
+    className="w-full border rounded px-3 py-2 disabled:bg-gray-200 disabled:cursor-not-allowed"
+  >
+    <option value="">-- Select Registrar --</option>
 
-      <option value="">
-        -- Select Registrar --
-      </option>
+    {formData.managedBy === "Signroots" &&
+      domainSources
+        .filter((source) => source.is_active)
+        .map((source) => (
+          <option key={source._id} value={source._id}>
+            {source.name}
+          </option>
+        ))}
+  </select>
 
+  {domainSources.find(
+    (source) =>
+      source._id === formData.domainSource &&
+      source.name === "Cloudflare"
+  ) && (
+    <div className="mt-4 flex items-center gap-2">
+      <input
+        type="checkbox"
+        name="dns_flag"
+        checked={formData.domain_flag || false}
+        disabled={formData.managedBy === "Customer"}
+        onChange={(e) =>
+          setFormData((prev) => ({
+            ...prev,
+            domain_flag: e.target.checked,
+          }))
+        }
+        className="w-4 h-4"
+      />
 
-      {/* Signroots can see all registrar */}
-      {formData.managedBy === "Signroots" &&
-        domainSources
-          .filter((source) => source.is_active)
-          .map((source) => (
-            <option
-              key={source._id}
-              value={source._id}
-            >
-              {source.name}
-            </option>
-          ))
-      }
-
-
-      {/* Customer only Cloudflare & Hostinger */}
-      {formData.managedBy === "Customer" &&
-        domainSources
-          .filter(
-            (source) =>
-              source.is_active &&
-              (
-                source.name === "Cloudflare" ||
-                source.name === "Hostinger"
-              )
-          )
-          .map((source) => (
-            <option
-              key={source._id}
-              value={source._id}
-            >
-              {source.name}
-            </option>
-          ))
-      }
-
-
-    </select>
-
-
-    {/* DNS Flag only for Cloudflare */}
-
-    {domainSources.find(
-      (source) =>
-        source._id === formData.domainSource &&
-        source.name === "Cloudflare"
-    ) && (
-
-      <div className="mt-4 flex items-center gap-2">
-
-        <input
-          type="checkbox"
-          name="dns_flag"
-          checked={formData.domain_flag || false}
-          disabled={formData.managedBy === "Customer"}
-          onChange={(e) =>
-            setFormData((prev) => ({
-              ...prev,
-              domain_flag: e.target.checked,
-            }))
-          }
-          className="w-4 h-4"
-        />
-
-        <label className="text-gray-700 font-medium">
-          DNS Flag
-        </label>
-
-      </div>
-
-    )}
-
-  </div>
+      <label className="text-gray-700 font-medium">
+        DNS Flag
+      </label>
+    </div>
+  )}
+</div>
 )}
             <div>
               <label className="block text-gray-700 font-medium mb-2">Registration Date</label>

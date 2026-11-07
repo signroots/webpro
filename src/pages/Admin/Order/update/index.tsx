@@ -823,6 +823,24 @@ const UpdateOrder: React.FC = () => {
   ) => {
     const { name, value } = e.target;
 
+    // When ownership changes to Customer, clear Signroots registrar
+    // and domain-level registration/expiry details immediately.
+    if (name === "managedBy") {
+      setFormData((prev) => ({
+        ...prev,
+        managedBy: value as "Signroots" | "Customer",
+        ...(value === "Customer"
+          ? {
+              domainSource: "",
+              registrationDate: "",
+              expiryDate: "",
+              dns_flag: false,
+            }
+          : {}),
+      }));
+      return;
+    }
+
     if (
       customerType === "new" &&
       name.startsWith("newCustomer.")
@@ -857,25 +875,6 @@ const UpdateOrder: React.FC = () => {
       }));
     }
   };
-
-  // =========================================================
-  // MANAGED BY
-  // =========================================================
-
-  useEffect(() => {
-    if (!domainSources.length) return;
-
-    if (
-      formData.managedBy === "Signroots" ||
-      formData.managedBy === "Customer"
-    ) {
-      setFormData((prev) => ({
-        ...prev,
-        domainSource: prev.domainSource || "",
-        dns_flag: false,
-      }));
-    }
-  }, [formData.managedBy, domainSources]);
 
   // =========================================================
   // CHECKBOX
@@ -1349,21 +1348,28 @@ const UpdateOrder: React.FC = () => {
         // FORM DATA
         // =====================================================
 
+        const isCustomerManaged =
+          order.managedBy === "Customer";
+
         setFormData((prev) => ({
           ...prev,
 
           domainName: order.domainName || "",
 
-          dns_flag: order.dns_flag || false,
+          dns_flag: isCustomerManaged
+            ? false
+            : order.dns_flag || false,
 
           managedBy:
             order.managedBy || "Signroots",
 
-          registrationDate:
-            order.registrationDate?.slice(0, 10) || "",
+          registrationDate: isCustomerManaged
+            ? ""
+            : order.registrationDate?.slice(0, 10) || "",
 
-          expiryDate:
-            order.expiryDate?.slice(0, 10) || "",
+          expiryDate: isCustomerManaged
+            ? ""
+            : order.expiryDate?.slice(0, 10) || "",
 
           status: order.status || "Active",
 
@@ -1428,10 +1434,11 @@ const UpdateOrder: React.FC = () => {
                 ?.c_placeOfContactWithStateCode || "",
           },
 
-          domainSource:
-            order.domainSource?._id ||
-            order.domainSource ||
-            "",
+          domainSource: isCustomerManaged
+            ? ""
+            : order.domainSource?._id ||
+              order.domainSource ||
+              "",
 
           email_expiryDate:
             order.email_expiryDate?.slice(0, 10) || "",
@@ -1798,14 +1805,30 @@ const UpdateOrder: React.FC = () => {
     setError(null);
 
     try {
+      const isCustomerManaged =
+        formData.managedBy === "Customer";
+
       const payload: any = {
         ...formData,
 
         is_customer:
           customerType === "existing",
 
-        domainSource:
-          formData.domainSource || null,
+        domainSource: isCustomerManaged
+          ? null
+          : formData.domainSource || null,
+
+        registrationDate: isCustomerManaged
+          ? null
+          : formData.registrationDate || null,
+
+        expiryDate: isCustomerManaged
+          ? null
+          : formData.expiryDate || null,
+
+        dns_flag: isCustomerManaged
+          ? false
+          : formData.dns_flag || false,
       };
 
       if (customerType === "existing") {
@@ -2743,11 +2766,13 @@ const UpdateOrder: React.FC = () => {
                 <select
                   name="domainSource"
                   value={
-                    formData.domainSource ||
-                    ""
+                    formData.managedBy === "Customer"
+                      ? ""
+                      : formData.domainSource || ""
                   }
                   onChange={handleInputChange}
-                  className="w-full border rounded px-3 py-2"
+                  disabled={formData.managedBy === "Customer"}
+                  className="w-full border rounded px-3 py-2 disabled:bg-gray-100 disabled:text-gray-500"
                 >
                   <option value="">
                     -- Select Registrar --
@@ -2816,7 +2841,8 @@ const UpdateOrder: React.FC = () => {
                   ""
                 }
                 onChange={handleInputChange}
-                className="w-full border rounded px-3 py-2"
+                disabled={formData.managedBy === "Customer"}
+                className="w-full border rounded px-3 py-2 disabled:bg-gray-100 disabled:text-gray-500"
               />
             </div>
 
@@ -2832,7 +2858,8 @@ const UpdateOrder: React.FC = () => {
                   formData.expiryDate || ""
                 }
                 onChange={handleInputChange}
-                className="w-full border rounded px-3 py-2 bg-gray-100"
+                disabled={formData.managedBy === "Customer"}
+                className="w-full border rounded px-3 py-2 bg-gray-100 disabled:text-gray-500"
               />
             </div>
 
@@ -4173,3 +4200,20 @@ const UpdateOrder: React.FC = () => {
 };
 
 export default UpdateOrder;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
