@@ -437,14 +437,14 @@ const CustomerOrders: React.FC = () => {
               {displayedOrders.length > 0 ? (
                 <div className="overflow-x-auto">
 
-                 <OrdersTable
+<OrdersTable
   paginatedOrders={displayedOrders}
   handleEdit={handleEdit}
   getStatusClass={getStatusClass}
   navigate={navigate}
   showDomainStatus={activeTab === "archived"}
+  showCustomerLink={false}
 />
-
 
 
                 </div>

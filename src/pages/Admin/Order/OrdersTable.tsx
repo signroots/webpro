@@ -37,6 +37,7 @@ interface OrdersTableProps {
     success: boolean;
   } | null;
   showEditAction?: boolean;
+  showCustomerLink?: boolean;
 }
 
 const OrdersTable: React.FC<OrdersTableProps> = ({
@@ -54,6 +55,7 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
   handleCopyNotification,
   copyFeedback,
   showEditAction = true,
+  showCustomerLink = true,
 }) => {
   const { user } = useAuth();
   const userType = user?.type;
@@ -197,24 +199,21 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
                       />
                     </div>
 
-                    {/* CUSTOMER */}
-                    {userType === "admin" && order.client ? (
+                    {/* CUSTOMER NAME - OPTIONAL */}
+                    {showCustomerLink && userType === "admin" && order.client && (
                       <Link
                         to={`/admin/orders/customer/${order.client._id}`}
                         className="truncate text-sm text-blue-600 leading-5 hover:underline"
                         title={
                           order.client.c_company ||
-                          order.client.c_name
+                          order.client.c_name ||
+                          "N/A"
                         }
                       >
                         {order.client.c_company ||
                           order.client.c_name ||
                           "N/A"}
                       </Link>
-                    ) : (
-                      <span className="text-gray-400 text-xs leading-5">
-                        &nbsp;
-                      </span>
                     )}
                   </div>
                 </div>
