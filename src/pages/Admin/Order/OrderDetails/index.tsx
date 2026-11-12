@@ -7,7 +7,6 @@ import {
   updatePlanStatus,
   fetchOrderStatuses,
   fetchPrimaryPlanStatuses,
-  fetchSecondaryPlanStatuses,
   fetchDomainStatuses,
 } from "../api";
 
@@ -50,15 +49,15 @@ interface Plan {
     is_custom?: boolean;
   } | null;
 
-  secondary_status?: {
-    _id: string;
-    name: string;
-    code?: string;
-    type?: string;
-    category?: "primary" | "secondary";
-    is_active?: boolean;
-    is_custom?: boolean;
-  } | null;
+  // secondary_status?: {
+  //   _id: string;
+  //   name: string;
+  //   code?: string;
+  //   type?: string;
+  //   category?: "primary" | "secondary";
+  //   is_active?: boolean;
+  //   is_custom?: boolean;
+  // } | null;
 }
 
 interface Customer {
@@ -195,8 +194,8 @@ const OrderDetails: React.FC = () => {
   const [primaryPlanStatuses, setPrimaryPlanStatuses] =
     useState<Record<string, Status[]>>({});
 
-  const [secondaryPlanStatuses, setSecondaryPlanStatuses] =
-    useState<Record<string, Status[]>>({});
+  // const [secondaryPlanStatuses, setSecondaryPlanStatuses] =
+  //   useState<Record<string, Status[]>>({});
 
   const [order, setOrder] = useState<Order | null>(null);
 
@@ -224,8 +223,8 @@ const OrderDetails: React.FC = () => {
   const [selectedPrimaryPlanStatuses, setSelectedPrimaryPlanStatuses] =
     useState<Record<string, string>>({});
 
-  const [selectedSecondaryPlanStatuses, setSelectedSecondaryPlanStatuses] =
-    useState<Record<string, string>>({});
+  // const [selectedSecondaryPlanStatuses, setSelectedSecondaryPlanStatuses] =
+  //   useState<Record<string, string>>({});
 
   const [statusUpdating, setStatusUpdating] = useState(false);
 
@@ -462,17 +461,24 @@ const OrderDetails: React.FC = () => {
 
     const primary: Record<string, string> = {};
 
-    const secondary: Record<string, string> = {};
 
-    (order?.plans || []).forEach((plan) => {
-      primary[plan._id] = plan.primary_status?._id || "";
+(order?.plans || []).forEach((plan) => {
+  primary[plan._id] = plan.primary_status?._id || "";
+});
 
-      secondary[plan._id] = plan.secondary_status?._id || "";
-    });
+setSelectedPrimaryPlanStatuses(primary);
 
-    setSelectedPrimaryPlanStatuses(primary);
+    // const secondary: Record<string, string> = {};
 
-    setSelectedSecondaryPlanStatuses(secondary);
+    // (order?.plans || []).forEach((plan) => {
+    //   primary[plan._id] = plan.primary_status?._id || "";
+
+    //   secondary[plan._id] = plan.secondary_status?._id || "";
+    // });
+
+    // setSelectedPrimaryPlanStatuses(primary);
+
+    // setSelectedSecondaryPlanStatuses(secondary);
 
     setUpdateOrderStatusChecked(false);
 
@@ -564,33 +570,33 @@ const OrderDetails: React.FC = () => {
           const primaryStatus =
             selectedPrimaryPlanStatuses[plan._id] || "";
 
-          const secondaryStatus =
-            selectedSecondaryPlanStatuses[plan._id] || "";
+          // const secondaryStatus =
+          //   selectedSecondaryPlanStatuses[plan._id] || "";
 
           const primaryChanged =
             primaryStatus !==
             (plan.primary_status?._id || "");
 
-          const secondaryChanged =
-            secondaryStatus !==
-            (plan.secondary_status?._id || "");
+          // const secondaryChanged =
+          //   secondaryStatus !==
+          //   (plan.secondary_status?._id || "");
 
-          if (!primaryChanged && !secondaryChanged) {
+          if (!primaryChanged) {
             continue;
           }
 
           const payload: {
             primary_status?: string;
-            secondary_status?: string | null;
+            // secondary_status?: string | null;
           } = {};
 
           if (primaryChanged && primaryStatus) {
             payload.primary_status = primaryStatus;
           }
 
-          if (secondaryChanged) {
-            payload.secondary_status = secondaryStatus || null;
-          }
+          // if (secondaryChanged) {
+          //   payload.secondary_status = secondaryStatus || null;
+          // }
 
           const updatedPlan = await updatePlanStatus(
             plan._id,
@@ -608,7 +614,7 @@ const OrderDetails: React.FC = () => {
                   ? {
                       ...p,
                       primary_status: updatedPlan.primary_status,
-                      secondary_status: updatedPlan.secondary_status,
+                      // secondary_status: updatedPlan.secondary_status,
                     }
                   : p
               ),
@@ -699,8 +705,8 @@ const OrderDetails: React.FC = () => {
         const primaryStatuses =
           await fetchPrimaryPlanStatuses();
 
-        const secondaryStatuses =
-          await fetchSecondaryPlanStatuses();
+        // const secondaryStatuses =
+        //   await fetchSecondaryPlanStatuses();
 
         const primaryStatusMap: Record<string, Status[]> = {};
 
@@ -712,15 +718,15 @@ const OrderDetails: React.FC = () => {
               ? primaryStatuses
               : [];
 
-          secondaryStatusMap[plan._id] =
-            Array.isArray(secondaryStatuses)
-              ? secondaryStatuses
-              : [];
+          // secondaryStatusMap[plan._id] =
+          //   Array.isArray(secondaryStatuses)
+          //     ? secondaryStatuses
+          //     : [];
         }
 
         setPrimaryPlanStatuses(primaryStatusMap);
 
-        setSecondaryPlanStatuses(secondaryStatusMap);
+        // setSecondaryPlanStatuses(secondaryStatusMap);
       } catch (error) {
         console.error(
           "Failed to load order details:",
@@ -1211,10 +1217,10 @@ const OrderDetails: React.FC = () => {
                             {plan.primary_status?.name || "-"}
                           </span>
 
-                          <span className="text-sm text-gray-600">
+                          {/* <span className="text-sm text-gray-600">
                             Secondary:{" "}
                             {plan.secondary_status?.name || "-"}
-                          </span>
+                          </span> */}
                         </div>
                       </td>
                     </tr>
@@ -1840,11 +1846,11 @@ const OrderDetails: React.FC = () => {
                               {/* SECONDARY STATUS */}
 
                               <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">
+                                {/* <label className="block text-xs font-medium text-gray-600 mb-1">
                                   Secondary Status
-                                </label>
+                                </label> */}
 
-                                <select
+                                {/* <select
                                   value={
                                     selectedSecondaryPlanStatuses[
                                       plan._id
@@ -1902,7 +1908,7 @@ const OrderDetails: React.FC = () => {
                                         {status.name}
                                       </option>
                                     ))}
-                                </select>
+                                </select> */}
                               </div>
                             </div>
                           </div>
