@@ -29,16 +29,16 @@ interface IOrderPlanResponse {
 
 type RenewalItem =
   | {
-      target: "domain";
-      durationMonths?: number;
-      expiryDate?: string;
-    }
+    target: "domain";
+    durationMonths?: number;
+    expiryDate?: string;
+  }
   | {
-      target: "plan";
-      planId: string;
-      durationMonths?: number;
-      expiryDate?: string;
-    };
+    target: "plan";
+    planId: string;
+    durationMonths?: number;
+    expiryDate?: string;
+  };
 
 const allowedPlanTypes = [
   "email",
@@ -250,9 +250,9 @@ router.post(
       const plans =
         requestedPlanIds.length > 0
           ? await OrderPlan.find({
-              _id: { $in: requestedPlanIds },
-              orderId: order._id,
-            })
+            _id: { $in: requestedPlanIds },
+            orderId: order._id,
+          })
           : [];
 
       if (plans.length !== requestedPlanIds.length) {
@@ -596,39 +596,39 @@ router.get(
       const plans: any[] =
         orderIds.length > 0
           ? await OrderPlan.find({
-              orderId: {
-                $in: orderIds,
-              },
+            orderId: {
+              $in: orderIds,
+            },
+          })
+            .select(
+              [
+                "orderId",
+                "type",
+                "expiryDate",
+                "registrationDate",
+                "emailTypeId",
+                "planId",
+                "noOfUsers",
+                "hostTypeId",
+                "hostSubTypeId",
+                "storageId",
+                "websiteDetails",
+                "sslDetails",
+                "adminEmail",
+                "adminPassword",
+                "monthly_renewlaed",
+                "primary_status",
+                "secondary_status",
+                "status",
+                "plan_transferred_on",
+                "plan_cancelled_on",
+              ].join(" ")
+            )
+            .populate({
+              path: "emailTypeId",
+              select: "name image",
             })
-              .select(
-                [
-                  "orderId",
-                  "type",
-                  "expiryDate",
-                  "registrationDate",
-                  "emailTypeId",
-                  "planId",
-                  "noOfUsers",
-                  "hostTypeId",
-                  "hostSubTypeId",
-                  "storageId",
-                  "websiteDetails",
-                  "sslDetails",
-                  "adminEmail",
-                  "adminPassword",
-                  "monthly_renewlaed",
-                  "primary_status",
-                  "secondary_status",
-                  "status",
-                  "plan_transferred_on",
-                  "plan_cancelled_on",
-                ].join(" ")
-              )
-              .populate({
-                path: "emailTypeId",
-                select: "name image",
-              })
-              .lean()
+            .lean()
           : [];
 
       // ==========================================
@@ -697,12 +697,12 @@ router.get(
         const nearestExpiryDate =
           expiryDates.length > 0
             ? new Date(
-                Math.min(
-                  ...expiryDates.map((date) =>
-                    date.getTime()
-                  )
+              Math.min(
+                ...expiryDates.map((date) =>
+                  date.getTime()
                 )
               )
+            )
             : null;
 
         return {
@@ -2744,7 +2744,9 @@ router.get(
       // ========================================================
       // ORDER MUST HAVE DOMAIN OR PLAN
       // ========================================================
-
+      const dnscloudflareSource = await DomainSource.findOne({
+        name: "DNS-CLOUDFLARE",
+      }).select("_id");
       filters.push({
         $or: [
           {
@@ -2754,6 +2756,7 @@ router.get(
           },
           {
             dns_flag: false,
+            domainSource: { $ne: dnscloudflareSource?._id },
           },
         ],
       });
@@ -4458,7 +4461,7 @@ router.get(
           adminEmail: p.adminEmail || "",
           username: p.username || "",
           adminPassword: p.adminPassword || "",
-          
+
 
           // ========================================
           // PLAN STATUS DATE TRACKING
@@ -5170,15 +5173,15 @@ router.post(
                   registrationDate:
                     p.registrationDate
                       ? new Date(
-                          p.registrationDate
-                        )
+                        p.registrationDate
+                      )
                       : new Date(),
 
                   expiryDate:
                     p.expiryDate
                       ? new Date(
-                          p.expiryDate
-                        )
+                        p.expiryDate
+                      )
                       : new Date(),
 
                   noOfUsers:
@@ -5734,15 +5737,15 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
             p.primary_status !== undefined
               ? toObjectIdOrNull(p.primary_status)
               : oldPlan?.primary_status?._id ||
-                oldPlan?.primary_status ||
-                null;
+              oldPlan?.primary_status ||
+              null;
 
           const secondaryStatus =
             p.secondary_status !== undefined
               ? toObjectIdOrNull(p.secondary_status)
               : oldPlan?.secondary_status?._id ||
-                oldPlan?.secondary_status ||
-                null;
+              oldPlan?.secondary_status ||
+              null;
 
           const status =
             p.status !== undefined
@@ -6049,19 +6052,19 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
         const planSummary = (plan: any) =>
           plan
             ? {
-                plan: plan.planId?.plan || null,
-                emailType: plan.emailTypeId?.type || null,
-                hostingType: plan.hostTypeId?.name || null,
-                hostingSubType: plan.hostSubTypeId?.name || null,
-                storage: plan.storageId?.name || null,
-                registrationDate: plan.registrationDate || null,
-                expiryDate: plan.expiryDate || null,
-                noOfUsers: plan.noOfUsers || 0,
-                type: plan.type || null,
-                adminEmail: plan.adminEmail || "",
-                // Do not put plaintext passwords in activity logs.
-                adminPassword: undefined,
-              }
+              plan: plan.planId?.plan || null,
+              emailType: plan.emailTypeId?.type || null,
+              hostingType: plan.hostTypeId?.name || null,
+              hostingSubType: plan.hostSubTypeId?.name || null,
+              storage: plan.storageId?.name || null,
+              registrationDate: plan.registrationDate || null,
+              expiryDate: plan.expiryDate || null,
+              noOfUsers: plan.noOfUsers || 0,
+              type: plan.type || null,
+              adminEmail: plan.adminEmail || "",
+              // Do not put plaintext passwords in activity logs.
+              adminPassword: undefined,
+            }
             : null;
 
         if (!oldPlan && newPlan) {
@@ -6089,80 +6092,80 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
           oldValue: any;
           newValue: any;
         }[] = [
-          {
-            field: "plan",
-            oldValue: oldPlan.planId?.plan || null,
-            newValue: newPlan.planId?.plan || null,
-          },
-          {
-            field: "emailType",
-            oldValue: oldPlan.emailTypeId?.type || null,
-            newValue: newPlan.emailTypeId?.type || null,
-          },
-          {
-            field: "hostingType",
-            oldValue: oldPlan.hostTypeId?.name || null,
-            newValue: newPlan.hostTypeId?.name || null,
-          },
-          {
-            field: "hostingSubType",
-            oldValue: oldPlan.hostSubTypeId?.name || null,
-            newValue: newPlan.hostSubTypeId?.name || null,
-          },
-          {
-            field: "storage",
-            oldValue: oldPlan.storageId?.name || null,
-            newValue: newPlan.storageId?.name || null,
-          },
-          {
-            field: "registrationDate",
-            oldValue: oldPlan.registrationDate
-              ? new Date(oldPlan.registrationDate).getTime()
-              : null,
-            newValue: newPlan.registrationDate
-              ? new Date(newPlan.registrationDate).getTime()
-              : null,
-          },
-          {
-            field: "expiryDate",
-            oldValue: oldPlan.expiryDate
-              ? new Date(oldPlan.expiryDate).getTime()
-              : null,
-            newValue: newPlan.expiryDate
-              ? new Date(newPlan.expiryDate).getTime()
-              : null,
-          },
-          {
-            field: "noOfUsers",
-            oldValue: Number(oldPlan.noOfUsers || 0),
-            newValue: Number(newPlan.noOfUsers || 0),
-          },
-          {
-            field: "type",
-            oldValue: oldPlan.type || null,
-            newValue: newPlan.type || null,
-          },
-          {
-            field: "adminEmail",
-            oldValue: oldPlan.adminEmail || "",
-            newValue: newPlan.adminEmail || "",
-          },
-          {
-            field: "status",
-            oldValue: getId(oldPlan.status),
-            newValue: getId(newPlan.status),
-          },
-          {
-            field: "primary_status",
-            oldValue: getId(oldPlan.primary_status),
-            newValue: getId(newPlan.primary_status),
-          },
-          {
-            field: "secondary_status",
-            oldValue: getId(oldPlan.secondary_status),
-            newValue: getId(newPlan.secondary_status),
-          },
-        ];
+            {
+              field: "plan",
+              oldValue: oldPlan.planId?.plan || null,
+              newValue: newPlan.planId?.plan || null,
+            },
+            {
+              field: "emailType",
+              oldValue: oldPlan.emailTypeId?.type || null,
+              newValue: newPlan.emailTypeId?.type || null,
+            },
+            {
+              field: "hostingType",
+              oldValue: oldPlan.hostTypeId?.name || null,
+              newValue: newPlan.hostTypeId?.name || null,
+            },
+            {
+              field: "hostingSubType",
+              oldValue: oldPlan.hostSubTypeId?.name || null,
+              newValue: newPlan.hostSubTypeId?.name || null,
+            },
+            {
+              field: "storage",
+              oldValue: oldPlan.storageId?.name || null,
+              newValue: newPlan.storageId?.name || null,
+            },
+            {
+              field: "registrationDate",
+              oldValue: oldPlan.registrationDate
+                ? new Date(oldPlan.registrationDate).getTime()
+                : null,
+              newValue: newPlan.registrationDate
+                ? new Date(newPlan.registrationDate).getTime()
+                : null,
+            },
+            {
+              field: "expiryDate",
+              oldValue: oldPlan.expiryDate
+                ? new Date(oldPlan.expiryDate).getTime()
+                : null,
+              newValue: newPlan.expiryDate
+                ? new Date(newPlan.expiryDate).getTime()
+                : null,
+            },
+            {
+              field: "noOfUsers",
+              oldValue: Number(oldPlan.noOfUsers || 0),
+              newValue: Number(newPlan.noOfUsers || 0),
+            },
+            {
+              field: "type",
+              oldValue: oldPlan.type || null,
+              newValue: newPlan.type || null,
+            },
+            {
+              field: "adminEmail",
+              oldValue: oldPlan.adminEmail || "",
+              newValue: newPlan.adminEmail || "",
+            },
+            {
+              field: "status",
+              oldValue: getId(oldPlan.status),
+              newValue: getId(newPlan.status),
+            },
+            {
+              field: "primary_status",
+              oldValue: getId(oldPlan.primary_status),
+              newValue: getId(newPlan.primary_status),
+            },
+            {
+              field: "secondary_status",
+              oldValue: getId(oldPlan.secondary_status),
+              newValue: getId(newPlan.secondary_status),
+            },
+          ];
 
         comparisons.forEach((change) => {
           if (
