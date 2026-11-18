@@ -2746,7 +2746,7 @@ router.get(
       // ========================================================
       const dnscloudflareSource = await DomainSource.findOne({
         name: "DNS-CLOUDFLARE",
-      }).select("_id");
+      });
       filters.push({
         $or: [
           {
@@ -2755,8 +2755,8 @@ router.get(
             },
           },
           {
-            dns_flag: false,
             domainSource: { $ne: dnscloudflareSource?._id },
+
           },
         ],
       });
