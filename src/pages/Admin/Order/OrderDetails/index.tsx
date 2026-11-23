@@ -8,6 +8,10 @@ import {
   fetchOrderStatuses,
   fetchPrimaryPlanStatuses,
   fetchDomainStatuses,
+  fetchActiveLabels,
+  updateOrderLabel,
+  updateOrderPlanLabel,
+  LabelInfo,
 } from "../api";
 
 import {
@@ -22,6 +26,8 @@ import {
 } from "react-icons/fa";
 
 /* ===================== TYPES ===================== */
+
+type LabelValue = LabelInfo | string;
 
 interface Plan {
   _id: string;
@@ -38,7 +44,9 @@ interface Plan {
   adminEmail?: string;
   adminPassword?: string;
   username?: string;
-
+  monthly_renewlaed?: boolean;
+  labels?: LabelValue[];
+  label?: LabelInfo | string | null;
   primary_status?: {
     _id: string;
     name: string;
@@ -48,16 +56,6 @@ interface Plan {
     is_active?: boolean;
     is_custom?: boolean;
   } | null;
-
-  // secondary_status?: {
-  //   _id: string;
-  //   name: string;
-  //   code?: string;
-  //   type?: string;
-  //   category?: "primary" | "secondary";
-  //   is_active?: boolean;
-  //   is_custom?: boolean;
-  // } | null;
 }
 
 interface Customer {
@@ -95,7 +93,6 @@ interface Status {
   code?: string;
   category?: "primary" | "secondary";
   is_active: boolean;
-
   typeEmail?: {
     _id: string;
     name: string;
@@ -105,12 +102,12 @@ interface Status {
 interface Order {
   _id: string;
   domainName: string;
-
+  labels?: LabelValue[];
+  label?: LabelInfo | string | null;
   status?: {
     _id: string;
     name: string;
   } | null;
-
   order_status?: {
     _id: string;
     name: string;
@@ -118,7 +115,6 @@ interface Order {
     type: string;
     is_active: boolean;
   } | null;
-
   domain_status?: {
     _id: string;
     name: string;
@@ -126,51 +122,173 @@ interface Order {
     type: string;
     is_active: boolean;
   } | null;
-
   managedBy?: string;
   registrationDate?: string;
   expiryDate?: string;
   provider?: string;
-
   domainSource?: DomainSource | null;
-
   domain_flag?: boolean;
   email_flag?: boolean;
   host_flag?: boolean;
   ssl_flag?: boolean;
   website_flag?: boolean;
   storage_services_flag?: boolean;
-
   lockStatus?: string;
   email_status?: string;
   businessEmail?: boolean;
   cloudflareRegistered?: boolean;
   google_email?: boolean;
   microsoft_email?: boolean;
-
   username?: string;
   nameServers?: string[];
-
   customer?: Customer;
   client?: Client;
-
   plans?: Plan[];
 }
 
-/* ===================== SMALL COMPONENTS ===================== */
+type RenewalTarget = "domain" | "plan";
+type RenewalDuration = 1 | 12;
+type RenewStep = "dates" | "confirm";
+
+interface RenewalItem {
+  key: string;
+  target: RenewalTarget;
+  label: string;
+  planId?: string;
+  currentExpiry?: string | null;
+  durationMonths: RenewalDuration;
+  monthlyLocked?: boolean;
+}
+
+/* ===================== CONSTANTS ===================== */
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+/* ===================== DATE HELPERS ===================== */
+
+const toDateInputValue = (
+  value?: string | Date | null
+): string => {
+  if (!value) return "";
+
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return "";
+
+    return [
+      value.getFullYear(),
+      String(value.getMonth() + 1).padStart(2, "0"),
+      String(value.getDate()).padStart(2, "0"),
+    ].join("-");
+  }
+
+  const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+
+  if (isoMatch) {
+    const [, year, month, day] = isoMatch;
+
+    const parsed = new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day)
+    );
+
+    if (
+      parsed.getFullYear() !== Number(year) ||
+      parsed.getMonth() !== Number(month) - 1 ||
+      parsed.getDate() !== Number(day)
+    ) {
+      return "";
+    }
+
+    return `${year}-${month}-${day}`;
+  }
+
+  const parsed = new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) return "";
+
+  return [
+    parsed.getFullYear(),
+    String(parsed.getMonth() + 1).padStart(2, "0"),
+    String(parsed.getDate()).padStart(2, "0"),
+  ].join("-");
+};
+
+const addMonthsSafely = (
+  date: Date,
+  months: number
+): Date => {
+  const result = new Date(date);
+  const originalDay = result.getDate();
+
+  result.setDate(1);
+  result.setMonth(result.getMonth() + months);
+
+  const lastDay = new Date(
+    result.getFullYear(),
+    result.getMonth() + 1,
+    0
+  ).getDate();
+
+  result.setDate(Math.min(originalDay, lastDay));
+
+  return result;
+};
+
+const calculateNewExpiry = (
+  currentExpiry: string | null | undefined,
+  durationMonths: number
+): string => {
+  const currentInput = toDateInputValue(currentExpiry);
+
+  let baseDate: Date;
+
+  if (currentInput) {
+    const [year, month, day] = currentInput.split("-").map(Number);
+
+    baseDate = new Date(year, month - 1, day, 12, 0, 0);
+  } else {
+    const today = new Date();
+
+    baseDate = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+      12,
+      0,
+      0
+    );
+  }
+
+  return toDateInputValue(
+    addMonthsSafely(baseDate, durationMonths)
+  );
+};
+
+const displayDate = (value?: string | null): string => {
+  const date = toDateInputValue(value);
+
+  if (!date) return "Not available";
+
+  const [year, month, day] = date.split("-");
+
+  return `${day}-${month}-${year}`;
+};
+
+/* ===================== INFO COMPONENT ===================== */
 
 const Info: React.FC<{
   label: string;
   value?: any;
 }> = ({ label, value }) => (
-  <div>
-    <p className="text-sm text-gray-500">{label}</p>
+  <div className="min-w-0">
+    <p className="mb-1.5 text-sm font-medium text-gray-500">
+      {label}
+    </p>
 
-    <p className="font-medium text-gray-800">
+    <p className="break-words text-base font-semibold text-gray-900">
       {Array.isArray(value)
-        ? value.join(", ")
+        ? value.join(", ") || "-"
         : value ?? "-"}
     </p>
   </div>
@@ -179,29 +297,291 @@ const Info: React.FC<{
 /* ===================== MAIN COMPONENT ===================== */
 
 const OrderDetails: React.FC = () => {
-  const { orderId } = useParams<{
-    orderId: string;
-  }>();
-
+  const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
 
   /* ===================== STATES ===================== */
 
   const [statuses, setStatuses] = useState<Status[]>([]);
-
   const [domainStatuses, setDomainStatuses] = useState<Status[]>([]);
 
   const [primaryPlanStatuses, setPrimaryPlanStatuses] =
     useState<Record<string, Status[]>>({});
 
-  // const [secondaryPlanStatuses, setSecondaryPlanStatuses] =
-  //   useState<Record<string, Status[]>>({});
-
   const [order, setOrder] = useState<Order | null>(null);
 
   const [loading, setLoading] = useState(true);
-
   const [error, setError] = useState<string | null>(null);
+
+  /* ===================== LABEL STATES ===================== */
+
+  const [labelLoading, setLabelLoading] = useState(false);
+
+  const [labelModalOpen, setLabelModalOpen] = useState(false);
+
+  const [selectedOrderLabels, setSelectedOrderLabels] =
+    useState<string[]>([]);
+
+  const [labelUpdating, setLabelUpdating] = useState(false);
+
+  const [orderLabels, setOrderLabels] = useState<LabelInfo[]>([]);
+  const [planLabels, setPlanLabels] = useState<LabelInfo[]>([]);
+
+  const [planLabelSelections, setPlanLabelSelections] =
+    useState<Record<string, string[]>>({});
+
+  const [savingPlanLabel, setSavingPlanLabel] = useState<string | null>(
+    null
+  );
+
+  const [planLabelModalOpen, setPlanLabelModalOpen] = useState(false);
+  const [activePlanLabelId, setActivePlanLabelId] = useState<string | null>(
+    null
+  );
+
+  /* ===================== LABEL HELPERS ===================== */
+
+  const getLabelIds = (
+    labels?: LabelValue[] | LabelValue | null
+  ): string[] => {
+    if (!labels) return [];
+
+    const normalizedLabels = Array.isArray(labels)
+      ? labels
+      : [labels];
+
+    return normalizedLabels
+      .map((label) =>
+        typeof label === "string" ? label : label?._id || ""
+      )
+      .filter(Boolean);
+  };
+
+  const getLabelNames = (
+    labels?: LabelValue[] | LabelValue | null,
+    availableLabels: LabelInfo[] = []
+  ): string => {
+    if (!labels) return "-";
+
+    const normalizedLabels = Array.isArray(labels)
+      ? labels
+      : [labels];
+
+    const names = normalizedLabels
+      .map((label) => {
+        if (typeof label === "object") {
+          return label.statusLabelName || "";
+        }
+
+        const matchedLabel = availableLabels.find(
+          (item) => item._id === label
+        );
+
+        return matchedLabel?.statusLabelName || "";
+      })
+      .filter(Boolean);
+
+    return names.length ? names.join(", ") : "-";
+  };
+
+  /* ===================== LOAD ACTIVE LABELS ===================== */
+
+  const loadActiveLabels = async () => {
+    try {
+      setLabelLoading(true);
+
+      const [orderData, planData] = await Promise.all([
+        fetchActiveLabels("ORDER"),
+        fetchActiveLabels("PLAN"),
+      ]);
+
+      setOrderLabels(Array.isArray(orderData) ? orderData : []);
+      setPlanLabels(Array.isArray(planData) ? planData : []);
+    } catch (labelError) {
+      console.error("Failed to load active labels:", labelError);
+      alert("Failed to load active labels.");
+    } finally {
+      setLabelLoading(false);
+    }
+  };
+
+  /* ===================== ORDER LABEL MODAL ===================== */
+
+  const openLabelModal = () => {
+    if (!order) return;
+
+    setSelectedOrderLabels(
+      getLabelIds(order.labels ?? order.label)
+    );
+
+    setLabelModalOpen(true);
+  };
+
+  const handleOrderLabelSelection = (
+    labelId: string,
+    checked: boolean
+  ) => {
+    setSelectedOrderLabels((previous) => {
+      if (checked) {
+        return previous.includes(labelId)
+          ? previous
+          : [...previous, labelId];
+      }
+
+      return previous.filter((id) => id !== labelId);
+    });
+  };
+
+  const handleOrderLabelUpdate = async () => {
+    if (!order) return;
+
+    try {
+      setLabelUpdating(true);
+
+      const labelIds = selectedOrderLabels;
+
+      await updateOrderLabel(order._id, labelIds);
+
+      const updatedLabels = orderLabels.filter((label) =>
+        labelIds.includes(label._id)
+      );
+
+      setOrder((previous) =>
+        previous
+          ? {
+              ...previous,
+              labels: updatedLabels,
+              label: undefined,
+            }
+          : previous
+      );
+
+      setLabelModalOpen(false);
+
+      alert("Order labels updated successfully.");
+    } catch (labelError: any) {
+      console.error("Order label update error:", labelError);
+
+      alert(
+        labelError?.response?.data?.message ||
+          "Failed to update order labels."
+      );
+    } finally {
+      setLabelUpdating(false);
+    }
+  };
+
+  /* ===================== PLAN LABEL MODAL ===================== */
+
+  const openPlanLabelModal = (plan: Plan) => {
+    setActivePlanLabelId(plan._id);
+
+    setPlanLabelSelections((previous) => ({
+      ...previous,
+      [plan._id]: getLabelIds(plan.labels ?? plan.label),
+    }));
+
+    setPlanLabelModalOpen(true);
+  };
+
+  const handlePlanLabelSelection = (
+    planId: string,
+    labelId: string,
+    checked: boolean
+  ) => {
+    setPlanLabelSelections((previous) => {
+      const currentLabels = previous[planId] || [];
+
+      const updatedLabels = checked
+        ? currentLabels.includes(labelId)
+          ? currentLabels
+          : [...currentLabels, labelId]
+        : currentLabels.filter((id) => id !== labelId);
+
+      return {
+        ...previous,
+        [planId]: updatedLabels,
+      };
+    });
+  };
+
+  /* ===================== SAVE PLAN LABELS ===================== */
+
+  const handlePlanLabelUpdate = async (
+    planId: string
+  ): Promise<boolean> => {
+    if (!order) return false;
+
+    const originalPlan = order.plans?.find(
+      (plan) => plan._id === planId
+    );
+
+    const labelIds = planLabelSelections[planId] || [];
+
+    try {
+      setSavingPlanLabel(planId);
+
+      await updateOrderPlanLabel(planId, labelIds);
+
+      const updatedLabels = planLabels.filter((label) =>
+        labelIds.includes(label._id)
+      );
+
+      setOrder((previous) =>
+        previous
+          ? {
+              ...previous,
+              plans: previous.plans?.map((plan) =>
+                plan._id === planId
+                  ? {
+                      ...plan,
+                      labels: updatedLabels,
+                      label: undefined,
+                    }
+                  : plan
+              ),
+            }
+          : previous
+      );
+
+      alert("Plan labels updated successfully.");
+
+      return true;
+    } catch (labelError: any) {
+      console.error("Plan label update error:", labelError);
+
+      alert(
+        labelError?.response?.data?.message ||
+          "Failed to update plan labels."
+      );
+
+      setPlanLabelSelections((previous) => ({
+        ...previous,
+        [planId]: getLabelIds(
+          originalPlan?.labels ?? originalPlan?.label
+        ),
+      }));
+
+      return false;
+    } finally {
+      setSavingPlanLabel(null);
+    }
+  };
+
+  const handleSavePlanLabels = async () => {
+    if (!activePlanLabelId) return;
+
+    const success = await handlePlanLabelUpdate(activePlanLabelId);
+
+    if (success) {
+      setPlanLabelModalOpen(false);
+      setActivePlanLabelId(null);
+    }
+  };
+
+  useEffect(() => {
+    loadActiveLabels();
+  }, []);
 
   /* ===================== STATUS MODAL ===================== */
 
@@ -217,14 +597,10 @@ const OrderDetails: React.FC = () => {
     useState(false);
 
   const [selectedOrderStatus, setSelectedOrderStatus] = useState("");
-
   const [selectedDomainStatus, setSelectedDomainStatus] = useState("");
 
   const [selectedPrimaryPlanStatuses, setSelectedPrimaryPlanStatuses] =
     useState<Record<string, string>>({});
-
-  // const [selectedSecondaryPlanStatuses, setSelectedSecondaryPlanStatuses] =
-  //   useState<Record<string, string>>({});
 
   const [statusUpdating, setStatusUpdating] = useState(false);
 
@@ -254,8 +630,8 @@ const OrderDetails: React.FC = () => {
         message: "Copied",
         success: true,
       });
-    } catch (error) {
-      console.error("Copy failed:", error);
+    } catch (copyError) {
+      console.error("Copy failed:", copyError);
 
       setCopyFeedback({
         key,
@@ -314,21 +690,13 @@ const OrderDetails: React.FC = () => {
     newLicenseTotal <= 300 &&
     licenseDelta !== 0;
 
-  /* OPEN LICENCE MODAL */
-
   const openLicenseModal = (plan: Plan) => {
     setSelectedLicensePlanId(plan._id);
-
     setNewLicenseTotalInput(String(plan.noOfUsers ?? 0));
-
     setPurchaseOrderNumber("");
-
     setLicenseConfirmModalOpen(false);
-
     setLicenseModalOpen(true);
   };
-
-  /* INCREASE / DECREASE LICENCE COUNT */
 
   const changeLicenseTotal = (change: number) => {
     setNewLicenseTotalInput((prev) => {
@@ -338,16 +706,11 @@ const OrderDetails: React.FC = () => {
         ? current
         : currentLicenseCount;
 
-      const next = Math.min(
-        300,
-        Math.max(1, safeCurrent + change)
-      );
+      const next = Math.min(300, Math.max(1, safeCurrent + change));
 
       return String(next);
     });
   };
-
-  /* CONTINUE TO CONFIRMATION */
 
   const handleContinueLicenses = () => {
     if (!selectedLicensePlan) {
@@ -356,18 +719,13 @@ const OrderDetails: React.FC = () => {
     }
 
     if (!isLicenseTotalValid) {
-      alert(
-        "Please change the licence total between 1 and 300."
-      );
+      alert("Please change the licence total between 1 and 300.");
       return;
     }
 
     setLicenseModalOpen(false);
-
     setLicenseConfirmModalOpen(true);
   };
-
-  /* CONFIRM LICENCE UPDATE */
 
   const handleConfirmLicenses = async () => {
     if (!selectedLicensePlan) {
@@ -376,14 +734,9 @@ const OrderDetails: React.FC = () => {
     }
 
     if (!isLicenseTotalValid) {
-      alert(
-        "Please select a valid licence total between 1 and 300."
-      );
-
+      alert("Please select a valid licence total between 1 and 300.");
       setLicenseConfirmModalOpen(false);
-
       setLicenseModalOpen(true);
-
       return;
     }
 
@@ -411,8 +764,7 @@ const OrderDetails: React.FC = () => {
         );
       }
 
-      const updatedUsers =
-        result.data?.noOfUsers ?? newLicenseTotal;
+      const updatedUsers = result.data?.noOfUsers ?? newLicenseTotal;
 
       setOrder((prev) =>
         prev
@@ -431,16 +783,15 @@ const OrderDetails: React.FC = () => {
       );
 
       setLicenseConfirmModalOpen(false);
-
       setLicenseModalOpen(false);
 
       alert("Licences updated successfully.");
-    } catch (error) {
-      console.error("Licence update error:", error);
+    } catch (licenseError) {
+      console.error("Licence update error:", licenseError);
 
       alert(
-        error instanceof Error
-          ? error.message
+        licenseError instanceof Error
+          ? licenseError.message
           : "Failed to update licences."
       );
     } finally {
@@ -448,42 +799,331 @@ const OrderDetails: React.FC = () => {
     }
   };
 
+  /* ===================== RENEWAL STATES ===================== */
+
+  const [renewOrder, setRenewOrder] = useState<Order | null>(null);
+
+  const [renewDates, setRenewDates] = useState<Record<string, string>>({});
+
+  const [renewalDurations, setRenewalDurations] =
+    useState<Record<string, RenewalDuration>>({});
+
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+
+  const [renewStep, setRenewStep] = useState<RenewStep>("dates");
+
+  const [renewUpdating, setRenewUpdating] = useState(false);
+
+  const [renewError, setRenewError] = useState("");
+
+  const [renewSuccess, setRenewSuccess] = useState("");
+
+  /* ===================== GET RENEWAL ITEMS ===================== */
+
+  const getRenewalItems = (currentOrder: Order): RenewalItem[] => {
+    const items: RenewalItem[] = [];
+
+    if (currentOrder.domainSource?._id && currentOrder.expiryDate) {
+      items.push({
+        key: "domain",
+        target: "domain",
+        label: `Domain — ${currentOrder.domainName}`,
+        currentExpiry: currentOrder.expiryDate,
+        durationMonths: 12,
+      });
+    }
+
+    (currentOrder.plans || []).forEach((plan) => {
+      if (!plan._id || !plan.expiryDate) return;
+
+      const monthlyLocked = plan.monthly_renewlaed === true;
+
+      items.push({
+        key: `plan-${plan._id}`,
+        target: "plan",
+        planId: plan._id,
+        label: `${(plan.type || "Plan").toUpperCase()} Plan`,
+        currentExpiry: plan.expiryDate,
+        durationMonths: monthlyLocked ? 1 : 12,
+        monthlyLocked,
+      });
+    });
+
+    return items;
+  };
+
+  /* ===================== OPEN RENEW POPUP ===================== */
+
+  const openRenewModal = () => {
+    if (!order) return;
+
+    const items = getRenewalItems(order);
+
+    if (!items.length) {
+      alert("No renewable domain or service plan was found.");
+      return;
+    }
+
+    const dates: Record<string, string> = {};
+    const durations: Record<string, RenewalDuration> = {};
+
+    items.forEach((item) => {
+      durations[item.key] = item.durationMonths;
+
+      dates[item.key] = calculateNewExpiry(
+        item.currentExpiry,
+        item.durationMonths
+      );
+    });
+
+    setRenewOrder(order);
+    setRenewDates(dates);
+    setRenewalDurations(durations);
+    setSelectedItems(items.map((item) => item.key));
+
+    setRenewStep("dates");
+    setRenewError("");
+    setRenewSuccess("");
+  };
+
+  /* ===================== CLOSE RENEW POPUP ===================== */
+
+  const closeRenewModal = () => {
+    if (renewUpdating) return;
+
+    setRenewOrder(null);
+    setRenewDates({});
+    setRenewalDurations({});
+    setSelectedItems([]);
+    setRenewStep("dates");
+    setRenewError("");
+  };
+
+  /* ===================== RENEWAL ITEM DATA ===================== */
+
+  const renewalItems = renewOrder
+    ? getRenewalItems(renewOrder)
+    : [];
+
+  const itemsWithSelectedDuration = renewalItems.map((item) => ({
+    ...item,
+    durationMonths:
+      renewalDurations[item.key] ?? item.durationMonths,
+  }));
+
+  const selectedRenewalItems = itemsWithSelectedDuration.filter((item) =>
+    selectedItems.includes(item.key)
+  );
+
+  /* ===================== TOGGLE RENEWAL ITEM ===================== */
+
+  const toggleRenewalItem = (key: string, checked: boolean) => {
+    setSelectedItems((previous) =>
+      checked
+        ? [...previous, key]
+        : previous.filter((item) => item !== key)
+    );
+
+    setRenewError("");
+  };
+
+  /* ===================== CHANGE RENEWAL DURATION ===================== */
+
+  const handleDurationChange = (
+    item: RenewalItem,
+    duration: RenewalDuration
+  ) => {
+    if (item.monthlyLocked) return;
+
+    setRenewalDurations((previous) => ({
+      ...previous,
+      [item.key]: duration,
+    }));
+
+    setRenewDates((previous) => ({
+      ...previous,
+      [item.key]: calculateNewExpiry(
+        item.currentExpiry,
+        duration
+      ),
+    }));
+
+    setRenewError("");
+  };
+
+  /* ===================== CHANGE RENEWAL DATE ===================== */
+
+  const changeRenewalDate = (key: string, date: string) => {
+    setRenewDates((previous) => ({
+      ...previous,
+      [key]: date,
+    }));
+
+    setRenewError("");
+  };
+
+  /* ===================== CONTINUE RENEWAL ===================== */
+
+  const handleContinueRenewal = () => {
+    if (!selectedRenewalItems.length) {
+      setRenewError("Select at least one service to renew.");
+      return;
+    }
+
+    for (const item of selectedRenewalItems) {
+      const selectedDate = renewDates[item.key];
+
+      if (
+        !selectedDate ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(selectedDate)
+      ) {
+        setRenewError(
+          `Select a valid expiry date for ${item.label}.`
+        );
+        return;
+      }
+
+      const [year, month, day] = selectedDate.split("-").map(Number);
+
+      const parsed = new Date(year, month - 1, day);
+
+      if (
+        parsed.getFullYear() !== year ||
+        parsed.getMonth() !== month - 1 ||
+        parsed.getDate() !== day
+      ) {
+        setRenewError(
+          `Select a valid expiry date for ${item.label}.`
+        );
+        return;
+      }
+
+      const minimumDate = toDateInputValue(new Date());
+
+      if (selectedDate < minimumDate) {
+        setRenewError(
+          `The new expiry date for ${item.label} cannot be in the past.`
+        );
+        return;
+      }
+
+      if (item.monthlyLocked && item.durationMonths !== 1) {
+        setRenewError(
+          `${item.label} is configured for monthly renewal only.`
+        );
+        return;
+      }
+    }
+
+    setRenewError("");
+    setRenewStep("confirm");
+  };
+
+  /* ===================== CONFIRM RENEWAL ===================== */
+
+  const handleConfirmRenewal = async () => {
+    if (!renewOrder || !selectedRenewalItems.length) {
+      setRenewError("Select at least one service to renew.");
+      return;
+    }
+
+    try {
+      setRenewUpdating(true);
+      setRenewError("");
+
+      const token = localStorage.getItem("token");
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/orders/${renewOrder._id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            renewals: selectedRenewalItems.map((item) => ({
+              target: item.target,
+              ...(item.target === "plan"
+                ? { planId: item.planId }
+                : {}),
+              durationMonths: item.durationMonths,
+              expiryDate: renewDates[item.key],
+            })),
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "Renewal failed.");
+      }
+
+      setOrder((previous) => {
+        if (!previous) return previous;
+
+        const updatedOrder: Order = {
+          ...previous,
+          plans: [...(previous.plans || [])],
+        };
+
+        selectedRenewalItems.forEach((item) => {
+          if (item.target === "domain") {
+            updatedOrder.expiryDate = renewDates[item.key];
+          }
+
+          if (item.target === "plan" && item.planId) {
+            updatedOrder.plans = updatedOrder.plans?.map((plan) =>
+              plan._id === item.planId
+                ? {
+                    ...plan,
+                    expiryDate: renewDates[item.key],
+                  }
+                : plan
+            );
+          }
+        });
+
+        return updatedOrder;
+      });
+
+      setRenewSuccess("Renewal completed successfully.");
+
+      setRenewOrder(null);
+      setRenewDates({});
+      setRenewalDurations({});
+      setSelectedItems([]);
+      setRenewStep("dates");
+    } catch (renewError) {
+      console.error("Renewal error:", renewError);
+
+      setRenewError(
+        renewError instanceof Error
+          ? renewError.message
+          : "Failed to renew selected services."
+      );
+    } finally {
+      setRenewUpdating(false);
+    }
+  };
+
   /* ===================== OPEN STATUS MODAL ===================== */
 
   const openStatusModal = () => {
-    setSelectedOrderStatus(
-      order?.order_status?._id || ""
-    );
-
-    setSelectedDomainStatus(
-      order?.domain_status?._id || ""
-    );
+    setSelectedOrderStatus(order?.order_status?._id || "");
+    setSelectedDomainStatus(order?.domain_status?._id || "");
 
     const primary: Record<string, string> = {};
 
+    (order?.plans || []).forEach((plan) => {
+      primary[plan._id] = plan.primary_status?._id || "";
+    });
 
-(order?.plans || []).forEach((plan) => {
-  primary[plan._id] = plan.primary_status?._id || "";
-});
-
-setSelectedPrimaryPlanStatuses(primary);
-
-    // const secondary: Record<string, string> = {};
-
-    // (order?.plans || []).forEach((plan) => {
-    //   primary[plan._id] = plan.primary_status?._id || "";
-
-    //   secondary[plan._id] = plan.secondary_status?._id || "";
-    // });
-
-    // setSelectedPrimaryPlanStatuses(primary);
-
-    // setSelectedSecondaryPlanStatuses(secondary);
+    setSelectedPrimaryPlanStatuses(primary);
 
     setUpdateOrderStatusChecked(false);
-
     setUpdateDomainStatusChecked(false);
-
     setUpdatePlanStatusChecked(false);
 
     setStatusModalOpen(true);
@@ -506,117 +1146,79 @@ setSelectedPrimaryPlanStatuses(primary);
     try {
       setStatusUpdating(true);
 
-      /* ORDER STATUS */
-
       if (
         updateOrderStatusChecked &&
         selectedOrderStatus &&
         selectedOrderStatus !== order.order_status?._id
       ) {
-        const updatedOrder = await updateOrderStatus(
-          order._id,
-          {
-            order_status: selectedOrderStatus,
-          }
-        );
+        const updatedOrder = await updateOrderStatus(order._id, {
+          order_status: selectedOrderStatus,
+        });
 
-        setOrder((prev) =>
-          prev
+        setOrder((previous) =>
+          previous
             ? {
-                ...prev,
+                ...previous,
                 order_status: updatedOrder.order_status,
               }
-            : prev
+            : previous
         );
       }
-
-      /* DOMAIN STATUS */
 
       if (
         updateDomainStatusChecked &&
         selectedDomainStatus &&
         selectedDomainStatus !== order.domain_status?._id
       ) {
-        const updatedOrder = await updateOrderStatus(
-          order._id,
-          {
-            domain_status: selectedDomainStatus,
-          }
-        );
+        const updatedOrder = await updateOrderStatus(order._id, {
+          domain_status: selectedDomainStatus,
+        });
 
-        setOrder((prev) =>
-          prev
+        setOrder((previous) =>
+          previous
             ? {
-                ...prev,
+                ...previous,
                 domain_status: updatedOrder.domain_status,
               }
-            : prev
+            : previous
         );
       }
 
-      /* PLAN STATUS */
-
       if (updatePlanStatusChecked) {
         for (const plan of order.plans || []) {
-          /*
-           * Only email plans are allowed
-           * to be updated from this popup.
-           */
-
-          if (!plan.emailType) {
-            continue;
-          }
+          if (!plan.emailType) continue;
 
           const primaryStatus =
             selectedPrimaryPlanStatuses[plan._id] || "";
 
-          // const secondaryStatus =
-          //   selectedSecondaryPlanStatuses[plan._id] || "";
-
           const primaryChanged =
-            primaryStatus !==
-            (plan.primary_status?._id || "");
+            primaryStatus !== (plan.primary_status?._id || "");
 
-          // const secondaryChanged =
-          //   secondaryStatus !==
-          //   (plan.secondary_status?._id || "");
+          if (!primaryChanged) continue;
 
-          if (!primaryChanged) {
-            continue;
-          }
-
-          const payload: {
-            primary_status?: string;
-            // secondary_status?: string | null;
-          } = {};
+          const payload: { primary_status?: string } = {};
 
           if (primaryChanged && primaryStatus) {
             payload.primary_status = primaryStatus;
           }
-
-          // if (secondaryChanged) {
-          //   payload.secondary_status = secondaryStatus || null;
-          // }
 
           const updatedPlan = await updatePlanStatus(
             plan._id,
             payload
           );
 
-          setOrder((prev) => {
-            if (!prev) return prev;
+          setOrder((previous) => {
+            if (!previous) return previous;
 
             return {
-              ...prev,
-
-              plans: prev.plans?.map((p) =>
-                p._id === plan._id
+              ...previous,
+              plans: previous.plans?.map((currentPlan) =>
+                currentPlan._id === plan._id
                   ? {
-                      ...p,
+                      ...currentPlan,
                       primary_status: updatedPlan.primary_status,
-                      // secondary_status: updatedPlan.secondary_status,
                     }
-                  : p
+                  : currentPlan
               ),
             };
           });
@@ -624,11 +1226,9 @@ setSelectedPrimaryPlanStatuses(primary);
       }
 
       setStatusModalOpen(false);
-
       alert("Status updated successfully");
-    } catch (error) {
-      console.error("Status update error:", error);
-
+    } catch (statusError) {
+      console.error("Status update error:", statusError);
       alert("Failed to update status");
     } finally {
       setStatusUpdating(false);
@@ -643,14 +1243,9 @@ setSelectedPrimaryPlanStatuses(primary);
     const loadOrderDetails = async () => {
       try {
         setLoading(true);
-
         setError(null);
 
-        /* FETCH ORDER */
-
         const data = await fetchOrderById(orderId);
-
-        /* MAP CUSTOMER / CLIENT */
 
         const mapPerson = (source: any) =>
           source
@@ -668,71 +1263,52 @@ setSelectedPrimaryPlanStatuses(primary);
 
         const mappedOrder: Order = {
           ...data,
-
           domainSource: data.domainSource || null,
-
           customer: mapPerson(data.customer),
-
           client: mapPerson(data.client),
         };
 
         setOrder(mappedOrder);
 
-        /* ORDER STATUS */
+        const planSelections: Record<string, string[]> = {};
 
-        const orderStatusData =
-          await fetchOrderStatuses(orderId);
+        (mappedOrder.plans || []).forEach((plan) => {
+          planSelections[plan._id] = getLabelIds(
+            plan.labels ?? plan.label
+          );
+        });
+
+        setPlanLabelSelections(planSelections);
+
+        setSelectedOrderLabels(
+          getLabelIds(mappedOrder.labels ?? mappedOrder.label)
+        );
+
+        const orderStatusData = await fetchOrderStatuses(orderId);
 
         setStatuses(
-          Array.isArray(orderStatusData)
-            ? orderStatusData
-            : []
+          Array.isArray(orderStatusData) ? orderStatusData : []
         );
 
-        /* DOMAIN STATUS */
-
-        const domainStatusData =
-          await fetchDomainStatuses(orderId);
+        const domainStatusData = await fetchDomainStatuses(orderId);
 
         setDomainStatuses(
-          Array.isArray(domainStatusData)
-            ? domainStatusData
-            : []
+          Array.isArray(domainStatusData) ? domainStatusData : []
         );
 
-        /* PLAN STATUSES */
-
-        const primaryStatuses =
-          await fetchPrimaryPlanStatuses();
-
-        // const secondaryStatuses =
-        //   await fetchSecondaryPlanStatuses();
+        const primaryStatuses = await fetchPrimaryPlanStatuses();
 
         const primaryStatusMap: Record<string, Status[]> = {};
 
-        const secondaryStatusMap: Record<string, Status[]> = {};
-
         for (const plan of mappedOrder.plans || []) {
-          primaryStatusMap[plan._id] =
-            Array.isArray(primaryStatuses)
-              ? primaryStatuses
-              : [];
-
-          // secondaryStatusMap[plan._id] =
-          //   Array.isArray(secondaryStatuses)
-          //     ? secondaryStatuses
-          //     : [];
+          primaryStatusMap[plan._id] = Array.isArray(primaryStatuses)
+            ? primaryStatuses
+            : [];
         }
 
         setPrimaryPlanStatuses(primaryStatusMap);
-
-        // setSecondaryPlanStatuses(secondaryStatusMap);
-      } catch (error) {
-        console.error(
-          "Failed to load order details:",
-          error
-        );
-
+      } catch (loadError) {
+        console.error("Failed to load order details:", loadError);
         setError("Failed to load order details");
       } finally {
         setLoading(false);
@@ -749,15 +1325,10 @@ setSelectedPrimaryPlanStatuses(primary);
     children: React.ReactNode;
     fullWidth?: boolean;
     rightContent?: React.ReactNode;
-  }> = ({
-    title,
-    children,
-    fullWidth,
-    rightContent,
-  }) => (
+  }> = ({ title, children, fullWidth, rightContent }) => (
     <section className="mb-6">
-      <div className="flex items-center justify-between mb-3 border-b pb-2">
-        <h2 className="text-lg font-semibold">
+      <div className="mb-3 flex items-center justify-between border-b border-gray-200 pb-2">
+        <h2 className="text-sm font-semibold text-gray-900">
           {title}
         </h2>
 
@@ -768,7 +1339,7 @@ setSelectedPrimaryPlanStatuses(primary);
         className={
           fullWidth
             ? ""
-            : "grid grid-cols-1 md:grid-cols-2 gap-4"
+            : "grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-2"
         }
       >
         {children}
@@ -779,101 +1350,128 @@ setSelectedPrimaryPlanStatuses(primary);
   /* ===================== LOADING ===================== */
 
   if (loading) {
-    return (
-      <p className="p-6">
-        Loading order details…
-      </p>
-    );
+    return <p className="p-6">Loading order details...</p>;
   }
 
   /* ===================== ERROR ===================== */
 
   if (error) {
-    return (
-      <p className="p-6 text-red-600">
-        {error}
-      </p>
-    );
+    return <p className="p-6 text-red-600">{error}</p>;
   }
 
   /* ===================== NO ORDER ===================== */
 
   if (!order) {
-    return (
-      <p className="p-6">
-        Order not found
-      </p>
-    );
+    return <p className="p-6">Order not found</p>;
   }
 
   /* ===================== DATE FORMAT ===================== */
 
-  const formatDate = (date?: string) =>
-    date
-      ? new Date(date)
-          .toLocaleDateString("en-GB", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          })
-          .replaceAll(" ", "-")
-      : "-";
+  const formatDate = (date?: string | null) => {
+    if (!date) return "-";
+
+    const parsed = new Date(date);
+
+    if (Number.isNaN(parsed.getTime())) return "-";
+
+    return parsed
+      .toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
+      .replaceAll(" ", "-");
+  };
 
   /* ===================== RETURN ===================== */
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-6xl mx-auto bg-white rounded-xl shadow p-6 space-y-8">
+    <div className="min-h-screen bg-gray-50 p-3 md:p-5">
+      <div className="mx-auto max-w-7xl space-y-6 rounded-xl bg-white p-5 shadow-sm md:p-6">
 
-        {/* HEADER */}
+        {/* ===================== HEADER ===================== */}
 
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-800">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="break-all text-lg font-semibold text-gray-900 md:text-xl">
               Order – {order.domainName}
             </h1>
 
             <button
               type="button"
-              onClick={openStatusModal}
-              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium"
+              onClick={() => navigate(-1)}
+              className="flex shrink-0 items-center gap-2 rounded bg-gray-200 px-4 py-2 text-sm text-gray-700 hover:bg-gray-300"
             >
-              <FaEdit />
-              Status Update
+              <FaArrowLeft />
+              Back
             </button>
           </div>
 
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
-          >
-            <FaArrowLeft />
-            Back
-          </button>
+          <div className="flex flex-wrap justify-end gap-2">
+            <button
+              type="button"
+              onClick={openStatusModal}
+              className="flex items-center gap-2 rounded bg-green-600 px-3 py-2 text-xs font-medium text-white hover:bg-green-700 md:text-sm"
+            >
+              <FaRedo />
+              Status
+            </button>
+
+            <button
+              type="button"
+              onClick={openLabelModal}
+              className="flex items-center gap-2 rounded bg-green-600 px-3 py-2 text-xs font-medium text-white hover:bg-green-700 md:text-sm"
+            >
+              <FaRedo />
+              Label
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                navigate(`/admin/orders/update/${order._id}`)
+              }
+              className="flex items-center gap-2 rounded bg-yellow-500 px-3 py-2 text-xs font-medium text-white hover:bg-yellow-600 md:text-sm"
+            >
+              <FaEdit />
+              Edit
+            </button>
+
+            <button
+              type="button"
+              onClick={openRenewModal}
+              className="flex items-center gap-2 rounded bg-green-600 px-3 py-2 text-xs font-medium text-white hover:bg-green-700 md:text-sm"
+            >
+              <FaRedo />
+              Renew
+            </button>
+          </div>
         </div>
 
-        {/* DOMAIN INFORMATION */}
+        {/* ===================== RENEWAL SUCCESS ===================== */}
 
-        <Section
-          title="Domain Information"
-          rightContent={null}
-        >
-          <Info
-            label="Domain Name"
-            value={order.domainName}
-          />
+        {renewSuccess && (
+          <div className="rounded-lg bg-green-100 p-3 text-green-800">
+            {renewSuccess}
 
-          <Info
-            label="Managed By"
-            value={order.managedBy}
-          />
+            <button
+              type="button"
+              className="ml-3 underline"
+              onClick={() => setRenewSuccess("")}
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
-          {/* REGISTRAR */}
+        {/* ===================== DOMAIN INFORMATION ===================== */}
 
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium">
-              Registrar:
-            </label>
+        <Section title="Domain Information">
+          <Info label="Domain Name" value={order.domainName} />
+          <Info label="Managed By" value={order.managedBy} />
+
+          <div className="min-w-0">
+            <p className="mb-1 text-xs text-gray-500">Registrar</p>
 
             <div className="flex items-center gap-2">
               {order.domainSource?.image && (
@@ -883,12 +1481,12 @@ setSelectedPrimaryPlanStatuses(primary);
                       ? `${API_BASE_URL}${order.domainSource.image}`
                       : `${API_BASE_URL}/${order.domainSource.image}`
                   }
-                  className="w-6 h-6 object-contain"
+                  className="h-6 w-6 object-contain"
                   alt={order.domainSource.name}
                 />
               )}
 
-              <span className="text-sm text-gray-700">
+              <span className="text-sm font-medium text-gray-900">
                 {order.domainSource?.name || "-"}
               </span>
             </div>
@@ -904,170 +1502,79 @@ setSelectedPrimaryPlanStatuses(primary);
             value={formatDate(order.expiryDate)}
           />
 
-          <Info
-            label="Lock Status"
-            value={order.lockStatus}
-          />
+          <Info label="Lock Status" value={order.lockStatus} />
+          <Info label="Name Servers" value={order.nameServers} />
 
           <Info
-            label="Name Servers"
-            value={order.nameServers}
+            label="Order Labels"
+            value={getLabelNames(
+              order.labels ?? order.label,
+              orderLabels
+            )}
           />
         </Section>
 
-        {/* CUSTOMER */}
-
-        {order.customer && (
-          <Section title="Customer Details">
-            {order.customer.name && (
-              <Info
-                label="Name"
-                value={order.customer.name}
-              />
-            )}
-
-            {order.customer.company && (
-              <Info
-                label="Company"
-                value={order.customer.company}
-              />
-            )}
-
-            {order.customer.email && (
-              <Info
-                label="Email"
-                value={order.customer.email}
-              />
-            )}
-
-            {order.customer.phone && (
-              <Info
-                label="Phone"
-                value={order.customer.phone}
-              />
-            )}
-
-            {order.customer.address && (
-              <Info
-                label="Address"
-                value={order.customer.address}
-              />
-            )}
-
-            {order.customer.city && (
-              <Info
-                label="City"
-                value={order.customer.city}
-              />
-            )}
-
-            {order.customer.state && (
-              <Info
-                label="State"
-                value={order.customer.state}
-              />
-            )}
-
-            {order.customer.country && (
-              <Info
-                label="Country"
-                value={order.customer.country}
-              />
-            )}
-          </Section>
-        )}
-
-        {/* CLIENT */}
+        {/* ===================== CLIENT DETAILS ===================== */}
 
         {order.client && (
           <Section title="Client Details">
-            <Info
-              label="Name"
-              value={order.client.name}
-            />
-
-            <Info
-              label="Company"
-              value={order.client.company}
-            />
-
-            <Info
-              label="Email"
-              value={order.client.email}
-            />
-
-            <Info
-              label="Phone"
-              value={order.client.phone}
-            />
-
-            <Info
-              label="Address"
-              value={order.client.address}
-            />
-
-            <Info
-              label="City"
-              value={order.client.city}
-            />
-
-            <Info
-              label="State"
-              value={order.client.state}
-            />
-
-            <Info
-              label="Country"
-              value={order.client.country}
-            />
+            <Info label="Name" value={order.client.name} />
+            <Info label="Company" value={order.client.company} />
+            <Info label="Email" value={order.client.email} />
+            <Info label="Phone" value={order.client.phone} />
+            <Info label="Address" value={order.client.address} />
+            <Info label="City" value={order.client.city} />
+            <Info label="State" value={order.client.state} />
+            <Info label="Country" value={order.client.country} />
           </Section>
         )}
 
-        {/* PLANS */}
+        {/* ===================== PLANS & SERVICES ===================== */}
 
         {order.plans && order.plans.length > 0 && (
-          <Section
-            title="Plans & Services"
-            fullWidth
-          >
+          <Section title="Plans & Services" fullWidth>
             <div className="overflow-x-auto">
-              <table className="w-full border border-gray-300">
+              <table className="w-full min-w-[1100px] border-collapse border border-gray-200 text-xs">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="border px-2 py-1">
+                    <th className="border border-gray-200 px-2 py-3">
                       Email Type
                     </th>
 
-                    <th className="border px-2 py-1">
+                    <th className="border border-gray-200 px-2 py-3">
                       Plan Name
                     </th>
 
-                    <th className="border px-2 py-1">
+                    <th className="border border-gray-200 px-2 py-3">
                       Type
                     </th>
 
-                    <th className="border px-2 py-1">
+                    <th className="border border-gray-200 px-2 py-3">
                       Users
                     </th>
 
-                    <th className="border px-2 py-1">
+                    <th className="border border-gray-200 px-2 py-3">
                       Admin Email
                     </th>
 
-                    <th className="border px-2 py-1">
+                    <th className="border border-gray-200 px-2 py-3">
                       Admin Password
                     </th>
 
-                    <th className="border px-2 py-1">
+                    <th className="border border-gray-200 px-2 py-3">
                       Reg Date
                     </th>
 
-                    <th className="border px-2 py-1">
+                    <th className="border border-gray-200 px-2 py-3">
                       Exp Date
                     </th>
 
-                    <th className="border px-2 py-1">
+                    <th className="border border-gray-200 px-2 py-3">
                       Status
+                    </th>
+
+                    <th className="border border-gray-200 px-2 py-3">
+                      Labels
                     </th>
                   </tr>
                 </thead>
@@ -1075,25 +1582,21 @@ setSelectedPrimaryPlanStatuses(primary);
                 <tbody>
                   {order.plans.map((plan) => (
                     <tr key={plan._id}>
-                      <td className="border px-2 py-1">
+                      <td className="border border-gray-200 px-2 py-2">
                         {plan.emailType || "-"}
                       </td>
 
-                      <td className="border px-2 py-1">
+                      <td className="border border-gray-200 px-2 py-2">
                         {plan.planName}
                       </td>
 
-                      <td className="border px-2 py-1">
+                      <td className="border border-gray-200 px-2 py-2">
                         {plan.type}
                       </td>
 
-                      {/* USERS / LICENCES */}
-
-                      <td className="border px-2 py-1">
+                      <td className="border border-gray-200 px-2 py-2">
                         <div className="flex items-center justify-center gap-2">
-                          <span>
-                            {plan.noOfUsers ?? 0}
-                          </span>
+                          <span>{plan.noOfUsers ?? 0}</span>
 
                           {plan.noOfUsers !== undefined &&
                             plan.noOfUsers !== null && (
@@ -1101,9 +1604,7 @@ setSelectedPrimaryPlanStatuses(primary);
                                 type="button"
                                 title="Manage licences"
                                 aria-label="Manage licences"
-                                onClick={() =>
-                                  openLicenseModal(plan)
-                                }
+                                onClick={() => openLicenseModal(plan)}
                                 className="text-blue-600 hover:text-blue-800"
                               >
                                 <FaEdit size={14} />
@@ -1112,9 +1613,7 @@ setSelectedPrimaryPlanStatuses(primary);
                         </div>
                       </td>
 
-                      {/* ADMIN EMAIL WITH COPY BUTTON */}
-
-                      <td className="border px-2 py-1">
+                      <td className="border border-gray-200 px-2 py-2">
                         <div className="flex items-center gap-2">
                           <span className="break-all">
                             {plan.adminEmail || "-"}
@@ -1142,7 +1641,7 @@ setSelectedPrimaryPlanStatuses(primary);
                                 `${plan._id}-Admin Email` && (
                                 <span
                                   role="status"
-                                  className={`absolute left-full bottom-full z-50 ml-1 mb-1 whitespace-nowrap rounded px-2 py-1 text-xs font-medium shadow-md ${
+                                  className={`absolute bottom-full left-full z-50 mb-1 ml-1 whitespace-nowrap rounded px-2 py-1 text-xs font-medium shadow-md ${
                                     copyFeedback.success
                                       ? "bg-green-600 text-white"
                                       : "bg-red-600 text-white"
@@ -1156,14 +1655,10 @@ setSelectedPrimaryPlanStatuses(primary);
                         </div>
                       </td>
 
-                      {/* ADMIN PASSWORD WITH COPY BUTTON */}
-
-                      <td className="border px-2 py-1">
+                      <td className="border border-gray-200 px-2 py-2">
                         <div className="flex items-center gap-2">
                           <span>
-                            {plan.adminPassword
-                              ? "••••••••"
-                              : "-"}
+                            {plan.adminPassword ? "••••••••" : "-"}
                           </span>
 
                           {plan.adminPassword && (
@@ -1188,7 +1683,7 @@ setSelectedPrimaryPlanStatuses(primary);
                                 `${plan._id}-Admin Password` && (
                                 <span
                                   role="status"
-                                  className={`absolute left-full bottom-full z-50 ml-1 mb-1 whitespace-nowrap rounded px-2 py-1 text-xs font-medium shadow-md ${
+                                  className={`absolute bottom-full left-full z-50 mb-1 ml-1 whitespace-nowrap rounded px-2 py-1 text-xs font-medium shadow-md ${
                                     copyFeedback.success
                                       ? "bg-green-600 text-white"
                                       : "bg-red-600 text-white"
@@ -1202,25 +1697,58 @@ setSelectedPrimaryPlanStatuses(primary);
                         </div>
                       </td>
 
-                      <td className="border px-2 py-1">
+                      <td className="border border-gray-200 px-2 py-2">
                         {formatDate(plan.registrationDate)}
                       </td>
 
-                      <td className="border px-2 py-1">
+                      <td className="border border-gray-200 px-2 py-2">
                         {formatDate(plan.expiryDate)}
                       </td>
 
-                      <td className="border px-2 py-1">
+                      <td className="border border-gray-200 px-2 py-2">
                         <div className="flex flex-col gap-1">
-                          <span className="text-sm font-medium text-gray-700">
-                            Primary:{" "}
-                            {plan.primary_status?.name || "-"}
+                          <span className="text-xs font-medium text-gray-700">
+                            Primary: {plan.primary_status?.name || "-"}
                           </span>
+                        </div>
+                      </td>
 
-                          {/* <span className="text-sm text-gray-600">
-                            Secondary:{" "}
-                            {plan.secondary_status?.name || "-"}
-                          </span> */}
+                      {/* PLAN LABEL BUTTON ONLY */}
+
+                      <td className="border border-gray-200 px-2 py-2">
+                        <div className="flex min-w-[150px] flex-col items-start gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openPlanLabelModal(plan)}
+                            className="rounded bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700"
+                          >
+                            Manage Labels
+                          </button>
+
+                          <div className="flex flex-wrap gap-1">
+                            {getLabelNames(
+                              plan.labels ?? plan.label,
+                              planLabels
+                            ) !== "-" ? (
+                              getLabelNames(
+                                plan.labels ?? plan.label,
+                                planLabels
+                              )
+                                .split(", ")
+                                .map((name, index) => (
+                                  <span
+                                    key={`${plan._id}-${index}`}
+                                    className="rounded-full bg-blue-100 px-2 py-1 text-[10px] font-medium text-blue-700"
+                                  >
+                                    {name}
+                                  </span>
+                                ))
+                            ) : (
+                              <span className="text-[11px] text-gray-400">
+                                No labels assigned
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </td>
                     </tr>
@@ -1231,14 +1759,473 @@ setSelectedPrimaryPlanStatuses(primary);
           </Section>
         )}
 
+        {/* ===================== ORDER LABEL MODAL ===================== */}
+
+        {labelModalOpen && (
+          <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 p-4">
+            <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+              <div className="mb-5 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Update Order Labels
+                </h2>
+
+                <button
+                  type="button"
+                  onClick={() => setLabelModalOpen(false)}
+                  disabled={labelUpdating}
+                  className="text-gray-500 hover:text-gray-800"
+                >
+                  <FaTimes />
+                </button>
+              </div>
+
+              <p className="mb-3 text-sm text-gray-600">
+                Select one or more labels for this order.
+              </p>
+
+              <div className="max-h-64 space-y-3 overflow-y-auto rounded-lg border border-gray-200 p-3">
+                {labelLoading ? (
+                  <p className="text-sm text-gray-500">
+                    Loading labels...
+                  </p>
+                ) : orderLabels.length === 0 ? (
+                  <p className="text-sm text-orange-600">
+                    No active order labels available.
+                  </p>
+                ) : (
+                  orderLabels.map((label) => (
+                    <label
+                      key={label._id}
+                      className="flex cursor-pointer items-center gap-3 rounded-md p-2 hover:bg-gray-50"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedOrderLabels.includes(label._id)}
+                        onChange={(event) =>
+                          handleOrderLabelSelection(
+                            label._id,
+                            event.target.checked
+                          )
+                        }
+                        disabled={labelUpdating || labelLoading}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+
+                      <span className="text-sm font-medium text-gray-700">
+                        {label.statusLabelName}
+                      </span>
+                    </label>
+                  ))
+                )}
+              </div>
+
+              <p className="mt-2 text-xs text-gray-500">
+                Selected labels: {selectedOrderLabels.length}
+              </p>
+
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setLabelModalOpen(false)}
+                  disabled={labelUpdating}
+                  className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleOrderLabelUpdate}
+                  disabled={labelUpdating || labelLoading}
+                  className="rounded-md bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700 disabled:opacity-50"
+                >
+                  {labelUpdating ? "Saving..." : "Save Labels"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ===================== PLAN LABEL MODAL ===================== */}
+
+        {planLabelModalOpen && activePlanLabelId && (
+          <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/50 p-4">
+            <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+              <div className="mb-5 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Update Plan Labels
+                </h2>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPlanLabelModalOpen(false);
+                    setActivePlanLabelId(null);
+                  }}
+                  disabled={savingPlanLabel === activePlanLabelId}
+                  className="text-gray-500 hover:text-gray-800"
+                >
+                  <FaTimes />
+                </button>
+              </div>
+
+              <p className="mb-3 text-sm text-gray-600">
+                Select one or more labels for this plan.
+              </p>
+
+              <div className="max-h-64 space-y-3 overflow-y-auto rounded-lg border border-gray-200 p-3">
+                {labelLoading ? (
+                  <p className="text-sm text-gray-500">
+                    Loading labels...
+                  </p>
+                ) : planLabels.length === 0 ? (
+                  <p className="text-sm text-orange-600">
+                    No active plan labels available.
+                  </p>
+                ) : (
+                  planLabels.map((label) => (
+                    <label
+                      key={label._id}
+                      className="flex cursor-pointer items-center gap-3 rounded-md p-2 hover:bg-gray-50"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={(
+                          planLabelSelections[activePlanLabelId] || []
+                        ).includes(label._id)}
+                        onChange={(event) =>
+                          handlePlanLabelSelection(
+                            activePlanLabelId,
+                            label._id,
+                            event.target.checked
+                          )
+                        }
+                        disabled={savingPlanLabel === activePlanLabelId}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+
+                      <span className="text-sm font-medium text-gray-700">
+                        {label.statusLabelName}
+                      </span>
+                    </label>
+                  ))
+                )}
+              </div>
+
+              <p className="mt-2 text-xs text-gray-500">
+                Selected labels:{" "}
+                {(planLabelSelections[activePlanLabelId] || []).length}
+              </p>
+
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPlanLabelModalOpen(false);
+                    setActivePlanLabelId(null);
+                  }}
+                  disabled={savingPlanLabel === activePlanLabelId}
+                  className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSavePlanLabels}
+                  disabled={
+                    savingPlanLabel === activePlanLabelId ||
+                    labelLoading
+                  }
+                  className="rounded-md bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700 disabled:opacity-50"
+                >
+                  {savingPlanLabel === activePlanLabelId
+                    ? "Saving..."
+                    : "Save Labels"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ===================== RENEWAL POPUP ===================== */}
+
+        {renewOrder && (
+          <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4">
+            <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
+              <div className="mb-5 flex items-center justify-between">
+                <h2 className="text-xl font-bold">
+                  {renewStep === "dates"
+                    ? "Select Renewal Items"
+                    : "Confirm Renewal"}
+                </h2>
+
+                <button
+                  type="button"
+                  onClick={closeRenewModal}
+                  disabled={renewUpdating}
+                  className="text-2xl text-gray-500"
+                >
+                  ×
+                </button>
+              </div>
+
+              <p className="mb-4 text-sm text-gray-600">
+                Domain: <strong>{renewOrder.domainName}</strong>
+              </p>
+
+              {renewError && (
+                <p className="mb-4 rounded-lg bg-red-100 p-3 text-red-800">
+                  {renewError}
+                </p>
+              )}
+
+              {renewStep === "dates" ? (
+                <>
+                  <p className="mb-4 text-sm text-gray-600">
+                    Select the domain or plans you want to renew.
+                    Yearly is the default for plans unless monthly
+                    renewal is already configured.
+                  </p>
+
+                  <div className="space-y-4">
+                    {itemsWithSelectedDuration.map((item) => {
+                      const checked = selectedItems.includes(item.key);
+                      const duration = item.durationMonths;
+
+                      return (
+                        <div
+                          key={item.key}
+                          className="rounded-lg border p-4"
+                        >
+                          <label className="flex items-center gap-3 font-medium">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={(event) =>
+                                toggleRenewalItem(
+                                  item.key,
+                                  event.target.checked
+                                )
+                              }
+                            />
+
+                            {item.label}
+
+                            <span className="text-xs text-gray-500">
+                              ({duration} month
+                              {duration === 1 ? "" : "s"})
+                            </span>
+                          </label>
+
+                          {item.target === "plan" && (
+                            <div className="mt-4">
+                              <p className="mb-2 text-sm font-medium text-gray-700">
+                                Renewal Type
+                              </p>
+
+                              <div className="flex flex-wrap gap-5">
+                                <label
+                                  className={`flex items-center gap-2 ${
+                                    item.monthlyLocked
+                                      ? "cursor-not-allowed text-gray-400"
+                                      : "cursor-pointer"
+                                  }`}
+                                >
+                                  <input
+                                    type="radio"
+                                    name={`duration-${item.key}`}
+                                    value="12"
+                                    checked={duration === 12}
+                                    disabled={
+                                      item.monthlyLocked || !checked
+                                    }
+                                    onChange={() =>
+                                      handleDurationChange(item, 12)
+                                    }
+                                  />
+
+                                  Yearly (12 months)
+                                </label>
+
+                                <label
+                                  className={`flex items-center gap-2 ${
+                                    !item.monthlyLocked && checked
+                                      ? "cursor-pointer"
+                                      : "cursor-not-allowed text-gray-400"
+                                  }`}
+                                >
+                                  <input
+                                    type="radio"
+                                    name={`duration-${item.key}`}
+                                    value="1"
+                                    checked={duration === 1}
+                                    disabled={
+                                      item.monthlyLocked || !checked
+                                    }
+                                    onChange={() =>
+                                      handleDurationChange(item, 1)
+                                    }
+                                  />
+
+                                  Monthly (1 month)
+                                </label>
+                              </div>
+
+                              {item.monthlyLocked && (
+                                <p className="mt-2 text-xs text-orange-600">
+                                  This plan is configured for monthly
+                                  renewal. The renewal type cannot be changed.
+                                </p>
+                              )}
+                            </div>
+                          )}
+
+                          {item.target === "domain" && (
+                            <p className="mt-2 text-xs text-gray-500">
+                              Domain renewal: Yearly (12 months)
+                            </p>
+                          )}
+
+                          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <div>
+                              <p className="text-sm text-gray-500">
+                                Current expiry
+                              </p>
+
+                              <p>
+                                {displayDate(item.currentExpiry)}
+                              </p>
+                            </div>
+
+                            <div>
+                              <label className="mb-1 block text-sm">
+                                New expiry date
+                              </label>
+
+                              <input
+                                type="date"
+                                disabled={!checked}
+                                min={toDateInputValue(new Date())}
+                                value={renewDates[item.key] || ""}
+                                onChange={(event) =>
+                                  changeRenewalDate(
+                                    item.key,
+                                    event.target.value
+                                  )
+                                }
+                                className="w-full rounded-lg border p-2 disabled:bg-gray-100"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-6 flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={closeRenewModal}
+                      className="rounded-lg border px-4 py-2"
+                    >
+                      Cancel
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={
+                        !selectedRenewalItems.length ||
+                        selectedRenewalItems.some(
+                          (item) => !renewDates[item.key]
+                        )
+                      }
+                      onClick={handleContinueRenewal}
+                      className="rounded-lg bg-green-600 px-4 py-2 text-white disabled:opacity-50"
+                    >
+                      Continue
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="mb-4 text-sm text-gray-600">
+                    Check the selected services, renewal types and expiry
+                    dates before saving.
+                  </p>
+
+                  <div className="space-y-3 rounded-lg border p-4">
+                    {selectedRenewalItems.map((item) => (
+                      <div
+                        key={item.key}
+                        className="flex justify-between gap-4 border-b pb-3 last:border-0"
+                      >
+                        <div>
+                          <p className="font-medium">
+                            {item.label}
+                          </p>
+
+                          <p className="text-sm text-gray-500">
+                            Old: {displayDate(item.currentExpiry)}
+                          </p>
+
+                          <p className="text-sm text-gray-500">
+                            Renewal type:{" "}
+                            {item.target === "domain"
+                              ? "Yearly"
+                              : item.durationMonths === 1
+                                ? "Monthly"
+                                : "Yearly"}
+                          </p>
+
+                          <p className="text-xs text-gray-500">
+                            Duration: {item.durationMonths} month
+                            {item.durationMonths === 1 ? "" : "s"}
+                          </p>
+                        </div>
+
+                        <p className="font-semibold text-green-700">
+                          {displayDate(renewDates[item.key])}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-6 flex justify-end gap-3">
+                    <button
+                      type="button"
+                      disabled={renewUpdating}
+                      onClick={() => {
+                        setRenewError("");
+                        setRenewStep("dates");
+                      }}
+                      className="rounded-lg border px-4 py-2"
+                    >
+                      Back
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={renewUpdating}
+                      onClick={handleConfirmRenewal}
+                      className="rounded-lg bg-green-600 px-4 py-2 text-white disabled:opacity-50"
+                    >
+                      {renewUpdating
+                        ? "Saving..."
+                        : "Confirm Renewal"}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* ===================== MANAGE LICENCES MODAL ===================== */}
 
         {licenseModalOpen && selectedLicensePlan && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-[2px]">
             <div className="w-full max-w-md overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl">
-
-              {/* HEADER */}
-
               <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
                 <div>
                   <div className="flex items-center gap-2">
@@ -1269,12 +2256,7 @@ setSelectedPrimaryPlanStatuses(primary);
                 </button>
               </div>
 
-              {/* CONTENT */}
-
               <div className="space-y-6 px-6 py-6">
-
-                {/* CURRENT LICENCES */}
-
                 <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4">
                   <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                     Current Licences
@@ -1285,17 +2267,12 @@ setSelectedPrimaryPlanStatuses(primary);
                   </p>
                 </div>
 
-                {/* LICENCE COUNTER */}
-
                 <div>
                   <p className="mb-3 text-sm font-semibold text-gray-800">
                     Update Licence Total
                   </p>
 
                   <div className="flex items-center justify-center gap-5">
-
-                    {/* MINUS BUTTON */}
-
                     <button
                       type="button"
                       onClick={() => changeLicenseTotal(-1)}
@@ -1304,12 +2281,10 @@ setSelectedPrimaryPlanStatuses(primary);
                         newLicenseTotal <= 1
                       }
                       aria-label="Decrease licences"
-                      className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-300 bg-white text-gray-700 shadow-sm transition hover:border-red-400 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
+                      className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-300 bg-white text-gray-700 shadow-sm hover:border-red-400 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
                     >
                       <FaMinus size={16} />
                     </button>
-
-                    {/* TOTAL INPUT */}
 
                     <div className="min-w-[100px] text-center">
                       <input
@@ -1318,8 +2293,8 @@ setSelectedPrimaryPlanStatuses(primary);
                         max={300}
                         step={1}
                         value={newLicenseTotalInput}
-                        onChange={(e) =>
-                          setNewLicenseTotalInput(e.target.value)
+                        onChange={(event) =>
+                          setNewLicenseTotalInput(event.target.value)
                         }
                         className="w-full border-0 bg-transparent text-center text-4xl font-bold text-gray-900 outline-none"
                       />
@@ -1329,8 +2304,6 @@ setSelectedPrimaryPlanStatuses(primary);
                       </p>
                     </div>
 
-                    {/* PLUS BUTTON */}
-
                     <button
                       type="button"
                       onClick={() => changeLicenseTotal(1)}
@@ -1339,7 +2312,7 @@ setSelectedPrimaryPlanStatuses(primary);
                         newLicenseTotal >= 300
                       }
                       aria-label="Increase licences"
-                      className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-300 bg-white text-gray-700 shadow-sm transition hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-30"
+                      className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-300 bg-white text-gray-700 shadow-sm hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-30"
                     >
                       <FaPlus size={16} />
                     </button>
@@ -1359,8 +2332,6 @@ setSelectedPrimaryPlanStatuses(primary);
                     )}
                 </div>
 
-                {/* LICENCE SUMMARY */}
-
                 <div className="rounded-xl border border-gray-200 p-4">
                   <p className="mb-3 text-sm font-semibold text-gray-800">
                     Licence Summary
@@ -1369,7 +2340,6 @@ setSelectedPrimaryPlanStatuses(primary);
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between text-gray-600">
                       <span>Current Total</span>
-
                       <span className="font-semibold text-gray-900">
                         {currentLicenseCount}
                       </span>
@@ -1383,15 +2353,15 @@ setSelectedPrimaryPlanStatuses(primary);
                           licenseDelta > 0
                             ? "text-green-600"
                             : licenseDelta < 0
-                            ? "text-red-600"
-                            : "text-gray-500"
+                              ? "text-red-600"
+                              : "text-gray-500"
                         }`}
                       >
                         {licenseDelta > 0
                           ? `+${licenseDelta}`
                           : licenseDelta < 0
-                          ? `${licenseDelta}`
-                          : "No change"}
+                            ? `${licenseDelta}`
+                            : "No change"}
                       </span>
                     </div>
 
@@ -1410,13 +2380,11 @@ setSelectedPrimaryPlanStatuses(primary);
                 </div>
               </div>
 
-              {/* FOOTER */}
-
               <div className="flex justify-end gap-2 border-t border-gray-100 bg-gray-50/70 px-6 py-4">
                 <button
                   type="button"
                   onClick={() => setLicenseModalOpen(false)}
-                  className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
                   Cancel
                 </button>
@@ -1425,7 +2393,7 @@ setSelectedPrimaryPlanStatuses(primary);
                   type="button"
                   onClick={handleContinueLicenses}
                   disabled={!isLicenseTotalValid}
-                  className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:shadow-none"
+                  className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
                 >
                   Continue
                 </button>
@@ -1439,9 +2407,6 @@ setSelectedPrimaryPlanStatuses(primary);
         {licenseConfirmModalOpen && selectedLicensePlan && (
           <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-[2px]">
             <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
-
-              {/* HEADER */}
-
               <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
                 <div className="flex items-center gap-3">
                   <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
@@ -1466,13 +2431,11 @@ setSelectedPrimaryPlanStatuses(primary);
                     setLicenseModalOpen(true);
                   }}
                   aria-label="Close"
-                  className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                  className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
                 >
                   <FaTimes size={17} />
                 </button>
               </div>
-
-              {/* CONTENT */}
 
               <div className="space-y-5 px-6 py-5">
                 <div>
@@ -1487,8 +2450,6 @@ setSelectedPrimaryPlanStatuses(primary);
                       "Subscription"}
                   </p>
                 </div>
-
-                {/* SUMMARY */}
 
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <p className="mb-4 text-sm font-semibold text-slate-800">
@@ -1542,8 +2503,6 @@ setSelectedPrimaryPlanStatuses(primary);
                   </div>
                 </div>
 
-                {/* OPTIONAL PO NUMBER */}
-
                 <div>
                   <label
                     htmlFor="license-po-number"
@@ -1559,12 +2518,12 @@ setSelectedPrimaryPlanStatuses(primary);
                     id="license-po-number"
                     type="text"
                     value={purchaseOrderNumber}
-                    onChange={(e) =>
-                      setPurchaseOrderNumber(e.target.value)
+                    onChange={(event) =>
+                      setPurchaseOrderNumber(event.target.value)
                     }
                     placeholder="Enter purchase order number"
                     maxLength={100}
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
                   />
                 </div>
 
@@ -1576,8 +2535,6 @@ setSelectedPrimaryPlanStatuses(primary);
                 </div>
               </div>
 
-              {/* FOOTER */}
-
               <div className="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50/70 px-6 py-4">
                 <button
                   type="button"
@@ -1586,7 +2543,7 @@ setSelectedPrimaryPlanStatuses(primary);
                     setLicenseModalOpen(true);
                   }}
                   disabled={licenseUpdating}
-                  className="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50"
                 >
                   Back
                 </button>
@@ -1594,10 +2551,8 @@ setSelectedPrimaryPlanStatuses(primary);
                 <button
                   type="button"
                   onClick={handleConfirmLicenses}
-                  disabled={
-                    licenseUpdating || !isLicenseTotalValid
-                  }
-                  className="inline-flex min-w-[130px] items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  disabled={licenseUpdating || !isLicenseTotalValid}
+                  className="inline-flex min-w-[130px] items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
                   {licenseUpdating ? "Updating..." : "Confirm"}
                 </button>
@@ -1610,17 +2565,14 @@ setSelectedPrimaryPlanStatuses(primary);
 
         {statusModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-xl shadow-2xl">
-
-              {/* MODAL HEADER */}
-
+            <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white shadow-2xl">
               <div className="flex items-center justify-between border-b px-5 py-4">
                 <div>
                   <h2 className="text-lg font-semibold text-gray-800">
                     Update Status
                   </h2>
 
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="mt-1 text-sm text-gray-500">
                     Select the status you want to update.
                   </p>
                 </div>
@@ -1635,21 +2587,19 @@ setSelectedPrimaryPlanStatuses(primary);
                 </button>
               </div>
 
-              {/* MODAL CONTENT */}
-
-              <div className="p-5 space-y-4">
+              <div className="space-y-4 p-5">
 
                 {/* ORDER STATUS */}
 
-                <div className="border rounded-lg p-4">
-                  <label className="flex items-center gap-3 cursor-pointer">
+                <div className="rounded-lg border p-4">
+                  <label className="flex cursor-pointer items-center gap-3">
                     <input
                       type="checkbox"
                       checked={updateOrderStatusChecked}
-                      onChange={(e) =>
-                        setUpdateOrderStatusChecked(e.target.checked)
+                      onChange={(event) =>
+                        setUpdateOrderStatusChecked(event.target.checked)
                       }
-                      className="w-4 h-4"
+                      className="h-4 w-4"
                     />
 
                     <span className="font-medium text-gray-800">
@@ -1658,17 +2608,15 @@ setSelectedPrimaryPlanStatuses(primary);
                   </label>
 
                   {updateOrderStatusChecked && (
-                    <div className="mt-3 ml-7">
+                    <div className="ml-7 mt-3">
                       <select
                         value={selectedOrderStatus}
-                        onChange={(e) =>
-                          setSelectedOrderStatus(e.target.value)
+                        onChange={(event) =>
+                          setSelectedOrderStatus(event.target.value)
                         }
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs font-medium md:text-sm"
                       >
-                        <option value="">
-                          Select Order Status
-                        </option>
+                        <option value="">Select Order Status</option>
 
                         {statuses
                           .filter(
@@ -1677,10 +2625,7 @@ setSelectedPrimaryPlanStatuses(primary);
                               status._id === order.order_status?._id
                           )
                           .map((status) => (
-                            <option
-                              key={status._id}
-                              value={status._id}
-                            >
+                            <option key={status._id} value={status._id}>
                               {status.name}
                             </option>
                           ))}
@@ -1692,15 +2637,15 @@ setSelectedPrimaryPlanStatuses(primary);
                 {/* DOMAIN STATUS */}
 
                 {order.domainSource && (
-                  <div className="border rounded-lg p-4">
-                    <label className="flex items-center gap-3 cursor-pointer">
+                  <div className="rounded-lg border p-4">
+                    <label className="flex cursor-pointer items-center gap-3">
                       <input
                         type="checkbox"
                         checked={updateDomainStatusChecked}
-                        onChange={(e) =>
-                          setUpdateDomainStatusChecked(e.target.checked)
+                        onChange={(event) =>
+                          setUpdateDomainStatusChecked(event.target.checked)
                         }
-                        className="w-4 h-4"
+                        className="h-4 w-4"
                       />
 
                       <span className="font-medium text-gray-800">
@@ -1709,17 +2654,15 @@ setSelectedPrimaryPlanStatuses(primary);
                     </label>
 
                     {updateDomainStatusChecked && (
-                      <div className="mt-3 ml-7">
+                      <div className="ml-7 mt-3">
                         <select
                           value={selectedDomainStatus}
-                          onChange={(e) =>
-                            setSelectedDomainStatus(e.target.value)
+                          onChange={(event) =>
+                            setSelectedDomainStatus(event.target.value)
                           }
-                          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                          className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs font-medium md:text-sm"
                         >
-                          <option value="">
-                            Select Domain Status
-                          </option>
+                          <option value="">Select Domain Status</option>
 
                           {domainStatuses
                             .filter(
@@ -1728,10 +2671,7 @@ setSelectedPrimaryPlanStatuses(primary);
                                 status._id === order.domain_status?._id
                             )
                             .map((status) => (
-                              <option
-                                key={status._id}
-                                value={status._id}
-                              >
+                              <option key={status._id} value={status._id}>
                                 {status.name}
                               </option>
                             ))}
@@ -1744,15 +2684,15 @@ setSelectedPrimaryPlanStatuses(primary);
                 {/* PLAN STATUS */}
 
                 {(order.plans || []).length > 0 && (
-                  <div className="border rounded-lg p-4">
-                    <label className="flex items-center gap-3 cursor-pointer">
+                  <div className="rounded-lg border p-4">
+                    <label className="flex cursor-pointer items-center gap-3">
                       <input
                         type="checkbox"
                         checked={updatePlanStatusChecked}
-                        onChange={(e) =>
-                          setUpdatePlanStatusChecked(e.target.checked)
+                        onChange={(event) =>
+                          setUpdatePlanStatusChecked(event.target.checked)
                         }
-                        className="w-4 h-4"
+                        className="h-4 w-4"
                       />
 
                       <span className="font-medium text-gray-800">
@@ -1761,42 +2701,35 @@ setSelectedPrimaryPlanStatuses(primary);
                     </label>
 
                     {updatePlanStatusChecked && (
-                      <div className="mt-4 ml-7 space-y-4">
+                      <div className="ml-7 mt-4 space-y-4">
                         {(order.plans || []).map((plan) => (
                           <div
                             key={plan._id}
-                            className="border rounded-lg p-3 bg-gray-50"
+                            className="rounded-lg border bg-gray-50 p-3"
                           >
-                            <p className="font-medium text-gray-800 mb-3">
-                              {plan.emailType ||
-                                plan.planName ||
-                                "-"}
+                            <p className="mb-3 font-medium text-gray-800">
+                              {plan.emailType || plan.planName || "-"}
                             </p>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-
-                              {/* PRIMARY STATUS */}
-
+                            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                               <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">
+                                <label className="mb-1 block text-xs font-medium text-gray-600">
                                   Primary Status
                                 </label>
 
                                 <select
                                   value={
-                                    selectedPrimaryPlanStatuses[
-                                      plan._id
-                                    ] || ""
+                                    selectedPrimaryPlanStatuses[plan._id] || ""
                                   }
-                                  onChange={(e) =>
+                                  onChange={(event) =>
                                     setSelectedPrimaryPlanStatuses(
-                                      (prev) => ({
-                                        ...prev,
-                                        [plan._id]: e.target.value,
+                                      (previous) => ({
+                                        ...previous,
+                                        [plan._id]: event.target.value,
                                       })
                                     )
                                   }
-                                  className="w-full border border-gray-300 rounded-md px-2 py-2 text-sm bg-white"
+                                  className="w-full rounded-md border border-gray-300 bg-white px-2 py-2 text-sm"
                                 >
                                   <option value="">
                                     Select Primary Status
@@ -1804,28 +2737,19 @@ setSelectedPrimaryPlanStatuses(primary);
 
                                   {plan.primary_status &&
                                     !(
-                                      primaryPlanStatuses[
-                                        plan._id
-                                      ] || []
+                                      primaryPlanStatuses[plan._id] || []
                                     ).some(
                                       (status) =>
-                                        status._id ===
-                                        plan.primary_status?._id
+                                        status._id === plan.primary_status?._id
                                     ) && (
                                       <option
-                                        value={
-                                          plan.primary_status._id
-                                        }
+                                        value={plan.primary_status._id}
                                       >
                                         {plan.primary_status.name}
                                       </option>
                                     )}
 
-                                  {(
-                                    primaryPlanStatuses[
-                                      plan._id
-                                    ] || []
-                                  )
+                                  {(primaryPlanStatuses[plan._id] || [])
                                     .filter(
                                       (status) =>
                                         status.is_active ||
@@ -1842,74 +2766,6 @@ setSelectedPrimaryPlanStatuses(primary);
                                     ))}
                                 </select>
                               </div>
-
-                              {/* SECONDARY STATUS */}
-
-                              <div>
-                                {/* <label className="block text-xs font-medium text-gray-600 mb-1">
-                                  Secondary Status
-                                </label> */}
-
-                                {/* <select
-                                  value={
-                                    selectedSecondaryPlanStatuses[
-                                      plan._id
-                                    ] || ""
-                                  }
-                                  onChange={(e) =>
-                                    setSelectedSecondaryPlanStatuses(
-                                      (prev) => ({
-                                        ...prev,
-                                        [plan._id]: e.target.value,
-                                      })
-                                    )
-                                  }
-                                  className="w-full border border-gray-300 rounded-md px-2 py-2 text-sm bg-white"
-                                >
-                                  <option value="">
-                                    None / Select Secondary Status
-                                  </option>
-
-                                  {plan.secondary_status &&
-                                    !(
-                                      secondaryPlanStatuses[
-                                        plan._id
-                                      ] || []
-                                    ).some(
-                                      (status) =>
-                                        status._id ===
-                                        plan.secondary_status?._id
-                                    ) && (
-                                      <option
-                                        value={
-                                          plan.secondary_status._id
-                                        }
-                                      >
-                                        {plan.secondary_status.name}
-                                      </option>
-                                    )}
-
-                                  {(
-                                    secondaryPlanStatuses[
-                                      plan._id
-                                    ] || []
-                                  )
-                                    .filter(
-                                      (status) =>
-                                        status.is_active ||
-                                        status._id ===
-                                          plan.secondary_status?._id
-                                    )
-                                    .map((status) => (
-                                      <option
-                                        key={status._id}
-                                        value={status._id}
-                                      >
-                                        {status.name}
-                                      </option>
-                                    ))}
-                                </select> */}
-                              </div>
                             </div>
                           </div>
                         ))}
@@ -1920,12 +2776,12 @@ setSelectedPrimaryPlanStatuses(primary);
 
                 {/* MODAL ACTIONS */}
 
-                <div className="flex justify-end gap-3 pt-3 border-t">
+                <div className="flex justify-end gap-3 border-t pt-3">
                   <button
                     type="button"
                     onClick={() => setStatusModalOpen(false)}
                     disabled={statusUpdating}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                    className="rounded-md bg-gray-200 px-4 py-2 text-gray-700 hover:bg-gray-300"
                   >
                     Cancel
                   </button>
@@ -1934,46 +2790,15 @@ setSelectedPrimaryPlanStatuses(primary);
                     type="button"
                     onClick={handleStatusUpdate}
                     disabled={statusUpdating}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                    className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
                   >
-                    {statusUpdating
-                      ? "Updating..."
-                      : "Update Status"}
+                    {statusUpdating ? "Updating..." : "Update Status"}
                   </button>
                 </div>
               </div>
             </div>
           </div>
         )}
-
-        {/* ===================== PAGE ACTIONS ===================== */}
-
-        <div className="flex justify-end gap-3">
-
-          {/* EDIT */}
-
-          <button
-            onClick={() =>
-              navigate(`/admin/orders/update/${order._id}`)
-            }
-            className="flex items-center gap-2 bg-yellow-500 text-white px-4 py-2 rounded"
-          >
-            <FaEdit />
-            Edit
-          </button>
-
-          {/* RENEW */}
-
-          <button
-            onClick={() =>
-              navigate(`/admin/orders/renew/${order._id}`)
-            }
-            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded"
-          >
-            <FaRedo />
-            Renew
-          </button>
-        </div>
       </div>
     </div>
   );

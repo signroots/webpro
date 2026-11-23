@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
@@ -11,6 +12,7 @@ import {
   Globe,
   Database,
   Archive,
+  Tag,
 } from "lucide-react";
 
 interface MenuItem {
@@ -18,6 +20,10 @@ interface MenuItem {
   icon: React.ReactNode;
   children?: MenuItem[];
 }
+
+// =====================================================
+// MENU ITEMS
+// =====================================================
 
 const menuItems: MenuItem[] = [
   {
@@ -45,13 +51,17 @@ const menuItems: MenuItem[] = [
     icon: <Users size={20} />,
   },
   {
-  name: "User Activity",
-  icon: <Layers size={20} />,
-},
+    name: "User Activity",
+    icon: <Layers size={20} />,
+  },
   {
     name: "Settings",
     icon: <Settings size={20} />,
     children: [
+      {
+        name: "Labels",
+        icon: <Tag size={16} />,
+      },
       {
         name: "Status",
         icon: <BarChart size={16} />,
@@ -69,9 +79,7 @@ const menuItems: MenuItem[] = [
         icon: <Database size={16} />,
       },
     ],
-    
   },
-  
 ];
 
 // =====================================================
@@ -79,39 +87,41 @@ const menuItems: MenuItem[] = [
 // =====================================================
 
 const roleMenus: Record<string, string[]> = {
-  // ================= ADMIN =================
   admin: [
     "Dashboard",
     "Orders",
     "Renewals",
-     "Archived Orders",
+    "Archived Orders",
     "DNS Orders",
     "Customers",
-      "User Activity",
+    "User Activity",
     "Settings",
   ],
 
-  // ================= CLIENT =================
   client: [
     "Dashboard",
     "Orders",
   ],
 
-  // ================= CUSTOMER =================
   customer: [
     "Orders",
   ],
 
-  // ================= USER =================
   user: [
     "Orders",
   ],
 };
 
+// =====================================================
+// SIDEBAR COMPONENT
+// =====================================================
+
 const Slider: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-const location = useLocation();
+
+  const location = useLocation();
+
   // =====================================================
   // GET USER
   // =====================================================
@@ -123,7 +133,7 @@ const location = useLocation();
   try {
     user = userJson ? JSON.parse(userJson) : null;
   } catch (error) {
-    console.error("❌ Failed to parse sidebar user:", error);
+    console.error("Failed to parse sidebar user:", error);
     user = null;
   }
 
@@ -135,118 +145,128 @@ const location = useLocation();
     .trim()
     .toLowerCase();
 
-  console.log("====================================");
-  console.log("🔥 SIDEBAR");
-  console.log("USER:", user);
-  console.log("ROLE:", userRole);
-  console.log("MENU:", roleMenus[userRole]);
-  console.log("====================================");
-
   // =====================================================
   // PATH
   // =====================================================
 
   const getPathFor = (name: string): string => {
-  const isClientOrCustomer =
-    userRole === "client" ||
-    userRole === "customer";
+    const isClientOrCustomer =
+      userRole === "client" ||
+      userRole === "customer";
 
-  switch (name) {
-    case "Dashboard":
-      return isClientOrCustomer
-        ? "/customer/dashboard"
-        : "/admin/dashboard_management";
+    switch (name) {
+      case "Dashboard":
+        return isClientOrCustomer
+          ? "/customer/dashboard"
+          : "/admin/dashboard_management";
 
-    case "Orders":
-      return isClientOrCustomer
-        ? "/customer/orders"
-        : "/admin/orders";
+      case "Orders":
+        return isClientOrCustomer
+          ? "/customer/orders"
+          : "/admin/orders";
 
-    case "DNS Orders":
-      return "/admin/dns-order";
+      case "DNS Orders":
+        return "/admin/dns-order";
 
-    case "Renewals":
-      return "/admin/renew-list";
-    case "Archived Orders":
-      return "/admin/archived-orders";
-    case "Customers":
-      return "/admin/customers";
-case "User Activity":
-  return "/admin/user-activity";
-    case "Status":
-      return "/admin/status";
+      case "Renewals":
+        return "/admin/renew-list";
 
-    case "User Types":
-      return "/admin/user-types";
+      case "Archived Orders":
+        return "/admin/archived-orders";
 
-    case "Data Management":
-      return "/admin/data-management";
+      case "Customers":
+        return "/admin/customers";
 
-    case "Domain Source":
-      return "/admin/domain-source";
+      case "User Activity":
+        return "/admin/user-activity";
 
-    default:
-      return "#";
-  }
-};
+      case "Labels":
+        return "/admin/labels";
 
+      case "Status":
+        return "/admin/status";
 
-const isMenuActive = (name: string): boolean => {
-  const pathname = location.pathname;
-  const from = location.state?.from;
+      case "User Types":
+        return "/admin/user-types";
 
-  // Edit page
-  if (pathname.startsWith("/admin/orders/update/")) {
-    if (from === "renewal" && name === "Renew List") {
-      return true;
+      case "Data Management":
+        return "/admin/data-management";
+
+      case "Domain Source":
+        return "/admin/domain-source";
+
+      default:
+        return "#";
     }
+  };
 
-    if (from === "dns" && name === "DNS Orders") {
-      return true;
-    }
+  // =====================================================
+  // ACTIVE MENU
+  // =====================================================
 
-    if (from === "orders" && name === "Orders") {
-      return true;
-    }
+  const isMenuActive = (name: string): boolean => {
+    const pathname = location.pathname;
+    const from = location.state?.from;
 
-    return false;
-  }
+    // Edit page
+    if (pathname.startsWith("/admin/orders/update/")) {
+      if (from === "renewal" && name === "Renewals") {
+        return true;
+      }
 
-  // Normal pages
-  switch (name) {
-    case "Orders":
-      return pathname === "/admin/orders";
+      if (from === "dns" && name === "DNS Orders") {
+        return true;
+      }
 
-    case "Renew List":
-      return pathname === "/admin/renew-list";
-    case "Archived Orders":
-      return pathname === "/admin/archived-orders";
-    case "DNS Orders":
-      return pathname === "/admin/dns-order";
+      if (from === "orders" && name === "Orders") {
+        return true;
+      }
 
-    case "Dashboard":
-      return pathname === "/admin/dashboard_management";
-
-    case "Customers":
-      return pathname === "/admin/customers";
-case "User Activity":
-  return pathname === "/admin/user-activity";
-    case "Status":
-      return pathname === "/admin/status";
-
-    case "User Types":
-      return pathname === "/admin/user-types";
-
-    case "Data Management":
-      return pathname === "/admin/data-management";
-
-    case "Domain Source":
-      return pathname === "/admin/domain-source";
-
-    default:
       return false;
-  }
-};
+    }
+
+    // Normal pages
+    switch (name) {
+      case "Orders":
+        return pathname === "/admin/orders";
+
+      case "Renewals":
+        return pathname === "/admin/renew-list";
+
+      case "Archived Orders":
+        return pathname === "/admin/archived-orders";
+
+      case "DNS Orders":
+        return pathname === "/admin/dns-order";
+
+      case "Dashboard":
+        return pathname === "/admin/dashboard_management";
+
+      case "Customers":
+        return pathname === "/admin/customers";
+
+      case "User Activity":
+        return pathname === "/admin/user-activity";
+
+      case "Labels":
+        return pathname === "/admin/labels";
+
+      case "Status":
+        return pathname === "/admin/status";
+
+      case "User Types":
+        return pathname === "/admin/user-types";
+
+      case "Data Management":
+        return pathname === "/admin/data-management";
+
+      case "Domain Source":
+        return pathname === "/admin/domain-source";
+
+      default:
+        return false;
+    }
+  };
 
   // =====================================================
   // FILTER MENU BASED ON ROLE
@@ -257,6 +277,18 @@ case "User Activity":
   const filteredMenuItems = menuItems.filter((item) =>
     allowedMenu.includes(item.name)
   );
+
+  // =====================================================
+  // AUTO OPEN SETTINGS FOR SETTINGS PAGES
+  // =====================================================
+
+  const isSettingsPage = [
+    "/admin/labels",
+    "/admin/status",
+    "/admin/user-types",
+    "/admin/data-management",
+    "/admin/domain-source",
+  ].includes(location.pathname);
 
   // =====================================================
   // SUB MENU
@@ -278,9 +310,7 @@ case "User Activity":
         collapsed ? "w-20" : "w-64"
       } bg-gray-900 text-white transition-all duration-300 min-h-screen flex flex-col shadow-xl`}
     >
-      {/* =================================================
-          COLLAPSE BUTTON
-      ================================================= */}
+      {/* COLLAPSE BUTTON */}
 
       <button
         onClick={() => setCollapsed(!collapsed)}
@@ -293,9 +323,7 @@ case "User Activity":
         )}
       </button>
 
-      {/* =================================================
-          MENU
-      ================================================= */}
+      {/* MENU */}
 
       <nav className="flex-1 mt-4">
         {filteredMenuItems.map((item) =>
@@ -306,7 +334,7 @@ case "User Activity":
               <button
                 onClick={() => toggleSubMenu(item.name)}
                 className={`w-full flex items-center p-4 my-2 rounded-lg hover:bg-gray-800 ${
-                  openMenu === item.name
+                  openMenu === item.name || isSettingsPage
                     ? "bg-gray-800"
                     : ""
                 }`}
@@ -323,23 +351,25 @@ case "User Activity":
 
                 {!collapsed && (
                   <span>
-                    {openMenu === item.name ? "−" : "+"}
+                    {openMenu === item.name || isSettingsPage
+                      ? "−"
+                      : "+"}
                   </span>
                 )}
               </button>
 
               {/* SETTINGS CHILDREN */}
 
-              {openMenu === item.name &&
+              {(openMenu === item.name || isSettingsPage) &&
                 !collapsed && (
                   <div className="ml-10">
                     {item.children.map((child) => (
                       <NavLink
                         key={child.name}
                         to={getPathFor(child.name)}
-                        className={({ isActive }) =>
+                        className={() =>
                           `flex items-center p-2 my-1 rounded-lg text-sm hover:bg-gray-800 ${
-                            isActive
+                            isMenuActive(child.name)
                               ? "bg-gray-700 font-semibold"
                               : ""
                           }`
@@ -356,22 +386,19 @@ case "User Activity":
                 )}
             </div>
           ) : (
-            /* =================================================
-               NORMAL MENU ITEM
-            ================================================= */
+            /* NORMAL MENU ITEM */
 
             <NavLink
-  key={item.name}
-  to={getPathFor(item.name)}
-  className={() =>
-    `flex items-center p-4 my-2 rounded-lg hover:bg-gray-800 ${
-      isMenuActive(item.name)
-        ? "bg-gray-700 font-semibold"
-        : ""
-    }`
-  }
->
-
+              key={item.name}
+              to={getPathFor(item.name)}
+              className={() =>
+                `flex items-center p-4 my-2 rounded-lg hover:bg-gray-800 ${
+                  isMenuActive(item.name)
+                    ? "bg-gray-700 font-semibold"
+                    : ""
+                }`
+              }
+            >
               <div className="w-8 h-8 flex items-center justify-center bg-gray-700 rounded-full mr-3">
                 {item.icon}
               </div>
@@ -386,9 +413,7 @@ case "User Activity":
         )}
       </nav>
 
-      {/* =================================================
-          FOOTER
-      ================================================= */}
+      {/* FOOTER */}
 
       {!collapsed && (
         <div className="p-4 border-t border-gray-800 text-sm text-gray-400">

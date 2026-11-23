@@ -21,6 +21,7 @@ import DomainSource from "../../pages/Admin/DomainSource"
 import ArchivedOrders from "../../pages/Admin/ArchivedOrders";
 import UserActivity from "../../pages/Admin/UserActivity";
 import ArchivedOrderDetails from "../../pages/Admin/ArchivedOrders/DetailedArchived";
+import Labels from "../../pages/Admin/Labels";
 
 export default function AdminRoutes() {
   return (
@@ -40,6 +41,7 @@ export default function AdminRoutes() {
   path="archived/order-details/:orderId"
   element={<ArchivedOrderDetails />}
 />
+<Route path="labels" element={<Labels />} />
         <Route path="dashboard_management" element={<Dashboard />} />
         <Route path="orders" element={<Order />} />
         <Route path="archived-orders" element={<ArchivedOrders />} />

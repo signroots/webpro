@@ -110,15 +110,17 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
 
   return (
     <div className="bg-white shadow rounded-lg overflow-x-auto">
-      <table className="w-full min-w-[1100px] table-fixed divide-y divide-gray-200 text-sm">
+      <table className="w-full min-w-[1250px] table-fixed divide-y divide-gray-200 text-sm">
 
         <thead className="bg-gray-100 text-gray-600 uppercase text-xs tracking-wider">
           <tr>
             <th className="w-[60px] px-3 py-3 text-center">SL No</th>
             <th className="w-[350px] px-3 py-3 text-left">Domain Name</th>
             <th className="w-[200px] px-3 py-3 text-left">Services</th>
+          
             <th className="w-[140px] px-3 py-3 text-center">Expiry Date</th>
             <th className="w-[150px] px-3 py-3 text-center">Status</th>
+              <th className="w-[150px] px-3 py-3 text-left">Label</th>
             <th className="w-[150px] px-3 py-3 text-center">Actions</th>
           </tr>
         </thead>
@@ -268,7 +270,20 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
                   )}
                 </div>
               </td>
-
+{/* LABEL */}
+<td className="px-3 py-4 text-left">
+  <div className="flex flex-wrap items-center gap-1">
+    {Array.isArray(order.labels) &&
+      order.labels.map((label: any) => (
+        <span
+          key={label._id}
+          className="inline-flex items-center rounded-md bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700"
+        >
+          {label.code}
+        </span>
+      ))}
+  </div>
+</td>
               {/* ACTIONS */}
               <td className="px-3 py-4">
                 <div className="flex justify-center items-center gap-4 text-gray-500">

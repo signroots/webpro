@@ -2,7 +2,68 @@ import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const FULL_API_URL = `${API_BASE_URL}/api`;
+export interface LabelInfo {
+  _id: string;
+  statusLabelName: string;
+  code: string;
+  type: string;
+  service: string;
+  status: boolean;
+  displayArea: string;
+  visibleTo?: ("ADMIN" | "CUSTOMER")[];
+}
 
+export const fetchActiveLabels = async (
+  type?: "ORDER" | "PLAN"
+): Promise<LabelInfo[]> => {
+  const token = localStorage.getItem("token");
+
+  const response = await axios.get(`${FULL_API_URL}/labels/active`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: type ? { type } : {},
+  });
+
+  return response.data.data || [];
+};
+export const updateOrderLabel = async (
+  orderId: string,
+  labelIds: string[]
+) => {
+  const token = localStorage.getItem("token");
+
+  const response = await axios.patch(
+    `${FULL_API_URL}/labels/order/${orderId}`,
+    { labelIds },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return response.data.data;
+};
+
+export const updateOrderPlanLabel = async (
+  planId: string,
+  labelIds: string[]
+) => {
+  const token = localStorage.getItem("token");
+
+  const response = await axios.patch(
+    `${FULL_API_URL}/labels/plan/${planId}`,
+    { labelIds },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return response.data.data;
+};
 export interface Order {
   _id: string;
   domainName: string;
