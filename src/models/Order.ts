@@ -16,7 +16,7 @@ archived_status?: mongoose.Types.ObjectId;
   subHostTypeId?: mongoose.Types.ObjectId;
   hoststorageId?: mongoose.Types.ObjectId;
   registrarName?: mongoose.Types.ObjectId;
-
+labels?: mongoose.Types.ObjectId[];
   managedBy: "Signroots" | "Customer";
 
   // External server/registrar status
@@ -125,7 +125,12 @@ archived_status: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Registrar",
     },
-
+labels: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Label",
+  },
+],
     managedBy: {
       type: String,
       enum: ["Signroots", "Customer"],

@@ -35,7 +35,7 @@ import activityLogRoutes  from "./routes/activitylog"
 import { startDomainSyncCron } from "./utils/cronjob";
 import "./cron/cloudflareCron";
 import "./cron/SubresellerclubCron";
-
+import labelRoutes from "./routes/labelRoutes";
 
 dotenv.config();
 
@@ -92,7 +92,7 @@ app.use("/api/cloudflare", cloudflareRoutes);
 app.use("/api/hostinger", hostinger);
 app.use("/api/domain-sources", domainSourceRoutes);
 app.use("/api/customers", customerRoutes);
-
+app.use("/api/labels", labelRoutes);
 app.use("/api/mainreseller", MainResellerRoutes);
 
 app.use("/api/reseller", ResellerRoute);

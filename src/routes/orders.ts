@@ -2582,6 +2582,19 @@ router.get(
 
       const loggedInUser = req.user;
 
+      // Read client identity from the verified JWT.
+      // Client login should include clientId in the token.
+      const tokenUser = loggedInUser as any;
+      const tokenRole = String(tokenUser?.role || "")
+        .trim()
+        .toLowerCase();
+
+      const tokenClientId =
+        tokenUser?.clientId ||
+        (tokenRole === "client" || tokenRole === "customer"
+          ? tokenUser?._id
+          : null);
+
       if (!loggedInUser?._id) {
         return res.status(401).json({
           success: false,
@@ -2889,6 +2902,7 @@ router.get(
         expiryDate: 1,
         lockStatus: 1,
         domainSource: 1,
+        labels: 1,
       };
 
       // ========================================================
@@ -2940,6 +2954,10 @@ router.get(
                 select:
                   "_id name code type is_active",
               })
+              .populate({
+  path: "labels",
+  select: "_id statusLabelName code type service status displayArea",
+})
               .select(`
                 _id
                 orderId
@@ -3913,8 +3931,14 @@ router.get(
                 select:
                   "_id c_name c_company",
               })
-
-              .populate({
+.populate({
+  path: "labels",
+  match:
+    tokenRole === "client" || tokenRole === "customer"
+      ? { visibleTo: "CUSTOMER" }
+      : {},
+  select: "_id statusLabelName code type service status displayArea visibleTo",
+})         .populate({
                 path: "order_status",
                 select:
                   "_id name code type is_active",
@@ -4080,92 +4104,70 @@ router.get(
       // 21. CUSTOMER
       // ========================================================
 
-      const client =
-        await Client.findById(
-          loggedInUser._id
-        ).populate(
-          "userType"
-        );
+      // Do not depend on Client.userType. Some client records do not
+      // have a userType relation. The verified JWT identifies the client.
+      if (tokenClientId) {
+        const clientIdString = String(tokenClientId);
 
-      const clientUserType =
-        (
-          client?.userType as any
-        )?.name
-          ?.toString()
-          .toLowerCase() ||
-        "";
-
-      if (
-        clientUserType ===
-        "customer"
-      ) {
-
-        if (!client) {
-          return res.status(
-            404
-          ).json({
+        if (!mongoose.Types.ObjectId.isValid(clientIdString)) {
+          return res.status(403).json({
             success: false,
-            error:
-              "Client not found",
+            message: "Access denied",
           });
         }
 
+        const client = await Client.findById(clientIdString).select(
+          "_id c_name c_company is_active c_portalEnabled"
+        );
+
+        if (!client) {
+          return res.status(404).json({
+            success: false,
+            message: "Client not found",
+          });
+        }
+
+        if (
+          (client as any).is_active === false ||
+          (client as any).c_portalEnabled === false
+        ) {
+          return res.status(403).json({
+            success: false,
+            message: "Client portal access is disabled",
+          });
+        }
+
+        // Restrict client users to their own orders only.
         filters.push({
-          client:
-            client._id,
+          client: client._id,
         });
 
         const finalFilter = {
           $and: filters,
         };
 
-        let orders =
-          await loadOrders(
-            finalFilter
-          );
+        let orders = await loadOrders(finalFilter);
 
-        const total =
-          orders.length;
+        const total = orders.length;
+        const skip = (page - 1) * limit;
 
-        const skip =
-          (page - 1) *
-          limit;
-
-        if (
-          !emailType
-        ) {
-          orders =
-            orders.slice(
-              skip,
-              skip + limit
-            );
+        if (!emailType) {
+          orders = orders.slice(skip, skip + limit);
         }
 
-        return res.status(
-          200
-        ).json({
-
+        return res.status(200).json({
           success: true,
-
           data: orders,
-
-          ...(
-            emailType
-              ? {}
-              : {
+          ...(emailType
+            ? {}
+            : {
                 pagination: {
                   page,
                   limit,
                   total,
-                  totalPages:
-                    Math.ceil(
-                      total /
-                      limit
-                    ),
+                  totalPages: Math.ceil(total / limit),
                 },
-              }
-          ),
-
+              }),
         });
       }
 
@@ -4213,7 +4215,7 @@ router.get(
   }
 );
 
-
+// GET single order by ID
 // GET single order by ID
 router.get(
   "/:id",
@@ -4276,9 +4278,24 @@ router.get(
           model: "DomainSource",
           select: "name code image",
         })
-        .populate("hosttypeid")
-        .populate("subHostTypeId")
-        .populate("hoststorageId")
+        .populate({
+          path: "hosttypeid",
+        })
+        .populate({
+          path: "subHostTypeId",
+        })
+        .populate({
+          path: "hoststorageId",
+        })
+        // ============================================
+        // ORDER LABELS
+        // ============================================
+        .populate({
+          path: "labels",
+          model: "Label",
+          select:
+            "_id statusLabelName code type service status displayArea",
+        })
         .exec();
 
       // ============================================
@@ -4347,6 +4364,15 @@ router.get(
           select:
             "_id name code type category is_custom is_active",
         })
+        // ============================================
+        // PLAN LABELS
+        // ============================================
+        .populate({
+          path: "labels",
+          model: "Label",
+          select:
+            "_id statusLabelName code type service status displayArea",
+        })
         .lean();
 
       // ============================================
@@ -4370,14 +4396,20 @@ router.get(
           emailType: p.emailTypeId?.name || "",
 
           // ========================================
+          // PLAN LABELS
+          // ========================================
+
+          labels: Array.isArray(p.labels) ? p.labels : [],
+
+          // ========================================
           // OLD PLAN STATUS
           // ========================================
 
           status: p.status
             ? {
-              _id: p.status._id,
-              name: p.status.name,
-            }
+                _id: p.status._id,
+                name: p.status.name,
+              }
             : null,
 
           // ========================================
@@ -4386,14 +4418,14 @@ router.get(
 
           primary_status: p.primary_status
             ? {
-              _id: p.primary_status._id,
-              name: p.primary_status.name,
-              code: p.primary_status.code,
-              type: p.primary_status.type,
-              category: p.primary_status.category,
-              is_custom: p.primary_status.is_custom,
-              is_active: p.primary_status.is_active,
-            }
+                _id: p.primary_status._id,
+                name: p.primary_status.name,
+                code: p.primary_status.code,
+                type: p.primary_status.type,
+                category: p.primary_status.category,
+                is_custom: p.primary_status.is_custom,
+                is_active: p.primary_status.is_active,
+              }
             : null,
 
           // ========================================
@@ -4402,14 +4434,14 @@ router.get(
 
           secondary_status: p.secondary_status
             ? {
-              _id: p.secondary_status._id,
-              name: p.secondary_status.name,
-              code: p.secondary_status.code,
-              type: p.secondary_status.type,
-              category: p.secondary_status.category,
-              is_custom: p.secondary_status.is_custom,
-              is_active: p.secondary_status.is_active,
-            }
+                _id: p.secondary_status._id,
+                name: p.secondary_status.name,
+                code: p.secondary_status.code,
+                type: p.secondary_status.type,
+                category: p.secondary_status.category,
+                is_custom: p.secondary_status.is_custom,
+                is_active: p.secondary_status.is_active,
+              }
             : null,
 
           // ========================================
@@ -4418,9 +4450,9 @@ router.get(
 
           hostType: p.hostTypeId
             ? {
-              _id: p.hostTypeId._id,
-              name: p.hostTypeId.type,
-            }
+                _id: p.hostTypeId._id,
+                name: p.hostTypeId.type,
+              }
             : null,
 
           // ========================================
@@ -4429,9 +4461,9 @@ router.get(
 
           hostSubType: p.hostSubTypeId
             ? {
-              _id: p.hostSubTypeId._id,
-              name: p.hostSubTypeId.name,
-            }
+                _id: p.hostSubTypeId._id,
+                name: p.hostSubTypeId.name,
+              }
             : null,
 
           // ========================================
@@ -4440,9 +4472,9 @@ router.get(
 
           storage: p.storageId
             ? {
-              _id: p.storageId._id,
-              name: p.storageId.storage,
-            }
+                _id: p.storageId._id,
+                name: p.storageId.storage,
+              }
             : null,
 
           // ========================================
@@ -4454,23 +4486,23 @@ router.get(
           expiryDate: p.expiryDate,
 
           noOfUsers: p.noOfUsers,
+
           // ========================================
           // ADMIN LOGIN INFORMATION
           // ========================================
 
           adminEmail: p.adminEmail || "",
-          username: p.username || "",
-          adminPassword: p.adminPassword || "",
 
+          username: p.username || "",
+
+          adminPassword: p.adminPassword || "",
 
           // ========================================
           // PLAN STATUS DATE TRACKING
           // ========================================
 
-          // Plan cancelled date & time
           plan_cancelled_on: p.plan_cancelled_on || null,
 
-          // Plan transferred date & time
           plan_transferred_on: p.plan_transferred_on || null,
         }));
 
@@ -4492,10 +4524,9 @@ router.get(
         if (image.startsWith("http")) {
           domainSourceImage = image;
         } else {
-          // Remove existing upload path(s)
           const cleanImage = image
             .replace(/^\/+/, "")
-            .replace(/^uploads\/domainsources\/+/, "");
+            .replace(/^uploads\/domainsources\/+/i, "");
 
           domainSourceImage = `/uploads/domainsources/${cleanImage}`;
         }
@@ -4524,6 +4555,14 @@ router.get(
           expiryDate: orderObj.expiryDate,
 
           // ========================================
+          // ORDER LABELS
+          // ========================================
+
+          labels: Array.isArray(orderObj.labels)
+            ? orderObj.labels
+            : [],
+
+          // ========================================
           // STATUS
           // ========================================
 
@@ -4535,7 +4574,6 @@ router.get(
           // STATUS / DATE TRACKING
           // ========================================
 
-          // General activation date
           activated_on: orderObj.activated_on,
 
           // ----------------------------------------
@@ -4580,9 +4618,9 @@ router.get(
 
           domainSource: orderObj.domainSource
             ? {
-              ...orderObj.domainSource,
-              image: domainSourceImage,
-            }
+                ...orderObj.domainSource,
+                image: domainSourceImage,
+              }
             : null,
 
           // ========================================
@@ -4594,7 +4632,7 @@ router.get(
           customer: orderObj.customer,
 
           // ========================================
-          // PLANS
+          // PLANS WITH THEIR LABELS
           // ========================================
 
           plans: orderPlans,

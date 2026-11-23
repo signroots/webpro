@@ -18,7 +18,7 @@ export interface IOrderPlan extends Document {
   emailTypeId?: mongoose.Types.ObjectId | null;
 
   planId?: mongoose.Types.ObjectId | null;
-
+labels?: mongoose.Types.ObjectId[];
   noOfUsers?: number;
 
   registrationDate?: Date | null;
@@ -117,7 +117,12 @@ const OrderPlanSchema = new Schema(
   ref: "Status",
   default: null,
 },
-
+labels: [
+  {
+    type: Schema.Types.ObjectId,
+    ref: "Label",
+  },
+],
     // ===============================
     // EMAIL / STORAGE / MS OFFICE
     // ===============================
