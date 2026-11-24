@@ -271,15 +271,16 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
                 </div>
               </td>
 {/* LABEL */}
+{/* LABEL */}
 <td className="px-3 py-4 text-left">
   <div className="flex flex-wrap items-center gap-1">
     {Array.isArray(order.labels) &&
       order.labels.map((label: any) => (
         <span
-          key={label._id}
+          key={label._id || label.code}
           className="inline-flex items-center rounded-md bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700"
         >
-          {label.code}
+          {label.code || label.statusLabelName}
         </span>
       ))}
   </div>
