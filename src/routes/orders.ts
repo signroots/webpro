@@ -2955,9 +2955,9 @@ router.get(
                   "_id name code type is_active",
               })
               .populate({
-  path: "labels",
-  select: "_id statusLabelName code type service status displayArea",
-})
+                path: "labels",
+                select: "_id statusLabelName code type service status displayArea",
+              })
               .select(`
                 _id
                 orderId
@@ -3931,14 +3931,14 @@ router.get(
                 select:
                   "_id c_name c_company",
               })
-.populate({
-  path: "labels",
-  match:
-    tokenRole === "client" || tokenRole === "customer"
-      ? { visibleTo: "CUSTOMER" }
-      : {},
-  select: "_id statusLabelName code type service status displayArea visibleTo",
-})         .populate({
+              .populate({
+                path: "labels",
+                match:
+                  tokenRole === "client" || tokenRole === "customer"
+                    ? { visibleTo: "CUSTOMER" }
+                    : {},
+                select: "_id statusLabelName code type service status displayArea visibleTo",
+              }).populate({
                 path: "order_status",
                 select:
                   "_id name code type is_active",
@@ -4161,13 +4161,13 @@ router.get(
           ...(emailType
             ? {}
             : {
-                pagination: {
-                  page,
-                  limit,
-                  total,
-                  totalPages: Math.ceil(total / limit),
-                },
-              }),
+              pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit),
+              },
+            }),
         });
       }
 
@@ -4407,9 +4407,9 @@ router.get(
 
           status: p.status
             ? {
-                _id: p.status._id,
-                name: p.status.name,
-              }
+              _id: p.status._id,
+              name: p.status.name,
+            }
             : null,
 
           // ========================================
@@ -4418,14 +4418,14 @@ router.get(
 
           primary_status: p.primary_status
             ? {
-                _id: p.primary_status._id,
-                name: p.primary_status.name,
-                code: p.primary_status.code,
-                type: p.primary_status.type,
-                category: p.primary_status.category,
-                is_custom: p.primary_status.is_custom,
-                is_active: p.primary_status.is_active,
-              }
+              _id: p.primary_status._id,
+              name: p.primary_status.name,
+              code: p.primary_status.code,
+              type: p.primary_status.type,
+              category: p.primary_status.category,
+              is_custom: p.primary_status.is_custom,
+              is_active: p.primary_status.is_active,
+            }
             : null,
 
           // ========================================
@@ -4434,14 +4434,14 @@ router.get(
 
           secondary_status: p.secondary_status
             ? {
-                _id: p.secondary_status._id,
-                name: p.secondary_status.name,
-                code: p.secondary_status.code,
-                type: p.secondary_status.type,
-                category: p.secondary_status.category,
-                is_custom: p.secondary_status.is_custom,
-                is_active: p.secondary_status.is_active,
-              }
+              _id: p.secondary_status._id,
+              name: p.secondary_status.name,
+              code: p.secondary_status.code,
+              type: p.secondary_status.type,
+              category: p.secondary_status.category,
+              is_custom: p.secondary_status.is_custom,
+              is_active: p.secondary_status.is_active,
+            }
             : null,
 
           // ========================================
@@ -4450,9 +4450,9 @@ router.get(
 
           hostType: p.hostTypeId
             ? {
-                _id: p.hostTypeId._id,
-                name: p.hostTypeId.type,
-              }
+              _id: p.hostTypeId._id,
+              name: p.hostTypeId.type,
+            }
             : null,
 
           // ========================================
@@ -4461,9 +4461,9 @@ router.get(
 
           hostSubType: p.hostSubTypeId
             ? {
-                _id: p.hostSubTypeId._id,
-                name: p.hostSubTypeId.name,
-              }
+              _id: p.hostSubTypeId._id,
+              name: p.hostSubTypeId.name,
+            }
             : null,
 
           // ========================================
@@ -4472,9 +4472,9 @@ router.get(
 
           storage: p.storageId
             ? {
-                _id: p.storageId._id,
-                name: p.storageId.storage,
-              }
+              _id: p.storageId._id,
+              name: p.storageId.storage,
+            }
             : null,
 
           // ========================================
@@ -4618,9 +4618,9 @@ router.get(
 
           domainSource: orderObj.domainSource
             ? {
-                ...orderObj.domainSource,
-                image: domainSourceImage,
-              }
+              ...orderObj.domainSource,
+              image: domainSourceImage,
+            }
             : null,
 
           // ========================================
@@ -6386,6 +6386,7 @@ router.get("/provider/:name", async (req, res) => {
 });
 
 
+
 router.get(
   "/customer_order_details/:customerId",
   async (req: Request, res: Response) => {
@@ -6439,7 +6440,6 @@ router.get(
       ) => {
         if (!value) return undefined;
 
-        // Already populated
         if (
           typeof value === "object" &&
           value.name
@@ -6470,12 +6470,8 @@ router.get(
 
       const clientData = {
         ...client,
-
-        c_state_name:
-          stateName,
-
-        c_country_name:
-          countryName,
+        c_state_name: stateName,
+        c_country_name: countryName,
       };
 
       // ========================================================
@@ -6484,12 +6480,7 @@ router.get(
 
       const today = new Date();
 
-      today.setHours(
-        0,
-        0,
-        0,
-        0
-      );
+      today.setHours(0, 0, 0, 0);
 
       // ========================================================
       // 5. ORDER STATUSES
@@ -6560,22 +6551,11 @@ router.get(
       const redemptionStatusSafe =
         await Status.findOne({
           type: "domain",
-
           $or: [
-            {
-              code:
-                "REDEMPTION PERIOD",
-            },
-            {
-              code:
-                "REDEMPTION_PERIOD",
-            },
-            {
-              name:
-                "REDEMPTION PERIOD",
-            },
+            { code: "REDEMPTION PERIOD" },
+            { code: "REDEMPTION_PERIOD" },
+            { name: "REDEMPTION PERIOD" },
           ],
-
           is_active: true,
         }).select(
           "_id name code type is_active"
@@ -6584,22 +6564,11 @@ router.get(
       const pendingDeleteStatusSafe =
         await Status.findOne({
           type: "domain",
-
           $or: [
-            {
-              code:
-                "PENDING DELETE RESTORABLE",
-            },
-            {
-              code:
-                "PENDING_DELETE_RESTORABLE",
-            },
-            {
-              name:
-                "PENDING DELETE RESTORABLE",
-            },
+            { code: "PENDING DELETE RESTORABLE" },
+            { code: "PENDING_DELETE_RESTORABLE" },
+            { name: "PENDING DELETE RESTORABLE" },
           ],
-
           is_active: true,
         }).select(
           "_id name code type is_active"
@@ -6626,7 +6595,7 @@ router.get(
             expiryDate: 1,
             lockStatus: 1,
             domainSource: 1,
-
+            labels: 1,
             status: 1,
             email_expiryDate: 1,
             createdAt: 1,
@@ -6638,8 +6607,17 @@ router.get(
 
           .populate({
             path: "domainSource",
+            select: "_id name code image",
+          })
+
+          // ====================================================
+          // ORDER LABELS
+          // ====================================================
+
+          .populate({
+            path: "labels",
             select:
-              "_id name code image",
+              "_id statusLabelName code type service status displayArea visibleTo",
           })
 
           // ====================================================
@@ -6648,8 +6626,7 @@ router.get(
 
           .populate({
             path: "order_status",
-            select:
-              "_id name code type is_active",
+            select: "_id name code type is_active",
           })
 
           // ====================================================
@@ -6658,8 +6635,7 @@ router.get(
 
           .populate({
             path: "domain_status",
-            select:
-              "_id name code type is_active",
+            select: "_id name code type is_active",
           })
 
           // ====================================================
@@ -6668,14 +6644,12 @@ router.get(
 
           .populate({
             path: "archived_status",
-            select:
-              "_id name code type is_active",
+            select: "_id name code type is_active",
           })
 
           .sort({
             createdAt: -1,
           })
-
           .lean();
 
       // ========================================================
@@ -6683,85 +6657,48 @@ router.get(
       // ========================================================
 
       const orderIds = orders.map(
-        (order: any) =>
-          order._id
+        (order: any) => order._id
       );
 
       const plans =
         orderIds.length
           ? await OrderPlan.find({
-            orderId: {
-              $in: orderIds,
-            },
-          })
-
-            // ------------------------------------------------
-            // EMAIL TYPE
-            // ------------------------------------------------
-
-            .populate({
-              path:
-                "emailTypeId",
-              select:
-                "name image",
+              orderId: {
+                $in: orderIds,
+              },
             })
 
-            // ------------------------------------------------
-            // HOST TYPE
-            // ------------------------------------------------
+              .populate({
+                path: "emailTypeId",
+                select: "name image",
+              })
 
-            .populate({
-              path:
-                "hostTypeId",
-              select:
-                "type",
-            })
+              .populate({
+                path: "hostTypeId",
+                select: "type",
+              })
 
-            // ------------------------------------------------
-            // HOST SUB TYPE
-            // ------------------------------------------------
+              .populate({
+                path: "hostSubTypeId",
+                select: "name",
+              })
 
-            .populate({
-              path:
-                "hostSubTypeId",
-              select:
-                "name",
-            })
+              .populate({
+                path: "storageId",
+                select: "name storage",
+              })
 
-            // ------------------------------------------------
-            // STORAGE
-            // ------------------------------------------------
+              .populate({
+                path: "primary_status",
+                select: "_id name code type is_active",
+              })
 
-            .populate({
-              path:
-                "storageId",
-              select:
-                "name storage",
-            })
+              .populate({
+                path: "secondary_status",
+                select: "_id name code type is_active",
+              })
 
-            // ------------------------------------------------
-            // PRIMARY STATUS
-            // ------------------------------------------------
-
-            .populate({
-              path:
-                "primary_status",
-              select:
-                "_id name code type is_active",
-            })
-
-            // ------------------------------------------------
-            // SECONDARY STATUS
-            // ------------------------------------------------
-
-            .populate({
-              path:
-                "secondary_status",
-              select:
-                "_id name code type is_active",
-            })
-
-            .select(`
+              .select(`
                 _id
                 orderId
                 type
@@ -6777,951 +6714,501 @@ router.get(
                 secondary_status
               `)
 
-            .lean()
+              .lean()
           : [];
 
       // ========================================================
       // 10. PLAN MAP
       // ========================================================
 
-      const planMap =
-        new Map<
-          string,
-          any[]
-        >();
+      const planMap = new Map<string, any[]>();
 
-      plans.forEach(
-        (plan: any) => {
-          const key =
-            plan.orderId.toString();
+      plans.forEach((plan: any) => {
+        const key = plan.orderId.toString();
 
-          if (
-            !planMap.has(key)
-          ) {
-            planMap.set(
-              key,
-              []
-            );
-          }
-
-          planMap
-            .get(key)!
-            .push({
-              _id:
-                plan._id,
-
-              type:
-                plan.type,
-
-              registrationDate:
-                plan.registrationDate ||
-                null,
-
-              expiryDate:
-                plan.expiryDate ||
-                null,
-
-              noOfUsers:
-                plan.noOfUsers ||
-                0,
-
-              emailType:
-                plan.emailTypeId?.name ||
-                null,
-
-              emailTypeImage:
-                plan.emailTypeId?.image ||
-                null,
-
-              planId:
-                plan.planId ||
-                null,
-
-              hostType:
-                plan.hostTypeId
-                  ? {
-                    _id:
-                      plan.hostTypeId._id,
-
-                    type:
-                      plan.hostTypeId.type,
-                  }
-                  : null,
-
-              hostSubType:
-                plan.hostSubTypeId
-                  ? {
-                    _id:
-                      plan.hostSubTypeId._id,
-
-                    name:
-                      plan.hostSubTypeId.name,
-                  }
-                  : null,
-
-              storage:
-                plan.storageId
-                  ? {
-                    _id:
-                      plan.storageId._id,
-
-                    name:
-                      plan.storageId.name ||
-                      plan.storageId.storage ||
-                      null,
-                  }
-                  : null,
-
-              primary_status:
-                plan.primary_status ||
-                null,
-
-              secondary_status:
-                plan.secondary_status ||
-                null,
-            });
+        if (!planMap.has(key)) {
+          planMap.set(key, []);
         }
-      );
+
+        planMap.get(key)!.push({
+          _id: plan._id,
+          type: plan.type,
+
+          registrationDate:
+            plan.registrationDate || null,
+
+          expiryDate:
+            plan.expiryDate || null,
+
+          noOfUsers:
+            plan.noOfUsers || 0,
+
+          emailType:
+            plan.emailTypeId?.name || null,
+
+          emailTypeImage:
+            plan.emailTypeId?.image || null,
+
+          planId:
+            plan.planId || null,
+
+          hostType: plan.hostTypeId
+            ? {
+                _id: plan.hostTypeId._id,
+                type: plan.hostTypeId.type,
+              }
+            : null,
+
+          hostSubType: plan.hostSubTypeId
+            ? {
+                _id: plan.hostSubTypeId._id,
+                name: plan.hostSubTypeId.name,
+              }
+            : null,
+
+          storage: plan.storageId
+            ? {
+                _id: plan.storageId._id,
+                name:
+                  plan.storageId.name ||
+                  plan.storageId.storage ||
+                  null,
+              }
+            : null,
+
+          primary_status:
+            plan.primary_status || null,
+
+          secondary_status:
+            plan.secondary_status || null,
+        });
+      });
 
       // ========================================================
       // 11. ATTACH PLANS TO ORDERS
       // ========================================================
 
-      orders = orders.map(
-        (order: any) => ({
-          ...order,
+      orders = orders.map((order: any) => ({
+        ...order,
 
-          // ----------------------------------------------------
-          // DOMAIN SOURCE IMAGE
-          // ----------------------------------------------------
+        domainSource: order.domainSource
+          ? {
+              ...order.domainSource,
 
-          domainSource:
-            order.domainSource
-              ? {
-                ...order.domainSource,
+              image: order.domainSource.image
+                ? order.domainSource.image.startsWith(
+                    "/uploads"
+                  )
+                  ? order.domainSource.image
+                  : `/uploads/domainsources/${order.domainSource.image}`
+                : null,
+            }
+          : null,
 
-                image:
-                  order.domainSource
-                    .image
-                    ? order.domainSource.image.startsWith(
-                      "/uploads"
-                    )
-                      ? order.domainSource.image
-                      : `/uploads/domainsources/${order.domainSource.image}`
-                    : null,
-              }
-              : null,
+        // LABELS ARE ALREADY POPULATED
+        // KEEP THEM IN RESPONSE
 
-          // ----------------------------------------------------
-          // PLANS
-          // ----------------------------------------------------
+        labels: Array.isArray(order.labels)
+          ? order.labels
+          : [],
 
-          Plans:
-            planMap.get(
-              order._id.toString()
-            ) || [],
-        })
-      );
+        Plans:
+          planMap.get(order._id.toString()) || [],
+      }));
 
       // ========================================================
       // 12. SERVICE AVAILABILITY
       // ========================================================
 
-      orders =
-        orders.filter(
-          (order: any) => {
+      orders = orders.filter((order: any) => {
+        const hasDomainService =
+          !!order.domainSource;
 
-            // --------------------------------------------------
-            // DOMAIN SERVICE
-            // --------------------------------------------------
+        const plans = Array.isArray(order.Plans)
+          ? order.Plans
+          : [];
 
-            const hasDomainService =
-              !!order.domainSource;
+        const hasPlans = plans.length > 0;
 
-            // --------------------------------------------------
-            // PLANS
-            // --------------------------------------------------
+        if (!hasDomainService && !hasPlans) {
+          return false;
+        }
 
-            const plans =
-              Array.isArray(
-                order.Plans
-              )
-                ? order.Plans
-                : [];
+        let domainAvailable = false;
 
-            const hasPlans =
-              plans.length > 0;
+        if (hasDomainService) {
+          domainAvailable =
+            !isTransferredOrCancelled(
+              order.domain_status
+            );
+        }
 
-            // --------------------------------------------------
-            // NO SERVICE
-            // --------------------------------------------------
+        let planAvailable = false;
 
-            if (
-              !hasDomainService &&
-              !hasPlans
-            ) {
-              return false;
+        if (hasPlans) {
+          planAvailable = plans.some(
+            (plan: any) => {
+              return !isTransferredOrCancelled(
+                plan.primary_status
+              );
             }
+          );
+        }
 
-            // ==================================================
-            // DOMAIN AVAILABLE
-            // ==================================================
-
-            let domainAvailable =
-              false;
-
-            if (
-              hasDomainService
-            ) {
-              domainAvailable =
-                !isTransferredOrCancelled(
-                  order.domain_status
-                );
-            }
-
-            // ==================================================
-            // ANY PLAN AVAILABLE
-            // ==================================================
-
-            let planAvailable =
-              false;
-
-            if (
-              hasPlans
-            ) {
-              planAvailable =
-                plans.some(
-                  (plan: any) => {
-
-                    return (
-                      !isTransferredOrCancelled(
-                        plan.primary_status
-                      )
-                    );
-                  }
-                );
-            }
-
-            // ==================================================
-            // AT LEAST ONE SERVICE AVAILABLE
-            // ==================================================
-
-            if (
-              domainAvailable ||
-              planAvailable
-            ) {
-              return true;
-            }
-
-            // ==================================================
-            // ALL SERVICES TRANSFERRED/CANCELLED
-            // ==================================================
-
-            return false;
-          }
-        );
+        return domainAvailable || planAvailable;
+      });
 
       // ========================================================
       // 13. UPDATE PLAN PRIMARY STATUS
-      // BASED ON PLAN expiryDate
       // ========================================================
 
-      const updatePlanStatuses =
-        async (
-          orderList: any[]
-        ) => {
+      const updatePlanStatuses = async (
+        orderList: any[]
+      ) => {
+        if (!orderList.length) {
+          return orderList;
+        }
 
+        const bulkOps: any[] = [];
+
+        for (const order of orderList) {
+          const orderPlans = Array.isArray(order.Plans)
+            ? order.Plans
+            : [];
+
+          for (const plan of orderPlans) {
+            if (
+              isTransferredOrCancelled(
+                plan.primary_status
+              )
+            ) {
+              continue;
+            }
+
+            if (!plan.expiryDate) {
+              continue;
+            }
+
+            const expiry = new Date(plan.expiryDate);
+
+            expiry.setHours(0, 0, 0, 0);
+
+            const isExpired = expiry < today;
+
+            const newStatus = isExpired
+              ? expiredPlanStatus
+              : activePlanStatus;
+
+            if (!newStatus?._id) {
+              continue;
+            }
+
+            const currentStatusId =
+              plan.primary_status?._id?.toString() ||
+              plan.primary_status?.toString() ||
+              "";
+
+            const newStatusId =
+              newStatus._id.toString();
+
+            if (currentStatusId !== newStatusId) {
+              bulkOps.push({
+                updateOne: {
+                  filter: {
+                    _id: plan._id,
+                  },
+                  update: {
+                    $set: {
+                      primary_status: newStatus._id,
+                    },
+                  },
+                },
+              });
+
+              plan.primary_status = {
+                _id: newStatus._id,
+                name: newStatus.name,
+                code: newStatus.code,
+                type: newStatus.type,
+                is_active: newStatus.is_active,
+              };
+            }
+          }
+        }
+
+        if (bulkOps.length) {
+          await OrderPlan.bulkWrite(bulkOps);
+        }
+
+        return orderList;
+      };
+
+      // ========================================================
+      // 14. UPDATE ORDER STATUS
+      // ========================================================
+
+      const updateOrderStatuses = async (
+        orderList: any[]
+      ) => {
+        const bulkOps: any[] = [];
+
+        orderList.forEach((order: any) => {
           if (
-            !orderList.length
+            isTransferredOrCancelled(
+              order.order_status
+            )
           ) {
-            return orderList;
+            return;
           }
 
-          const bulkOps: any[] =
-            [];
+          let isExpired = false;
 
-          for (
-            const order of orderList
-          ) {
+          if (order.expiryDate) {
+            const expiry = new Date(order.expiryDate);
 
-            const orderPlans =
-              Array.isArray(
-                order.Plans
-              )
-                ? order.Plans
-                : [];
+            expiry.setHours(0, 0, 0, 0);
 
-            for (
-              const plan of orderPlans
-            ) {
+            if (expiry < today) {
+              isExpired = true;
+            }
+          }
 
-              // ------------------------------------------------
-              // TRANSFERRED / CANCELLED
-              // DO NOT OVERWRITE
-              // ------------------------------------------------
+          const orderPlans = Array.isArray(order.Plans)
+            ? order.Plans
+            : [];
 
+          const planExpired = orderPlans.some(
+            (plan: any) => {
               if (
                 isTransferredOrCancelled(
                   plan.primary_status
                 )
               ) {
-                continue;
+                return false;
               }
 
-              // ------------------------------------------------
-              // NO EXPIRY
-              // ------------------------------------------------
-
-              if (
-                !plan.expiryDate
-              ) {
-                continue;
+              if (!plan.expiryDate) {
+                return false;
               }
 
-              const expiry =
-                new Date(
-                  plan.expiryDate
-                );
+              const expiry = new Date(plan.expiryDate);
 
-              expiry.setHours(
-                0,
-                0,
-                0,
-                0
-              );
+              expiry.setHours(0, 0, 0, 0);
 
-              // ------------------------------------------------
-              // ACTIVE / EXPIRED
-              // ------------------------------------------------
-
-              const isExpired =
-                expiry < today;
-
-              const newStatus =
-                isExpired
-                  ? expiredPlanStatus
-                  : activePlanStatus;
-
-              if (
-                !newStatus?._id
-              ) {
-                continue;
-              }
-
-              const currentStatusId =
-                plan.primary_status?._id
-                  ?.toString() ||
-                plan.primary_status
-                  ?.toString() ||
-                "";
-
-              const newStatusId =
-                newStatus._id.toString();
-
-              // ------------------------------------------------
-              // UPDATE DATABASE
-              // ------------------------------------------------
-
-              if (
-                currentStatusId !==
-                newStatusId
-              ) {
-
-                bulkOps.push({
-                  updateOne: {
-                    filter: {
-                      _id:
-                        plan._id,
-                    },
-
-                    update: {
-                      $set: {
-                        primary_status:
-                          newStatus._id,
-                      },
-                    },
-                  },
-                });
-
-                // ------------------------------------------------
-                // LOCAL RESPONSE
-                // ------------------------------------------------
-
-                plan.primary_status = {
-                  _id:
-                    newStatus._id,
-
-                  name:
-                    newStatus.name,
-
-                  code:
-                    newStatus.code,
-
-                  type:
-                    newStatus.type,
-
-                  is_active:
-                    newStatus.is_active,
-                };
-              }
-            }
-          }
-
-          // ====================================================
-          // BULK UPDATE
-          // ====================================================
-
-          if (
-            bulkOps.length
-          ) {
-            await OrderPlan.bulkWrite(
-              bulkOps
-            );
-          }
-
-          return orderList;
-        };
-
-      // ========================================================
-      // 14. UPDATE ORDER STATUS
-      // ORDER EXPIRY OR PLAN EXPIRY
-      // ========================================================
-
-      const updateOrderStatuses =
-        async (
-          orderList: any[]
-        ) => {
-
-          const bulkOps: any[] =
-            [];
-
-          orderList.forEach(
-            (order: any) => {
-
-              // ------------------------------------------------
-              // TRANSFERRED / CANCELLED ORDER
-              // DO NOT OVERWRITE
-              // ------------------------------------------------
-
-              if (
-                isTransferredOrCancelled(
-                  order.order_status
-                )
-              ) {
-                return;
-              }
-
-              let isExpired =
-                false;
-
-              // ------------------------------------------------
-              // ORDER EXPIRY
-              // ------------------------------------------------
-
-              if (
-                order.expiryDate
-              ) {
-
-                const expiry =
-                  new Date(
-                    order.expiryDate
-                  );
-
-                expiry.setHours(
-                  0,
-                  0,
-                  0,
-                  0
-                );
-
-                if (
-                  expiry < today
-                ) {
-                  isExpired = true;
-                }
-              }
-
-              // ------------------------------------------------
-              // PLAN EXPIRY
-              // ------------------------------------------------
-
-              const orderPlans =
-                Array.isArray(
-                  order.Plans
-                )
-                  ? order.Plans
-                  : [];
-
-              const planExpired =
-                orderPlans.some(
-                  (plan: any) => {
-
-                    // ------------------------------------------
-                    // IMPORTANT:
-                    // CANCELLED / TRANSFERRED PLAN
-                    // MUST NOT MAKE ORDER EXPIRED
-                    // ------------------------------------------
-
-                    if (
-                      isTransferredOrCancelled(
-                        plan.primary_status
-                      )
-                    ) {
-                      return false;
-                    }
-
-                    // ------------------------------------------
-                    // NO EXPIRY
-                    // ------------------------------------------
-
-                    if (
-                      !plan.expiryDate
-                    ) {
-                      return false;
-                    }
-
-                    const expiry =
-                      new Date(
-                        plan.expiryDate
-                      );
-
-                    expiry.setHours(
-                      0,
-                      0,
-                      0,
-                      0
-                    );
-
-                    return (
-                      expiry < today
-                    );
-                  }
-                );
-
-              if (
-                planExpired
-              ) {
-                isExpired = true;
-              }
-
-              // ------------------------------------------------
-              // NEW STATUS
-              // ------------------------------------------------
-
-              const newStatus =
-                isExpired
-                  ? expiredOrderStatus
-                  : activeOrderStatus;
-
-              if (
-                !newStatus?._id
-              ) {
-                return;
-              }
-
-              const currentStatusId =
-                order.order_status?._id
-                  ?.toString() ||
-                order.order_status
-                  ?.toString() ||
-                "";
-
-              const newStatusId =
-                newStatus._id.toString();
-
-              // ------------------------------------------------
-              // UPDATE DATABASE
-              // ------------------------------------------------
-
-              if (
-                currentStatusId !==
-                newStatusId
-              ) {
-
-                bulkOps.push({
-                  updateOne: {
-                    filter: {
-                      _id:
-                        order._id,
-                    },
-
-                    update: {
-                      $set: {
-                        order_status:
-                          newStatus._id,
-                      },
-                    },
-                  },
-                });
-
-                // ------------------------------------------------
-                // LOCAL RESPONSE
-                // ------------------------------------------------
-
-                order.order_status = {
-                  _id:
-                    newStatus._id,
-
-                  name:
-                    newStatus.name,
-
-                  code:
-                    newStatus.code,
-
-                  type:
-                    newStatus.type,
-
-                  is_active:
-                    newStatus.is_active,
-                };
-              }
+              return expiry < today;
             }
           );
 
-          // ====================================================
-          // BULK UPDATE
-          // ====================================================
-
-          if (
-            bulkOps.length
-          ) {
-            await Order.bulkWrite(
-              bulkOps
-            );
+          if (planExpired) {
+            isExpired = true;
           }
 
-          return orderList;
-        };
+          const newStatus = isExpired
+            ? expiredOrderStatus
+            : activeOrderStatus;
+
+          if (!newStatus?._id) {
+            return;
+          }
+
+          const currentStatusId =
+            order.order_status?._id?.toString() ||
+            order.order_status?.toString() ||
+            "";
+
+          const newStatusId =
+            newStatus._id.toString();
+
+          if (currentStatusId !== newStatusId) {
+            bulkOps.push({
+              updateOne: {
+                filter: {
+                  _id: order._id,
+                },
+                update: {
+                  $set: {
+                    order_status: newStatus._id,
+                  },
+                },
+              },
+            });
+
+            order.order_status = {
+              _id: newStatus._id,
+              name: newStatus.name,
+              code: newStatus.code,
+              type: newStatus.type,
+              is_active: newStatus.is_active,
+            };
+          }
+        });
+
+        if (bulkOps.length) {
+          await Order.bulkWrite(bulkOps);
+        }
+
+        return orderList;
+      };
 
       // ========================================================
       // 15. UPDATE ARCHIVED STATUS
-      // 36-65 / 66+
       // ========================================================
 
-      const updateArchivedStatuses =
-        async (
-          orderList: any[]
-        ) => {
+      const updateArchivedStatuses = async (
+        orderList: any[]
+      ) => {
+        const bulkOps: any[] = [];
 
-          const bulkOps: any[] =
-            [];
-
-          orderList.forEach(
-            (order: any) => {
-
-              // ------------------------------------------------
-              // NO EXPIRY
-              // ------------------------------------------------
-
-              if (
-                !order.expiryDate
-              ) {
-                return;
-              }
-
-              const expiry =
-                new Date(
-                  order.expiryDate
-                );
-
-              expiry.setHours(
-                0,
-                0,
-                0,
-                0
-              );
-
-              const diffMs =
-                today.getTime() -
-                expiry.getTime();
-
-              const expiredDays =
-                Math.floor(
-                  diffMs /
-                  (
-                    1000 *
-                    60 *
-                    60 *
-                    24
-                  )
-                );
-
-              let newArchivedStatus:
-                any = null;
-
-              // ------------------------------------------------
-              // TODAY / FUTURE
-              // ------------------------------------------------
-
-              if (
-                expiredDays <= 0
-              ) {
-
-                newArchivedStatus =
-                  null;
-              }
-
-              // ------------------------------------------------
-              // 1-35 DAYS
-              // ------------------------------------------------
-
-              else if (
-                expiredDays <= 35
-              ) {
-
-                newArchivedStatus =
-                  null;
-              }
-
-              // ------------------------------------------------
-              // 36-65 DAYS
-              // ------------------------------------------------
-
-              else if (
-                expiredDays <= 65
-              ) {
-
-                newArchivedStatus =
-                  redemptionStatusSafe;
-              }
-
-              // ------------------------------------------------
-              // 66+ DAYS
-              // ------------------------------------------------
-
-              else {
-
-                newArchivedStatus =
-                  pendingDeleteStatusSafe;
-              }
-
-              const currentArchivedId =
-                order.archived_status?._id
-                  ?.toString() ||
-                order.archived_status
-                  ?.toString() ||
-                null;
-
-              const newArchivedId =
-                newArchivedStatus?._id
-                  ?.toString() ||
-                null;
-
-              // ------------------------------------------------
-              // UPDATE ONLY IF DIFFERENT
-              // ------------------------------------------------
-
-              if (
-                currentArchivedId !==
-                newArchivedId
-              ) {
-
-                bulkOps.push({
-                  updateOne: {
-                    filter: {
-                      _id:
-                        order._id,
-                    },
-
-                    update: {
-                      $set: {
-                        archived_status:
-                          newArchivedStatus
-                            ? newArchivedStatus._id
-                            : null,
-                      },
-                    },
-                  },
-                });
-
-                // ------------------------------------------------
-                // LOCAL RESPONSE
-                // ------------------------------------------------
-
-                order.archived_status =
-                  newArchivedStatus;
-              }
-            }
-          );
-
-          // ====================================================
-          // BULK UPDATE
-          // ====================================================
-
-          if (
-            bulkOps.length
-          ) {
-            await Order.bulkWrite(
-              bulkOps
-            );
+        orderList.forEach((order: any) => {
+          if (!order.expiryDate) {
+            return;
           }
 
-          return orderList;
-        };
+          const expiry = new Date(order.expiryDate);
+
+          expiry.setHours(0, 0, 0, 0);
+
+          const diffMs =
+            today.getTime() - expiry.getTime();
+
+          const expiredDays = Math.floor(
+            diffMs / (1000 * 60 * 60 * 24)
+          );
+
+          let newArchivedStatus: any = null;
+
+          if (expiredDays <= 0) {
+            newArchivedStatus = null;
+          } else if (expiredDays <= 35) {
+            newArchivedStatus = null;
+          } else if (expiredDays <= 65) {
+            newArchivedStatus = redemptionStatusSafe;
+          } else {
+            newArchivedStatus = pendingDeleteStatusSafe;
+          }
+
+          const currentArchivedId =
+            order.archived_status?._id?.toString() ||
+            order.archived_status?.toString() ||
+            null;
+
+          const newArchivedId =
+            newArchivedStatus?._id?.toString() ||
+            null;
+
+          if (currentArchivedId !== newArchivedId) {
+            bulkOps.push({
+              updateOne: {
+                filter: {
+                  _id: order._id,
+                },
+                update: {
+                  $set: {
+                    archived_status:
+                      newArchivedStatus
+                        ? newArchivedStatus._id
+                        : null,
+                  },
+                },
+              },
+            });
+
+            order.archived_status =
+              newArchivedStatus;
+          }
+        });
+
+        if (bulkOps.length) {
+          await Order.bulkWrite(bulkOps);
+        }
+
+        return orderList;
+      };
 
       // ========================================================
       // 16. PLAN STATUS UPDATE
       // ========================================================
 
-      orders =
-        await updatePlanStatuses(
-          orders
-        );
+      orders = await updatePlanStatuses(orders);
 
       // ========================================================
       // 17. ORDER STATUS UPDATE
       // ========================================================
 
-      orders =
-        await updateOrderStatuses(
-          orders
-        );
+      orders = await updateOrderStatuses(orders);
 
       // ========================================================
       // 18. ARCHIVED STATUS UPDATE
       // ========================================================
 
-      orders =
-        await updateArchivedStatuses(
-          orders
-        );
+      orders = await updateArchivedStatuses(orders);
 
       // ========================================================
       // 19. NORMAL ORDER AGE FILTER
-      //
-      // TODAY/FUTURE  -> SHOW
-      // 1-35 DAYS     -> SHOW
-      // 36+ DAYS      -> HIDE
+      // TODAY/FUTURE -> SHOW
+      // 1-35 DAYS    -> SHOW
+      // 36+ DAYS     -> HIDE
       // ========================================================
 
-      orders =
-        orders.filter(
-          (order: any) => {
+      orders = orders.filter((order: any) => {
+        if (!order.expiryDate) {
+          return true;
+        }
 
-            // --------------------------------------------------
-            // NO ORDER EXPIRY
-            // --------------------------------------------------
+        const expiry = new Date(order.expiryDate);
 
-            if (
-              !order.expiryDate
-            ) {
-              return true;
-            }
+        expiry.setHours(0, 0, 0, 0);
 
-            const expiry =
-              new Date(
-                order.expiryDate
-              );
+        const diffMs =
+          today.getTime() - expiry.getTime();
 
-            expiry.setHours(
-              0,
-              0,
-              0,
-              0
-            );
-
-            const diffMs =
-              today.getTime() -
-              expiry.getTime();
-
-            const expiredDays =
-              Math.floor(
-                diffMs /
-                (
-                  1000 *
-                  60 *
-                  60 *
-                  24
-                )
-              );
-
-            // --------------------------------------------------
-            // TODAY / FUTURE
-            // --------------------------------------------------
-
-            if (
-              expiredDays <= 0
-            ) {
-              return true;
-            }
-
-            // --------------------------------------------------
-            // 1-35 DAYS
-            // --------------------------------------------------
-
-            if (
-              expiredDays <= 35
-            ) {
-              return true;
-            }
-
-            // --------------------------------------------------
-            // 36+ DAYS
-            // --------------------------------------------------
-
-            return false;
-          }
+        const expiredDays = Math.floor(
+          diffMs / (1000 * 60 * 60 * 24)
         );
+
+        if (expiredDays <= 0) {
+          return true;
+        }
+
+        if (expiredDays <= 35) {
+          return true;
+        }
+
+        return false;
+      });
 
       // ========================================================
       // 20. EMAIL EXPIRY
       // ========================================================
 
-      orders =
-        await Promise.all(
-          orders.map(
-            async (
-              order: any
-            ) => {
+      orders = await Promise.all(
+        orders.map(async (order: any) => {
+          const emailPlans = await OrderPlan.find({
+            orderId: order._id,
+            type: "email",
+          })
+            .select("expiryDate")
+            .lean();
 
-              const emailPlans =
-                await OrderPlan.find({
-                  orderId:
-                    order._id,
+          const emailExpiryDates = emailPlans
+            .map((item: any) => item.expiryDate)
+            .filter(Boolean);
 
-                  type:
-                    "email",
-                })
-                  .select(
-                    "expiryDate"
-                  )
-                  .lean();
+          return {
+            ...order,
 
-              const emailExpiryDates =
-                emailPlans
-                  .map(
-                    (item: any) =>
-                      item.expiryDate
-                  )
-                  .filter(Boolean);
+            domainExpiryDate:
+              order.expiryDate || null,
 
-              return {
-                ...order,
-
-                // ------------------------------------------------
-                // DOMAIN EXPIRY
-                // ------------------------------------------------
-
-                domainExpiryDate:
-                  order.expiryDate ||
-                  null,
-
-                // ------------------------------------------------
-                // EMAIL EXPIRY
-                // ------------------------------------------------
-
-                emailExpiryDate:
-                  emailExpiryDates.length
-                    ? emailExpiryDates
-                    : order.email_expiryDate
-                      ? [
-                        order.email_expiryDate,
-                      ]
-                      : [],
-              };
-            }
-          )
-        );
+            emailExpiryDate:
+              emailExpiryDates.length
+                ? emailExpiryDates
+                : order.email_expiryDate
+                ? [order.email_expiryDate]
+                : [],
+          };
+        })
+      );
 
       // ========================================================
       // 21. FINAL RESPONSE
@@ -7729,23 +7216,17 @@ router.get(
 
       return res.json({
         status: "SUCCESS",
-
-        client:
-          clientData,
-
+        client: clientData,
         orders,
       });
 
-    } catch (
-    error: any
-    ) {
-
+    } catch (error: any) {
       console.error(
         "================================="
       );
 
       console.error(
-        "❌ Customer Order Details Error:",
+        "Customer Order Details Error:",
         error
       );
 
@@ -7755,14 +7236,13 @@ router.get(
 
       return res.status(500).json({
         status: "ERROR",
-
         message:
-          error?.message ||
-          "Server error",
+          error?.message || "Server error",
       });
     }
   }
 );
+
 /**
  * GET CUSTOMER CANCELLED / TRANSFERRED ORDERS
  *
