@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-
+import { toast } from "react-toastify";
+import { notify } from "../../../../Common/Toastify";
+import { getLabelColor } from "../../../../utils/labelColors";
 import {
   fetchOrderById,
   updateOrderStatus,
@@ -314,7 +316,7 @@ const OrderDetails: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   /* ===================== LABEL STATES ===================== */
-
+const [orderLabelChanged, setOrderLabelChanged] = useState(false);
   const [labelLoading, setLabelLoading] = useState(false);
 
   const [labelModalOpen, setLabelModalOpen] = useState(false);
@@ -323,7 +325,7 @@ const OrderDetails: React.FC = () => {
     useState<string[]>([]);
 
   const [labelUpdating, setLabelUpdating] = useState(false);
-
+const [labelSuccess, setLabelSuccess] = useState("");
   const [orderLabels, setOrderLabels] = useState<LabelInfo[]>([]);
   const [planLabels, setPlanLabels] = useState<LabelInfo[]>([]);
 
@@ -407,15 +409,16 @@ const OrderDetails: React.FC = () => {
 
   /* ===================== ORDER LABEL MODAL ===================== */
 
-  const openLabelModal = () => {
-    if (!order) return;
+const openLabelModal = () => {
+  if (!order) return;
 
-    setSelectedOrderLabels(
-      getLabelIds(order.labels ?? order.label)
-    );
+  setSelectedOrderLabels(
+    getLabelIds(order.labels ?? order.label)
+  );
 
-    setLabelModalOpen(true);
-  };
+  setOrderLabelChanged(false);
+  setLabelModalOpen(true);
+};
 
   const handleOrderLabelSelection = (
     labelId: string,
@@ -449,22 +452,22 @@ const OrderDetails: React.FC = () => {
       setOrder((previous) =>
         previous
           ? {
-              ...previous,
-              labels: updatedLabels,
-              label: undefined,
-            }
+            ...previous,
+            labels: updatedLabels,
+            label: undefined,
+          }
           : previous
       );
 
       setLabelModalOpen(false);
 
-      alert("Order labels updated successfully.");
+      notify("Order labels updated successfully.","success");
     } catch (labelError: any) {
       console.error("Order label update error:", labelError);
 
-      alert(
+      notify(
         labelError?.response?.data?.message ||
-          "Failed to update order labels."
+        "Failed to update order labels.","error"
       );
     } finally {
       setLabelUpdating(false);
@@ -530,29 +533,29 @@ const OrderDetails: React.FC = () => {
       setOrder((previous) =>
         previous
           ? {
-              ...previous,
-              plans: previous.plans?.map((plan) =>
-                plan._id === planId
-                  ? {
-                      ...plan,
-                      labels: updatedLabels,
-                      label: undefined,
-                    }
-                  : plan
-              ),
-            }
+            ...previous,
+            plans: previous.plans?.map((plan) =>
+              plan._id === planId
+                ? {
+                  ...plan,
+                  labels: updatedLabels,
+                  label: undefined,
+                }
+                : plan
+            ),
+          }
           : previous
       );
 
-      alert("Plan labels updated successfully.");
+      notify("Plan labels updated successfully.","success");
 
       return true;
     } catch (labelError: any) {
       console.error("Plan label update error:", labelError);
 
-      alert(
+      notify(
         labelError?.response?.data?.message ||
-          "Failed to update plan labels."
+        "Failed to update plan labels.","error"
       );
 
       setPlanLabelSelections((previous) => ({
@@ -769,27 +772,27 @@ const OrderDetails: React.FC = () => {
       setOrder((prev) =>
         prev
           ? {
-              ...prev,
-              plans: prev.plans?.map((plan) =>
-                plan._id === selectedLicensePlan._id
-                  ? {
-                      ...plan,
-                      noOfUsers: updatedUsers,
-                    }
-                  : plan
-              ),
-            }
+            ...prev,
+            plans: prev.plans?.map((plan) =>
+              plan._id === selectedLicensePlan._id
+                ? {
+                  ...plan,
+                  noOfUsers: updatedUsers,
+                }
+                : plan
+            ),
+          }
           : prev
       );
 
       setLicenseConfirmModalOpen(false);
       setLicenseModalOpen(false);
 
-      alert("Licences updated successfully.");
+      notify("Licences updated successfully.");
     } catch (licenseError) {
       console.error("Licence update error:", licenseError);
 
-      alert(
+      notify(
         licenseError instanceof Error
           ? licenseError.message
           : "Failed to update licences."
@@ -1077,9 +1080,9 @@ const OrderDetails: React.FC = () => {
             updatedOrder.plans = updatedOrder.plans?.map((plan) =>
               plan._id === item.planId
                 ? {
-                    ...plan,
-                    expiryDate: renewDates[item.key],
-                  }
+                  ...plan,
+                  expiryDate: renewDates[item.key],
+                }
                 : plan
             );
           }
@@ -1158,9 +1161,9 @@ const OrderDetails: React.FC = () => {
         setOrder((previous) =>
           previous
             ? {
-                ...previous,
-                order_status: updatedOrder.order_status,
-              }
+              ...previous,
+              order_status: updatedOrder.order_status,
+            }
             : previous
         );
       }
@@ -1177,9 +1180,9 @@ const OrderDetails: React.FC = () => {
         setOrder((previous) =>
           previous
             ? {
-                ...previous,
-                domain_status: updatedOrder.domain_status,
-              }
+              ...previous,
+              domain_status: updatedOrder.domain_status,
+            }
             : previous
         );
       }
@@ -1215,9 +1218,9 @@ const OrderDetails: React.FC = () => {
               plans: previous.plans?.map((currentPlan) =>
                 currentPlan._id === plan._id
                   ? {
-                      ...currentPlan,
-                      primary_status: updatedPlan.primary_status,
-                    }
+                    ...currentPlan,
+                    primary_status: updatedPlan.primary_status,
+                  }
                   : currentPlan
               ),
             };
@@ -1226,10 +1229,10 @@ const OrderDetails: React.FC = () => {
       }
 
       setStatusModalOpen(false);
-      alert("Status updated successfully");
+      notify("Status updated successfully");
     } catch (statusError) {
       console.error("Status update error:", statusError);
-      alert("Failed to update status");
+     notify("Failed to update status");
     } finally {
       setStatusUpdating(false);
     }
@@ -1250,15 +1253,15 @@ const OrderDetails: React.FC = () => {
         const mapPerson = (source: any) =>
           source
             ? {
-                name: source.c_name,
-                email: source.c_email,
-                phone: source.c_phone,
-                company: source.c_company,
-                address: source.c_address,
-                city: source.c_city,
-                state: source.c_state?.name,
-                country: source.c_country?.name,
-              }
+              name: source.c_name,
+              email: source.c_email,
+              phone: source.c_phone,
+              company: source.c_company,
+              address: source.c_address,
+              city: source.c_city,
+              state: source.c_state?.name,
+              country: source.c_country?.name,
+            }
             : undefined;
 
         const mappedOrder: Order = {
@@ -1463,6 +1466,21 @@ const OrderDetails: React.FC = () => {
             </button>
           </div>
         )}
+        {labelSuccess && (
+  <div
+    role="alert"
+    className="rounded-lg border border-green-300 bg-green-100 p-3 text-sm font-medium text-green-800"
+  >
+    {labelSuccess}
+    <button
+      type="button"
+      onClick={() => setLabelSuccess("")}
+      className="ml-3 font-semibold text-green-800 underline"
+    >
+      Dismiss
+    </button>
+  </div>
+)}
 
         {/* ===================== DOMAIN INFORMATION ===================== */}
 
@@ -1639,17 +1657,16 @@ const OrderDetails: React.FC = () => {
 
                               {copyFeedback?.key ===
                                 `${plan._id}-Admin Email` && (
-                                <span
-                                  role="status"
-                                  className={`absolute bottom-full left-full z-50 mb-1 ml-1 whitespace-nowrap rounded px-2 py-1 text-xs font-medium shadow-md ${
-                                    copyFeedback.success
-                                      ? "bg-green-600 text-white"
-                                      : "bg-red-600 text-white"
-                                  }`}
-                                >
-                                  {copyFeedback.message}
-                                </span>
-                              )}
+                                  <span
+                                    role="status"
+                                    className={`absolute bottom-full left-full z-50 mb-1 ml-1 whitespace-nowrap rounded px-2 py-1 text-xs font-medium shadow-md ${copyFeedback.success
+                                        ? "bg-green-600 text-white"
+                                        : "bg-red-600 text-white"
+                                      }`}
+                                  >
+                                    {copyFeedback.message}
+                                  </span>
+                                )}
                             </span>
                           )}
                         </div>
@@ -1681,17 +1698,16 @@ const OrderDetails: React.FC = () => {
 
                               {copyFeedback?.key ===
                                 `${plan._id}-Admin Password` && (
-                                <span
-                                  role="status"
-                                  className={`absolute bottom-full left-full z-50 mb-1 ml-1 whitespace-nowrap rounded px-2 py-1 text-xs font-medium shadow-md ${
-                                    copyFeedback.success
-                                      ? "bg-green-600 text-white"
-                                      : "bg-red-600 text-white"
-                                  }`}
-                                >
-                                  {copyFeedback.message}
-                                </span>
-                              )}
+                                  <span
+                                    role="status"
+                                    className={`absolute bottom-full left-full z-50 mb-1 ml-1 whitespace-nowrap rounded px-2 py-1 text-xs font-medium shadow-md ${copyFeedback.success
+                                        ? "bg-green-600 text-white"
+                                        : "bg-red-600 text-white"
+                                      }`}
+                                  >
+                                    {copyFeedback.message}
+                                  </span>
+                                )}
                             </span>
                           )}
                         </div>
@@ -1736,12 +1752,14 @@ const OrderDetails: React.FC = () => {
                               )
                                 .split(", ")
                                 .map((name, index) => (
-                                  <span
-                                    key={`${plan._id}-${index}`}
-                                    className="rounded-full bg-blue-100 px-2 py-1 text-[10px] font-medium text-blue-700"
-                                  >
-                                    {name}
-                                  </span>
+                                 <span
+  key={`${plan._id}-${index}`}
+  className={`rounded-full px-2 py-1 text-[10px] font-medium ${
+    getLabelColor(name)
+  }`}
+>
+  {name}
+</span>
                                 ))
                             ) : (
                               <span className="text-[11px] text-gray-400">
@@ -1801,12 +1819,13 @@ const OrderDetails: React.FC = () => {
                       <input
                         type="checkbox"
                         checked={selectedOrderLabels.includes(label._id)}
-                        onChange={(event) =>
+                        onChange={(event) => {
                           handleOrderLabelSelection(
                             label._id,
                             event.target.checked
-                          )
-                        }
+                          );
+                          setOrderLabelChanged(true);
+                        }}
                         disabled={labelUpdating || labelLoading}
                         className="h-4 w-4 rounded border-gray-300"
                       />
@@ -1833,14 +1852,18 @@ const OrderDetails: React.FC = () => {
                   Cancel
                 </button>
 
-                <button
-                  type="button"
-                  onClick={handleOrderLabelUpdate}
-                  disabled={labelUpdating || labelLoading}
-                  className="rounded-md bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700 disabled:opacity-50"
-                >
-                  {labelUpdating ? "Saving..." : "Save Labels"}
-                </button>
+             <button
+  type="button"
+  onClick={handleOrderLabelUpdate}
+ disabled={
+  labelUpdating ||
+  labelLoading ||
+  selectedOrderLabels.length === 0
+}
+  className="rounded-md bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+>
+  {labelUpdating ? "Saving..." : "Save Labels"}
+</button>
               </div>
             </div>
           </div>
@@ -1934,9 +1957,10 @@ const OrderDetails: React.FC = () => {
                   type="button"
                   onClick={handleSavePlanLabels}
                   disabled={
-                    savingPlanLabel === activePlanLabelId ||
-                    labelLoading
-                  }
+  savingPlanLabel === activePlanLabelId ||
+  labelLoading ||
+  (planLabelSelections[activePlanLabelId] || []).length === 0
+}
                   className="rounded-md bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700 disabled:opacity-50"
                 >
                   {savingPlanLabel === activePlanLabelId
@@ -2026,11 +2050,10 @@ const OrderDetails: React.FC = () => {
 
                               <div className="flex flex-wrap gap-5">
                                 <label
-                                  className={`flex items-center gap-2 ${
-                                    item.monthlyLocked
+                                  className={`flex items-center gap-2 ${item.monthlyLocked
                                       ? "cursor-not-allowed text-gray-400"
                                       : "cursor-pointer"
-                                  }`}
+                                    }`}
                                 >
                                   <input
                                     type="radio"
@@ -2049,11 +2072,10 @@ const OrderDetails: React.FC = () => {
                                 </label>
 
                                 <label
-                                  className={`flex items-center gap-2 ${
-                                    !item.monthlyLocked && checked
+                                  className={`flex items-center gap-2 ${!item.monthlyLocked && checked
                                       ? "cursor-pointer"
                                       : "cursor-not-allowed text-gray-400"
-                                  }`}
+                                    }`}
                                 >
                                   <input
                                     type="radio"
@@ -2349,13 +2371,12 @@ const OrderDetails: React.FC = () => {
                       <span>Change</span>
 
                       <span
-                        className={`font-semibold ${
-                          licenseDelta > 0
+                        className={`font-semibold ${licenseDelta > 0
                             ? "text-green-600"
                             : licenseDelta < 0
                               ? "text-red-600"
                               : "text-gray-500"
-                        }`}
+                          }`}
                       >
                         {licenseDelta > 0
                           ? `+${licenseDelta}`
@@ -2370,8 +2391,8 @@ const OrderDetails: React.FC = () => {
 
                       <span className="text-xl">
                         {Number.isInteger(newLicenseTotal) &&
-                        newLicenseTotal >= 1 &&
-                        newLicenseTotal <= 300
+                          newLicenseTotal >= 1 &&
+                          newLicenseTotal <= 300
                           ? newLicenseTotal
                           : "—"}
                       </span>
@@ -2473,11 +2494,10 @@ const OrderDetails: React.FC = () => {
                       </p>
 
                       <p
-                        className={`mt-1 text-2xl font-semibold ${
-                          licenseDelta > 0
+                        className={`mt-1 text-2xl font-semibold ${licenseDelta > 0
                             ? "text-green-600"
                             : "text-red-600"
-                        }`}
+                          }`}
                       >
                         {licenseDelta > 0
                           ? `+${licenseDelta}`
@@ -2754,7 +2774,7 @@ const OrderDetails: React.FC = () => {
                                       (status) =>
                                         status.is_active ||
                                         status._id ===
-                                          plan.primary_status?._id
+                                        plan.primary_status?._id
                                     )
                                     .map((status) => (
                                       <option

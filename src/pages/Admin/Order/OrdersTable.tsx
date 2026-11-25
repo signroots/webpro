@@ -74,7 +74,20 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
       );
     }, 2000);
   };
+const getLabelColor = (code: string) => {
+  const colors: Record<string, string> = {
+    QATAR: "bg-purple-100 text-purple-800 border border-purple-200",
+    INDIA: "bg-orange-100 text-orange-800 border border-orange-200",
+    TRIAL: "bg-cyan-100 text-cyan-800 border border-cyan-200",
+    LEGACY_FREE: "bg-gray-100 text-gray-700 border border-gray-200",
+    EDUCATION: "bg-indigo-100 text-indigo-800 border border-indigo-200",
+    DIRECT_BILLING: "bg-green-100 text-green-800 border border-green-200",
+    SUSPENDED: "bg-red-100 text-red-800 border border-red-200",
+    SIGNIN_BLOCKED: "bg-rose-100 text-rose-800 border border-rose-200",
+  };
 
+  return colors[code?.toUpperCase()] || "bg-blue-100 text-blue-800";
+};
   const copyDomain = async (order: any) => {
     try {
       await navigator.clipboard.writeText(order.domainName);
@@ -272,13 +285,16 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
               </td>
 {/* LABEL */}
 {/* LABEL */}
+{/* LABEL */}
 <td className="px-3 py-4 text-left">
   <div className="flex flex-wrap items-center gap-1">
     {Array.isArray(order.labels) &&
       order.labels.map((label: any) => (
         <span
           key={label._id || label.code}
-          className="inline-flex items-center rounded-md bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700"
+          className={`inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ${
+            getLabelColor(label.code || label.statusLabelName)
+          }`}
         >
           {label.code || label.statusLabelName}
         </span>
