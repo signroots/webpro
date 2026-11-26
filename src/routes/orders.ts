@@ -2758,43 +2758,47 @@ router.get(
       // ORDER MUST HAVE DOMAIN OR PLAN
       // ========================================================
       const dnscloudflareSource = await DomainSource.findOne({
-        code: "DNS-CLOUDFLARE",
-      });
-      filters.push({
-        $or: [
-          {
-            _id: {
-              $in: planOrderIds,
-            },
-          },
-          {
-            domainSource: { $ne: dnscloudflareSource?._id },
+  code: "DNS-CLOUDFLARE",
+});
 
-          },
-        ],
-      });
-
+// Apply existing domain/plan condition only for Admin
+if (tokenRole !== "client" && tokenRole !== "customer") {
+  filters.push({
+    $or: [
+      {
+        _id: {
+          $in: planOrderIds,
+        },
+      },
+      {
+        domainSource: {
+          $ne: dnscloudflareSource?._id,
+        },
+      },
+    ],
+  });
+}
       // ========================================================
       // EXCLUDE TRANSFERRED / CANCELLED ORDERS
       // FROM NORMAL ORDERS
       // ========================================================
 
-      const excludedOrderStatusIds = [
-        transferredOrderStatus?._id,
-        cancelledOrderStatus?._id,
-      ].filter(Boolean);
+     const excludedOrderStatusIds = [
+  transferredOrderStatus?._id,
+  cancelledOrderStatus?._id,
+].filter(Boolean);
 
-      if (
-        excludedOrderStatusIds.length
-      ) {
-        filters.push({
-          order_status: {
-            $nin:
-              excludedOrderStatusIds,
-          },
-        });
-      }
-
+if (
+  tokenRole !== "client" &&
+  tokenRole !== "customer" &&
+  excludedOrderStatusIds.length
+) {
+  filters.push({
+    order_status: {
+      $nin: excludedOrderStatusIds,
+    },
+  });
+}
       // ========================================================
       // 7. SEARCH
       // ========================================================
